@@ -70,6 +70,9 @@
                 return {
                     name: data.n,
                     whatsapp: data.w,
+                    address: data.a,
+                    instagram: data.ig,
+                    facebook: data.fb,
                     primaryColor: data.c,
                     secondaryColor: data.b,
                     bannerImage: data.bi,
@@ -183,12 +186,30 @@
 
             app.innerHTML = `
                 <div class="min-h-screen bg-white">
+                    <a href="criar.html${window.location.hash}" class="fixed top-4 right-4 z-30 bg-white/20 hover:bg-white/40 text-white p-3 rounded-full backdrop-blur-md transition-all shadow-lg" title="Editar Página">
+                        <i data-lucide="edit-3" size="20"></i>
+                    </a>
                     <div class="relative py-12 sm:py-20 px-6 text-center overflow-hidden" style="background-color: ${storeData.secondaryColor}; color: #ffffff">
                         ${storeData.bannerImage ? `<img src="${proxyImg(storeData.bannerImage)}" class="absolute inset-0 w-full h-full object-cover opacity-30 z-0" referrerpolicy="no-referrer">` : ''}
                         <div class="relative z-10">
                             <h1 class="text-3xl sm:text-5xl md:text-6xl font-black italic uppercase tracking-tighter mb-4">${storeData.name}</h1>
-                            <div class="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest">
-                                <i data-lucide="smartphone" size="14"></i> Pedidos via WhatsApp
+                            
+                            ${storeData.address ? `<p class="text-sm sm:text-base font-medium mb-4 opacity-90"><i data-lucide="map-pin" class="inline-block w-4 h-4 mr-1"></i> ${storeData.address}</p>` : ''}
+
+                            <div class="flex flex-wrap justify-center gap-4 mb-6">
+                                <div class="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest">
+                                    <i data-lucide="smartphone" size="14"></i> Pedidos via WhatsApp
+                                </div>
+                                ${storeData.instagram ? `
+                                    <a href="https://instagram.com/${storeData.instagram.replace('@', '')}" target="_blank" class="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest hover:bg-white/30 transition-all">
+                                        <i data-lucide="instagram" size="14"></i> Instagram
+                                    </a>
+                                ` : ''}
+                                ${storeData.facebook ? `
+                                    <a href="${storeData.facebook.startsWith('http') ? storeData.facebook : 'https://' + storeData.facebook}" target="_blank" class="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest hover:bg-white/30 transition-all">
+                                        <i data-lucide="facebook" size="14"></i> Facebook
+                                    </a>
+                                ` : ''}
                             </div>
                         </div>
                     </div>

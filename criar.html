@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Criar meu CatálogoZap V11</title>
+    <title>Criar meu CatálogoZap V12</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -14,11 +14,11 @@
         <div class="max-w-4xl mx-auto h-16 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <div class="bg-orange-500 p-2 rounded-lg"><i data-lucide="shopping-bag" class="text-white w-5 h-5"></i></div>
-                <h1 class="text-xl font-bold tracking-tight">CatálogoZap V11</h1>
+                <h1 class="text-xl font-bold tracking-tight">CatálogoZap V12</h1>
             </div>
             <div class="flex gap-2">
-                <button onclick="window.open('https://archive.org/', '_blank')" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-[10px] font-bold hover:bg-blue-700">
-                    <i data-lucide="upload-cloud" size="12"></i> Archive.org (Melhor)
+                <button onclick="window.open('https://pt-br.imgbb.com/', '_blank')" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-[10px] font-bold hover:bg-blue-700">
+                    <i data-lucide="upload-cloud" size="12"></i> ImgBB (Sem Cadastro)
                 </button>
                 <button onclick="window.open('https://postimages.org/', '_blank')" class="bg-slate-900 text-white px-4 py-2 rounded-xl text-[10px] font-bold hover:bg-slate-800">
                     <i data-lucide="upload-cloud" size="12"></i> Postimg
@@ -70,7 +70,7 @@
                     </div>
                     <div class="space-y-2">
                         <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">URL da Imagem de Banner (Opcional)</label>
-                        <input type="text" id="banner-image" placeholder="https://archive.org/download/minhafoto.jpg" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                        <input type="text" id="banner-image" placeholder="https://i.ibb.co/minhafoto.jpg" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
                     </div>
                 </section>
 
@@ -175,3 +175,8 @@
             navigator.clipboard.writeText(text);
             alert("Link copiado!");
         }
+
+        window.onload = renderProducts;
+    </script>
+</body>
+</html>

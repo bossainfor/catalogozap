@@ -116,17 +116,6 @@
             }
         };
 
-        // Limpador de links para economizar espaço
-        function cleanUrl(url) {
-            if (!url) return '';
-            if (url.includes('postimg.cc/')) {
-                const parts = url.split('/');
-                const id = parts.find(p => p.length > 5 && !p.includes('.'));
-                return id ? 'p:' + id : url;
-            }
-            return url;
-        }
-
         function addProduct() {
             products.push({ id: Date.now().toString(), name: '', price: '', image: '' });
             renderProducts();
@@ -172,12 +161,12 @@
                 w: whatsapp.replace(/\D/g, ''),
                 pc: document.getElementById('primary-color').value,
                 sc: document.getElementById('secondary-color').value,
-                bi: cleanUrl(bannerImage),
+                bi: bannerImage,
                 t: document.getElementById('niche').value,
                 p: products.filter(p => p.name && p.price).map(p => ({
                     n: p.name,
                     p: p.price,
-                    i: cleanUrl(p.image)
+                    i: p.image
                 }))
             };
 

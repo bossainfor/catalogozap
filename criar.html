@@ -174,30 +174,56 @@
                 return;
             }
 
+            // Objeto otimizado (apenas chaves necessárias)
             const data = {
                 n: name,
-                w: whatsapp.replace(/\D/g, ''),
-                a: address,
-                ig: instagram,
-                fb: facebook,
-                c: document.getElementById('primary-color').value,
-                b: document.getElementById('secondary-color').value,
-                bi: bannerImage,
-                t: document.getElementById('niche').value,
-                p: products.filter(p => p.name && p.price).map(p => ({
-                    n: p.name,
-                    p: p.price,
-                    i: p.image
-                }))
+                w: whatsapp.replace(/\D/g, '')
             };
+
+            if (address) data.a = address;
+            if (instagram) data.ig = instagram;
+            if (facebook) data.fb = facebook;
+            if (bannerImage) data.bi = bannerImage;
+            
+            data.c = document.getElementById('primary-color').value;
+            data.b = document.getElementById('secondary-color').value;
+            data.t = document.getElementById('niche').value;
+            
+            const validProducts = products.filter(p => p.name && p.price);
+            if (validProducts.length > 0) {
+                data.p = validProducts.map(p => {
+                    const item = { n: p.name, p: p.price };
+                    if (p.image) item.i = p.image;
+                    return item;
+                });
+            }
 
             const json = JSON.stringify(data);
             const b64 = btoa(unescape(encodeURIComponent(json)));
             const publicUrl = window.location.origin + window.location.pathname.replace('criar.html', 'loja.html') + '#' + b64;
 
             document.getElementById('public-link').innerText = publicUrl;
-            document.getElementById('result-section').classList.remove('hidden');
-            document.getElementById('result-section').scrollIntoView({ behavior: 'smooth' });
+            
+            // Adiciona botão de editar no painel de resultado para o dono da loja
+            const resultSection = document.getElementById('result-section');
+            const editBtnId = 'edit-page-btn';
+            if (!document.getElementById(editBtnId)) {
+                const editBtn = document.createElement('div');
+                editBtn.id = editBtnId;
+                editBtn.className = "mt-4 flex justify-center";
+                editBtn.innerHTML = `
+                    <a href="loja.html#${b64}" target="_blank" class="text-orange-600 font-bold underline text-sm flex items-center gap-1">
+                        <i data-lucide="external-link" size="14"></i> Visualizar minha página agora
+                    </a>
+                `;
+                resultSection.querySelector('.bg-orange-50').appendChild(editBtn);
+            } else {
+                document.getElementById(editBtnId).querySelector('a').href = `loja.html#${b64}`;
+            }
+
+            resultSection.classList.remove('hidden');
+            resultSection.scrollIntoView({ behavior: 'smooth' });
+            lucide.createIcons();
         }
 
         function copyLink(id) {

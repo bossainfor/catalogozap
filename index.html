@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CatálogoZap - Vitrine Digital Instantânea</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 overflow-x-hidden">
+    <div class="relative min-h-screen flex flex-col items-center justify-center px-4 py-20 text-center overflow-hidden">
+        <div class="absolute top-0 left-0 w-full h-full -z-10 opacity-20">
+            <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-400 rounded-full blur-[120px]"></div>
+            <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-slate-400 rounded-full blur-[120px]"></div>
+        </div>
+
+        <div class="max-w-4xl mx-auto space-y-8">
+            <h1 class="text-5xl md:text-8xl font-black tracking-tighter italic uppercase leading-[0.9] text-slate-900">
+                Sua vitrine no <span class="text-orange-500">WhatsApp</span> em segundos.
+            </h1>
+            <p class="text-xl md:text-2xl text-slate-500 font-medium max-w-2xl mx-auto">
+                Crie catálogos, cardápios ou portfólios digitais sem complicação. Sem login, sem mensalidade, sem burocracia.
+            </p>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
+                <a href="criar.html" class="w-full sm:w-auto px-12 py-6 bg-slate-900 text-white rounded-3xl font-black uppercase italic tracking-widest text-xl hover:bg-slate-800 transition-all shadow-2xl hover:scale-105 active:scale-95 flex items-center justify-center gap-3">
+                    <i data-lucide="plus-circle"></i> Criar Agora
+                </a>
+            </div>
+        </div>
+
+        <div class="mt-20 relative max-w-5xl mx-auto">
+            <div class="bg-white p-4 rounded-[40px] shadow-2xl border border-slate-100 transform rotate-1 hover:rotate-0 transition-transform duration-500">
+                <!-- Imagem de Preview com Fallback -->
+                <img src="https://i.postimg.cc/grFTzT7M/Chat-GPT-Image-1-04-2026-11-54-48.png" 
+                     onerror="this.src='https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1200&q=80'"
+                     alt="Preview" class="rounded-[32px] w-full h-auto shadow-inner" referrerpolicy="no-referrer">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

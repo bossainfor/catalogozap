@@ -43,18 +43,23 @@
 
         // Funções de Descompressão LZW
         const LZW = {
-            decompress: (b) => {
+            decompress: (s) => {
                 try {
-                    let f = decodeURIComponent(escape(atob(b))), d = {}, a = f.split(""), g = a[0], e = [g], h = 256, k = g;
-                    for (let b = 1; b < a.length; b++) {
-                        let c = a[b].charCodeAt(0), m = c < 256 ? a[b] : d[c] ? d[c] : g + k;
-                        e.push(m);
-                        k = m.charAt(0);
-                        d[h++] = g + k;
-                        g = m
+                    let dict = {}, data = (decodeURIComponent(escape(atob(s))) + "").split(""), currChar = data[0], oldPhrase = currChar, out = [currChar], code = 256, phrase;
+                    for (let i = 1; i < data.length; i++) {
+                        let currCode = data[i].charCodeAt(0);
+                        if (currCode < 256) {
+                            phrase = data[i];
+                        } else {
+                            phrase = dict[currCode] ? dict[currCode] : (oldPhrase + currChar);
+                        }
+                        out.push(phrase);
+                        currChar = phrase.charAt(0);
+                        dict[code++] = oldPhrase + currChar;
+                        oldPhrase = phrase;
                     }
-                    return e.join("");
-                } catch(e) { return null; }
+                    return out.join("");
+                } catch (e) { return null; }
             }
         };
 
@@ -63,11 +68,8 @@
                 const hash = window.location.hash.substring(1);
                 if (!hash) throw new Error("Nenhum dado encontrado");
                 
-                let json;
-                const decompressed = LZW.decompress(hash);
-                if (decompressed && decompressed.startsWith('{')) {
-                    json = decompressed;
-                } else {
+                let json = LZW.decompress(hash);
+                if (!json || !json.startsWith('{')) {
                     json = decodeURIComponent(escape(atob(hash)));
                 }
                 
@@ -75,8 +77,8 @@
                 return {
                     name: data.n || data.name,
                     whatsapp: data.w || data.whatsapp,
-                    primaryColor: data.pc || data.primaryColor || '#f97316',
-                    secondaryColor: data.sc || data.secondaryColor || '#0f172a',
+                    primaryColor: data.c || data.primaryColor || '#f97316',
+                    secondaryColor: data.b || data.secondaryColor || '#0f172a',
                     bannerImage: data.bi || data.bannerImage,
                     type: data.t || data.type || 'loja',
                     products: (data.p || data.products || []).map(p => ({
@@ -142,7 +144,7 @@
                         <img src="${item.image}" class="w-16 h-16 rounded-lg object-cover" referrerpolicy="no-referrer">
                         <div class="flex-1">
                             <h4 class="font-bold text-sm">${item.name}</h4>
-                            <p class="text-xs" style="color: ${storeData.primaryColor}">${formatCurrency(item.price)}</p>
+                            <p class="text-xs font-bold" style="color: ${storeData.primaryColor}">${formatCurrency(item.price)}</p>
                             <div class="flex items-center gap-2 mt-2">
                                 <button onclick="updateQuantity('${item.id}', -1)" class="w-6 h-6 bg-slate-100 rounded">-</button>
                                 <span class="text-xs font-bold">${item.quantity}</span>
@@ -179,28 +181,28 @@
 
             document.title = storeData.name;
             const productsHTML = storeData.products.map(p => `
-                <div class="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm">
+                <div class="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
                     <img src="${p.image}" class="w-full aspect-square object-cover" referrerpolicy="no-referrer" onerror="this.src='https://picsum.photos/seed/'+Math.random()+'/400/400'">
-                    <div class="p-6">
-                        <h3 class="font-bold text-lg mb-2">${p.name}</h3>
-                        <p class="font-black text-xl mb-4" style="color: ${storeData.primaryColor}">${formatCurrency(p.price)}</p>
-                        <button onclick="addToCart('${p.id}')" class="w-full py-4 text-white font-bold rounded-2xl" style="background-color: ${storeData.primaryColor}">ADICIONAR AO CARRINHO</button>
+                    <div class="p-4 sm:p-6">
+                        <h3 class="font-bold text-base sm:text-lg mb-1 truncate">${p.name}</h3>
+                        <p class="font-black text-lg sm:text-xl mb-4" style="color: ${storeData.primaryColor}">${formatCurrency(p.price)}</p>
+                        <button onclick="addToCart('${p.id}')" class="w-full py-3 sm:py-4 text-white font-bold rounded-xl text-sm sm:text-base uppercase tracking-widest italic" style="background-color: ${storeData.primaryColor}">Adicionar</button>
                     </div>
                 </div>
             `).join('');
 
             app.innerHTML = `
                 <div class="min-h-screen bg-white">
-                    <div class="relative py-12 md:py-20 px-4 text-center overflow-hidden" style="background-color: ${storeData.secondaryColor}; color: #ffffff">
+                    <div class="relative py-12 sm:py-20 px-6 text-center overflow-hidden" style="background-color: ${storeData.secondaryColor}; color: #ffffff">
                         ${storeData.bannerImage ? `<img src="${storeData.bannerImage}" class="absolute inset-0 w-full h-full object-cover opacity-30 z-0" referrerpolicy="no-referrer">` : ''}
                         <div class="relative z-10">
-                            <h1 class="text-3xl md:text-5xl font-black italic uppercase tracking-tighter mb-4">${storeData.name}</h1>
-                            <div class="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full text-xs font-bold">
+                            <h1 class="text-3xl sm:text-5xl md:text-6xl font-black italic uppercase tracking-tighter mb-4">${storeData.name}</h1>
+                            <div class="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest">
                                 <i data-lucide="smartphone" size="14"></i> Pedidos via WhatsApp
                             </div>
                         </div>
                     </div>
-                    <main class="max-w-6xl mx-auto px-4 py-8 md:py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+                    <main class="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                         ${productsHTML}
                     </main>
                 </div>

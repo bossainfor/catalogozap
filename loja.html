@@ -185,37 +185,48 @@
             `).join('');
 
             app.innerHTML = `
-                <div class="min-h-screen bg-white">
-                    <a href="criar.html${window.location.hash}" class="fixed top-4 right-4 z-30 bg-white/20 hover:bg-white/40 text-white p-3 rounded-full backdrop-blur-md transition-all shadow-lg" title="Editar Página">
-                        <i data-lucide="edit-3" size="20"></i>
-                    </a>
+                <div class="min-h-screen bg-white flex flex-col">
                     <div class="relative py-12 sm:py-20 px-6 text-center overflow-hidden" style="background-color: ${storeData.secondaryColor}; color: #ffffff">
                         ${storeData.bannerImage ? `<img src="${proxyImg(storeData.bannerImage)}" class="absolute inset-0 w-full h-full object-cover opacity-30 z-0" referrerpolicy="no-referrer">` : ''}
                         <div class="relative z-10">
                             <h1 class="text-3xl sm:text-5xl md:text-6xl font-black italic uppercase tracking-tighter mb-4">${storeData.name}</h1>
-                            
-                            ${storeData.address ? `<p class="text-sm sm:text-base font-medium mb-4 opacity-90"><i data-lucide="map-pin" class="inline-block w-4 h-4 mr-1"></i> ${storeData.address}</p>` : ''}
-
-                            <div class="flex flex-wrap justify-center gap-4 mb-6">
-                                <div class="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest">
-                                    <i data-lucide="smartphone" size="14"></i> Pedidos via WhatsApp
-                                </div>
-                                ${storeData.instagram ? `
-                                    <a href="https://instagram.com/${storeData.instagram.replace('@', '')}" target="_blank" class="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest hover:bg-white/30 transition-all">
-                                        <i data-lucide="instagram" size="14"></i> Instagram
-                                    </a>
-                                ` : ''}
-                                ${storeData.facebook ? `
-                                    <a href="${storeData.facebook.startsWith('http') ? storeData.facebook : 'https://' + storeData.facebook}" target="_blank" class="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest hover:bg-white/30 transition-all">
-                                        <i data-lucide="facebook" size="14"></i> Facebook
-                                    </a>
-                                ` : ''}
+                            <div class="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest">
+                                <i data-lucide="smartphone" size="14"></i> Pedidos via WhatsApp
                             </div>
                         </div>
                     </div>
-                    <main class="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+
+                    <main class="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 flex-1 w-full">
                         ${productsHTML}
                     </main>
+
+                    <footer class="bg-slate-900 text-white py-12 px-6 mt-10">
+                        <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
+                            <div class="text-center md:text-left space-y-4">
+                                <h2 class="text-2xl font-black italic uppercase tracking-tighter">${storeData.name}</h2>
+                                ${storeData.address ? `<p class="text-slate-400 text-sm flex items-center justify-center md:justify-start gap-2"><i data-lucide="map-pin" size="16"></i> ${storeData.address}</p>` : ''}
+                            </div>
+
+                            <div class="flex flex-col items-center md:items-end gap-4">
+                                <div class="flex gap-4">
+                                    ${storeData.instagram ? `
+                                        <a href="https://instagram.com/${storeData.instagram.replace('@', '')}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-orange-500 transition-all">
+                                            <i data-lucide="instagram" size="20"></i>
+                                        </a>
+                                    ` : ''}
+                                    ${storeData.facebook ? `
+                                        <a href="${storeData.facebook.startsWith('http') ? storeData.facebook : 'https://' + storeData.facebook}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-blue-600 transition-all">
+                                            <i data-lucide="facebook" size="20"></i>
+                                        </a>
+                                    ` : ''}
+                                    <a href="https://wa.me/55${storeData.whatsapp}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-green-500 transition-all">
+                                        <i data-lucide="phone" size="20"></i>
+                                    </a>
+                                </div>
+                                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Gerado por CatálogoZap</p>
+                            </div>
+                        </div>
+                    </footer>
                 </div>
             `;
             lucide.createIcons();

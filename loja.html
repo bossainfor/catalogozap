@@ -92,21 +92,6 @@
             }
         }
 
-        function fixImageUrl(url) {
-            if (!url) return '';
-            // Se for um link encurtado pelo sistema V3
-            if (url.startsWith('p:')) {
-                const id = url.replace('p:', '');
-                return `https://i.postimg.cc/${id}/image.png`;
-            }
-            // Se for um link de página do Postimg
-            if (url.includes('postimg.cc/') && !url.includes('i.postimg.cc')) {
-                const id = url.split('/').filter(p => p.length > 5 && !p.includes('.')).pop();
-                return `https://i.postimg.cc/${id}/image.png`;
-            }
-            return url;
-        }
-
         function formatCurrency(value) {
             const num = typeof value === 'string' ? parseFloat(value.replace(',', '.')) : value;
             return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(num || 0);
@@ -154,7 +139,7 @@
             } else {
                 itemsContainer.innerHTML = cart.map(item => `
                     <div class="flex gap-4 items-start">
-                        <img src="${fixImageUrl(item.image)}" class="w-16 h-16 rounded-lg object-cover" referrerpolicy="no-referrer">
+                        <img src="${item.image}" class="w-16 h-16 rounded-lg object-cover" referrerpolicy="no-referrer">
                         <div class="flex-1">
                             <h4 class="font-bold text-sm">${item.name}</h4>
                             <p class="text-xs" style="color: ${storeData.primaryColor}">${formatCurrency(item.price)}</p>
@@ -195,7 +180,7 @@
             document.title = storeData.name;
             const productsHTML = storeData.products.map(p => `
                 <div class="bg-white rounded-3xl overflow-hidden border border-slate-100 shadow-sm">
-                    <img src="${fixImageUrl(p.image)}" class="w-full aspect-square object-cover" referrerpolicy="no-referrer" onerror="this.src='https://picsum.photos/seed/'+Math.random()+'/400/400'">
+                    <img src="${p.image}" class="w-full aspect-square object-cover" referrerpolicy="no-referrer" onerror="this.src='https://picsum.photos/seed/'+Math.random()+'/400/400'">
                     <div class="p-6">
                         <h3 class="font-bold text-lg mb-2">${p.name}</h3>
                         <p class="font-black text-xl mb-4" style="color: ${storeData.primaryColor}">${formatCurrency(p.price)}</p>
@@ -206,16 +191,16 @@
 
             app.innerHTML = `
                 <div class="min-h-screen bg-white">
-                    <div class="relative py-20 px-4 text-center overflow-hidden" style="background-color: ${storeData.secondaryColor}; color: #ffffff">
-                        ${storeData.bannerImage ? `<img src="${fixImageUrl(storeData.bannerImage)}" class="absolute inset-0 w-full h-full object-cover opacity-30 z-0" referrerpolicy="no-referrer">` : ''}
+                    <div class="relative py-12 md:py-20 px-4 text-center overflow-hidden" style="background-color: ${storeData.secondaryColor}; color: #ffffff">
+                        ${storeData.bannerImage ? `<img src="${storeData.bannerImage}" class="absolute inset-0 w-full h-full object-cover opacity-30 z-0" referrerpolicy="no-referrer">` : ''}
                         <div class="relative z-10">
-                            <h1 class="text-5xl font-black italic uppercase tracking-tighter mb-4">${storeData.name}</h1>
-                            <div class="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full text-sm font-bold">
-                                <i data-lucide="smartphone" size="16"></i> Pedidos via WhatsApp
+                            <h1 class="text-3xl md:text-5xl font-black italic uppercase tracking-tighter mb-4">${storeData.name}</h1>
+                            <div class="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full text-xs font-bold">
+                                <i data-lucide="smartphone" size="14"></i> Pedidos via WhatsApp
                             </div>
                         </div>
                     </div>
-                    <main class="max-w-6xl mx-auto px-4 py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <main class="max-w-6xl mx-auto px-4 py-8 md:py-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                         ${productsHTML}
                     </main>
                 </div>

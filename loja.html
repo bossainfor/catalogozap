@@ -42,23 +42,25 @@
         let storeData = null;
         let cart = [];
 
-        // Proxy de Imagem (Simplificado e Direto)
+        // Proxy de Imagem Nuclear (Tenta 3 formas se falhar)
         function proxyImg(url) {
             if (!url) return '';
             let u = url.trim();
-
-            // Se for link de visualizador, tenta corrigir (mas o ideal é o link direto)
-            if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) {
-                u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
-            }
-            if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) {
-                u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
-            }
-
+            if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
+            if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
             if (!u.startsWith('http')) u = 'https://' + u;
-            
-            // Retorna o link direto sem atravessadores
             return u;
+        }
+
+        // Função para tentar carregar via Proxy se o link direto falhar
+        function handleImgError(img) {
+            const originalSrc = img.getAttribute('data-original');
+            if (!img.getAttribute('data-tried-proxy')) {
+                img.setAttribute('data-tried-proxy', 'true');
+                img.src = `https://wsrv.nl/?url=${encodeURIComponent(originalSrc)}&w=600&cache=${Date.now()}`;
+            } else {
+                img.src = 'https://picsum.photos/seed/' + Math.random() + '/400/400';
+            }
         }
 
         function decodeData() {
@@ -131,7 +133,7 @@
             } else {
                 itemsContainer.innerHTML = cart.map(item => `
                     <div class="flex gap-4 items-start">
-                        <img src="${proxyImg(item.image)}" class="w-16 h-16 rounded-lg object-cover" referrerpolicy="no-referrer">
+                        <img src="${proxyImg(item.image)}" data-original="${item.image}" onerror="handleImgError(this)" class="w-16 h-16 rounded-lg object-cover" referrerpolicy="no-referrer">
                         <div class="flex-1">
                             <h4 class="font-bold text-sm">${item.name}</h4>
                             <p class="text-xs font-bold" style="color: ${storeData.primaryColor}">${formatCurrency(item.price)}</p>
@@ -172,7 +174,7 @@
             document.title = storeData.name;
             const productsHTML = storeData.products.map(p => `
                 <div class="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
-                    <img src="${proxyImg(p.image)}" class="w-full aspect-square object-cover" referrerpolicy="no-referrer" onerror="this.src='https://picsum.photos/seed/'+Math.random()+'/400/400'">
+                    <img src="${proxyImg(p.image)}" data-original="${p.image}" onerror="handleImgError(this)" class="w-full aspect-square object-cover" referrerpolicy="no-referrer">
                     <div class="p-4 sm:p-6">
                         <h3 class="font-bold text-base sm:text-lg mb-1 truncate">${p.name}</h3>
                         <p class="font-black text-lg sm:text-xl mb-4" style="color: ${storeData.primaryColor}">${formatCurrency(p.price)}</p>
@@ -184,7 +186,7 @@
             app.innerHTML = `
                 <div class="min-h-screen bg-white">
                     <div class="relative py-12 sm:py-20 px-6 text-center overflow-hidden" style="background-color: ${storeData.secondaryColor}; color: #ffffff">
-                        ${storeData.bannerImage ? `<img src="${proxyImg(storeData.bannerImage)}" class="absolute inset-0 w-full h-full object-cover opacity-30 z-0" referrerpolicy="no-referrer">` : ''}
+                        ${storeData.bannerImage ? `<img src="${proxyImg(storeData.bannerImage)}" data-original="${storeData.bannerImage}" onerror="handleImgError(this)" class="absolute inset-0 w-full h-full object-cover opacity-30 z-0" referrerpolicy="no-referrer">` : ''}
                         <div class="relative z-10">
                             <h1 class="text-3xl sm:text-5xl md:text-6xl font-black italic uppercase tracking-tighter mb-4">${storeData.name}</h1>
                             <div class="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest">

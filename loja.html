@@ -42,24 +42,28 @@
         let storeData = null;
         let cart = [];
 
-        // Proxy de Imagem Nuclear (Tenta 3 formas se falhar)
+        // Proxy de Imagem V17 (Ultra Compatível)
         function proxyImg(url) {
             if (!url) return '';
             let u = url.trim();
+            
+            // Se for link de visualizador, tenta converter para direto
             if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
             if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
+            
             if (!u.startsWith('http')) u = 'https://' + u;
-            return u;
+            
+            // Força o uso do proxy wsrv.nl que é o mais estável para GitHub Pages
+            // Adicionamos parâmetros para garantir que a imagem seja tratada como imagem pura
+            return `https://wsrv.nl/?url=${encodeURIComponent(u)}&noproxy=1&default=https://picsum.photos/400/400`;
         }
 
-        // Função para tentar carregar via Proxy se o link direto falhar
+        // Função de erro simplificada
         function handleImgError(img) {
-            const originalSrc = img.getAttribute('data-original');
-            if (!img.getAttribute('data-tried-proxy')) {
-                img.setAttribute('data-tried-proxy', 'true');
-                img.src = `https://wsrv.nl/?url=${encodeURIComponent(originalSrc)}&w=600&cache=${Date.now()}`;
-            } else {
-                img.src = 'https://picsum.photos/seed/' + Math.random() + '/400/400';
+            if (!img.getAttribute('data-tried-fallback')) {
+                img.setAttribute('data-tried-fallback', 'true');
+                // Se falhar, tenta o link puro sem proxy
+                img.src = img.getAttribute('data-original');
             }
         }
 

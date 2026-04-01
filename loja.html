@@ -42,27 +42,23 @@
         let storeData = null;
         let cart = [];
 
-        // Proxy de Imagem Inteligente com Corretor de Links
+        // Proxy de Imagem (Simplificado e Direto)
         function proxyImg(url) {
             if (!url) return '';
             let u = url.trim();
 
-            // CORRETOR AUTOMÁTICO: Se o usuário colou o link de visualizador do ImgBB
+            // Se for link de visualizador, tenta corrigir (mas o ideal é o link direto)
             if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) {
-                // Tenta forçar o link direto (se o ID for o mesmo)
-                // Nota: Isso é uma tentativa, o ideal é o link direto.
                 u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
             }
-            
-            // CORRETOR AUTOMÁTICO: Se o usuário colou o link de visualizador do Postimages
             if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) {
                 u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
             }
 
             if (!u.startsWith('http')) u = 'https://' + u;
             
-            // Usa o proxy para garantir que o GitHub não bloqueie
-            return `https://wsrv.nl/?url=${encodeURIComponent(u)}&w=800&fit=cover&cache=${Date.now()}`;
+            // Retorna o link direto sem atravessadores
+            return u;
         }
 
         function decodeData() {

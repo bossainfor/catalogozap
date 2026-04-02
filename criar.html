@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAJaxRdA6uzbN41JvAw8xO7F5mzJaDfMBc",
@@ -42,7 +42,12 @@
                 <div class="bg-orange-500 p-2 rounded-lg"><i data-lucide="shopping-bag" class="text-white w-5 h-5"></i></div>
                 <h1 class="text-xl font-bold tracking-tight">CatálogoZap V15</h1>
             </div>
-            <div class="flex gap-2">
+            <div class="flex gap-2 items-center">
+                <div id="last-store-container" class="hidden">
+                    <button onclick="editLastStore()" class="bg-orange-100 text-orange-600 px-3 py-2 rounded-xl text-[10px] font-bold hover:bg-orange-200 flex items-center gap-1">
+                        <i data-lucide="history" size="12"></i> Editar Última
+                    </button>
+                </div>
                 <button onclick="window.open('https://postimages.org/', '_blank')" class="bg-blue-600 text-white px-4 py-2 rounded-xl text-[10px] font-bold hover:bg-blue-700">
                     <i data-lucide="upload-cloud" size="12"></i> Postimages (RECOMENDADO)
                 </button>
@@ -227,6 +232,10 @@
                 await setDoc(doc(window.db, "stores", storeId), data);
 
                 const publicUrl = window.location.origin + window.location.pathname.replace('criar.html', 'loja.html') + '?id=' + storeId;
+
+                localStorage.setItem('lastStoreId', storeId);
+                localStorage.setItem('lastStoreName', name);
+
                 document.getElementById('public-link').innerText = publicUrl;
                 
                 const resultSection = document.getElementById('result-section');
@@ -239,15 +248,20 @@
                         <a href="loja.html?id=${storeId}" target="_blank" class="text-orange-600 font-bold underline text-sm flex items-center gap-1">
                             <i data-lucide="external-link" size="14"></i> Visualizar minha página agora
                         </a>
+                        <button onclick="deleteStore('${storeId}')" class="text-red-500 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1 hover:text-red-700 transition-colors">
+                            <i data-lucide="trash-2" size="12"></i> Excluir esta página permanentemente
+                        </button>
                         <p class="text-[10px] text-slate-400">Guarde este link para editar sua página futuramente!</p>
                     `;
                     resultSection.querySelector('.bg-orange-50').appendChild(editBtn);
                 } else {
                     document.getElementById(editBtnId).querySelector('a').href = `loja.html?id=${storeId}`;
+                    document.getElementById(editBtnId).querySelector('button').onclick = () => deleteStore(storeId);
                 }
 
                 resultSection.classList.remove('hidden');
                 resultSection.scrollIntoView({ behavior: 'smooth' });
+                checkLastStore();
             } catch (error) {
                 console.error("Erro ao salvar:", error);
                 alert("Erro ao salvar no banco de dados. Tente novamente.");
@@ -264,21 +278,56 @@
             alert("Link copiado!");
         }
 
+        function checkLastStore() {
+            const lastId = localStorage.getItem('lastStoreId');
+            const lastName = localStorage.getItem('lastStoreName');
+            const container = document.getElementById('last-store-container');
+            if (lastId) {
+                container.classList.remove('hidden');
+                container.querySelector('button').title = `Editar: ${lastName}`;
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        function editLastStore() {
+            const lastId = localStorage.getItem('lastStoreId');
+            if (lastId) {
+                const url = new URL(window.location.href);
+                url.searchParams.set('edit', lastId);
+                window.location.href = url.toString();
+            }
+        }
+
+        async function deleteStore(id) {
+            if (!confirm("TEM CERTEZA? Isso vai apagar sua página para sempre e o link deixará de funcionar!")) return;
+            try {
+                const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+                await deleteDoc(doc(window.db, "stores", id));
+                if (localStorage.getItem('lastStoreId') === id) {
+                    localStorage.removeItem('lastStoreId');
+                    localStorage.removeItem('lastStoreName');
+                }
+                alert("Página excluída com sucesso!");
+                window.location.href = 'criar.html';
+            } catch (error) {
+                console.error("Erro ao excluir:", error);
+                alert("Erro ao excluir. Tente novamente.");
+            }
+        }
+
         async function loadFromFirebase() {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
                 const storeId = urlParams.get('edit') || urlParams.get('id');
                 if (!storeId) return;
-
                 let attempts = 0;
                 while (!window.db && attempts < 50) {
                     await new Promise(r => setTimeout(r, 100));
                     attempts++;
                 }
-
                 const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
                 const docSnap = await getDoc(doc(window.db, "stores", storeId));
-
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     document.getElementById('store-name').value = data.n || '';
@@ -290,7 +339,6 @@
                     document.getElementById('secondary-color').value = data.b ? '#' + data.b : '#0f172a';
                     document.getElementById('banner-image').value = data.bi || '';
                     document.getElementById('niche').value = data.t || 'loja';
-                    
                     if (data.p && data.p.length > 0) {
                         products = data.p.map(p => ({
                             id: Math.random().toString(36).substr(2, 9),
@@ -305,6 +353,7 @@
         }
 
         window.onload = () => {
+            checkLastStore();
             loadFromFirebase();
             renderProducts();
         };

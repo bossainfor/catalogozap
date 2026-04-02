@@ -72,6 +72,10 @@
                 <section class="space-y-6">
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Seu Nome (Responsável)</label>
+                            <input type="text" id="owner-name" placeholder="Ex: João Silva" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                        </div>
+                        <div class="space-y-2">
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Nome da Loja</label>
                             <input type="text" id="store-name" placeholder="Ex: Hamburgueria do Jhow" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
                         </div>
@@ -184,6 +188,7 @@
         }
 
         async function generateStore() {
+            const ownerName = document.getElementById('owner-name').value;
             const name = document.getElementById('store-name').value;
             const whatsapp = document.getElementById('whatsapp').value;
             const bannerImage = document.getElementById('banner-image').value;
@@ -191,8 +196,8 @@
             const instagram = document.getElementById('instagram').value;
             const facebook = document.getElementById('facebook').value;
 
-            if (!name || !whatsapp) {
-                alert("Preencha o nome e o WhatsApp!");
+            if (!name || !whatsapp || !ownerName) {
+                alert("Preencha o seu nome, o nome da loja e o WhatsApp!");
                 return;
             }
 
@@ -203,6 +208,7 @@
             lucide.createIcons();
 
             const data = {
+                cn: ownerName,
                 n: name,
                 w: whatsapp.replace(/\D/g, ''),
                 createdAt: new Date().toISOString(),
@@ -346,6 +352,7 @@
                 const docSnap = await getDoc(doc(window.db, "stores", storeId));
                 if (docSnap.exists()) {
                     const data = docSnap.data();
+                    document.getElementById('owner-name').value = data.cn || '';
                     document.getElementById('store-name').value = data.n || '';
                     document.getElementById('whatsapp').value = data.w || '';
                     document.getElementById('address').value = data.a || '';

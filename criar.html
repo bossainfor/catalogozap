@@ -174,19 +174,20 @@
                 return;
             }
 
-            // Objeto otimizado (apenas chaves necessárias)
+            // Objeto ultra-otimizado
             const data = {
                 n: name,
                 w: whatsapp.replace(/\D/g, '')
             };
 
             if (address) data.a = address;
-            if (instagram) data.ig = instagram;
+            if (instagram) data.ig = instagram.replace('@', '');
             if (facebook) data.fb = facebook;
             if (bannerImage) data.bi = bannerImage;
             
-            data.c = document.getElementById('primary-color').value;
-            data.b = document.getElementById('secondary-color').value;
+            // Remove o # para economizar espaço
+            data.c = document.getElementById('primary-color').value.replace('#', '');
+            data.b = document.getElementById('secondary-color').value.replace('#', '');
             data.t = document.getElementById('niche').value;
             
             const validProducts = products.filter(p => p.name && p.price);
@@ -204,17 +205,19 @@
 
             document.getElementById('public-link').innerText = publicUrl;
             
-            // Adiciona botão de editar no painel de resultado para o dono da loja
             const resultSection = document.getElementById('result-section');
             const editBtnId = 'edit-page-btn';
             if (!document.getElementById(editBtnId)) {
                 const editBtn = document.createElement('div');
                 editBtn.id = editBtnId;
-                editBtn.className = "mt-4 flex justify-center";
+                editBtn.className = "mt-4 flex flex-col items-center gap-3";
                 editBtn.innerHTML = `
                     <a href="loja.html#${b64}" target="_blank" class="text-orange-600 font-bold underline text-sm flex items-center gap-1">
                         <i data-lucide="external-link" size="14"></i> Visualizar minha página agora
                     </a>
+                    <button onclick="shortenUrl('${publicUrl}')" class="text-[10px] bg-slate-200 px-3 py-1 rounded-full font-bold text-slate-600 hover:bg-slate-300">
+                        ENCURTAR LINK (BITLY/TINYURL)
+                    </button>
                 `;
                 resultSection.querySelector('.bg-orange-50').appendChild(editBtn);
             } else {
@@ -224,6 +227,10 @@
             resultSection.classList.remove('hidden');
             resultSection.scrollIntoView({ behavior: 'smooth' });
             lucide.createIcons();
+        }
+
+        async function shortenUrl(url) {
+            alert("Dica: Como o link contém todos os dados, ele é naturalmente longo. Para enviar um link curto, recomendamos usar o site 'bitly.com' ou 'tinyurl.com' colando seu link lá!");
         }
 
         function copyLink(id) {

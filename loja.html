@@ -73,8 +73,8 @@
                     address: data.a,
                     instagram: data.ig,
                     facebook: data.fb,
-                    primaryColor: data.c,
-                    secondaryColor: data.b,
+                    primaryColor: data.c.startsWith('#') ? data.c : '#' + data.c,
+                    secondaryColor: data.b.startsWith('#') ? data.b : '#' + data.b,
                     bannerImage: data.bi,
                     type: data.t,
                     products: (data.p || []).map(p => ({
@@ -210,17 +210,17 @@
                             <div class="flex flex-col items-center md:items-end gap-4">
                                 <div class="flex gap-4">
                                     ${storeData.instagram ? `
-                                        <a href="https://instagram.com/${storeData.instagram.replace('@', '')}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-orange-500 transition-all">
-                                            <i data-lucide="instagram" size="20"></i>
+                                        <a href="https://instagram.com/${storeData.instagram.replace('@', '')}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-orange-500 transition-all flex items-center justify-center">
+                                            <i data-lucide="instagram" class="w-5 h-5"></i>
                                         </a>
                                     ` : ''}
                                     ${storeData.facebook ? `
-                                        <a href="${storeData.facebook.startsWith('http') ? storeData.facebook : 'https://' + storeData.facebook}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-blue-600 transition-all">
-                                            <i data-lucide="facebook" size="20"></i>
+                                        <a href="${storeData.facebook.startsWith('http') ? storeData.facebook : 'https://' + storeData.facebook}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-blue-600 transition-all flex items-center justify-center">
+                                            <i data-lucide="facebook" class="w-5 h-5"></i>
                                         </a>
                                     ` : ''}
-                                    <a href="https://wa.me/55${storeData.whatsapp}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-green-500 transition-all">
-                                        <i data-lucide="phone" size="20"></i>
+                                    <a href="https://wa.me/55${storeData.whatsapp}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-green-500 transition-all flex items-center justify-center">
+                                        <i data-lucide="phone" class="w-5 h-5"></i>
                                     </a>
                                 </div>
                                 <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Gerado por CatálogoZap</p>

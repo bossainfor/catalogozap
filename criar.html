@@ -340,9 +340,14 @@
                 console.error("Erro ao salvar:", error);
                 alert("Erro ao salvar no banco de dados. Tente novamente.");
             } finally {
-                btn.innerHTML = originalText;
                 btn.disabled = false;
                 lucide.createIcons();
+                if (document.getElementById('btn-text').innerText !== "Atualizar Minha Página") {
+                    btn.innerHTML = originalText;
+                } else {
+                    btn.innerHTML = `<i data-lucide="refresh-cw"></i> <span id="btn-text">Atualizar Minha Página</span>`;
+                    lucide.createIcons();
+                }
             }
         }
 
@@ -432,7 +437,8 @@
                     const mainBtn = document.getElementById('main-action-btn');
                     mainBtn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
                     mainBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
-                    document.getElementById('btn-text').innerText = "Atualizar Minha Página";
+                    mainBtn.innerHTML = `<i data-lucide="refresh-cw"></i> <span id="btn-text">Atualizar Minha Página</span>`;
+                    lucide.createIcons();
 
                     document.getElementById('owner-name').value = data.cn || '';
                     document.getElementById('store-name').value = data.n || '';

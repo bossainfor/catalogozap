@@ -252,14 +252,13 @@
             btn.disabled = true;
             lucide.createIcons();
 
-            // Objeto ultra-otimizado
             const data = {
                 cn: ownerName,
                 n: name,
                 w: whatsapp.replace(/\D/g, ''),
                 createdAt: new Date().toISOString(),
                 status: "trial",
-                expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() // 3 dias de teste
+                expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
             };
 
             if (address) data.a = address;
@@ -282,14 +281,12 @@
             }
 
             try {
-                // Usa o ID existente se estiver editando, senão gera um novo
                 const urlParams = new URLSearchParams(window.location.search);
                 const existingId = urlParams.get('edit') || urlParams.get('id');
                 const storeId = existingId || Math.random().toString(36).substring(2, 8);
                 
                 const { doc, getDoc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
 
-                // Se estiver editando, mantém o status e expiração originais
                 if (existingId) {
                     const docSnap = await getDoc(doc(window.db, "stores", existingId));
                     if (docSnap.exists()) {
@@ -300,12 +297,10 @@
                     }
                 }
 
-                // Salva no Firebase
                 await setDoc(doc(window.db, "stores", storeId), data);
 
                 const publicUrl = window.location.origin + window.location.pathname.replace('criar.html', 'loja.html') + '?id=' + storeId;
 
-                // Salva o ID na memória do navegador
                 localStorage.setItem('lastStoreId', storeId);
                 localStorage.setItem('lastStoreName', name);
 
@@ -334,7 +329,7 @@
 
                 resultSection.classList.remove('hidden');
                 resultSection.scrollIntoView({ behavior: 'smooth' });
-                checkLastStore(); // Atualiza o botão do topo
+                checkLastStore();
             } catch (error) {
                 console.error("Erro ao salvar:", error);
                 alert("Erro ao salvar no banco de dados. Tente novamente.");
@@ -343,10 +338,6 @@
                 btn.disabled = false;
                 lucide.createIcons();
             }
-        }
-
-        async function shortenUrl(url) {
-            alert("Dica: Como o link contém todos os dados, ele é naturalmente longo. Para enviar um link curto, recomendamos usar o site 'bitly.com' ou 'tinyurl.com' colando seu link lá!");
         }
 
         function copyLink(id) {
@@ -401,7 +392,6 @@
                 const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
                 await deleteDoc(doc(window.db, "stores", id));
                 
-                // Limpa a memória se for a última loja
                 if (localStorage.getItem('lastStoreId') === id) {
                     localStorage.removeItem('lastStoreId');
                     localStorage.removeItem('lastStoreName');
@@ -421,7 +411,6 @@
                 const storeId = urlParams.get('edit') || urlParams.get('id');
                 if (!storeId) return;
 
-                // Aguarda o Firebase inicializar
                 let attempts = 0;
                 while (!window.db && attempts < 50) {
                     await new Promise(r => setTimeout(r, 100));

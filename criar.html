@@ -49,7 +49,6 @@
             </div>
         </div>
     </div>
-
     <header class="bg-white border-b border-slate-200 sticky top-0 z-10 px-4">
         <div class="max-w-4xl mx-auto h-16 flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -198,10 +197,10 @@
     </main>
 
     <script>
-        let products = [{ id: Date.now().toString(), name: '', price: '', image: '' }];
+        let products = [{ id: Date.now().toString(), name: '', price: '', image: '', description: '' }];
 
         function addProduct() {
-            products.push({ id: Date.now().toString(), name: '', price: '', image: '' });
+            products.push({ id: Date.now().toString(), name: '', price: '', image: '', description: '' });
             renderProducts();
         }
 
@@ -220,11 +219,14 @@
         function renderProducts() {
             const list = document.getElementById('products-list');
             list.innerHTML = products.map(p => `
-                <div class="flex flex-col md:flex-row gap-4 bg-slate-50 p-6 rounded-3xl border border-slate-100 relative">
+                <div class="flex flex-col gap-4 bg-slate-50 p-6 rounded-3xl border border-slate-100 relative">
                     <button onclick="removeProduct('${p.id}')" class="absolute top-2 right-2 text-red-500 p-2"><i data-lucide="trash-2" size="16"></i></button>
-                    <input type="text" value="${p.name}" oninput="updateProduct('${p.id}', 'name', this.value)" placeholder="Nome do Item" class="flex-1 px-4 py-3 rounded-xl border border-slate-200">
-                    <input type="text" value="${p.price}" oninput="updateProduct('${p.id}', 'price', this.value)" placeholder="Preço" class="w-full md:w-32 px-4 py-3 rounded-xl border border-slate-200">
-                    <input type="text" value="${p.image}" oninput="updateProduct('${p.id}', 'image', this.value)" placeholder="URL da Foto" class="flex-1 px-4 py-3 rounded-xl border border-slate-200">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="text" value="${p.name}" oninput="updateProduct('${p.id}', 'name', this.value)" placeholder="Nome do Item" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold">
+                        <input type="text" value="${p.price}" oninput="updateProduct('${p.id}', 'price', this.value)" placeholder="Preço (Ex: 29,90)" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold">
+                    </div>
+                    <textarea oninput="updateProduct('${p.id}', 'description', this.value)" placeholder="Descrição do item (Opcional)" class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm h-20 resize-none">${p.description || ''}</textarea>
+                    <input type="text" value="${p.image}" oninput="updateProduct('${p.id}', 'image', this.value)" placeholder="URL da Foto (Link Direto do Postimages)" class="w-full px-4 py-3 rounded-xl border border-slate-200 text-xs">
                 </div>
             `).join('');
             lucide.createIcons();
@@ -250,13 +252,14 @@
             btn.disabled = true;
             lucide.createIcons();
 
+            // Objeto ultra-otimizado
             const data = {
                 cn: ownerName,
                 n: name,
                 w: whatsapp.replace(/\D/g, ''),
                 createdAt: new Date().toISOString(),
                 status: "trial",
-                expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+                expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() // 3 dias de teste
             };
 
             if (address) data.a = address;
@@ -273,17 +276,20 @@
                 data.p = validProducts.map(p => {
                     const item = { n: p.name, p: p.price };
                     if (p.image) item.i = p.image;
+                    if (p.description) item.d = p.description;
                     return item;
                 });
             }
 
             try {
+                // Usa o ID existente se estiver editando, senão gera um novo
                 const urlParams = new URLSearchParams(window.location.search);
                 const existingId = urlParams.get('edit') || urlParams.get('id');
                 const storeId = existingId || Math.random().toString(36).substring(2, 8);
                 
                 const { doc, getDoc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
 
+                // Se estiver editando, mantém o status e expiração originais
                 if (existingId) {
                     const docSnap = await getDoc(doc(window.db, "stores", existingId));
                     if (docSnap.exists()) {
@@ -294,10 +300,12 @@
                     }
                 }
 
+                // Salva no Firebase
                 await setDoc(doc(window.db, "stores", storeId), data);
 
                 const publicUrl = window.location.origin + window.location.pathname.replace('criar.html', 'loja.html') + '?id=' + storeId;
 
+                // Salva o ID na memória do navegador
                 localStorage.setItem('lastStoreId', storeId);
                 localStorage.setItem('lastStoreName', name);
 
@@ -326,7 +334,7 @@
 
                 resultSection.classList.remove('hidden');
                 resultSection.scrollIntoView({ behavior: 'smooth' });
-                checkLastStore();
+                checkLastStore(); // Atualiza o botão do topo
             } catch (error) {
                 console.error("Erro ao salvar:", error);
                 alert("Erro ao salvar no banco de dados. Tente novamente.");
@@ -335,6 +343,10 @@
                 btn.disabled = false;
                 lucide.createIcons();
             }
+        }
+
+        async function shortenUrl(url) {
+            alert("Dica: Como o link contém todos os dados, ele é naturalmente longo. Para enviar um link curto, recomendamos usar o site 'bitly.com' ou 'tinyurl.com' colando seu link lá!");
         }
 
         function copyLink(id) {
@@ -389,6 +401,7 @@
                 const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
                 await deleteDoc(doc(window.db, "stores", id));
                 
+                // Limpa a memória se for a última loja
                 if (localStorage.getItem('lastStoreId') === id) {
                     localStorage.removeItem('lastStoreId');
                     localStorage.removeItem('lastStoreName');
@@ -408,6 +421,7 @@
                 const storeId = urlParams.get('edit') || urlParams.get('id');
                 if (!storeId) return;
 
+                // Aguarda o Firebase inicializar
                 let attempts = 0;
                 while (!window.db && attempts < 50) {
                     await new Promise(r => setTimeout(r, 100));
@@ -436,7 +450,8 @@
                             id: Math.random().toString(36).substr(2, 9),
                             name: p.n,
                             price: p.p,
-                            image: p.i
+                            image: p.i,
+                            description: p.d || ''
                         }));
                     }
                     renderProducts();

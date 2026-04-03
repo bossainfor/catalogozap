@@ -1,0 +1,37 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Função para validar os dados básicos da loja
+    function isValidStore(data) {
+      return data.n is string && data.n.size() > 0 && data.n.size() < 100 &&
+             data.w is string && data.w.size() > 0 && data.w.size() < 20 &&
+             data.status in ['trial', 'active', 'blocked'] &&
+             data.expiresAt is string;
+    }
+
+    // Regras para a coleção de lojas (Catálogos)
+    match /stores/{storeId} {
+      // Permite que qualquer pessoa veja um catálogo pelo link
+      allow read: if true;
+      
+      // Permite criar um novo catálogo (valida os campos para evitar spam)
+      allow create: if isValidStore(request.resource.data);
+      
+      // Permite atualizar e excluir os catálogos
+      allow update: if isValidStore(request.resource.data);
+      allow delete: if true;
+    }
+
+    // Regras para a trava de WhatsApp (Histórico de Testes)
+    match /trial_history/{whatsapp} {
+      // Permite ler para verificar se o número já usou o teste
+      allow read: if true;
+      
+      // Permite registrar o número após a criação do primeiro catálogo
+      allow create: if request.resource.data.whatsapp is string && 
+                      request.resource.data.whatsapp.size() > 0 &&
+                      request.resource.data.whatsapp.size() < 20;
+    }
+  }
+}

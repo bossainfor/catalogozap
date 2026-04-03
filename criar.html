@@ -205,6 +205,7 @@
 
     <script>
         let products = [{ id: Date.now().toString(), name: '', price: '', image: '', description: '' }];
+        let currentStoreId = new URLSearchParams(window.location.search).get('edit') || new URLSearchParams(window.location.search).get('id');
 
         function addProduct() {
             products.push({ id: Date.now().toString(), name: '', price: '', image: '', description: '' });
@@ -299,14 +300,11 @@
             }
 
             try {
-                const urlParams = new URLSearchParams(window.location.search);
-                const existingId = urlParams.get('edit') || urlParams.get('id');
-                const storeId = existingId || Math.random().toString(36).substring(2, 8);
-                
+                const storeId = currentStoreId || Math.random().toString(36).substring(2, 8);
                 const { doc, getDoc, setDoc } = window.fs;
 
-                if (existingId) {
-                    const docSnap = await getDoc(doc(window.db, "stores", existingId));
+                if (currentStoreId) {
+                    const docSnap = await getDoc(doc(window.db, "stores", currentStoreId));
                     if (docSnap.exists()) {
                         const oldData = docSnap.data();
                         data.status = oldData.status || "trial";
@@ -316,46 +314,71 @@
                 }
 
                 await setDoc(doc(window.db, "stores", storeId), data);
+                currentStoreId = storeId; // Garante que o próximo clique use o mesmo ID
+
+                // Atualiza a URL sem recarregar para que o próximo clique seja um "Atualizar"
+                if (!window.location.search.includes(storeId)) {
+                    const newUrl = window.location.origin + window.location.pathname + '?edit=' + storeId;
+                    window.history.pushState({ path: newUrl }, '', newUrl);
+                }
 
                 const publicUrl = window.location.origin + window.location.pathname.replace('criar.html', 'loja.html') + '?id=' + storeId;
 
                 localStorage.setItem('lastStoreId', storeId);
                 localStorage.setItem('lastStoreName', name);
 
-                const mainBtn = document.getElementById('main-action-btn');
-                mainBtn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
-                mainBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
-                document.getElementById('btn-text').innerText = "Atualizar Minha Página";
-                document.getElementById('activate-plan-container').classList.remove('hidden');
-                lucide.createIcons();
+                try {
+                    const mainBtn = document.getElementById('main-action-btn');
+                    if (mainBtn) {
+                        mainBtn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+                        mainBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    }
+                    
+                    const btnTextEl = document.getElementById('btn-text');
+                    if (btnTextEl) btnTextEl.innerText = "Atualizar Minha Página";
+                    
+                    const activatePlanContainer = document.getElementById('activate-plan-container');
+                    if (activatePlanContainer) activatePlanContainer.classList.remove('hidden');
+                    
+                    const publicLinkEl = document.getElementById('public-link');
+                    if (publicLinkEl) publicLinkEl.innerText = publicUrl;
+                    
+                    const resultSection = document.getElementById('result-section');
+                    const resultCard = document.getElementById('result-card');
+                    
+                    if (resultSection) resultSection.classList.remove('hidden');
+                    
+                    if (resultCard) {
+                        const editBtnId = 'edit-page-btn';
+                        let editBtn = document.getElementById(editBtnId);
+                        
+                        if (!editBtn) {
+                            editBtn = document.createElement('div');
+                            editBtn.id = editBtnId;
+                            editBtn.className = "mt-4 flex flex-col items-center gap-3";
+                            editBtn.innerHTML = `
+                                <a href="loja.html?id=${storeId}" target="_blank" class="text-orange-600 font-bold underline text-sm flex items-center gap-1">
+                                    <i data-lucide="external-link" size="14"></i> Visualizar minha página agora
+                                </a>
+                                <button onclick="deleteStore('${storeId}')" class="text-red-500 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1 hover:text-red-700 transition-colors">
+                                    <i data-lucide="trash-2" size="12"></i> Excluir esta página permanentemente
+                                </button>
+                                <p class="text-[10px] text-slate-400">Guarde este link para editar sua página futuramente!</p>
+                            `;
+                            resultCard.appendChild(editBtn);
+                        } else {
+                            const link = editBtn.querySelector('a');
+                            if (link) link.href = `loja.html?id=${storeId}`;
+                            const delBtn = editBtn.querySelector('button');
+                            if (delBtn) delBtn.onclick = () => deleteStore(storeId);
+                        }
+                    }
 
-                document.getElementById('public-link').innerText = publicUrl;
-                
-                const resultSection = document.getElementById('result-section');
-                const resultCard = document.getElementById('result-card');
-                const editBtnId = 'edit-page-btn';
-                if (!document.getElementById(editBtnId)) {
-                    const editBtn = document.createElement('div');
-                    editBtn.id = editBtnId;
-                    editBtn.className = "mt-4 flex flex-col items-center gap-3";
-                    editBtn.innerHTML = `
-                        <a href="loja.html?id=${storeId}" target="_blank" class="text-orange-600 font-bold underline text-sm flex items-center gap-1">
-                            <i data-lucide="external-link" size="14"></i> Visualizar minha página agora
-                        </a>
-                        <button onclick="deleteStore('${storeId}')" class="text-red-500 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1 hover:text-red-700 transition-colors">
-                            <i data-lucide="trash-2" size="12"></i> Excluir esta página permanentemente
-                        </button>
-                        <p class="text-[10px] text-slate-400">Guarde este link para editar sua página futuramente!</p>
-                    `;
-                    resultCard.appendChild(editBtn);
-                } else {
-                    document.getElementById(editBtnId).querySelector('a').href = `loja.html?id=${storeId}`;
-                    document.getElementById(editBtnId).querySelector('button').onclick = () => deleteStore(storeId);
+                    if (resultSection) resultSection.scrollIntoView({ behavior: 'smooth' });
+                    checkLastStore();
+                } catch (uiError) {
+                    console.error("Erro ao atualizar interface:", uiError);
                 }
-
-                resultSection.classList.remove('hidden');
-                resultSection.scrollIntoView({ behavior: 'smooth' });
-                checkLastStore();
             } catch (error) {
                 console.error("Erro ao salvar:", error);
                 alert("Erro ao salvar no banco de dados. Verifique sua conexão e tente novamente. (Erro: " + error.message + ")");
@@ -369,7 +392,7 @@
         function copyLink(id) {
             const text = document.getElementById(id).innerText;
             navigator.clipboard.writeText(text);
-            alert("Link copiado!");
+            alert("Link cobiado!");
         }
 
         function openTutorial(videoId) {
@@ -421,6 +444,7 @@
                 if (localStorage.getItem('lastStoreId') === id) {
                     localStorage.removeItem('lastStoreId');
                     localStorage.removeItem('lastStoreName');
+                    currentStoreId = null;
                 }
                 
                 alert("Página excluída com sucesso!");
@@ -437,6 +461,8 @@
                 const storeId = urlParams.get('edit') || urlParams.get('id');
                 if (!storeId) return;
 
+                currentStoreId = storeId; // Garante que o ID carregado seja usado no salvamento
+
                 let attempts = 0;
                 while (!window.db && attempts < 50) {
                     await new Promise(r => setTimeout(r, 100));
@@ -449,12 +475,23 @@
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     
-                    const mainBtn = document.getElementById('main-action-btn');
-                    mainBtn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
-                    mainBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
-                    document.getElementById('btn-text').innerText = "Atualizar Minha Página";
-                    document.getElementById('activate-plan-container').classList.remove('hidden');
-                    lucide.createIcons();
+                    try {
+                        const mainBtn = document.getElementById('main-action-btn');
+                        if (mainBtn) {
+                            mainBtn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+                            mainBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                        }
+                        
+                        const btnTextEl = document.getElementById('btn-text');
+                        if (btnTextEl) btnTextEl.innerText = "Atualizar Minha Página";
+                        
+                        const activatePlanContainer = document.getElementById('activate-plan-container');
+                        if (activatePlanContainer) activatePlanContainer.classList.remove('hidden');
+                        
+                        lucide.createIcons();
+                    } catch (uiError) {
+                        console.error("Erro ao atualizar interface no carregamento:", uiError);
+                    }
 
                     document.getElementById('owner-name').value = data.cn || '';
                     document.getElementById('store-name').value = data.n || '';

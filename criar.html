@@ -23,6 +23,7 @@
         const db = getFirestore(app, "ai-studio-2395f72f-4dac-4517-9681-c654cd1a03ca");
 
         window.db = db;
+        window.fs = { doc, setDoc, getDoc, deleteDoc };
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
@@ -239,6 +240,17 @@
         }
 
         async function generateStore() {
+            // Aguarda o Firebase inicializar
+            let attempts = 0;
+            while (!window.db && attempts < 50) {
+                await new Promise(r => setTimeout(r, 100));
+                attempts++;
+            }
+            if (!window.db) {
+                alert("Erro: O banco de dados não carregou. Recarregue a página.");
+                return;
+            }
+
             const ownerName = document.getElementById('owner-name').value;
             const name = document.getElementById('store-name').value;
             const whatsapp = document.getElementById('whatsapp').value;
@@ -291,7 +303,7 @@
                 const existingId = urlParams.get('edit') || urlParams.get('id');
                 const storeId = existingId || Math.random().toString(36).substring(2, 8);
                 
-                const { doc, getDoc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+                const { doc, getDoc, setDoc } = window.fs;
 
                 if (existingId) {
                     const docSnap = await getDoc(doc(window.db, "stores", existingId));
@@ -310,7 +322,6 @@
                 localStorage.setItem('lastStoreId', storeId);
                 localStorage.setItem('lastStoreName', name);
 
-                // Transforma o botão em "Atualizar"
                 const mainBtn = document.getElementById('main-action-btn');
                 mainBtn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
                 mainBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
@@ -323,7 +334,6 @@
                 const resultSection = document.getElementById('result-section');
                 const resultCard = document.getElementById('result-card');
                 const editBtnId = 'edit-page-btn';
-                
                 if (!document.getElementById(editBtnId)) {
                     const editBtn = document.createElement('div');
                     editBtn.id = editBtnId;
@@ -348,7 +358,7 @@
                 checkLastStore();
             } catch (error) {
                 console.error("Erro ao salvar:", error);
-                alert("Erro ao salvar no banco de dados. Tente novamente.");
+                alert("Erro ao salvar no banco de dados. Verifique sua conexão e tente novamente. (Erro: " + error.message + ")");
             } finally {
                 btn.innerHTML = originalText;
                 btn.disabled = false;
@@ -405,7 +415,7 @@
             if (!confirm("TEM CERTEZA? Isso vai apagar sua página para sempre e o link deixará de funcionar!")) return;
             
             try {
-                const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+                const { doc, deleteDoc } = window.fs;
                 await deleteDoc(doc(window.db, "stores", id));
                 
                 if (localStorage.getItem('lastStoreId') === id) {
@@ -433,13 +443,12 @@
                     attempts++;
                 }
 
-                const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+                const { doc, getDoc } = window.fs;
                 const docSnap = await getDoc(doc(window.db, "stores", storeId));
 
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     
-                    // Muda o botão para modo de atualização
                     const mainBtn = document.getElementById('main-action-btn');
                     mainBtn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
                     mainBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');

@@ -61,12 +61,22 @@
         let storeData = null;
         let cart = [];
 
+        // Proxy de Imagem (Simplificado e Direto)
         function proxyImg(url) {
             if (!url) return '';
             let u = url.trim();
-            if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
-            if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
+
+            // Se for link de visualizador, tenta corrigir (mas o ideal é o link direto)
+            if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) {
+                u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
+            }
+            if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) {
+                u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
+            }
+
             if (!u.startsWith('http')) u = 'https://' + u;
+            
+            // Retorna o link direto sem atravessadores
             return u;
         }
 
@@ -98,7 +108,8 @@
                         id: Math.random().toString(36).substr(2, 9),
                         name: p.n,
                         price: p.p,
-                        image: p.i
+                        image: p.i,
+                        description: p.d || ''
                     }))
                 };
             } catch (e) { 
@@ -193,6 +204,7 @@
                 return;
             }
 
+            // Verificação de Expiração
             const now = new Date();
             const expiresAt = new Date(storeData.expiresAt || storeData.createdAt);
             const isExpired = now > expiresAt;
@@ -227,6 +239,7 @@
                     <img src="${proxyImg(p.image)}" class="w-full aspect-square object-cover" referrerpolicy="no-referrer" onerror="this.src='https://picsum.photos/seed/'+Math.random()+'/400/400'">
                     <div class="p-4 sm:p-6">
                         <h3 class="font-bold text-base sm:text-lg mb-1 truncate">${p.name}</h3>
+                        ${p.description ? `<p class="text-slate-500 text-xs mb-3 line-clamp-2">${p.description}</p>` : ''}
                         <p class="font-black text-lg sm:text-xl mb-4" style="color: ${storeData.primaryColor}">${formatCurrency(p.price)}</p>
                         <button onclick="addToCart('${p.id}')" class="w-full py-3 sm:py-4 text-white font-bold rounded-xl text-sm sm:text-base uppercase tracking-widest italic" style="background-color: ${storeData.primaryColor}">Adicionar</button>
                     </div>
@@ -282,11 +295,13 @@
         }
 
         window.onload = async () => {
+            // Aguarda um pouco para o Firebase inicializar
             let attempts = 0;
             while (!window.firebaseUtils && attempts < 50) {
                 await new Promise(r => setTimeout(r, 100));
                 attempts++;
             }
+            
             storeData = await decodeData();
             renderStore();
         };

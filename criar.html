@@ -181,7 +181,7 @@
         </div>
 
         <div id="result-section" class="hidden mt-12 space-y-6">
-            <div class="bg-orange-50 rounded-3xl p-8 border-2 border-orange-200">
+            <div id="result-card" class="bg-orange-50 rounded-3xl p-8 border-2 border-orange-200">
                 <h3 class="text-orange-800 font-black italic uppercase tracking-tighter text-2xl mb-6">Página Gerada!</h3>
                 <div class="space-y-6">
                     <div>
@@ -246,7 +246,7 @@
                 return;
             }
 
-            const btn = document.querySelector('button[onclick="generateStore()"]');
+            const btn = document.getElementById('main-action-btn');
             const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="animate-spin" data-lucide="loader-2"></i> Salvando...';
             btn.disabled = true;
@@ -304,16 +304,16 @@
                 localStorage.setItem('lastStoreId', storeId);
                 localStorage.setItem('lastStoreName', name);
 
-                // Transforma o botão em "Atualizar"
-                const mainBtn = document.getElementById('main-action-btn');
-                mainBtn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
-                mainBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                btn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+                btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
                 document.getElementById('btn-text').innerText = "Atualizar Minha Página";
 
                 document.getElementById('public-link').innerText = publicUrl;
                 
                 const resultSection = document.getElementById('result-section');
+                const resultCard = document.getElementById('result-card');
                 const editBtnId = 'edit-page-btn';
+                
                 if (!document.getElementById(editBtnId)) {
                     const editBtn = document.createElement('div');
                     editBtn.id = editBtnId;
@@ -327,7 +327,7 @@
                         </button>
                         <p class="text-[10px] text-slate-400">Guarde este link para editar sua página futuramente!</p>
                     `;
-                    resultSection.querySelector('.bg-orange-50').appendChild(editBtn);
+                    resultCard.appendChild(editBtn);
                 } else {
                     document.getElementById(editBtnId).querySelector('a').href = `loja.html?id=${storeId}`;
                     document.getElementById(editBtnId).querySelector('button').onclick = () => deleteStore(storeId);
@@ -429,7 +429,6 @@
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     
-                    // Muda o botão para modo de atualização
                     const mainBtn = document.getElementById('main-action-btn');
                     mainBtn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
                     mainBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');

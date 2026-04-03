@@ -23,6 +23,7 @@
         const db = getFirestore(app, "ai-studio-2395f72f-4dac-4517-9681-c654cd1a03ca");
 
         window.db = db;
+        window.fbUtils = { doc, setDoc, getDoc, deleteDoc };
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
@@ -49,6 +50,7 @@
             </div>
         </div>
     </div>
+
     <header class="bg-white border-b border-slate-200 sticky top-0 z-10 px-4">
         <div class="max-w-4xl mx-auto h-16 flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -69,7 +71,6 @@
     </header>
 
     <main class="max-w-4xl mx-auto px-4 py-8 pb-32">
-        <!-- SEÇÃO DE TUTORIAIS -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             <button onclick="openTutorial('pGM--Oy4Fno')" class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center gap-5 hover:shadow-xl hover:-translate-y-1 transition-all group text-left">
                 <div class="bg-slate-900 p-4 rounded-2xl text-white group-hover:bg-orange-500 transition-colors shadow-lg">
@@ -97,13 +98,13 @@
             </button>
         </div>
 
-        <!-- AVISO IMPORTANTE -->
         <div class="bg-slate-900 text-white p-4 rounded-2xl mb-8 shadow-lg alert-direct flex items-center gap-4 border-l-8 border-orange-500">
             <div class="bg-white/20 p-3 rounded-full text-orange-500"><i data-lucide="alert-circle"></i></div>
             <p class="text-xs font-bold leading-tight">
                 USE O POSTIMAGES: Suba a foto e copie o <span class="text-orange-500 underline">"LINK DIRETO"</span>. É o único que funciona 100% no celular!
             </p>
         </div>
+
         <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
             <div class="bg-orange-500 p-8 text-white">
                 <h2 class="text-3xl font-black italic uppercase tracking-tighter mb-2">Crie sua vitrine hoje</h2>
@@ -247,7 +248,7 @@
             }
 
             const btn = document.getElementById('main-action-btn');
-            const originalText = btn.innerHTML;
+            const originalHTML = btn.innerHTML;
             btn.innerHTML = '<i class="animate-spin" data-lucide="loader-2"></i> Salvando...';
             btn.disabled = true;
             lucide.createIcons();
@@ -285,7 +286,7 @@
                 const existingId = urlParams.get('edit') || urlParams.get('id');
                 const storeId = existingId || Math.random().toString(36).substring(2, 8);
                 
-                const { doc, getDoc, setDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+                const { doc, getDoc, setDoc } = window.fbUtils;
 
                 if (existingId) {
                     const docSnap = await getDoc(doc(window.db, "stores", existingId));
@@ -304,9 +305,10 @@
                 localStorage.setItem('lastStoreId', storeId);
                 localStorage.setItem('lastStoreName', name);
 
+                // Atualiza o botão para modo de atualização
                 btn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
                 btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
-                document.getElementById('btn-text').innerText = "Atualizar Minha Página";
+                btn.innerHTML = `<i data-lucide="refresh-cw"></i> <span id="btn-text">Atualizar Minha Página</span>`;
 
                 document.getElementById('public-link').innerText = publicUrl;
                 
@@ -336,18 +338,14 @@
                 resultSection.classList.remove('hidden');
                 resultSection.scrollIntoView({ behavior: 'smooth' });
                 checkLastStore();
+                lucide.createIcons();
             } catch (error) {
                 console.error("Erro ao salvar:", error);
                 alert("Erro ao salvar no banco de dados. Tente novamente.");
+                btn.innerHTML = originalHTML;
             } finally {
                 btn.disabled = false;
                 lucide.createIcons();
-                if (document.getElementById('btn-text').innerText !== "Atualizar Minha Página") {
-                    btn.innerHTML = originalText;
-                } else {
-                    btn.innerHTML = `<i data-lucide="refresh-cw"></i> <span id="btn-text">Atualizar Minha Página</span>`;
-                    lucide.createIcons();
-                }
             }
         }
 
@@ -400,7 +398,7 @@
             if (!confirm("TEM CERTEZA? Isso vai apagar sua página para sempre e o link deixará de funcionar!")) return;
             
             try {
-                const { doc, deleteDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+                const { doc, deleteDoc } = window.fbUtils;
                 await deleteDoc(doc(window.db, "stores", id));
                 
                 if (localStorage.getItem('lastStoreId') === id) {
@@ -428,7 +426,7 @@
                     attempts++;
                 }
 
-                const { doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+                const { doc, getDoc } = window.fbUtils;
                 const docSnap = await getDoc(doc(window.db, "stores", storeId));
 
                 if (docSnap.exists()) {

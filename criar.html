@@ -25,7 +25,7 @@
         window.db = db;
         window.fs = { doc, setDoc, getDoc, deleteDoc };
     </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
         .alert-direct { animation: pulse 2s infinite; }
@@ -116,27 +116,27 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="space-y-2">
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Seu Nome (Responsável)</label>
-                            <input type="text" id="owner-name" placeholder="Ex: João Silva" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                            <input type="text" id="owner-name" oninput="saveDraft()" placeholder="Ex: João Silva" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
                         </div>
                         <div class="space-y-2">
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Nome da Loja</label>
-                            <input type="text" id="store-name" placeholder="Ex: Hamburgueria do Jhow" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                            <input type="text" id="store-name" oninput="saveDraft()" placeholder="Ex: Hamburgueria do Jhow" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
                         </div>
                         <div class="space-y-2">
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">WhatsApp (DDD + Número)</label>
-                            <input type="text" id="whatsapp" placeholder="Ex: 11999999999" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                            <input type="text" id="whatsapp" oninput="saveDraft()" placeholder="Ex: 11999999999" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
                         </div>
                         <div class="space-y-2 md:col-span-2">
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Endereço da Loja</label>
-                            <input type="text" id="address" placeholder="Ex: Rua das Flores, 123 - São Paulo" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                            <input type="text" id="address" oninput="saveDraft()" placeholder="Ex: Rua das Flores, 123 - São Paulo" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
                         </div>
                         <div class="space-y-2">
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Instagram (Opcional)</label>
-                            <input type="text" id="instagram" placeholder="Ex: @minhaloja" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                            <input type="text" id="instagram" oninput="saveDraft()" placeholder="Ex: @minhaloja" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
                         </div>
                         <div class="space-y-2">
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Facebook (Opcional)</label>
-                            <input type="text" id="facebook" placeholder="Ex: facebook.com/minhaloja" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                            <input type="text" id="facebook" oninput="saveDraft()" placeholder="Ex: facebook.com/minhaloja" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
                         </div>
                     </div>
                 </section>
@@ -145,7 +145,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div class="space-y-2">
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Nicho</label>
-                            <select id="niche" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                            <select id="niche" onchange="saveDraft()" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
                                 <option value="loja">Loja</option>
                                 <option value="cardapio">Cardápio</option>
                                 <option value="servicos">Serviços</option>
@@ -154,16 +154,16 @@
                         </div>
                         <div class="space-y-2">
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Cor Principal</label>
-                            <input type="color" id="primary-color" value="#f97316" class="w-full h-14 rounded-2xl cursor-pointer">
+                            <input type="color" id="primary-color" oninput="saveDraft()" value="#f97316" class="w-full h-14 rounded-2xl cursor-pointer">
                         </div>
                         <div class="space-y-2">
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Cor do Banner</label>
-                            <input type="color" id="secondary-color" value="#0f172a" class="w-full h-14 rounded-2xl cursor-pointer">
+                            <input type="color" id="secondary-color" oninput="saveDraft()" value="#0f172a" class="w-full h-14 rounded-2xl cursor-pointer">
                         </div>
                     </div>
                     <div class="space-y-2">
                         <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">URL da Imagem de Banner (Opcional)</label>
-                        <input type="text" id="banner-image" placeholder="https://i.ibb.co/minhafoto.jpg" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                        <input type="text" id="banner-image" oninput="saveDraft()" placeholder="https://i.ibb.co/minhafoto.jpg" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
                     </div>
                 </section>
 
@@ -211,21 +211,75 @@
     <script>
         let products = [{ id: Date.now().toString(), name: '', price: '', image: '', description: '' }];
 
+        function saveDraft() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('edit') || urlParams.get('id')) return;
+
+            const draft = {
+                ownerName: document.getElementById('owner-name').value,
+                storeName: document.getElementById('store-name').value,
+                whatsapp: document.getElementById('whatsapp').value,
+                address: document.getElementById('address').value,
+                instagram: document.getElementById('instagram').value,
+                facebook: document.getElementById('facebook').value,
+                niche: document.getElementById('niche').value,
+                primaryColor: document.getElementById('primary-color').value,
+                secondaryColor: document.getElementById('secondary-color').value,
+                bannerImage: document.getElementById('banner-image').value,
+                products: products
+            };
+            localStorage.setItem('catalog_draft', JSON.stringify(draft));
+        }
+
+        function loadDraft() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('edit') || urlParams.get('id')) return;
+
+            const draftStr = localStorage.getItem('catalog_draft');
+            if (!draftStr) return;
+
+            try {
+                const draft = JSON.parse(draftStr);
+                document.getElementById('owner-name').value = draft.ownerName || '';
+                document.getElementById('store-name').value = draft.storeName || '';
+                document.getElementById('whatsapp').value = draft.whatsapp || '';
+                document.getElementById('address').value = draft.address || '';
+                document.getElementById('instagram').value = draft.instagram || '';
+                document.getElementById('facebook').value = draft.facebook || '';
+                document.getElementById('niche').value = draft.niche || 'loja';
+                document.getElementById('primary-color').value = draft.primaryColor || '#f97316';
+                document.getElementById('secondary-color').value = draft.secondaryColor || '#0f172a';
+                document.getElementById('banner-image').value = draft.bannerImage || '';
+                if (draft.products && draft.products.length > 0) {
+                    products = draft.products;
+                }
+            } catch (e) {
+                console.error("Erro ao carregar rascunho:", e);
+            }
+        }
+
+        function clearDraft() {
+            localStorage.removeItem('catalog_draft');
+        }
+
         function addProduct() {
             products.push({ id: Date.now().toString(), name: '', price: '', image: '', description: '' });
             renderProducts();
+            saveDraft();
         }
 
         function removeProduct(id) {
             if (products.length > 1) {
                 products = products.filter(p => p.id !== id);
                 renderProducts();
+                saveDraft();
             }
         }
 
         function updateProduct(id, field, value) {
             const p = products.find(p => p.id === id);
             if (p) p[field] = value;
+            saveDraft();
         }
 
         function renderProducts() {
@@ -352,6 +406,7 @@
                 // Salva o ID na memória do navegador
                 localStorage.setItem('lastStoreId', storeId);
                 localStorage.setItem('lastStoreName', name);
+                clearDraft(); // Limpa o rascunho após criar a loja
 
                 // Tenta atualizar a interface (se falhar aqui, o dado já está salvo)
                 try {
@@ -551,6 +606,7 @@
         }
 
         window.onload = () => {
+            loadDraft();
             checkLastStore();
             loadFromFirebase();
             renderProducts();

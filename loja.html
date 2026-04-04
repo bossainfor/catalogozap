@@ -16,7 +16,7 @@
             projectId: "gen-lang-client-0664324166",
             storageBucket: "gen-lang-client-0664324166.firebasestorage.app",
             messagingSenderId: "1074933311707",
-            appId: "1:1074933311707:web:d841b61f84c05a40fc04fe"
+            appId: "1:1074933311707:web:d841b61f84c05a40fe04fe"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -278,7 +278,11 @@
                     </footer>
                 </div>
             `;
-            setTimeout(() => lucide.createIcons(), 100);
+            
+            // Força o redesenho dos ícones várias vezes para garantir
+            lucide.createIcons();
+            setTimeout(() => lucide.createIcons(), 500);
+            setTimeout(() => lucide.createIcons(), 2000);
         }
 
         window.onload = async () => {

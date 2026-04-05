@@ -302,6 +302,16 @@
             if (window.lucide) lucide.createIcons();
         }
 
+        window.slugify = function(text) {
+            return text.toString().toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remove acentos
+                .replace(/\s+/g, '-')           // Espaços por -
+                .replace(/[^\w\-]+/g, '')       // Remove caracteres especiais
+                .replace(/\-\-+/g, '-')         // Remove múltiplos -
+                .replace(/^-+/, '')             // Remove - do início
+                .replace(/-+$/, '');            // Remove - do fim
+        }
+
         window.generateStore = async function() {
             // Aguarda o Firebase inicializar
             let attempts = 0;
@@ -380,7 +390,18 @@
                     }
                 }
 
-                const storeId = existingId || Math.random().toString(36).substring(2, 8);
+                let storeId = existingId;
+                if (!storeId) {
+                    let slug = window.slugify(name);
+                    if (!slug) slug = 'loja';
+                    const docSnap = await getDoc(doc(window.db, "stores", slug));
+                    if (docSnap.exists()) {
+                        // Se já existe, adiciona um sufixo aleatório curto
+                        storeId = slug + '-' + Math.random().toString(36).substring(2, 5);
+                    } else {
+                        storeId = slug;
+                    }
+                }
                 
                 // Se estiver editando, mantém o status e expiração originais
                 if (existingId) {

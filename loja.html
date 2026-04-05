@@ -61,22 +61,16 @@
         let storeData = null;
         let cart = [];
 
-        // Proxy de Imagem (Simplificado e Direto)
         function proxyImg(url) {
             if (!url) return '';
             let u = url.trim();
-
-            // Se for link de visualizador, tenta corrigir (mas o ideal é o link direto)
             if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) {
                 u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
             }
             if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) {
                 u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
             }
-
             if (!u.startsWith('http')) u = 'https://' + u;
-            
-            // Retorna o link direto sem atravessadores
             return u;
         }
 
@@ -204,7 +198,6 @@
                 return;
             }
 
-            // Verificação de Expiração
             const now = new Date();
             const expiresAt = new Date(storeData.expiresAt || storeData.createdAt);
             const isExpired = now > expiresAt;
@@ -285,23 +278,22 @@
                                         <i data-lucide="phone" class="w-5 h-5"></i>
                                     </a>
                                 </div>
-                                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Gerado por CatálogoZap</p>
+                                <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Desenvolvido por Bossa Infor</p>
                             </div>
                         </div>
                     </footer>
                 </div>
             `;
-            setTimeout(() => lucide.createIcons(), 100);
+            lucide.createIcons();
+            setTimeout(() => lucide.createIcons(), 1000);
         }
 
         window.onload = async () => {
-            // Aguarda um pouco para o Firebase inicializar
             let attempts = 0;
             while (!window.firebaseUtils && attempts < 50) {
                 await new Promise(r => setTimeout(r, 100));
                 attempts++;
             }
-            
             storeData = await decodeData();
             renderStore();
         };

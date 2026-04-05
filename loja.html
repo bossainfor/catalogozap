@@ -33,9 +33,6 @@
         .cart-drawer.open { transform: translateX(0); }
         .overlay { opacity: 0; pointer-events: none; transition: opacity 0.3s; }
         .overlay.open { opacity: 1; pointer-events: auto; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .cubic-bezier { transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
 <body class="bg-white text-slate-900">
@@ -63,16 +60,23 @@
     <script>
         let storeData = null;
         let cart = [];
-        let currentSlide = 0;
-        let highlightsInterval = null;
-        let isPaused = false;
 
+        // Proxy de Imagem (Simplificado e Direto)
         function proxyImg(url) {
             if (!url) return '';
             let u = url.trim();
-            if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
-            if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
+
+            // Se for link de visualizador, tenta corrigir (mas o ideal é o link direto)
+            if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) {
+                u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
+            }
+            if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) {
+                u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
+            }
+
             if (!u.startsWith('http')) u = 'https://' + u;
+            
+            // Retorna o link direto sem atravessadores
             return u;
         }
 
@@ -81,9 +85,12 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 const storeId = urlParams.get('id');
                 if (!storeId) return null;
+
                 const { doc, getDoc } = window.firebaseUtils;
                 const docSnap = await getDoc(doc(window.db, "stores", storeId));
+
                 if (!docSnap.exists()) return null;
+
                 const data = docSnap.data();
                 return {
                     name: data.n,
@@ -105,7 +112,10 @@
                         description: p.d || ''
                     }))
                 };
-            } catch (e) { return null; }
+            } catch (e) { 
+                console.error("Erro ao buscar dados:", e);
+                return null; 
+            }
         }
 
         function formatCurrency(value) {
@@ -143,10 +153,12 @@
             const footerContainer = document.getElementById('cart-footer');
             const fab = document.getElementById('cart-fab');
             const countBadge = document.getElementById('cart-count');
+
             const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
             countBadge.innerText = totalItems;
             fab.classList.toggle('hidden', totalItems === 0);
             fab.style.backgroundColor = storeData.primaryColor;
+
             if (cart.length === 0) {
                 itemsContainer.innerHTML = '<p class="text-center text-slate-400">Carrinho vazio</p>';
                 footerContainer.innerHTML = '';
@@ -166,6 +178,7 @@
                         <button onclick="removeFromCart('${item.id}')" class="text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                     </div>
                 `).join('');
+
                 const total = cart.reduce((acc, item) => acc + (parseFloat(item.price.replace(',', '.')) * item.quantity), 0);
                 footerContainer.innerHTML = `
                     <div class="flex justify-between font-bold"><span>Total</span><span>${formatCurrency(total)}</span></div>
@@ -183,71 +196,6 @@
             window.open(`https://wa.me/55${storeData.whatsapp}?text=${encodeURIComponent(message)}`, '_blank');
         }
 
-        function renderHighlights() {
-            const highlights = storeData.products.filter(p => p.image).slice(0, 6);
-            if (highlights.length <= 1) return '';
-
-            return `
-                <section class="max-w-6xl mx-auto px-4 pt-8">
-                    <h2 class="text-sm font-black uppercase italic tracking-widest mb-4 flex items-center gap-2 text-slate-400">
-                        <i data-lucide="star" class="text-orange-500 w-4 h-4"></i> Itens em Destaque
-                    </h2>
-                    <div id="highlights-container" class="relative overflow-hidden" 
-                         onmouseenter="pauseHighlights()" 
-                         onmouseleave="resumeHighlights()"
-                         ontouchstart="pauseHighlights()"
-                         ontouchend="resumeHighlights()">
-                        
-                        <div id="highlights-track" class="flex transition-transform duration-700 cubic-bezier(0.4, 0, 0.2, 1)">
-                            ${highlights.map(p => `
-                                <div class="min-w-[75%] sm:min-w-[40%] lg:min-w-[25%] px-2">
-                                    <div onclick="addToCart('${p.id}')" class="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm active:scale-95 transition-all cursor-pointer">
-                                        <img src="${proxyImg(p.image)}" class="w-full aspect-[4/5] object-cover" referrerpolicy="no-referrer">
-                                        <div class="p-3">
-                                            <h3 class="font-bold text-xs mb-1 truncate text-slate-700">${p.name}</h3>
-                                            <p class="font-black text-sm" style="color: ${storeData.primaryColor}">${formatCurrency(p.price)}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                </section>
-            `;
-        }
-
-        function startHighlights() {
-            const track = document.getElementById('highlights-track');
-            if (!track) return;
-            updateHighlights();
-            highlightsInterval = setInterval(() => {
-                if (!isPaused) moveHighlights(1);
-            }, 3500);
-        }
-
-        function pauseHighlights() { isPaused = true; }
-        function resumeHighlights() { setTimeout(() => { isPaused = false; }, 2000); }
-
-        function moveHighlights(delta) {
-            const track = document.getElementById('highlights-track');
-            if (!track) return;
-            const items = track.children.length;
-            const visibleItems = window.innerWidth < 640 ? 1.3 : (window.innerWidth < 1024 ? 2.5 : 4);
-            const maxSlide = Math.max(0, items - Math.floor(visibleItems));
-            currentSlide = (currentSlide + delta);
-            if (currentSlide > maxSlide) currentSlide = 0;
-            if (currentSlide < 0) currentSlide = maxSlide;
-            updateHighlights();
-        }
-
-        function updateHighlights() {
-            const track = document.getElementById('highlights-track');
-            if (!track) return;
-            const isMobile = window.innerWidth < 640;
-            const slideWidth = isMobile ? 75 : (window.innerWidth < 1024 ? 40 : 25);
-            track.style.transform = `translateX(-${currentSlide * slideWidth}%)`;
-        }
-
         function renderStore() {
             const urlParams = new URLSearchParams(window.location.search);
             const app = document.getElementById('app');
@@ -255,13 +203,36 @@
                 app.innerHTML = '<div class="p-8 text-center"><h1 class="text-xl font-bold">Link Inválido</h1><a href="criar.html" class="text-orange-500">Criar Catálogo</a></div>';
                 return;
             }
+
+            // Verificação de Expiração
             const now = new Date();
             const expiresAt = new Date(storeData.expiresAt || storeData.createdAt);
-            if (now > expiresAt || storeData.status === 'blocked') {
-                app.innerHTML = `<div class="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-slate-50"><div class="bg-white p-10 rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full space-y-6"><div class="bg-red-100 text-red-600 w-20 h-20 rounded-full flex items-center justify-center mx-auto"><i data-lucide="lock" class="w-10 h-10"></i></div><h1 class="text-2xl font-black uppercase italic tracking-tighter">Catálogo Suspenso</h1><p class="text-slate-500 font-medium leading-relaxed">O período de teste ou a mensalidade deste catálogo expirou. Para reativar e continuar vendendo, entre em contato com o suporte.</p><a href="https://wa.me/5585992862177?text=Olá! Meu catálogo ${storeData.name} expirou e quero reativar." class="block w-full py-4 bg-green-500 text-white font-black uppercase italic tracking-widest rounded-2xl hover:bg-green-600 transition-all shadow-lg"><i data-lucide="phone" class="inline-block mr-2 w-4.5 h-4.5"></i> Falar com Suporte</a><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">ID: ${urlParams.get('id')}</p></div></div>`;
+            const isExpired = now > expiresAt;
+            const isBlocked = storeData.status === 'blocked';
+
+            if (isExpired || isBlocked) {
+                app.innerHTML = `
+                    <div class="min-h-screen flex flex-col items-center justify-center p-6 text-center bg-slate-50">
+                        <div class="bg-white p-10 rounded-3xl shadow-2xl border border-slate-100 max-w-md w-full space-y-6">
+                            <div class="bg-red-100 text-red-600 w-20 h-20 rounded-full flex items-center justify-center mx-auto">
+                                <i data-lucide="lock" class="w-10 h-10"></i>
+                            </div>
+                            <h1 class="text-2xl font-black uppercase italic tracking-tighter">Catálogo Suspenso</h1>
+                            <p class="text-slate-500 font-medium leading-relaxed">
+                                O período de teste ou a mensalidade deste catálogo expirou. Para reativar e continuar vendendo, entre em contato com o suporte.
+                            </p>
+                            <a href="https://wa.me/5585992862177?text=Olá! Meu catálogo ${storeData.name} expirou e quero reativar." 
+                               class="block w-full py-4 bg-green-500 text-white font-black uppercase italic tracking-widest rounded-2xl hover:bg-green-600 transition-all shadow-lg">
+                                <i data-lucide="phone" class="inline-block mr-2 w-4.5 h-4.5"></i> Falar com Suporte
+                            </a>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">ID: ${urlParams.get('id')}</p>
+                        </div>
+                    </div>
+                `;
                 lucide.createIcons();
                 return;
             }
+
             document.title = storeData.name;
             const productsHTML = storeData.products.map(p => `
                 <div class="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-shadow">
@@ -274,28 +245,45 @@
                     </div>
                 </div>
             `).join('');
+
             app.innerHTML = `
                 <div class="min-h-screen bg-white flex flex-col">
                     <div class="relative py-12 sm:py-20 px-6 text-center overflow-hidden" style="background-color: ${storeData.secondaryColor}; color: #ffffff">
                         ${storeData.bannerImage ? `<img src="${proxyImg(storeData.bannerImage)}" class="absolute inset-0 w-full h-full object-cover opacity-30 z-0" referrerpolicy="no-referrer">` : ''}
                         <div class="relative z-10">
                             <h1 class="text-3xl sm:text-5xl md:text-6xl font-black italic uppercase tracking-tighter mb-4">${storeData.name}</h1>
-                            <div class="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest"><i data-lucide="smartphone" class="w-3.5 h-3.5"></i> Pedidos via WhatsApp</div>
+                            <div class="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest">
+                                <i data-lucide="smartphone" class="w-3.5 h-3.5"></i> Pedidos via WhatsApp
+                            </div>
                         </div>
                     </div>
-                    ${renderHighlights()}
-                    <main class="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 flex-1 w-full">${productsHTML}</main>
+
+                    <main class="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 flex-1 w-full">
+                        ${productsHTML}
+                    </main>
+
                     <footer class="bg-slate-900 text-white py-12 px-6 mt-10">
                         <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
                             <div class="text-center md:text-left space-y-4">
                                 <h2 class="text-2xl font-black italic uppercase tracking-tighter">${storeData.name}</h2>
                                 ${storeData.address ? `<p class="text-slate-400 text-sm flex items-center justify-center md:justify-start gap-2"><i data-lucide="map-pin" class="w-4 h-4"></i> ${storeData.address}</p>` : ''}
                             </div>
+
                             <div class="flex flex-col items-center md:items-end gap-4">
                                 <div class="flex gap-4">
-                                    ${storeData.instagram ? `<a href="https://instagram.com/${storeData.instagram.replace('@', '')}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-all flex items-center justify-center text-white"><i data-lucide="instagram" class="w-5 h-5"></i></a>` : ''}
-                                    ${storeData.facebook ? `<a href="${storeData.facebook.startsWith('http') ? storeData.facebook : 'https://' + storeData.facebook}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-all flex items-center justify-center text-white"><i data-lucide="facebook" class="w-5 h-5"></i></a>` : ''}
-                                    <a href="https://wa.me/55${storeData.whatsapp}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-all flex items-center justify-center text-white"><i data-lucide="phone" class="w-5 h-5"></i></a>
+                                    ${storeData.instagram ? `
+                                        <a href="https://instagram.com/${storeData.instagram.replace('@', '')}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-all flex items-center justify-center text-white">
+                                            <i data-lucide="instagram" class="w-5 h-5"></i>
+                                        </a>
+                                    ` : ''}
+                                    ${storeData.facebook ? `
+                                        <a href="${storeData.facebook.startsWith('http') ? storeData.facebook : 'https://' + storeData.facebook}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-all flex items-center justify-center text-white">
+                                            <i data-lucide="facebook" class="w-5 h-5"></i>
+                                        </a>
+                                    ` : ''}
+                                    <a href="https://wa.me/55${storeData.whatsapp}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-all flex items-center justify-center text-white">
+                                        <i data-lucide="phone" class="w-5 h-5"></i>
+                                    </a>
                                 </div>
                                 <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Gerado por CatálogoZap</p>
                             </div>
@@ -307,15 +295,15 @@
         }
 
         window.onload = async () => {
+            // Aguarda um pouco para o Firebase inicializar
             let attempts = 0;
             while (!window.firebaseUtils && attempts < 50) {
                 await new Promise(r => setTimeout(r, 100));
                 attempts++;
             }
+            
             storeData = await decodeData();
             renderStore();
-            startHighlights();
-            window.addEventListener('resize', updateHighlights);
         };
     </script>
 </body>

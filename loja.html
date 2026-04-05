@@ -35,6 +35,7 @@
         .overlay.open { opacity: 1; pointer-events: auto; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .cubic-bezier { transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1); }
     </style>
 </head>
 <body class="bg-white text-slate-900">
@@ -62,6 +63,9 @@
     <script>
         let storeData = null;
         let cart = [];
+        let currentSlide = 0;
+        let highlightsInterval = null;
+        let isPaused = false;
 
         function proxyImg(url) {
             if (!url) return '';
@@ -181,26 +185,78 @@
 
         function renderHighlights() {
             const highlights = storeData.products.filter(p => p.image).slice(0, 5);
-            if (highlights.length === 0) return '';
+            if (highlights.length <= 1) return '';
+
             return `
                 <section class="max-w-6xl mx-auto px-6 pt-10">
                     <h2 class="text-xl font-black uppercase italic tracking-tighter mb-6 flex items-center gap-2">
                         <i data-lucide="star" class="text-orange-500 w-5 h-5"></i> Itens em Destaque
                     </h2>
-                    <div class="flex overflow-x-auto pb-6 gap-6 snap-x no-scrollbar">
-                        ${highlights.map(p => `
-                            <div class="min-w-[260px] sm:min-w-[300px] snap-start bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
-                                <img src="${proxyImg(p.image)}" class="w-full aspect-square object-cover" referrerpolicy="no-referrer" onerror="this.src='https://picsum.photos/seed/'+Math.random()+'/400/400'">
-                                <div class="p-4 sm:p-6">
-                                    <h3 class="font-bold text-base sm:text-lg mb-1 truncate">${p.name}</h3>
-                                    <p class="font-black text-lg sm:text-xl mb-4" style="color: ${storeData.primaryColor}">${formatCurrency(p.price)}</p>
-                                    <button onclick="addToCart('${p.id}')" class="w-full py-3 text-white font-bold rounded-xl text-sm uppercase tracking-widest italic" style="background-color: ${storeData.primaryColor}">Adicionar</button>
-                                </div>
+                    <div id="highlights-container" class="relative group" 
+                         onmouseenter="pauseHighlights()" 
+                         onmouseleave="resumeHighlights()"
+                         ontouchstart="pauseHighlights()"
+                         ontouchend="resumeHighlights()">
+                        
+                        <div class="overflow-hidden rounded-2xl">
+                            <div id="highlights-track" class="flex transition-transform duration-700 cubic-bezier(0.4, 0, 0.2, 1)">
+                                ${highlights.map(p => `
+                                    <div class="min-w-full sm:min-w-[50%] lg:min-w-[33.333%] px-2">
+                                        <div class="bg-white rounded-2xl overflow-hidden border border-slate-100 shadow-sm h-full">
+                                            <img src="${proxyImg(p.image)}" class="w-full aspect-square object-cover" referrerpolicy="no-referrer">
+                                            <div class="p-4 sm:p-6">
+                                                <h3 class="font-bold text-base sm:text-lg mb-1 truncate">${p.name}</h3>
+                                                <p class="font-black text-lg sm:text-xl mb-4" style="color: ${storeData.primaryColor}">${formatCurrency(p.price)}</p>
+                                                <button onclick="addToCart('${p.id}')" class="w-full py-3 text-white font-bold rounded-xl text-sm uppercase tracking-widest italic" style="background-color: ${storeData.primaryColor}">Adicionar</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `).join('')}
                             </div>
-                        `).join('')}
+                        </div>
+
+                        <!-- Setas -->
+                        <button onclick="moveHighlights(-1)" class="absolute -left-4 top-1/2 -translate-y-1/2 bg-white text-slate-900 p-3 rounded-full shadow-xl z-10 border border-slate-100 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:flex items-center justify-center">
+                            <i data-lucide="chevron-left"></i>
+                        </button>
+                        <button onclick="moveHighlights(1)" class="absolute -right-4 top-1/2 -translate-y-1/2 bg-white text-slate-900 p-3 rounded-full shadow-xl z-10 border border-slate-100 opacity-0 group-hover:opacity-100 transition-opacity hidden sm:flex items-center justify-center">
+                            <i data-lucide="chevron-right"></i>
+                        </button>
                     </div>
                 </section>
             `;
+        }
+
+        function startHighlights() {
+            const track = document.getElementById('highlights-track');
+            if (!track) return;
+            updateHighlights();
+            highlightsInterval = setInterval(() => {
+                if (!isPaused) moveHighlights(1);
+            }, 4000);
+        }
+
+        function pauseHighlights() { isPaused = true; }
+        function resumeHighlights() { setTimeout(() => { isPaused = false; }, 2000); }
+
+        function moveHighlights(delta) {
+            const track = document.getElementById('highlights-track');
+            if (!track) return;
+            const items = track.children.length;
+            const visibleItems = window.innerWidth < 640 ? 1 : (window.innerWidth < 1024 ? 2 : 3);
+            const maxSlide = Math.max(0, items - visibleItems);
+            currentSlide = (currentSlide + delta);
+            if (currentSlide > maxSlide) currentSlide = 0;
+            if (currentSlide < 0) currentSlide = maxSlide;
+            updateHighlights();
+        }
+
+        function updateHighlights() {
+            const track = document.getElementById('highlights-track');
+            if (!track) return;
+            const visibleItems = window.innerWidth < 640 ? 1 : (window.innerWidth < 1024 ? 2 : 3);
+            const slideWidth = 100 / visibleItems;
+            track.style.transform = `translateX(-${currentSlide * slideWidth}%)`;
         }
 
         function renderStore() {
@@ -269,6 +325,8 @@
             }
             storeData = await decodeData();
             renderStore();
+            startHighlights();
+            window.addEventListener('resize', updateHighlights);
         };
     </script>
 </body>

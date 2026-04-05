@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAJaxRdA6uzbN41JvAw8xO7F5mzJaDfMBc",
@@ -23,38 +23,25 @@
         const db = getFirestore(app, "ai-studio-2395f72f-4dac-4517-9681-c654cd1a03ca");
 
         window.db = db;
-        window.fs = { doc, setDoc, getDoc, deleteDoc };
+        window.fs = { doc, getDoc, setDoc, deleteDoc };
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
-        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; }
-        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 1.5rem; }
+        .step-card { display: none; }
+        .step-card.active { display: block; }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
-    <!-- MODAL DE VÍDEO -->
-    <div id="video-modal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[100] hidden items-center justify-center p-4" onclick="closeTutorial()">
-        <div class="bg-slate-800 w-full max-w-4xl rounded-[2.5rem] overflow-hidden shadow-2xl relative border border-white/10" onclick="event.stopPropagation()">
-            <button onclick="closeTutorial()" class="absolute top-6 right-6 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full z-20 backdrop-blur-xl transition-all">
-                <i data-lucide="x"></i>
-            </button>
-            <div class="video-container">
-                <iframe id="tutorial-iframe" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-            </div>
-        </div>
-    </div>
-
     <header class="bg-white border-b border-slate-200 sticky top-0 z-10 px-4">
         <div class="max-w-4xl mx-auto h-16 flex items-center justify-between">
             <div class="flex items-center gap-2">
                 <div class="bg-orange-500 p-2 rounded-lg"><i data-lucide="shopping-bag" class="text-white w-5 h-5"></i></div>
-                <h1 class="text-xl font-bold tracking-tight">CatálogoZap</h1>
+                <h1 class="text-xl font-bold tracking-tight">CatálogoZap - Bossa Infor</h1>
             </div>
             <div class="flex gap-2 items-center">
-                <!-- BOTÃO EDITAR ÚLTIMA (AQUI ESTÁ O QUE VOCÊ PEDIU) -->
                 <div id="last-store-container" class="hidden">
-                    <button onclick="editLastStore()" class="bg-orange-100 text-orange-600 px-3 py-2 rounded-xl text-[10px] font-bold hover:bg-orange-200 flex items-center gap-1">
+                    <button onclick="window.editLastStore()" class="bg-orange-100 text-orange-600 px-3 py-2 rounded-xl text-[10px] font-bold hover:bg-orange-200 flex items-center gap-1">
                         <i data-lucide="history" class="w-3 h-3"></i> Editar Última
                     </button>
                 </div>
@@ -65,143 +52,118 @@
         </div>
     </header>
 
-    <main class="max-w-4xl mx-auto px-4 py-8 pb-32">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-            <button onclick="openTutorial('6xh3jsLYXRQ')" class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center gap-5 hover:shadow-xl hover:-translate-y-1 transition-all group text-left">
-                <div class="bg-slate-900 p-4 rounded-2xl text-white group-hover:bg-orange-500 transition-colors shadow-lg">
-                    <i data-lucide="monitor" class="w-6 h-6"></i>
-                </div>
-                <div>
-                    <h3 class="font-black uppercase italic tracking-tighter text-lg">Tutorial PC</h3>
-                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Aprenda a criar pelo computador</p>
-                </div>
-                <div class="ml-auto text-slate-200 group-hover:text-orange-500 transition-colors">
-                    <i data-lucide="play-circle" class="w-8 h-8"></i>
-                </div>
-            </button>
-            <button onclick="openTutorial('kxdfDO0ctHA')" class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center gap-5 hover:shadow-xl hover:-translate-y-1 transition-all group text-left">
-                <div class="bg-slate-900 p-4 rounded-2xl text-white group-hover:bg-orange-500 transition-colors shadow-lg">
-                    <i data-lucide="smartphone" class="w-6 h-6"></i>
-                </div>
-                <div>
-                    <h3 class="font-black uppercase italic tracking-tighter text-lg">Tutorial Celular</h3>
-                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Aprenda a criar pelo celular</p>
-                </div>
-                <div class="ml-auto text-slate-200 group-hover:text-orange-500 transition-colors">
-                    <i data-lucide="play-circle" class="w-8 h-8"></i>
-                </div>
-            </button>
-        </div>
-
-        <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
-            <div class="bg-orange-500 p-8 text-white">
-                <h2 class="text-3xl font-black italic uppercase tracking-tighter mb-2">Crie sua vitrine hoje</h2>
-                <p class="text-orange-100 font-medium">Preencha os dados e gere seu link instantâneo.</p>
-            </div>
-
-            <div class="p-8 space-y-10">
+    <main class="max-w-4xl mx-auto p-6 space-y-8">
+        <div class="bg-white p-8 rounded-[40px] shadow-2xl border border-slate-100">
+            <div class="space-y-12">
+                <!-- Seção 1: Dados da Loja -->
                 <section class="space-y-6">
+                    <h3 class="font-black uppercase italic tracking-widest text-sm text-orange-600">Sua Loja</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="space-y-2">
-                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Seu Nome (Responsável)</label>
-                            <input type="text" id="owner-name" oninput="saveDraft()" placeholder="Ex: João Silva" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                            <label class="text-xs font-bold uppercase tracking-widest text-slate-400">Seu Nome</label>
+                            <input type="text" id="owner-name" oninput="window.saveDraft()" placeholder="Ex: João Silva" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold">
                         </div>
                         <div class="space-y-2">
-                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Nome da Loja</label>
-                            <input type="text" id="store-name" oninput="saveDraft()" placeholder="Ex: Hamburgueria do Jhow" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                            <label class="text-xs font-bold uppercase tracking-widest text-slate-400">Nome da Loja</label>
+                            <input type="text" id="store-name" oninput="window.saveDraft()" placeholder="Ex: Boutique da Moda" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold">
                         </div>
                         <div class="space-y-2">
-                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">WhatsApp (DDD + Número)</label>
-                            <input type="text" id="whatsapp" oninput="saveDraft()" placeholder="Ex: 11999999999" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
-                        </div>
-                        <div class="space-y-2 md:col-span-2">
-                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Endereço da Loja</label>
-                            <input type="text" id="address" oninput="saveDraft()" placeholder="Ex: Rua das Flores, 123" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                            <label class="text-xs font-bold uppercase tracking-widest text-slate-400">WhatsApp (DDD + Número)</label>
+                            <input type="text" id="whatsapp" oninput="window.saveDraft()" placeholder="Ex: 85992862177" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold">
                         </div>
                         <div class="space-y-2">
-                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Instagram (Opcional)</label>
-                            <input type="text" id="instagram" oninput="saveDraft()" placeholder="Ex: @minhaloja" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
-                        </div>
-                        <div class="space-y-2">
-                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Facebook (Opcional)</label>
-                            <input type="text" id="facebook" oninput="saveDraft()" placeholder="Ex: facebook.com/minhaloja" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                            <label class="text-xs font-bold uppercase tracking-widest text-slate-400">Endereço (Opcional)</label>
+                            <input type="text" id="address" oninput="window.saveDraft()" placeholder="Ex: Rua Central, 123" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold">
                         </div>
                     </div>
                 </section>
 
+                <!-- Seção 2: Redes Sociais -->
                 <section class="space-y-6">
+                    <h3 class="font-black uppercase italic tracking-widest text-sm text-orange-600">Redes Sociais</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold uppercase tracking-widest text-slate-400">Instagram (Sem @)</label>
+                            <input type="text" id="instagram" oninput="window.saveDraft()" placeholder="Ex: minha_loja" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold uppercase tracking-widest text-slate-400">Facebook (Link ou Nome)</label>
+                            <input type="text" id="facebook" oninput="window.saveDraft()" placeholder="Ex: facebook.com/loja" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold">
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Seção 3: Design -->
+                <section class="space-y-6">
+                    <h3 class="font-black uppercase italic tracking-widest text-sm text-orange-600">Design & Cores</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div class="space-y-2">
-                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Nicho</label>
-                            <select id="niche" onchange="saveDraft()" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
-                                <option value="loja">Loja</option>
-                                <option value="cardapio">Cardápio</option>
-                                <option value="servicos">Serviços</option>
+                            <label class="text-xs font-bold uppercase tracking-widest text-slate-400">Nicho</label>
+                            <select id="niche" onchange="window.saveDraft()" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold">
+                                <option value="loja">Loja Geral</option>
+                                <option value="comida">Restaurante / Delivery</option>
+                                <option value="servico">Prestação de Serviço</option>
+                                <option value="moda">Moda & Acessórios</option>
                             </select>
                         </div>
                         <div class="space-y-2">
-                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Cor Principal</label>
-                            <input type="color" id="primary-color" oninput="saveDraft()" value="#f97316" class="w-full h-14 rounded-2xl cursor-pointer">
+                            <label class="text-xs font-bold uppercase tracking-widest text-slate-400">Cor Principal</label>
+                            <input type="color" id="primary-color" value="#f97316" oninput="window.saveDraft()" class="w-full h-[60px] rounded-2xl bg-slate-50 border-2 border-transparent cursor-pointer p-1">
                         </div>
                         <div class="space-y-2">
-                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Cor do Banner</label>
-                            <input type="color" id="secondary-color" oninput="saveDraft()" value="#0f172a" class="w-full h-14 rounded-2xl cursor-pointer">
+                            <label class="text-xs font-bold uppercase tracking-widest text-slate-400">Cor Fundo Topo</label>
+                            <input type="color" id="secondary-color" value="#0f172a" oninput="window.saveDraft()" class="w-full h-[60px] rounded-2xl bg-slate-50 border-2 border-transparent cursor-pointer p-1">
                         </div>
                     </div>
                     <div class="space-y-2">
-                        <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">URL da Imagem de Banner (Opcional)</label>
-                        <input type="text" id="banner-image" oninput="saveDraft()" placeholder="https://i.ibb.co/minhafoto.jpg" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                        <label class="text-xs font-bold uppercase tracking-widest text-slate-400">URL da Imagem de Banner (Topo)</label>
+                        <div class="flex items-center gap-3">
+                            <div class="w-16 h-16 bg-slate-100 rounded-2xl overflow-hidden flex-shrink-0 flex items-center justify-center border border-slate-200">
+                                <img id="banner-preview" src="" class="w-full h-full object-cover hidden">
+                                <i data-lucide="image" class="text-slate-300 w-6 h-6" id="banner-icon"></i>
+                            </div>
+                            <input type="text" id="banner-image" oninput="window.updateBannerPreview(this.value); window.saveDraft()" placeholder="Cole o link direto da imagem aqui" class="flex-1 px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-sm">
+                        </div>
                     </div>
                 </section>
 
+                <!-- Seção 4: Itens -->
                 <section class="space-y-6">
                     <div class="flex items-center justify-between mb-2">
                         <h3 class="font-black uppercase italic tracking-widest text-sm text-orange-600">Itens</h3>
-                        <button onclick="addProduct()" class="bg-orange-100 text-orange-600 px-4 py-2 rounded-xl text-xs font-bold hover:bg-orange-200">Adicionar Item</button>
+                        <button type="button" onclick="window.addProduct()" class="bg-orange-100 text-orange-600 px-4 py-2 rounded-xl text-xs font-bold hover:bg-orange-200">Adicionar Item</button>
                     </div>
                     <div id="products-list" class="space-y-4"></div>
                 </section>
 
-                <button id="main-action-btn" onclick="generateStore()" class="w-full py-6 bg-slate-900 text-white rounded-3xl font-black uppercase italic tracking-widest text-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-3 shadow-xl">
-                    <i data-lucide="smartphone"></i> <span id="btn-text">Gerar Minha Página</span>
+                <button id="main-action-btn" onclick="window.generateStore()" class="w-full py-6 bg-slate-900 text-white rounded-[32px] font-black uppercase italic tracking-[0.2em] text-lg hover:bg-slate-800 transition-all shadow-2xl flex items-center justify-center gap-3 group">
+                    <span id="btn-text">Criar Minha Página</span>
+                    <i data-lucide="arrow-right" class="group-hover:translate-x-2 transition-transform"></i>
                 </button>
-                
-                <div id="activate-plan-container" class="hidden mt-4">
-                    <button onclick="window.open('https://wa.me/5585992862177?text=Olá! Quero ativar o plano profissional do meu catálogo.', '_blank')" class="w-full py-4 bg-green-500 text-white rounded-2xl font-bold uppercase tracking-widest text-sm hover:bg-green-600 transition-all flex items-center justify-center gap-2 shadow-lg">
-                        <i data-lucide="zap"></i> Ativar Plano Profissional
-                    </button>
-                </div>
             </div>
         </div>
 
-        <div id="result-section" class="hidden mt-12 space-y-6">
-            <div id="result-card" class="bg-orange-50 rounded-3xl p-8 border-2 border-orange-200">
-                <h3 class="text-orange-800 font-black italic uppercase tracking-tighter text-2xl mb-6">Página Gerada!</h3>
-                <div class="space-y-6">
-                    <div>
-                        <h4 class="text-orange-800 font-bold mb-2">Link Público:</h4>
-                        <div class="flex flex-col sm:flex-row gap-2">
-                            <div id="public-link" class="flex-1 bg-white px-4 py-3 rounded-xl border border-orange-200 text-slate-600 text-sm truncate font-mono"></div>
-                            <button onclick="copyLink('public-link')" class="px-6 py-3 bg-orange-600 text-white rounded-xl font-bold hover:bg-orange-700">Copiar Link</button>
-                        </div>
-                    </div>
+        <!-- Seção de Resultado (Oculta até salvar) -->
+        <div id="result-section" class="hidden space-y-6">
+            <div id="result-card" class="bg-green-50 p-8 rounded-[40px] border-2 border-green-100 text-center space-y-4">
+                <div class="bg-green-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="check" class="text-white w-8 h-8"></i>
+                </div>
+                <h2 class="text-2xl font-black uppercase italic tracking-tighter text-green-800">Página Criada com Sucesso!</h2>
+                <p class="text-green-700 font-medium">Seu link público está pronto para ser compartilhado:</p>
+                <div class="bg-white p-4 rounded-2xl border border-green-200 flex items-center justify-between gap-4">
+                    <code id="public-link" class="text-xs font-bold text-slate-600 break-all"></code>
+                    <button onclick="window.copyLink('public-link')" class="bg-green-100 text-green-600 p-3 rounded-xl hover:bg-green-200 transition-colors">
+                        <i data-lucide="copy" class="w-4 h-4"></i>
+                    </button>
                 </div>
             </div>
         </div>
     </main>
 
-    <footer class="py-8 px-6 border-t border-slate-200 mt-10">
-        <div class="max-w-4xl mx-auto text-center">
-            <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Desenvolvido por Bossa Infor</p>
-        </div>
-    </footer>
-
-    <a href="https://wa.me/5585992862177?text=Olá! Preciso de suporte com o CatálogoZap." target="_blank" class="fixed bottom-6 right-6 w-16 h-16 bg-green-500 text-white rounded-full shadow-2xl z-50 flex items-center justify-center hover:scale-110 active:scale-95 transition-all">
-        <i data-lucide="message-circle"></i>
-    </a>
-
     <script>
-        let products = [{ id: Date.now().toString(), name: '', price: '', image: '', description: '' }];
+        // Tornar funções globais explicitamente para garantir funcionamento em botões
+        window.products = [{ id: Date.now().toString(), name: '', price: '', image: '', description: '' }];
 
         function proxyImg(url) {
             if (!url) return '';
@@ -212,7 +174,7 @@
             return u;
         }
 
-        function saveDraft() {
+        window.saveDraft = function() {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('edit') || urlParams.get('id')) return;
 
@@ -227,12 +189,26 @@
                 primaryColor: document.getElementById('primary-color').value,
                 secondaryColor: document.getElementById('secondary-color').value,
                 bannerImage: document.getElementById('banner-image').value,
-                products: products
+                products: window.products
             };
             localStorage.setItem('catalog_draft', JSON.stringify(draft));
         }
 
-        function loadDraft() {
+        window.updateBannerPreview = function(url) {
+            const img = document.getElementById('banner-preview');
+            const icon = document.getElementById('banner-icon');
+            if (url) {
+                img.src = proxyImg(url);
+                img.classList.remove('hidden');
+                if (icon) icon.classList.add('hidden');
+            } else {
+                img.src = '';
+                img.classList.add('hidden');
+                if (icon) icon.classList.remove('hidden');
+            }
+        }
+
+        window.loadDraft = function() {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('edit') || urlParams.get('id')) return;
 
@@ -251,145 +227,358 @@
                 document.getElementById('primary-color').value = draft.primaryColor || '#f97316';
                 document.getElementById('secondary-color').value = draft.secondaryColor || '#0f172a';
                 document.getElementById('banner-image').value = draft.bannerImage || '';
-                if (draft.products && draft.products.length > 0) products = draft.products;
-            } catch (e) { console.error(e); }
-        }
-
-        function addProduct() {
-            products.push({ id: Date.now().toString(), name: '', price: '', image: '', description: '' });
-            renderProducts();
-            saveDraft();
-        }
-
-        function removeProduct(id) {
-            if (products.length > 1) {
-                products = products.filter(p => p.id !== id);
-                renderProducts();
-                saveDraft();
+                window.updateBannerPreview(draft.bannerImage);
+                if (draft.products && draft.products.length > 0) {
+                    window.products = draft.products;
+                }
+            } catch (e) {
+                console.error("Erro ao carregar rascunho:", e);
             }
         }
 
-        function updateProduct(id, field, value) {
-            const p = products.find(p => p.id === id);
-            if (p) p[field] = value;
-            saveDraft();
+        window.clearDraft = function() {
+            localStorage.removeItem('catalog_draft');
         }
 
-        function renderProducts() {
+        window.addProduct = function() {
+            window.products.push({ id: Date.now().toString(), name: '', price: '', image: '', description: '' });
+            window.renderProducts();
+            window.saveDraft();
+        }
+
+        window.removeProduct = function(id) {
+            if (window.products.length > 1) {
+                window.products = window.products.filter(p => p.id !== id);
+                window.renderProducts();
+                window.saveDraft();
+            }
+        }
+
+        window.updateProduct = function(id, field, value) {
+            const p = window.products.find(p => p.id === id);
+            if (p) {
+                p[field] = value;
+                if (field === 'image') {
+                    const img = document.getElementById(`preview-${id}`);
+                    const icon = document.getElementById(`icon-${id}`);
+                    if (img && icon) {
+                        if (value) {
+                            img.src = proxyImg(value);
+                            img.classList.remove('hidden');
+                            icon.classList.add('hidden');
+                        } else {
+                            img.src = '';
+                            img.classList.add('hidden');
+                            icon.classList.remove('hidden');
+                        }
+                    }
+                }
+            }
+            window.saveDraft();
+        }
+
+        window.renderProducts = function() {
             const list = document.getElementById('products-list');
-            list.innerHTML = products.map(p => `
+            if (!list) return;
+            
+            list.innerHTML = window.products.map(p => `
                 <div class="flex flex-col gap-4 bg-slate-50 p-6 rounded-3xl border border-slate-100 relative">
-                    <button onclick="removeProduct('${p.id}')" class="absolute top-2 right-2 text-red-500 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                    <button type="button" onclick="window.removeProduct('${p.id}')" class="absolute top-2 right-2 text-red-500 p-2"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <input type="text" value="${p.name}" oninput="updateProduct('${p.id}', 'name', this.value)" placeholder="Nome do Item" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold">
-                        <input type="text" value="${p.price}" oninput="updateProduct('${p.id}', 'price', this.value)" placeholder="Preço (Ex: 29,90)" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold">
+                        <input type="text" value="${p.name.replace(/"/g, '&quot;')}" oninput="window.updateProduct('${p.id}', 'name', this.value)" placeholder="Nome do Item" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold">
+                        <input type="text" value="${p.price.replace(/"/g, '&quot;')}" oninput="window.updateProduct('${p.id}', 'price', this.value)" placeholder="Preço (Ex: 29,90)" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold">
                     </div>
-                    <textarea oninput="updateProduct('${p.id}', 'description', this.value)" placeholder="Descrição (Opcional)" class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm h-20 resize-none">${p.description || ''}</textarea>
-                    <input type="text" value="${p.image}" oninput="updateProduct('${p.id}', 'image', this.value)" placeholder="URL da Foto (Link Direto)" class="w-full px-4 py-3 rounded-xl border border-slate-200 text-xs">
+                    <textarea oninput="window.updateProduct('${p.id}', 'description', this.value)" placeholder="Descrição do item (Opcional)" class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm h-20 resize-none">${p.description || ''}</textarea>
+                    
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-white rounded-xl border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                            <img id="preview-${p.id}" src="${proxyImg(p.image)}" class="w-full h-full object-cover ${p.image ? '' : 'hidden'}" onerror="this.classList.add('hidden'); document.getElementById('icon-${p.id}').classList.remove('hidden')">
+                            <i data-lucide="image" class="text-slate-300 w-5 h-5 ${p.image ? 'hidden' : ''}" id="icon-${p.id}"></i>
+                        </div>
+                        <input type="text" value="${p.image.replace(/"/g, '&quot;')}" oninput="window.updateProduct('${p.id}', 'image', this.value)" placeholder="URL da Foto (Link Direto do Postimages)" class="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-xs">
+                    </div>
                 </div>
             `).join('');
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
         }
 
-        async function generateStore() {
+        window.generateStore = async function() {
+            // Aguarda o Firebase inicializar
+            let attempts = 0;
+            while (!window.db && attempts < 50) {
+                await new Promise(r => setTimeout(r, 100));
+                attempts++;
+            }
+            if (!window.db) {
+                alert("Erro: O banco de dados não carregou. Recarregue a página.");
+                return;
+            }
+
             const ownerName = document.getElementById('owner-name').value;
             const name = document.getElementById('store-name').value;
             const whatsapp = document.getElementById('whatsapp').value;
+            const bannerImage = document.getElementById('banner-image').value;
+            const address = document.getElementById('address').value;
+            const instagram = document.getElementById('instagram').value;
+            const facebook = document.getElementById('facebook').value;
 
             if (!name || !whatsapp || !ownerName) {
-                alert("Preencha os campos obrigatórios!");
+                alert("Preencha o seu nome, o nome da loja e o WhatsApp!");
                 return;
             }
 
             const btn = document.getElementById('main-action-btn');
+            const originalText = btn.innerHTML;
             btn.innerHTML = '<i class="animate-spin" data-lucide="loader-2"></i> Salvando...';
             btn.disabled = true;
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
 
+            // Objeto ultra-otimizado
             const data = {
-                cn: ownerName, n: name, w: whatsapp.replace(/\D/g, ''),
-                a: document.getElementById('address').value,
-                ig: document.getElementById('instagram').value.replace('@', ''),
-                fb: document.getElementById('facebook').value,
-                bi: document.getElementById('banner-image').value,
-                c: document.getElementById('primary-color').value.replace('#', ''),
-                b: document.getElementById('secondary-color').value.replace('#', ''),
-                t: document.getElementById('niche').value,
+                cn: ownerName,
+                n: name,
+                w: whatsapp.replace(/\D/g, ''),
                 createdAt: new Date().toISOString(),
                 status: "trial",
-                expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-                p: products.filter(p => p.name && p.price).map(p => ({ n: p.name, p: p.price, i: p.image, d: p.description }))
+                expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() // 3 dias de teste
             };
 
+            if (address) data.a = address;
+            if (instagram) data.ig = instagram.replace('@', '');
+            if (facebook) data.fb = facebook;
+            if (bannerImage) data.bi = bannerImage;
+            
+            data.c = document.getElementById('primary-color').value.replace('#', '');
+            data.b = document.getElementById('secondary-color').value.replace('#', '');
+            data.t = document.getElementById('niche').value;
+            
+            const validProducts = window.products.filter(p => p.name && p.price);
+            if (validProducts.length > 0) {
+                data.p = validProducts.map(p => {
+                    const item = { n: p.name, p: p.price };
+                    if (p.image) item.i = p.image;
+                    if (p.description) item.d = p.description;
+                    return item;
+                });
+            }
+
             try {
+                const whatsappClean = whatsapp.replace(/\D/g, '');
                 const urlParams = new URLSearchParams(window.location.search);
                 const existingId = urlParams.get('edit') || urlParams.get('id');
+                const { doc, getDoc, setDoc } = window.fs;
+
+                // TRAVA DE WHATSAPP (OPÇÃO 2): Verifica se o número já usou o teste
+                if (!existingId) {
+                    const historySnap = await getDoc(doc(window.db, "trial_history", whatsappClean));
+                    if (historySnap.exists()) {
+                        alert("AVISO: Este número de WhatsApp já utilizou o período de teste gratuito. Para reativar seu catálogo ou criar um novo, entre em contato com o suporte.");
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                        if (window.lucide) lucide.createIcons();
+                        return;
+                    }
+                }
+
                 const storeId = existingId || Math.random().toString(36).substring(2, 8);
                 
-                await window.fs.setDoc(window.fs.doc(window.db, "stores", storeId), data);
+                // Se estiver editando, mantém o status e expiração originais
+                if (existingId) {
+                    const docSnap = await getDoc(doc(window.db, "stores", existingId));
+                    if (docSnap.exists()) {
+                        const oldData = docSnap.data();
+                        data.status = oldData.status || "trial";
+                        data.expiresAt = oldData.expiresAt || data.expiresAt;
+                        data.createdAt = oldData.createdAt || data.createdAt;
+                    }
+                }
+
+                // Salva no Firebase
+                await setDoc(doc(window.db, "stores", storeId), data);
+
+                // Se for uma criação nova, registra no histórico de testes (Trava Opção 2)
+                if (!existingId) {
+                    await setDoc(doc(window.db, "trial_history", whatsappClean), {
+                        whatsapp: whatsappClean,
+                        storeId: storeId,
+                        createdAt: new Date().toISOString()
+                    });
+                }
 
                 const publicUrl = window.location.origin + window.location.pathname.replace('criar.html', 'loja.html') + '?id=' + storeId;
+
+                // Salva o ID na memória do navegador
                 localStorage.setItem('lastStoreId', storeId);
                 localStorage.setItem('lastStoreName', name);
-                localStorage.removeItem('catalog_draft');
+                window.clearDraft(); // Limpa o rascunho após criar a loja
 
-                document.getElementById('public-link').innerText = publicUrl;
-                document.getElementById('result-section').classList.remove('hidden');
-                document.getElementById('activate-plan-container').classList.remove('hidden');
-                document.getElementById('btn-text').innerText = "Atualizar Minha Página";
-                checkLastStore();
+                // Tenta atualizar a interface (se falhar aqui, o dado já está salvo)
+                try {
+                    // Transforma o botão em "Atualizar"
+                    const mainBtn = document.getElementById('main-action-btn');
+                    if (mainBtn) {
+                        mainBtn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+                        mainBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    }
+                    
+                    const btnTextEl = document.getElementById('btn-text');
+                    if (btnTextEl) btnTextEl.innerText = "Atualizar Minha Página";
+                    
+                    const activatePlanContainer = document.getElementById('activate-plan-container');
+                    if (activatePlanContainer) activatePlanContainer.classList.remove('hidden');
+                    
+                    const publicLinkEl = document.getElementById('public-link');
+                    if (publicLinkEl) publicLinkEl.innerText = publicUrl;
+                    
+                    const resultSection = document.getElementById('result-section');
+                    const resultCard = document.getElementById('result-card');
+                    
+                    if (resultSection) resultSection.classList.remove('hidden');
+                    
+                    if (resultCard) {
+                        const editBtnId = 'edit-page-btn';
+                        let editBtn = document.getElementById(editBtnId);
+                        
+                        if (!editBtn) {
+                            editBtn = document.createElement('div');
+                            editBtn.id = editBtnId;
+                            editBtn.className = "mt-4 flex flex-col items-center gap-3";
+                            editBtn.innerHTML = `
+                                <a href="loja.html?id=${storeId}" target="_blank" class="text-orange-600 font-bold underline text-sm flex items-center gap-1">
+                                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Visualizar minha página agora
+                                </a>
+                                <button onclick="window.deleteStore('${storeId}')" class="text-red-500 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1 hover:text-red-700 transition-colors">
+                                    <i data-lucide="trash-2" class="w-3 h-3"></i> Excluir esta página permanentemente
+                                </button>
+                                <p class="text-[10px] text-slate-400">Guarde este link para editar sua página futuramente!</p>
+                            `;
+                            resultCard.appendChild(editBtn);
+                        } else {
+                            const link = editBtn.querySelector('a');
+                            if (link) link.href = `loja.html?id=${storeId}`;
+                            const delBtn = editBtn.querySelector('button');
+                            if (delBtn) delBtn.onclick = () => window.deleteStore(storeId);
+                        }
+                    }
+
+                    window.checkLastStore(); // Atualiza o botão do topo
+                } catch (uiError) {
+                    console.error("Erro ao atualizar interface (mas os dados foram salvos):", uiError);
+                }
             } catch (error) {
-                console.error(error);
-                alert("Erro ao salvar.");
+                console.error("Erro ao salvar:", error);
+                alert("Erro ao salvar no banco de dados. Verifique sua conexão e tente novamente. (Erro: " + error.message + ")");
             } finally {
-                btn.innerHTML = '<i data-lucide="smartphone"></i> <span id="btn-text">Atualizar Minha Página</span>';
+                btn.innerHTML = originalText;
                 btn.disabled = false;
-                lucide.createIcons();
+                if (window.lucide) lucide.createIcons();
             }
         }
 
-        function copyLink(id) {
-            navigator.clipboard.writeText(document.getElementById(id).innerText);
+        window.copyLink = function(id) {
+            const text = document.getElementById(id).innerText;
+            navigator.clipboard.writeText(text);
             alert("Link copiado!");
         }
 
-        function openTutorial(videoId) {
+        window.openTutorial = function(videoId) {
             const modal = document.getElementById('video-modal');
-            document.getElementById('tutorial-iframe').src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+            const iframe = document.getElementById('tutorial-iframe');
+            iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
             modal.classList.remove('hidden');
             modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
         }
 
-        function closeTutorial() {
+        window.closeTutorial = function() {
             const modal = document.getElementById('video-modal');
-            document.getElementById('tutorial-iframe').src = '';
+            const iframe = document.getElementById('tutorial-iframe');
+            iframe.src = '';
             modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = 'auto';
         }
 
-        function checkLastStore() {
+        window.checkLastStore = function() {
             const lastId = localStorage.getItem('lastStoreId');
+            const lastName = localStorage.getItem('lastStoreName');
             const container = document.getElementById('last-store-container');
-            if (lastId) container.classList.remove('hidden');
-            else container.classList.add('hidden');
+            if (lastId) {
+                container.classList.remove('hidden');
+                container.querySelector('button').title = `Editar: ${lastName}`;
+            } else {
+                container.classList.add('hidden');
+            }
         }
 
-        function editLastStore() {
+        window.editLastStore = function() {
             const lastId = localStorage.getItem('lastStoreId');
-            if (lastId) window.location.href = `criar.html?edit=${lastId}`;
+            if (lastId) {
+                const url = new URL(window.location.href);
+                url.searchParams.set('edit', lastId);
+                window.location.href = url.toString();
+            }
         }
 
-        async function loadFromFirebase() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const storeId = urlParams.get('edit') || urlParams.get('id');
-            if (!storeId) return;
-
+        window.deleteStore = async function(id) {
+            if (!confirm("TEM CERTEZA? Isso vai apagar sua página para sempre e o link deixará de funcionar!")) return;
+            
             try {
+                const { doc, deleteDoc } = window.fs;
+                await deleteDoc(doc(window.db, "stores", id));
+                
+                // Limpa a memória se for a última loja
+                if (localStorage.getItem('lastStoreId') === id) {
+                    localStorage.removeItem('lastStoreId');
+                    localStorage.removeItem('lastStoreName');
+                }
+                
+                alert("Página excluída com sucesso!");
+                window.location.href = 'criar.html';
+            } catch (error) {
+                console.error("Erro ao excluir:", error);
+                alert("Erro ao excluir. Tente novamente.");
+            }
+        }
+
+        window.loadFromFirebase = async function() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const storeId = urlParams.get('edit') || urlParams.get('id');
+                if (!storeId) return;
+
+                // Aguarda o Firebase inicializar
                 let attempts = 0;
-                while (!window.db && attempts < 50) { await new Promise(r => setTimeout(r, 100)); attempts++; }
-                const docSnap = await window.fs.getDoc(window.fs.doc(window.db, "stores", storeId));
+                while (!window.db && attempts < 50) {
+                    await new Promise(r => setTimeout(r, 100));
+                    attempts++;
+                }
+
+                const { doc, getDoc } = window.fs;
+                const docSnap = await getDoc(doc(window.db, "stores", storeId));
 
                 if (docSnap.exists()) {
                     const data = docSnap.data();
+                    
+                    // Tenta atualizar a interface
+                    try {
+                        const mainBtn = document.getElementById('main-action-btn');
+                        if (mainBtn) {
+                            mainBtn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+                            mainBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                        }
+                        
+                        const btnTextEl = document.getElementById('btn-text');
+                        if (btnTextEl) btnTextEl.innerText = "Atualizar Minha Página";
+                        
+                        const activatePlanContainer = document.getElementById('activate-plan-container');
+                        if (activatePlanContainer) activatePlanContainer.classList.remove('hidden');
+                        
+                        if (window.lucide) lucide.createIcons();
+                    } catch (uiError) {
+                        console.error("Erro ao atualizar interface no carregamento:", uiError);
+                    }
+
                     document.getElementById('owner-name').value = data.cn || '';
                     document.getElementById('store-name').value = data.n || '';
                     document.getElementById('whatsapp').value = data.w || '';
@@ -399,19 +588,28 @@
                     document.getElementById('primary-color').value = data.c ? '#' + data.c : '#f97316';
                     document.getElementById('secondary-color').value = data.b ? '#' + data.b : '#0f172a';
                     document.getElementById('banner-image').value = data.bi || '';
+                    window.updateBannerPreview(data.bi);
                     document.getElementById('niche').value = data.t || 'loja';
-                    if (data.p) products = data.p.map(p => ({ id: Math.random().toString(36).substr(2, 9), name: p.n, price: p.p, image: p.i, description: p.d }));
-                    renderProducts();
-                    document.getElementById('btn-text').innerText = "Atualizar Minha Página";
+                    
+                    if (data.p && data.p.length > 0) {
+                        window.products = data.p.map(p => ({
+                            id: Math.random().toString(36).substr(2, 9),
+                            name: p.n,
+                            price: p.p,
+                            image: p.i,
+                            description: p.d || ''
+                        }));
+                    }
+                    window.renderProducts();
                 }
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("Erro ao carregar dados:", e); }
         }
 
         window.onload = () => {
-            loadDraft();
-            checkLastStore();
-            loadFromFirebase();
-            renderProducts();
+            window.loadDraft();
+            window.checkLastStore();
+            window.loadFromFirebase();
+            window.renderProducts();
         };
     </script>
 </body>

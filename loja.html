@@ -61,16 +61,22 @@
         let storeData = null;
         let cart = [];
 
+        // Proxy de Imagem (Simplificado e Direto)
         function proxyImg(url) {
             if (!url) return '';
             let u = url.trim();
+
+            // Se for link de visualizador, tenta corrigir (mas o ideal é o link direto)
             if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) {
                 u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
             }
             if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) {
                 u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
             }
+
             if (!u.startsWith('http')) u = 'https://' + u;
+            
+            // Retorna o link direto sem atravessadores
             return u;
         }
 
@@ -198,6 +204,7 @@
                 return;
             }
 
+            // Verificação de Expiração
             const now = new Date();
             const expiresAt = new Date(storeData.expiresAt || storeData.createdAt);
             const isExpired = now > expiresAt;
@@ -265,16 +272,16 @@
                             <div class="flex flex-col items-center md:items-end gap-4">
                                 <div class="flex gap-4">
                                     ${storeData.instagram ? `
-                                        <a href="https://instagram.com/${storeData.instagram.replace('@', '')}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-all flex items-center justify-center text-white">
+                                        <a href="https://instagram.com/${storeData.instagram.replace('@', '').trim()}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-all flex items-center justify-center text-white" title="Instagram">
                                             <i data-lucide="instagram" class="w-5 h-5"></i>
                                         </a>
                                     ` : ''}
                                     ${storeData.facebook ? `
-                                        <a href="${storeData.facebook.startsWith('http') ? storeData.facebook : 'https://' + storeData.facebook}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-all flex items-center justify-center text-white">
+                                        <a href="${storeData.facebook.includes('facebook.com') ? (storeData.facebook.startsWith('http') ? storeData.facebook : 'https://' + storeData.facebook) : 'https://facebook.com/' + storeData.facebook.trim()}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-all flex items-center justify-center text-white" title="Facebook">
                                             <i data-lucide="facebook" class="w-5 h-5"></i>
                                         </a>
                                     ` : ''}
-                                    <a href="https://wa.me/55${storeData.whatsapp}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-all flex items-center justify-center text-white">
+                                    <a href="https://wa.me/55${storeData.whatsapp}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-all flex items-center justify-center text-white" title="WhatsApp">
                                         <i data-lucide="phone" class="w-5 h-5"></i>
                                     </a>
                                 </div>
@@ -284,16 +291,28 @@
                     </footer>
                 </div>
             `;
-            lucide.createIcons();
-            setTimeout(() => lucide.createIcons(), 1000);
+            
+            // Força a renderização dos ícones várias vezes para garantir
+            if (window.lucide) {
+                lucide.createIcons();
+                setTimeout(() => lucide.createIcons(), 500);
+                setTimeout(() => lucide.createIcons(), 2000);
+            }
         }
 
         window.onload = async () => {
+            // Aguarda o script do Lucide carregar se necessário
+            if (!window.lucide) {
+                await new Promise(r => setTimeout(r, 500));
+            }
+            
+            // Aguarda um pouco para o Firebase inicializar
             let attempts = 0;
             while (!window.firebaseUtils && attempts < 50) {
                 await new Promise(r => setTimeout(r, 100));
                 attempts++;
             }
+            
             storeData = await decodeData();
             renderStore();
         };

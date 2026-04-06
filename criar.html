@@ -237,10 +237,10 @@
 
         function proxyImg(url) {
             if (!url) return '';
-            let u = url.trim();
+            let u = String(url).trim();
             
             // Se for base64 ou link do Firebase, retorna direto
-            if (u.startsWith('data:') || u.includes('firebasestorage.googleapis.com')) return u;
+            if (u.startsWith('data:') || u.toLowerCase().includes('firebasestorage')) return u;
 
             // Se for link de visualizador do ImgBB
             if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) {
@@ -251,7 +251,10 @@
                 u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
             }
 
-            if (!u.startsWith('http') && !u.startsWith('//')) u = 'https://' + u;
+            // Só adiciona https:// se não tiver protocolo e não for base64
+            if (!u.startsWith('http') && !u.startsWith('//') && !u.startsWith('data:')) {
+                u = 'https://' + u;
+            }
             
             return u;
         }
@@ -423,8 +426,8 @@
                         <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Imagem do Produto</label>
                         <div class="flex flex-col gap-2">
                             <div class="flex items-center gap-3">
-                                <div class="w-12 h-12 bg-white rounded-xl border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
-                                    <img id="preview-${p.id}" src="${proxyImg(p.image)}" class="w-full h-full object-cover ${p.image ? '' : 'hidden'}" onerror="this.classList.add('hidden'); document.getElementById('icon-${p.id}').classList.remove('hidden')">
+                                <div class="w-12 h-12 bg-white rounded-xl border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center relative">
+                                    <img id="preview-${p.id}" src="${proxyImg(p.image)}" class="w-full h-full object-cover ${p.image ? '' : 'hidden'}" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden')">
                                     <i data-lucide="image" class="text-slate-300 w-5 h-5 ${p.image ? 'hidden' : ''}" id="icon-${p.id}"></i>
                                 </div>
                                 <div class="flex-1 flex gap-2 min-w-0">

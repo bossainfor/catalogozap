@@ -1,0 +1,42 @@
+{
+  "entities": {
+    "Store": {
+      "title": "Store",
+      "description": "Store configuration and products",
+      "type": "object",
+      "properties": {
+        "n": { "type": "string", "description": "Store Name" },
+        "w": { "type": "string", "description": "WhatsApp Number" },
+        "a": { "type": "string", "description": "Address" },
+        "ig": { "type": "string", "description": "Instagram Username" },
+        "fb": { "type": "string", "description": "Facebook URL" },
+        "c": { "type": "string", "description": "Primary Color (Hex without #)" },
+        "b": { "type": "string", "description": "Secondary Color (Hex without #)" },
+        "bi": { "type": "string", "description": "Banner Image URL" },
+        "t": { "type": "string", "description": "Niche/Type" },
+        "status": { "type": "string", "enum": ["trial", "active", "blocked"], "description": "Subscription status" },
+        "expiresAt": { "type": "string", "format": "date-time", "description": "Expiration date" },
+        "p": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "description": "Product Unique ID" },
+              "n": { "type": "string", "description": "Product Name" },
+              "p": { "type": "string", "description": "Product Price" },
+              "i": { "type": "string", "description": "Product Image URL" }
+            }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["n", "w"]
+    }
+  },
+  "firestore": {
+    "/stores/{storeId}": {
+      "schema": "Store",
+      "description": "Public store data"
+    }
+  }
+}

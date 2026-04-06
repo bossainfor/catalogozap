@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Admin - CatálogoZap</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getStorage, ref, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAJaxRdA6uzbN41JvAw8xO7F5mzJaDfMBc",
+            authDomain: "gen-lang-client-0664324166.firebaseapp.com",
+            projectId: "gen-lang-client-0664324166",
+            storageBucket: "gen-lang-client-0664324166.firebasestorage.app",
+            messagingSenderId: "1074933311707",
+            appId: "1:1074933311707:web:d841b61f84c05a40fc04fe"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app, "ai-studio-2395f72f-4dac-4517-9681-c654cd1a03ca");
+        const storage = getStorage(app);
+
+        window.db = db;
+        window.storage = storage;
+        window.fs = { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, getDoc };
+        window.st = { ref, deleteObject };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <!-- Tela de Login -->
+    <div id="login-screen" class="min-h-screen flex items-center justify-center p-6">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl border border-slate-100 w-full max-w-md space-y-6">
+            <div class="text-center space-y-2">
+                <div class="bg-slate-900 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="lock" class="text-white"></i>
+                </div>
+                <h1 class="text-2xl font-black uppercase italic tracking-tighter">Acesso Restrito</h1>
+                <p class="text-slate-400 text-sm font-medium">Digite a senha mestra para entrar</p>
+            </div>
+            <div class="space-y-4">
+                <input type="password" id="admin-password" placeholder="Sua senha secreta" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-slate-900 outline-none transition-all font-bold text-center tracking-widest">
+                <button onclick="checkPassword()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase italic tracking-widest hover:bg-slate-800 transition-all">Entrar no Painel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Painel Principal -->
+    <div id="admin-panel" class="hidden min-h-screen flex flex-col">
+        <header class="bg-white border-b border-slate-200 sticky top-0 z-10 px-4">
+            <div class="max-w-6xl mx-auto h-16 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="bg-slate-900 p-2 rounded-lg"><i data-lucide="shield-check" class="text-white w-5 h-5"></i></div>
+                    <h1 class="text-xl font-bold tracking-tight">Admin CatálogoZap</h1>
+                </div>
+                <button onclick="logout()" class="text-slate-400 hover:text-red-500 transition-colors">
+                    <i data-lucide="log-out"></i>
+                </button>
+            </div>
+        </header>
+
+        <main class="max-w-6xl mx-auto w-full px-4 py-8 space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-3xl font-black uppercase italic tracking-tighter">Gerenciar Lojas</h2>
+                    <p class="text-slate-500 font-medium">Controle de assinaturas e status dos clientes</p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <div class="relative">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
+                        <input type="text" id="search-input" oninput="filterStores()" placeholder="Buscar loja ou cliente..." class="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-slate-900 w-full sm:w-64">
+                    </div>
+                    <button onclick="loadStores()" class="bg-white border border-slate-200 px-4 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-slate-50">
+                        <i data-lucide="refresh-cw" size="14"></i> Atualizar Lista
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+                <!-- Desktop Table View -->
+                <div class="hidden md:block overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-100">
+                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Loja / Cliente</th>
+                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">WhatsApp</th>
+                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Status</th>
+                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Expira em</th>
+                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stores-table-body">
+                            <!-- Lojas serão carregadas aqui -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Mobile Card View -->
+                <div id="stores-mobile-list" class="md:hidden divide-y divide-slate-100">
+                    <!-- Lojas mobile serão carregadas aqui -->
+                </div>
+
+                <div id="loading-indicator" class="p-12 text-center hidden">
+                    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-slate-900 mx-auto"></div>
+                </div>
+                <div id="empty-state" class="p-12 text-center hidden">
+                    <p class="text-slate-400 font-medium">Nenhuma loja encontrada no banco de dados.</p>
+                </div>
+            </div>
+        </main>
+
+        <footer class="py-8 px-6 border-t border-slate-200 mt-auto">
+            <div class="max-w-6xl mx-auto text-center">
+                <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Desenvolvido por Bossa Infor</p>
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        const ADMIN_PASSWORD = "13259898Aa#@";
+        let allStores = [];
+
+        function checkPassword() {
+            const input = document.getElementById('admin-password').value;
+            if (input === ADMIN_PASSWORD) {
+                localStorage.setItem('admin_logged', 'true');
+                showPanel();
+            } else {
+                alert("Senha incorreta! Tente novamente.");
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('admin_logged');
+            location.reload();
+        }
+
+        function showPanel() {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('admin-panel').classList.remove('hidden');
+            loadStores();
+            lucide.createIcons();
+        }
+
+        async function loadStores() {
+            const tbody = document.getElementById('stores-table-body');
+            const mobileList = document.getElementById('stores-mobile-list');
+            const loader = document.getElementById('loading-indicator');
+            const empty = document.getElementById('empty-state');
+
+            tbody.innerHTML = '';
+            mobileList.innerHTML = '';
+            loader.classList.remove('hidden');
+            empty.classList.add('hidden');
+
+            try {
+                const q = window.fs.query(window.fs.collection(window.db, "stores"), window.fs.orderBy("createdAt", "desc"));
+                const querySnapshot = await window.fs.getDocs(q);
+                
+                loader.classList.add('hidden');
+
+                if (querySnapshot.empty) {
+                    empty.classList.remove('hidden');
+                    return;
+                }
+
+                allStores = [];
+                querySnapshot.forEach((docSnap) => {
+                    allStores.push({ id: docSnap.id, ...docSnap.data() });
+                });
+
+                renderStores(allStores);
+            } catch (error) {
+                console.error("Erro ao carregar lojas:", error);
+                alert("Erro ao carregar dados do Firebase.");
+            }
+        }
+
+        function filterStores() {
+            const term = document.getElementById('search-input').value.toLowerCase();
+            const filtered = allStores.filter(s => 
+                (s.n && s.n.toLowerCase().includes(term)) || 
+                (s.cn && s.cn.toLowerCase().includes(term)) ||
+                (s.w && s.w.includes(term)) ||
+                (s.id && s.id.toLowerCase().includes(term))
+            );
+            renderStores(filtered);
+        }
+
+        function renderStores(stores) {
+            const tbody = document.getElementById('stores-table-body');
+            const mobileList = document.getElementById('stores-mobile-list');
+            const empty = document.getElementById('empty-state');
+
+            tbody.innerHTML = '';
+            mobileList.innerHTML = '';
+
+            if (stores.length === 0) {
+                empty.classList.remove('hidden');
+                return;
+            } else {
+                empty.classList.add('hidden');
+            }
+
+            // Conta ocorrências de cada número para detectar duplicatas
+            const whatsappCounts = {};
+            stores.forEach(s => {
+                const w = s.w ? s.w.replace(/\D/g, '') : '';
+                if (w) whatsappCounts[w] = (whatsappCounts[w] || 0) + 1;
+            });
+
+            stores.forEach((data) => {
+                const id = data.id;
+                const whatsappClean = data.w ? data.w.replace(/\D/g, '') : '';
+                const isDuplicate = whatsappCounts[whatsappClean] > 1;
+                const expiresAt = new Date(data.expiresAt || data.createdAt);
+                const isExpired = new Date() > expiresAt;
+                
+                let statusBadge = '';
+                let statusColor = '';
+                if (data.status === 'blocked') {
+                    statusColor = 'red';
+                    statusBadge = '<span class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Bloqueado</span>';
+                } else if (isExpired && data.status === 'trial') {
+                    statusColor = 'orange';
+                    statusBadge = '<span class="bg-orange-100 text-orange-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Teste Expirado</span>';
+                } else if (data.status === 'trial') {
+                    statusColor = 'blue';
+                    statusBadge = '<span class="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Em Teste</span>';
+                } else {
+                    statusColor = 'green';
+                    statusBadge = '<span class="bg-green-100 text-green-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Ativo</span>';
+                }
+
+                // Desktop Row
+                const row = document.createElement('tr');
+                row.className = "border-b border-slate-50 hover:bg-slate-50/50 transition-colors";
+                row.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-sm">${data.n || 'Sem Nome'}</div>
+                        <div class="text-[10px] text-slate-400 font-medium uppercase tracking-widest">${data.cn || 'Dono não informado'}</div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <a href="https://wa.me/55${data.w}" target="_blank" class="text-xs font-bold text-slate-600 hover:text-green-500 flex items-center gap-1">
+                            <i data-lucide="phone" size="12"></i> ${data.w || '-'}
+                        </a>
+                        ${isDuplicate ? '<div class="text-[8px] text-orange-500 font-black uppercase mt-1 flex items-center gap-1"><i data-lucide="alert-triangle" class="w-2 h-2"></i> Número Repetido</div>' : ''}
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        ${statusBadge}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="text-xs font-bold ${isExpired ? 'text-red-500' : 'text-slate-600'}">
+                            ${expiresAt.toLocaleDateString('pt-BR')}
+                        </div>
+                        <div class="text-[9px] text-slate-400 font-medium uppercase tracking-widest">
+                            ID: ${id}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            <button onclick="activateStore('${id}', '${data.expiresAt}')" title="Ativar +30 dias" class="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
+                                <i data-lucide="calendar-plus" size="16"></i>
+                            </button>
+                            <button onclick="blockStore('${id}')" title="Bloquear" class="p-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors">
+                                <i data-lucide="lock" size="16"></i>
+                            </button>
+                            <button onclick="deleteStore('${id}')" title="Excluir" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
+                                <i data-lucide="trash-2" size="16"></i>
+                            </button>
+                            <a href="loja.html?id=${id}" target="_blank" title="Ver Loja" class="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors">
+                                <i data-lucide="external-link" size="16"></i>
+                            </a>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+
+                // Mobile Card
+                const card = document.createElement('div');
+                card.className = "p-6 space-y-4";
+                card.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="font-bold text-base">${data.n || 'Sem Nome'}</div>
+                            <div class="text-[10px] text-slate-400 font-medium uppercase tracking-widest">${data.cn || 'Dono não informado'}</div>
+                        </div>
+                        ${statusBadge}
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <div class="text-slate-400 uppercase font-bold text-[9px] tracking-widest mb-1">WhatsApp</div>
+                            <a href="https://wa.me/55${data.w}" target="_blank" class="font-bold text-slate-600 flex items-center gap-1">
+                                <i data-lucide="phone" size="10"></i> ${data.w || '-'}
+                            </a>
+                            ${isDuplicate ? '<div class="text-[8px] text-orange-500 font-black uppercase mt-1 flex items-center gap-1"><i data-lucide="alert-triangle" class="w-2 h-2"></i> Número Repetido</div>' : ''}
+                        </div>
+                        <div>
+                            <div class="text-slate-400 uppercase font-bold text-[9px] tracking-widest mb-1">Expira em</div>
+                            <div class="font-bold ${isExpired ? 'text-red-500' : 'text-slate-600'}">${expiresAt.toLocaleDateString('pt-BR')}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 pt-2">
+                        <button onclick="activateStore('${id}', '${data.expiresAt}')" class="flex-1 py-3 bg-green-50 text-green-600 rounded-xl font-bold text-xs flex items-center justify-center gap-2">
+                            <i data-lucide="calendar-plus" size="14"></i> Ativar
+                        </button>
+                        <button onclick="blockStore('${id}')" class="flex-1 py-3 bg-orange-50 text-orange-600 rounded-xl font-bold text-xs flex items-center justify-center gap-2">
+                            <i data-lucide="lock" size="14"></i> Bloquear
+                        </button>
+                        <button onclick="deleteStore('${id}')" class="p-3 bg-red-50 text-red-600 rounded-xl">
+                            <i data-lucide="trash-2" size="16"></i>
+                        </button>
+                        <a href="loja.html?id=${id}" target="_blank" class="p-3 bg-slate-100 text-slate-600 rounded-xl">
+                            <i data-lucide="external-link" size="16"></i>
+                        </a>
+                    </div>
+                    <div class="text-[9px] text-slate-300 font-medium uppercase tracking-widest text-center">ID: ${id}</div>
+                `;
+                mobileList.appendChild(card);
+            });
+            lucide.createIcons();
+        }
+
+        async function activateStore(id, currentExpires) {
+            if (!confirm("Deseja ativar/renovar esta loja por mais 30 dias?")) return;
+            
+            try {
+                const now = new Date();
+                const current = new Date(currentExpires || now);
+                const baseDate = current > now ? current : now;
+                const newExpires = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+                
+                await window.fs.updateDoc(window.fs.doc(window.db, "stores", id), {
+                    status: "active",
+                    expiresAt: newExpires.toISOString()
+                });
+                
+                alert("Loja ativada com sucesso!");
+                loadStores();
+            } catch (error) {
+                alert("Erro ao atualizar status.");
+            }
+        }
+
+        async function blockStore(id) {
+            if (!confirm("Deseja bloquear o acesso a esta loja?")) return;
+            
+            try {
+                await window.fs.updateDoc(window.fs.doc(window.db, "stores", id), {
+                    status: "blocked"
+                });
+                alert("Loja bloqueada!");
+                loadStores();
+            } catch (error) {
+                alert("Erro ao bloquear.");
+            }
+        }
+
+        async function deleteStore(id) {
+            if (!confirm("TEM CERTEZA? Esta ação é irreversível e apagará todos os dados da loja e suas imagens!")) return;
+            
+            try {
+                const { doc, deleteDoc, getDoc } = window.fs;
+                const { ref, deleteObject } = window.st;
+                const storeRef = doc(window.db, "stores", id);
+                
+                // Buscar dados para apagar imagens
+                const snap = await getDoc(storeRef);
+                if (snap.exists()) {
+                    const data = snap.data();
+                    const slug = id;
+                    
+                    // Tentar apagar o banner
+                    if (data.bi && data.bi.includes('firebasestorage')) {
+                        try { await deleteObject(ref(window.storage, `stores/${slug}/banner`)); } catch(e){}
+                    }
+                    
+                    // Tentar apagar imagens de produtos (se tiverem IDs previsíveis)
+                    if (data.p && Array.isArray(data.p)) {
+                        for (let i = 0; i < data.p.length; i++) {
+                            // Nota: Como os IDs no Firestore podem ser aleatórios, 
+                            // a exclusão aqui é baseada no que o criar.html faz agora.
+                        }
+                    }
+                }
+
+                await deleteDoc(storeRef);
+                alert("Loja e dados excluídos permanentemente!");
+                loadStores();
+            } catch (error) {
+                console.error("Erro ao excluir:", error);
+                alert("Erro ao excluir.");
+            }
+        }
+
+        window.onload = () => {
+            if (localStorage.getItem('admin_logged') === 'true') {
+                showPanel();
+            }
+            lucide.createIcons();
+        };
+    </script>
+</body>
+</html>

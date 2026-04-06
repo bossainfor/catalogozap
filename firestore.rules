@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isValidStore(data) {
+      return data.n is string && data.n.size() > 0 && data.n.size() < 100 &&
+             data.w is string && data.w.size() > 0 && data.w.size() < 20 &&
+             data.status in ['trial', 'active', 'blocked'] &&
+             data.expiresAt is string;
+    }
+
+    match /stores/{storeId} {
+      // Allow anyone to read a store by its ID
+      allow read: if true;
+      
+      // Allow anyone to create a store (since there's no login)
+      // We validate basic fields to prevent spam
+      allow create: if isValidStore(request.resource.data);
+      
+      // Allow updates and deletes
+      // Note: In a real app, you'd want to protect this with a password or auth
+      allow update: if isValidStore(request.resource.data);
+      allow delete: if true;
+    }
+
+    match /trial_history/{whatsapp} {
+      // Allow reading to check if a trial has already been used
+      allow read: if true;
+      
+      // Allow creating a new trial record
+      allow create: if request.resource.data.whatsapp is string && 
+                      request.resource.data.whatsapp.size() > 0 &&
+                      request.resource.data.whatsapp.size() < 20;
+    }
+  }
+}

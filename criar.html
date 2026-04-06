@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar meu CatálogoZap</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAJaxRdA6uzbN41JvAw8xO7F5mzJaDfMBc",
+            authDomain: "gen-lang-client-0664324166.firebaseapp.com",
+            projectId: "gen-lang-client-0664324166",
+            storageBucket: "gen-lang-client-0664324166.firebasestorage.app",
+            messagingSenderId: "1074933311707",
+            appId: "1:1074933311707:web:d841b61f84c05a40fc04fe"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app, "ai-studio-2395f72f-4dac-4517-9681-c654cd1a03ca");
+        const storage = getStorage(app);
+        const auth = getAuth(app);
+
+        // Login anônimo para permitir upload se as regras exigirem
+        signInAnonymously(auth).catch(err => console.error("Erro no login anônimo:", err));
+
+        window.db = db;
+        window.storage = storage;
+        window.auth = auth;
+        window.fs = { doc, setDoc, getDoc, deleteDoc };
+        window.st = { ref, uploadBytesResumable, getDownloadURL, deleteObject };
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 1.5rem; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+    <!-- MODAL DE VÍDEO -->
+    <div id="video-modal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[100] hidden items-center justify-center p-4" onclick="closeTutorial()">
+        <div class="bg-slate-800 w-full max-w-4xl rounded-[2.5rem] overflow-hidden shadow-2xl relative border border-white/10" onclick="event.stopPropagation()">
+            <button onclick="closeTutorial()" class="absolute top-6 right-6 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full z-20 backdrop-blur-xl transition-all">
+                <i data-lucide="x"></i>
+            </button>
+            <div class="video-container">
+                <iframe id="tutorial-iframe" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </div>
+        </div>
+    </div>
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-10 px-4">
+        <div class="max-w-4xl mx-auto h-16 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="bg-orange-500 p-2 rounded-lg"><i data-lucide="shopping-bag" class="text-white w-5 h-5"></i></div>
+                <h1 class="text-xl font-bold tracking-tight">CatálogoZap</h1>
+            </div>
+            <div class="flex gap-1 items-center">
+                <div id="last-store-container" class="hidden">
+                    <button onclick="window.editLastStore()" class="bg-orange-100 text-orange-600 px-2 sm:px-3 py-2 rounded-xl text-[9px] sm:text-[10px] font-bold hover:bg-orange-200 flex items-center gap-1">
+                        <i data-lucide="history" class="w-3 h-3"></i> <span class="hidden xs:inline">Última</span>
+                    </button>
+                </div>
+                <button onclick="window.open('https://postimages.org/', '_blank')" class="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-xl text-[9px] sm:text-[10px] font-bold hover:bg-blue-700 flex items-center gap-1">
+                    <i data-lucide="upload-cloud" class="w-3 h-3"></i> Postimages
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-4xl mx-auto px-4 py-8 pb-32">
+        <!-- SEÇÃO DE TUTORIAIS -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            <button onclick="openTutorial('6xh3jsLYXRQ')" class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center gap-5 hover:shadow-xl hover:-translate-y-1 transition-all group text-left">
+                <div class="bg-slate-900 p-4 rounded-2xl text-white group-hover:bg-orange-500 transition-colors shadow-lg">
+                    <i data-lucide="monitor" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h3 class="font-black uppercase italic tracking-tighter text-lg">Tutorial PC</h3>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Aprenda a criar pelo computador</p>
+                </div>
+                <div class="ml-auto text-slate-200 group-hover:text-orange-500 transition-colors">
+                    <i data-lucide="play-circle" class="w-8 h-8"></i>
+                </div>
+            </button>
+            <button onclick="openTutorial('kxdfDO0ctHA')" class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 flex items-center gap-5 hover:shadow-xl hover:-translate-y-1 transition-all group text-left">
+                <div class="bg-slate-900 p-4 rounded-2xl text-white group-hover:bg-orange-500 transition-colors shadow-lg">
+                    <i data-lucide="smartphone" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h3 class="font-black uppercase italic tracking-tighter text-lg">Tutorial Celular</h3>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Aprenda a criar pelo celular</p>
+                </div>
+                <div class="ml-auto text-slate-200 group-hover:text-orange-500 transition-colors">
+                    <i data-lucide="play-circle" class="w-8 h-8"></i>
+                </div>
+            </button>
+        </div>
+
+        <!-- AVISO IMPORTANTE -->
+        <div class="bg-slate-900 text-white p-4 rounded-2xl mb-8 shadow-lg flex items-center gap-4 border-l-8 border-orange-500">
+            <div class="bg-white/20 p-3 rounded-full text-orange-500"><i data-lucide="alert-circle"></i></div>
+            <p class="text-xs font-bold leading-tight">
+                USE O POSTIMAGES: Suba a foto e copie o <span class="text-orange-500 underline">"LINK DIRETO"</span>. É o único que funciona 100% no celular!
+            </p>
+        </div>
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+            <div class="bg-orange-500 p-8 text-white">
+                <h2 class="text-3xl font-black italic uppercase tracking-tighter mb-2">Crie sua vitrine hoje</h2>
+                <p class="text-orange-100 font-medium">Preencha os dados e gere seu link instantâneo.</p>
+            </div>
+
+            <div class="p-8 space-y-10">
+                <section class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Seu Nome (Responsável)</label>
+                            <input type="text" id="owner-name" oninput="window.saveDraft()" placeholder="Ex: João Silva" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Nome da Loja</label>
+                            <input type="text" id="store-name" oninput="window.saveDraft()" placeholder="Ex: Hamburgueria do Jhow" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">WhatsApp (DDD + Número)</label>
+                            <input type="text" id="whatsapp" oninput="window.saveDraft(); window.checkWhatsApp(this.value)" placeholder="Ex: 11999999999" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                        </div>
+                        <div class="space-y-2 md:col-span-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Endereço da Loja</label>
+                            <input type="text" id="address" oninput="window.saveDraft()" placeholder="Ex: Rua das Flores, 123 - São Paulo" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Instagram (Opcional)</label>
+                            <input type="text" id="instagram" oninput="window.saveDraft()" placeholder="Ex: @minhaloja" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Facebook (Opcional)</label>
+                            <input type="text" id="facebook" oninput="window.saveDraft()" placeholder="Ex: facebook.com/minhaloja" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                        </div>
+                    </div>
+                </section>
+
+                <section class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Nicho</label>
+                            <select id="niche" onchange="window.saveDraft()" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                                <option value="loja">Loja</option>
+                                <option value="cardapio">Cardápio</option>
+                                <option value="servicos">Serviços</option>
+                                <option value="portfolio">Portfólio</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Cor Principal</label>
+                            <input type="color" id="primary-color" oninput="window.saveDraft()" value="#f97316" class="w-full h-14 rounded-2xl cursor-pointer">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Cor do Banner</label>
+                            <input type="color" id="secondary-color" oninput="window.saveDraft()" value="#0f172a" class="w-full h-14 rounded-2xl cursor-pointer">
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Imagem de Banner (Opcional)</label>
+                        <div class="flex flex-col gap-3">
+                            <div class="flex items-center gap-4">
+                                <div class="w-20 h-12 bg-slate-100 rounded-xl overflow-hidden border-2 border-slate-200 flex items-center justify-center flex-shrink-0">
+                                    <img id="banner-preview" src="" class="w-full h-full object-cover hidden" onerror="this.classList.add('hidden'); document.getElementById('banner-icon').classList.remove('hidden')">
+                                    <i id="banner-icon" data-lucide="image" class="text-slate-300 w-5 h-5"></i>
+                                </div>
+                                <div class="flex-1 flex gap-2 min-w-0">
+                                    <input type="text" id="banner-image" oninput="window.updateBannerPreview(this.value); window.saveDraft()" placeholder="Link ou use o botão" class="flex-1 min-w-0 px-4 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold text-sm">
+                                    <button type="button" onclick="document.getElementById('banner-file').click()" class="bg-blue-600 text-white px-4 sm:px-6 rounded-2xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 flex-shrink-0">
+                                        <i data-lucide="camera" class="w-4 h-4"></i>
+                                        <span class="hidden sm:inline">Subir</span>
+                                    </button>
+                                    <input type="file" id="banner-file" class="hidden" accept="image/*" onchange="window.handleFileUpload(this, 'banner-image', 'banner-preview')">
+                                </div>
+                            </div>
+                            <div id="banner-progress" class="hidden w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                <div id="banner-progress-bar" class="bg-orange-500 h-full transition-all" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="space-y-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="font-black uppercase italic tracking-widest text-sm text-orange-600">Itens</h3>
+                        <button type="button" onclick="window.addProduct()" class="bg-orange-100 text-orange-600 px-4 py-2 rounded-xl text-xs font-bold hover:bg-orange-200">Adicionar Item</button>
+                    </div>
+                    <div id="products-list" class="space-y-4"></div>
+                </section>
+
+                <button id="main-action-btn" onclick="window.generateStore()" class="w-full py-6 bg-slate-900 text-white rounded-3xl font-black uppercase italic tracking-widest text-xl hover:bg-slate-800 transition-all flex items-center justify-center gap-3 shadow-xl">
+                    <i data-lucide="smartphone"></i> <span id="btn-text">Gerar Minha Página</span>
+                </button>
+                <div id="activate-plan-container" class="hidden mt-4">
+                    <button onclick="window.open('https://wa.me/5585992862177?text=Olá! Quero ativar o plano profissional do meu catálogo.', '_blank')" class="w-full py-4 bg-green-500 text-white rounded-2xl font-bold uppercase tracking-widest text-sm hover:bg-green-600 transition-all flex items-center justify-center gap-2 shadow-lg">
+                        <i data-lucide="zap"></i> Ativar Plano Profissional
+                    </button>
+                    <p class="text-[10px] text-center text-slate-400 mt-2 font-bold uppercase tracking-widest">Remova o limite de 3 dias e venda sem parar!</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="result-section" class="hidden mt-12 space-y-6">
+            <div id="result-card" class="bg-orange-50 rounded-3xl p-8 border-2 border-orange-200">
+                <h3 class="text-orange-800 font-black italic uppercase tracking-tighter text-2xl mb-6">Página Gerada!</h3>
+                <div class="space-y-6">
+                    <div>
+                        <h4 class="text-orange-800 font-bold mb-2">Link Público:</h4>
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <div id="public-link" class="flex-1 bg-white px-4 py-3 rounded-xl border border-orange-200 text-slate-600 text-sm truncate font-mono"></div>
+                            <button onclick="copyLink('public-link')" class="px-6 py-3 bg-orange-600 text-white rounded-xl font-bold hover:bg-orange-700">Copiar Link</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="py-8 px-6 border-t border-slate-200 mt-10">
+        <div class="max-w-4xl mx-auto text-center">
+            <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Desenvolvido por Bossa Infor</p>
+        </div>
+    </footer>
+
+    <!-- BOTÃO DE SUPORTE FLUTUANTE -->
+    <a href="https://wa.me/5585992862177?text=Olá! Preciso de suporte com o CatálogoZap." target="_blank" class="fixed bottom-6 right-6 w-16 h-16 bg-green-500 text-white rounded-full shadow-2xl z-50 flex items-center justify-center hover:scale-110 active:scale-95 transition-all">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-whatsapp"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-11.7 8.38 8.38 0 0 1 3.8.9L21 3z"/><path d="M17 16c-1.5 1.5-4.5 1.5-6 0-1.5-1.5-1.5-4.5 0-6"/></svg>
+    </a>
+
+    <script>
+        // Tornar funções globais explicitamente para garantir funcionamento em botões
+        window.products = [{ id: Date.now().toString(), name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', description: '' }];
+
+        function proxyImg(url) {
+            if (!url) return '';
+            let u = url.trim();
+            // Se for link do Firebase, não precisa de proxy
+            if (u.includes('firebasestorage.googleapis.com')) return u;
+            
+            if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
+            if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
+            if (!u.startsWith('http')) u = 'https://' + u;
+            return u;
+        }
+
+        window.saveDraft = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const storeId = urlParams.get('edit') || urlParams.get('id');
+
+            const draft = {
+                storeId: storeId,
+                ownerName: document.getElementById('owner-name').value,
+                storeName: document.getElementById('store-name').value,
+                whatsapp: document.getElementById('whatsapp').value,
+                address: document.getElementById('address').value,
+                instagram: document.getElementById('instagram').value,
+                facebook: document.getElementById('facebook').value,
+                niche: document.getElementById('niche').value,
+                primaryColor: document.getElementById('primary-color').value,
+                secondaryColor: document.getElementById('secondary-color').value,
+                bannerImage: document.getElementById('banner-image').value,
+                products: window.products,
+                lastUpdated: Date.now()
+            };
+            localStorage.setItem('catalog_draft', JSON.stringify(draft));
+        }
+
+        window.updateBannerPreview = function(url) {
+            const img = document.getElementById('banner-preview');
+            const icon = document.getElementById('banner-icon');
+            if (url) {
+                img.src = proxyImg(url);
+                img.classList.remove('hidden');
+                if (icon) icon.classList.add('hidden');
+            } else {
+                img.src = '';
+                img.classList.add('hidden');
+                if (icon) icon.classList.remove('hidden');
+            }
+        }
+
+        window.loadDraft = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentStoreId = urlParams.get('edit') || urlParams.get('id');
+
+            const draftStr = localStorage.getItem('catalog_draft');
+            if (!draftStr) return;
+
+            try {
+                const draft = JSON.parse(draftStr);
+                
+                // Se estivermos editando, só carrega o rascunho se ele for para ESTA loja
+                if (currentStoreId && draft.storeId !== currentStoreId) return;
+                // Se NÃO estivermos editando, mas o rascunho for de uma edição anterior, não carrega
+                if (!currentStoreId && draft.storeId) return;
+
+                document.getElementById('owner-name').value = draft.ownerName || '';
+                document.getElementById('store-name').value = draft.storeName || '';
+                document.getElementById('whatsapp').value = draft.whatsapp || '';
+                document.getElementById('address').value = draft.address || '';
+                document.getElementById('instagram').value = draft.instagram || '';
+                document.getElementById('facebook').value = draft.facebook || '';
+                document.getElementById('niche').value = draft.niche || 'loja';
+                document.getElementById('primary-color').value = draft.primaryColor || '#f97316';
+                document.getElementById('secondary-color').value = draft.secondaryColor || '#0f172a';
+                document.getElementById('banner-image').value = draft.bannerImage || '';
+                window.updateBannerPreview(draft.bannerImage);
+                if (draft.products && Array.isArray(draft.products) && draft.products.length > 0) {
+                    window.products = draft.products;
+                }
+            } catch (e) {
+                console.error("Erro ao carregar rascunho:", e);
+            }
+        }
+
+        window.clearDraft = function() {
+            localStorage.removeItem('catalog_draft');
+        }
+
+        window.addProduct = function() {
+            window.products.push({ id: Date.now().toString(), name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', description: '' });
+            window.renderProducts();
+            window.saveDraft();
+        }
+
+        window.removeProduct = function(id) {
+            if (window.products.length > 1) {
+                window.products = window.products.filter(p => p.id !== id);
+                window.renderProducts();
+                window.saveDraft();
+            }
+        }
+
+        window.updateProduct = function(id, field, value) {
+            const p = window.products.find(p => p.id === id);
+            if (p) {
+                p[field] = value;
+                if (field === 'image') {
+                    const img = document.getElementById(`preview-${id}`);
+                    const icon = document.getElementById(`icon-${id}`);
+                    if (img && icon) {
+                        if (value) {
+                            img.src = proxyImg(value);
+                            img.classList.remove('hidden');
+                            icon.classList.add('hidden');
+                        } else {
+                            img.src = '';
+                            img.classList.add('hidden');
+                            icon.classList.remove('hidden');
+                        }
+                    }
+                }
+            }
+            window.saveDraft();
+        }
+
+        window.moveProduct = function(id, direction) {
+            const index = window.products.findIndex(p => p.id === id);
+            if (index === -1) return;
+            
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= window.products.length) return;
+            
+            const temp = window.products[index];
+            window.products[index] = window.products[newIndex];
+            window.products[newIndex] = temp;
+            
+            window.renderProducts();
+            window.saveDraft();
+        }
+
+        window.renderProducts = function() {
+            const list = document.getElementById('products-list');
+            if (!list) return;
+            
+            list.innerHTML = window.products.map((p, index) => `
+                <div class="flex flex-col gap-4 bg-slate-50 p-4 sm:p-6 rounded-3xl border border-slate-100 relative group">
+                    <div class="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button type="button" onclick="window.moveProduct('${p.id}', -1)" class="p-2 text-slate-400 hover:text-slate-600 ${index === 0 ? 'invisible' : ''}" title="Mover para cima">
+                            <i data-lucide="chevron-up" class="w-4 h-4"></i>
+                        </button>
+                        <button type="button" onclick="window.moveProduct('${p.id}', 1)" class="p-2 text-slate-400 hover:text-slate-600 ${index === window.products.length - 1 ? 'invisible' : ''}" title="Mover para baixo">
+                            <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                        </button>
+                        <button type="button" onclick="window.removeProduct('${p.id}')" class="p-2 text-red-400 hover:text-red-600" title="Remover item">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 sm:mt-0">
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Nome do Item</label>
+                            <input type="text" value="${p.name.replace(/"/g, '&quot;')}" oninput="window.updateProduct('${p.id}', 'name', this.value)" placeholder="Ex: Camiseta Branca" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold focus:border-orange-500 outline-none transition-all">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Preço Varejo (R$)</label>
+                            <input type="text" value="${p.price.replace(/"/g, '&quot;')}" oninput="window.updateProduct('${p.id}', 'price', this.value)" placeholder="Ex: 49,90" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold focus:border-orange-500 outline-none transition-all">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold uppercase tracking-widest text-orange-400 ml-1">Preço Atacado (Opcional)</label>
+                            <input type="text" value="${(p.wholesalePrice || '').replace(/"/g, '&quot;')}" oninput="window.updateProduct('${p.id}', 'wholesalePrice', this.value)" placeholder="Ex: 35,00" class="w-full px-4 py-3 rounded-xl border border-orange-100 bg-orange-50/30 font-bold focus:border-orange-500 outline-none transition-all">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold uppercase tracking-widest text-orange-400 ml-1">Qtd Mínima Atacado</label>
+                            <input type="number" value="${p.wholesaleMinQty || ''}" oninput="window.updateProduct('${p.id}', 'wholesaleMinQty', this.value)" placeholder="Ex: 3" class="w-full px-4 py-3 rounded-xl border border-orange-100 bg-orange-50/30 font-bold focus:border-orange-500 outline-none transition-all">
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Descrição</label>
+                        <textarea oninput="window.updateProduct('${p.id}', 'description', this.value)" placeholder="Detalhes do produto, tamanhos, cores..." class="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm h-20 resize-none focus:border-orange-500 outline-none transition-all">${p.description || ''}</textarea>
+                    </div>
+                    
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Imagem do Produto</label>
+                        <div class="flex flex-col gap-2">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-white rounded-xl border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                                    <img id="preview-${p.id}" src="${proxyImg(p.image)}" class="w-full h-full object-cover ${p.image ? '' : 'hidden'}" onerror="this.classList.add('hidden'); document.getElementById('icon-${p.id}').classList.remove('hidden')">
+                                    <i data-lucide="image" class="text-slate-300 w-5 h-5 ${p.image ? 'hidden' : ''}" id="icon-${p.id}"></i>
+                                </div>
+                                <div class="flex-1 flex gap-2 min-w-0">
+                                    <input type="text" value="${p.image.replace(/"/g, '&quot;')}" id="input-${p.id}" oninput="window.updateProduct('${p.id}', 'image', this.value)" placeholder="Link ou use o botão" class="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 text-xs focus:border-orange-500 outline-none transition-all">
+                                    <button type="button" onclick="document.getElementById('file-${p.id}').click()" class="bg-blue-600 text-white px-4 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 flex-shrink-0">
+                                        <i data-lucide="camera" class="w-4 h-4"></i>
+                                    </button>
+                                    <input type="file" id="file-${p.id}" class="hidden" accept="image/*" onchange="window.handleFileUpload(this, 'input-${p.id}', 'preview-${p.id}', '${p.id}')">
+                                </div>
+                            </div>
+                            <div id="progress-${p.id}" class="hidden w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                                <div id="progress-bar-${p.id}" class="bg-orange-500 h-full transition-all" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        window.handleFileUpload = async function(input, inputId, previewId, productId = null) {
+            const file = input.files[0];
+            if (!file) return;
+
+            // 1. Verificar se o sistema de upload carregou
+            if (!window.st || !window.storage) {
+                alert("O sistema de fotos ainda está iniciando. Aguarde 2 segundos e tente novamente.");
+                return;
+            }
+
+            // 2. Validação de tamanho
+            if (file.size > 5 * 1024 * 1024) {
+                alert("A imagem é muito grande! Máximo 5MB.");
+                return;
+            }
+
+            // 3. Mostrar prévia local IMEDIATA para o usuário não achar que travou
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = document.getElementById(previewId);
+                const icon = document.getElementById(productId ? `icon-${productId}` : 'banner-icon');
+                if (img) {
+                    // Remove o onerror temporariamente para evitar que ele esconda a prévia local
+                    const oldOnError = img.onerror;
+                    img.onerror = null;
+                    img.src = e.target.result;
+                    img.classList.remove('hidden');
+                    // Restaura o onerror após um pequeno delay
+                    setTimeout(() => { img.onerror = oldOnError; }, 1000);
+                }
+                if (icon) icon.classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+
+            // 4. Iniciar Upload real
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentStoreId = urlParams.get('edit') || urlParams.get('id');
+            const storeName = document.getElementById('store-name').value || 'temp';
+            const slug = currentStoreId || window.slugify(storeName);
+            const timestamp = Date.now();
+            const path = `stores/${slug}/${productId ? 'products/' + productId + '_' + timestamp : 'banner_' + timestamp}`;
+            
+            const { ref, uploadBytesResumable, getDownloadURL } = window.st;
+            const storageRef = ref(window.storage, path);
+            const uploadTask = uploadBytesResumable(storageRef, file);
+
+            const progressContainer = document.getElementById(productId ? `progress-${productId}` : 'banner-progress');
+            const progressBar = document.getElementById(productId ? `progress-bar-${productId}` : 'banner-progress-bar');
+            
+            if (progressContainer) progressContainer.classList.remove('hidden');
+
+            uploadTask.on('state_changed', 
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    if (progressBar) progressBar.style.width = progress + '%';
+                }, 
+                (error) => {
+                    console.error("Erro no upload:", error);
+                    // Se der erro, avisamos o usuário
+                    if (error.code === 'storage/unauthorized') {
+                        alert("Erro: Sem permissão para salvar. Verifique as regras do seu Firebase Storage.");
+                    } else {
+                        alert("Erro ao subir imagem. Verifique sua internet.");
+                    }
+                    if (progressContainer) progressContainer.classList.add('hidden');
+                }, 
+                async () => {
+                    // Upload concluído com sucesso
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                    const inputEl = document.getElementById(inputId);
+                    if (inputEl) {
+                        inputEl.value = downloadURL;
+                        // Atualiza o dado no rascunho/produto
+                        if (productId) {
+                            window.updateProduct(productId, 'image', downloadURL);
+                        } else {
+                            window.updateBannerPreview(downloadURL);
+                            window.saveDraft();
+                        }
+                    }
+                    if (progressContainer) {
+                        setTimeout(() => progressContainer.classList.add('hidden'), 1000);
+                    }
+                }
+            );
+        }
+
+        window.slugify = function(text) {
+            return text.toString().toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remove acentos
+                .replace(/\s+/g, '-')           // Espaços por -
+                .replace(/[^\w\-]+/g, '')       // Remove caracteres especiais
+                .replace(/\-\-+/g, '-')         // Remove múltiplos -
+                .replace(/^-+/, '')             // Remove - do início
+                .replace(/-+$/, '');            // Remove - do fim
+        }
+
+        window.checkWhatsApp = async function(val) {
+            const whatsappClean = val.replace(/\D/g, '');
+            if (whatsappClean.length < 10) return;
+
+            // Se já estivermos editando uma loja específica via URL, não mudamos o comportamento
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('edit') || urlParams.get('id')) return;
+
+            try {
+                const { doc, getDoc } = window.fs;
+                const historySnap = await getDoc(doc(window.db, "trial_history", whatsappClean));
+                
+                const btn = document.getElementById('main-action-btn');
+                const btnText = document.getElementById('btn-text');
+                const btnIcon = btn.querySelector('i');
+
+                if (historySnap.exists()) {
+                    const historyData = historySnap.data();
+                    window.existingStoreId = historyData.storeId;
+                    
+                    // Muda para modo ATUALIZAR
+                    btn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+                    btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    if (btnText) btnText.innerText = "Atualizar Meu Catálogo";
+                    if (btnIcon) btnIcon.setAttribute('data-lucide', 'refresh-cw');
+                } else {
+                    window.existingStoreId = null;
+                    // Volta para modo GERAR
+                    btn.classList.add('bg-slate-900', 'hover:bg-slate-800');
+                    btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    if (btnText) btnText.innerText = "Gerar Minha Página";
+                    if (btnIcon) btnIcon.setAttribute('data-lucide', 'smartphone');
+                }
+                if (window.lucide) lucide.createIcons();
+            } catch (e) {
+                console.error("Erro ao verificar WhatsApp:", e);
+            }
+        }
+
+        window.generateStore = async function() {
+            // Aguarda o Firebase inicializar
+            let attempts = 0;
+            while (!window.db && attempts < 50) {
+                await new Promise(r => setTimeout(r, 100));
+                attempts++;
+            }
+            if (!window.db) {
+                alert("Erro: O banco de dados não carregou. Recarregue a página.");
+                return;
+            }
+
+            const ownerName = document.getElementById('owner-name').value;
+            const name = document.getElementById('store-name').value;
+            const whatsapp = document.getElementById('whatsapp').value;
+            const bannerImage = document.getElementById('banner-image').value;
+            const address = document.getElementById('address').value;
+            const instagram = document.getElementById('instagram').value;
+            const facebook = document.getElementById('facebook').value;
+
+            if (!name || !whatsapp || !ownerName) {
+                alert("Preencha o seu nome, o nome da loja e o WhatsApp!");
+                return;
+            }
+
+            const btn = document.getElementById('main-action-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="animate-spin" data-lucide="loader-2"></i> Salvando...';
+            btn.disabled = true;
+            if (window.lucide) lucide.createIcons();
+
+            // Objeto ultra-otimizado
+            const data = {
+                cn: ownerName,
+                n: name,
+                w: whatsapp.replace(/\D/g, ''),
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                status: "trial",
+                expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() // 3 dias de teste
+            };
+
+            if (address) data.a = address;
+            if (instagram) data.ig = instagram.replace('@', '');
+            if (facebook) data.fb = facebook;
+            if (bannerImage) data.bi = bannerImage;
+            
+            data.c = document.getElementById('primary-color').value.replace('#', '');
+            data.b = document.getElementById('secondary-color').value.replace('#', '');
+            data.t = document.getElementById('niche').value;
+            
+            const validProducts = window.products.filter(p => p.name);
+            if (validProducts.length > 0) {
+                data.p = validProducts.map(p => {
+                    const item = { id: p.id, n: p.name };
+                    if (p.price) item.p = p.price;
+                    if (p.image) item.i = p.image;
+                    if (p.description) item.d = p.description;
+                    if (p.wholesalePrice) item.wp = p.wholesalePrice;
+                    if (p.wholesaleMinQty) item.wq = parseInt(p.wholesaleMinQty);
+                    return item;
+                });
+            }
+
+            try {
+                const whatsappClean = whatsapp.replace(/\D/g, '');
+                const urlParams = new URLSearchParams(window.location.search);
+                const existingId = urlParams.get('edit') || urlParams.get('id') || window.existingStoreId;
+                const { doc, getDoc, setDoc } = window.fs;
+
+                // Se não estivermos editando explicitamente, mas o número já existe
+                if (!urlParams.get('edit') && !urlParams.get('id') && window.existingStoreId) {
+                    // Opcional: Você pode carregar os dados da loja antiga aqui se quiser, 
+                    // mas por enquanto vamos apenas salvar por cima do ID existente.
+                }
+
+                // TRAVA DE WHATSAPP REFORÇADA: Verifica se o número já possui uma loja
+                const historySnap = await getDoc(doc(window.db, "trial_history", whatsappClean));
+                
+                if (historySnap.exists()) {
+                    const historyData = historySnap.data();
+                    // Se for uma criação nova OU se estiver editando mas o ID for diferente do registrado para esse número
+                    if (!existingId || (existingId !== historyData.storeId)) {
+                        const confirmEdit = confirm(`AVISO: O número ${whatsappClean} já está vinculado à loja "${historyData.storeId}".\n\nVocê deseja editar a loja existente em vez de criar uma nova?`);
+                        if (confirmEdit) {
+                            window.location.href = `criar.html?edit=${historyData.storeId}`;
+                            return;
+                        } else {
+                            alert("Não é permitido criar múltiplas lojas com o mesmo número de WhatsApp.");
+                            btn.innerHTML = originalText;
+                            btn.disabled = false;
+                            if (window.lucide) lucide.createIcons();
+                            return;
+                        }
+                    }
+                }
+
+                let storeId = existingId;
+                if (!storeId) {
+                    let slug = window.slugify(name);
+                    if (!slug) slug = 'loja';
+                    const docSnap = await getDoc(doc(window.db, "stores", slug));
+                    if (docSnap.exists()) {
+                        // Se já existe, adiciona um sufixo aleatório curto
+                        storeId = slug + '-' + Math.random().toString(36).substring(2, 5);
+                    } else {
+                        storeId = slug;
+                    }
+                }
+                
+                // Se estiver editando, mantém o status e expiração originais
+                if (existingId) {
+                    const docSnap = await getDoc(doc(window.db, "stores", existingId));
+                    if (docSnap.exists()) {
+                        const oldData = docSnap.data();
+                        data.status = oldData.status || "trial";
+                        data.expiresAt = oldData.expiresAt || data.expiresAt;
+                        data.createdAt = oldData.createdAt || data.createdAt;
+                    }
+                }
+
+                // Salva no Firebase
+                await setDoc(doc(window.db, "stores", storeId), data);
+
+                // Se for uma criação nova, registra no histórico de testes (Trava Opção 2)
+                if (!existingId) {
+                    await setDoc(doc(window.db, "trial_history", whatsappClean), {
+                        whatsapp: whatsappClean,
+                        storeId: storeId,
+                        createdAt: new Date().toISOString()
+                    });
+                }
+
+                const publicUrl = window.location.origin + window.location.pathname.replace('criar.html', 'loja.html') + '?id=' + storeId;
+
+                // Salva o ID na memória do navegador
+                localStorage.setItem('lastStoreId', storeId);
+                localStorage.setItem('lastStoreName', name);
+                window.clearDraft(); // Limpa o rascunho após criar a loja
+
+                // Tenta atualizar a interface (se falhar aqui, o dado já está salvo)
+                try {
+                    // Transforma o botão em "Atualizar"
+                    const mainBtn = document.getElementById('main-action-btn');
+                    if (mainBtn) {
+                        mainBtn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+                        mainBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    }
+                    
+                    const btnTextEl = document.getElementById('btn-text');
+                    if (btnTextEl) btnTextEl.innerText = "Atualizar Minha Página";
+                    
+                    const activatePlanContainer = document.getElementById('activate-plan-container');
+                    if (activatePlanContainer) activatePlanContainer.classList.remove('hidden');
+                    
+                    const publicLinkEl = document.getElementById('public-link');
+                    if (publicLinkEl) publicLinkEl.innerText = publicUrl;
+                    
+                    const resultSection = document.getElementById('result-section');
+                    const resultCard = document.getElementById('result-card');
+                    
+                    if (resultSection) resultSection.classList.remove('hidden');
+                    
+                    if (resultCard) {
+                        const editBtnId = 'edit-page-btn';
+                        let editBtn = document.getElementById(editBtnId);
+                        
+                        if (!editBtn) {
+                            editBtn = document.createElement('div');
+                            editBtn.id = editBtnId;
+                            editBtn.className = "mt-4 flex flex-col items-center gap-3";
+                            editBtn.innerHTML = `
+                                <a href="loja.html?id=${storeId}" target="_blank" class="text-orange-600 font-bold underline text-sm flex items-center gap-1">
+                                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Visualizar minha página agora
+                                </a>
+                                <button onclick="window.deleteStore('${storeId}')" class="text-red-500 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1 hover:text-red-700 transition-colors">
+                                    <i data-lucide="trash-2" class="w-3 h-3"></i> Excluir esta página permanentemente
+                                </button>
+                                <p class="text-[10px] text-slate-400">Guarde este link para editar sua página futuramente!</p>
+                            `;
+                            resultCard.appendChild(editBtn);
+                        } else {
+                            const link = editBtn.querySelector('a');
+                            if (link) link.href = `loja.html?id=${storeId}`;
+                            const delBtn = editBtn.querySelector('button');
+                            if (delBtn) delBtn.onclick = () => window.deleteStore(storeId);
+                        }
+                    }
+
+                    window.checkLastStore(); // Atualiza o botão do topo
+                } catch (uiError) {
+                    console.error("Erro ao atualizar interface (mas os dados foram salvos):", uiError);
+                }
+            } catch (error) {
+                console.error("Erro ao salvar:", error);
+                alert("Erro ao salvar no banco de dados. Verifique sua conexão e tente novamente. (Erro: " + error.message + ")");
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
+        window.copyLink = function(id) {
+            const text = document.getElementById(id).innerText;
+            navigator.clipboard.writeText(text);
+            alert("Link copiado!");
+        }
+
+        window.openTutorial = function(videoId) {
+            const modal = document.getElementById('video-modal');
+            const iframe = document.getElementById('tutorial-iframe');
+            iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+
+        window.closeTutorial = function() {
+            const modal = document.getElementById('video-modal');
+            const iframe = document.getElementById('tutorial-iframe');
+            iframe.src = '';
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = 'auto';
+        }
+
+        window.checkLastStore = function() {
+            const lastId = localStorage.getItem('lastStoreId');
+            const lastName = localStorage.getItem('lastStoreName');
+            const container = document.getElementById('last-store-container');
+            if (lastId) {
+                container.classList.remove('hidden');
+                container.querySelector('button').title = `Editar: ${lastName}`;
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        window.editLastStore = function() {
+            const lastId = localStorage.getItem('lastStoreId');
+            if (lastId) {
+                const url = new URL(window.location.href);
+                url.searchParams.set('edit', lastId);
+                window.location.href = url.toString();
+            }
+        }
+
+        window.deleteStore = async function(id) {
+            if (!confirm("TEM CERTEZA? Isso vai apagar sua página para sempre e o link deixará de funcionar!")) return;
+            
+            try {
+                const { doc, deleteDoc } = window.fs;
+                await deleteDoc(doc(window.db, "stores", id));
+                
+                // Limpa a memória se for a última loja
+                if (localStorage.getItem('lastStoreId') === id) {
+                    localStorage.removeItem('lastStoreId');
+                    localStorage.removeItem('lastStoreName');
+                }
+                
+                alert("Página excluída com sucesso!");
+                window.location.href = 'criar.html';
+            } catch (error) {
+                console.error("Erro ao excluir:", error);
+                alert("Erro ao excluir. Tente novamente.");
+            }
+        }
+
+        window.loadFromFirebase = async function() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const storeId = urlParams.get('edit') || urlParams.get('id');
+                if (!storeId) return;
+
+                // Aguarda o Firebase inicializar
+                let attempts = 0;
+                while (!window.db && attempts < 50) {
+                    await new Promise(r => setTimeout(r, 100));
+                    attempts++;
+                }
+
+                const { doc, getDoc } = window.fs;
+                const docSnap = await getDoc(doc(window.db, "stores", storeId));
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    
+                    // Verifica se o rascunho local é mais recente que o dado do servidor
+                    const draftStr = localStorage.getItem('catalog_draft');
+                    if (draftStr) {
+                        try {
+                            const draft = JSON.parse(draftStr);
+                            if (draft.storeId === storeId && draft.lastUpdated) {
+                                const serverUpdate = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
+                                if (draft.lastUpdated > serverUpdate) {
+                                    console.log("Usando rascunho local mais recente");
+                                    // O rascunho já foi carregado pelo loadDraft() no onload
+                                    // Então não sobrescrevemos com os dados do Firebase
+                                    return;
+                                }
+                            }
+                        } catch (e) { console.error("Erro ao comparar rascunho:", e); }
+                    }
+
+                    // Tenta atualizar a interface
+                    try {
+                        const mainBtn = document.getElementById('main-action-btn');
+                        if (mainBtn) {
+                            mainBtn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+                            mainBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                        }
+                        
+                        const btnTextEl = document.getElementById('btn-text');
+                        if (btnTextEl) btnTextEl.innerText = "Atualizar Minha Página";
+                        
+                        const activatePlanContainer = document.getElementById('activate-plan-container');
+                        if (activatePlanContainer) activatePlanContainer.classList.remove('hidden');
+                        
+                        if (window.lucide) lucide.createIcons();
+                    } catch (uiError) {
+                        console.error("Erro ao atualizar interface no carregamento:", uiError);
+                    }
+
+                    document.getElementById('owner-name').value = data.cn || '';
+                    document.getElementById('store-name').value = data.n || '';
+                    document.getElementById('whatsapp').value = data.w || '';
+                    document.getElementById('address').value = data.a || '';
+                    document.getElementById('instagram').value = data.ig || '';
+                    document.getElementById('facebook').value = data.fb || '';
+                    document.getElementById('primary-color').value = data.c ? '#' + data.c : '#f97316';
+                    document.getElementById('secondary-color').value = data.b ? '#' + data.b : '#0f172a';
+                    document.getElementById('banner-image').value = data.bi || '';
+                    window.updateBannerPreview(data.bi);
+                    document.getElementById('niche').value = data.t || 'loja';
+                    
+                    if (data.p && data.p.length > 0) {
+                        window.products = data.p.map(p => ({
+                            id: p.id || Math.random().toString(36).substr(2, 9),
+                            name: p.n,
+                            price: p.p,
+                            wholesalePrice: p.wp || '',
+                            wholesaleMinQty: p.wq || '',
+                            image: p.i,
+                            description: p.d || ''
+                        }));
+                    }
+                    window.renderProducts();
+                }
+            } catch (e) { console.error("Erro ao carregar dados:", e); }
+        }
+
+        window.onload = () => {
+            window.loadDraft();
+            window.checkLastStore();
+            window.loadFromFirebase();
+            window.renderProducts();
+        };
+    </script>
+</body>
+</html>

@@ -65,8 +65,11 @@
         function proxyImg(url) {
             if (!url) return '';
             let u = url.trim();
+            
+            // Se for base64 ou link do Firebase, retorna direto
+            if (u.startsWith('data:') || u.includes('firebasestorage.googleapis.com')) return u;
 
-            // Se for link de visualizador, tenta corrigir (mas o ideal é o link direto)
+            // Se for link de visualizador, tenta corrigir
             if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) {
                 u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
             }
@@ -74,9 +77,8 @@
                 u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
             }
 
-            if (!u.startsWith('http')) u = 'https://' + u;
+            if (!u.startsWith('http') && !u.startsWith('//')) u = 'https://' + u;
             
-            // Retorna o link direto sem atravessadores
             return u;
         }
 
@@ -276,10 +278,17 @@
             const btnAction = isService ? 'requestQuote' : 'addToCart';
             const btnIcon = isService ? 'message-circle' : 'shopping-cart';
 
-            const productsHTML = storeData.products.map(p => `
+            const productsHTML = storeData.products.map(p => {
+                const imgUrl = proxyImg(p.image);
+                const hasImage = imgUrl && imgUrl.length > 10; // Evita strings vazias ou muito curtas
+                
+                return `
                 <div class="bg-white rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex flex-col">
                     <div class="relative overflow-hidden bg-slate-50 w-full" style="aspect-ratio: 9/16 !important;">
-                        <img src="${proxyImg(p.image)}" class="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-500" referrerpolicy="no-referrer" onerror="this.src='https://picsum.photos/seed/'+Math.random()+'/400/700'">
+                        <img src="${hasImage ? imgUrl : 'https://picsum.photos/seed/' + p.id + '/400/700'}" 
+                             class="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-500" 
+                             referrerpolicy="no-referrer" 
+                             onerror="this.src='https://picsum.photos/seed/'+Math.random()+'/400/700'">
                     </div>
                     <div class="p-3 sm:p-5 flex flex-col flex-1">
                         <h3 class="font-bold text-sm sm:text-lg mb-1 line-clamp-2 leading-tight h-10 sm:h-auto">${p.name}</h3>
@@ -293,7 +302,7 @@
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `;}).join('');
 
             app.innerHTML = `
                 <div class="min-h-screen bg-white flex flex-col">

@@ -108,6 +108,8 @@
                         id: Math.random().toString(36).substr(2, 9),
                         name: p.n,
                         price: p.p,
+                        wholesalePrice: p.wp || '',
+                        wholesaleMinQty: p.wq || '',
                         image: p.i,
                         description: p.d || ''
                     }))
@@ -163,26 +165,39 @@
                 itemsContainer.innerHTML = '<p class="text-center text-slate-400">Carrinho vazio</p>';
                 footerContainer.innerHTML = '';
             } else {
-                itemsContainer.innerHTML = cart.map(item => `
-                    <div class="flex gap-4 items-start">
-                        <img src="${proxyImg(item.image)}" class="w-16 h-16 rounded-lg object-cover" referrerpolicy="no-referrer">
-                        <div class="flex-1">
-                            <h4 class="font-bold text-sm">${item.name}</h4>
-                            <p class="text-xs font-bold" style="color: ${storeData.primaryColor}">${formatCurrency(item.price)}</p>
-                            <div class="flex items-center gap-2 mt-2">
-                                <button onclick="updateQuantity('${item.id}', -1)" class="w-6 h-6 bg-slate-100 rounded">-</button>
-                                <span class="text-xs font-bold">${item.quantity}</span>
-                                <button onclick="updateQuantity('${item.id}', 1)" class="w-6 h-6 bg-slate-100 rounded">+</button>
-                            </div>
-                        </div>
-                        <button onclick="removeFromCart('${item.id}')" class="text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-                    </div>
-                `).join('');
+                let total = 0;
+                itemsContainer.innerHTML = cart.map(item => {
+                    const isWholesale = item.wholesaleMinQty && item.quantity >= item.wholesaleMinQty;
+                    const priceToUse = isWholesale ? item.wholesalePrice : item.price;
+                    const subtotal = parseFloat(priceToUse.replace(',', '.')) * item.quantity;
+                    total += subtotal;
 
-                const total = cart.reduce((acc, item) => acc + (parseFloat(item.price.replace(',', '.')) * item.quantity), 0);
+                    return `
+                        <div class="flex gap-4 items-start bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                            <img src="${proxyImg(item.image)}" class="w-16 h-16 rounded-lg object-cover" referrerpolicy="no-referrer">
+                            <div class="flex-1">
+                                <h4 class="font-bold text-sm">${item.name}</h4>
+                                <div class="flex items-center gap-2">
+                                    <p class="text-xs font-bold" style="color: ${isWholesale ? '#f97316' : storeData.primaryColor}">${formatCurrency(priceToUse)}</p>
+                                    ${isWholesale ? '<span class="text-[8px] bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded font-black uppercase">Atacado</span>' : ''}
+                                </div>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <button onclick="updateQuantity('${item.id}', -1)" class="w-6 h-6 bg-white border border-slate-200 rounded flex items-center justify-center">-</button>
+                                    <span class="text-xs font-bold">${item.quantity}</span>
+                                    <button onclick="updateQuantity('${item.id}', 1)" class="w-6 h-6 bg-white border border-slate-200 rounded flex items-center justify-center">+</button>
+                                </div>
+                            </div>
+                            <button onclick="removeFromCart('${item.id}')" class="text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                        </div>
+                    `;
+                }).join('');
+
                 footerContainer.innerHTML = `
-                    <div class="flex justify-between font-bold"><span>Total</span><span>${formatCurrency(total)}</span></div>
-                    <button onclick="checkout()" class="w-full py-4 text-white font-bold rounded-xl shadow-lg" style="background-color: ${storeData.primaryColor}">Finalizar no WhatsApp</button>
+                    <div class="flex justify-between font-bold mb-4">
+                        <span class="text-slate-400 uppercase text-[10px] tracking-widest">Total</span>
+                        <span class="text-xl font-black tracking-tighter">${formatCurrency(total)}</span>
+                    </div>
+                    <button onclick="checkout()" class="w-full py-4 text-white font-black uppercase italic tracking-widest text-sm rounded-2xl shadow-lg transition-all active:scale-95" style="background-color: ${storeData.primaryColor}">Finalizar no WhatsApp</button>
                 `;
             }
             lucide.createIcons();
@@ -190,8 +205,14 @@
 
         function checkout() {
             let message = `*Novo Pedido - ${storeData.name}*\n\n`;
-            cart.forEach(item => message += `- ${item.quantity}x ${item.name} (${formatCurrency(item.price)})\n`);
-            const total = cart.reduce((acc, item) => acc + (parseFloat(item.price.replace(',', '.')) * item.quantity), 0);
+            let total = 0;
+            cart.forEach(item => {
+                const isWholesale = item.wholesaleMinQty && item.quantity >= item.wholesaleMinQty;
+                const priceToUse = isWholesale ? item.wholesalePrice : item.price;
+                const subtotal = parseFloat(priceToUse.replace(',', '.')) * item.quantity;
+                total += subtotal;
+                message += `- ${item.quantity}x ${item.name} (${formatCurrency(priceToUse)})${isWholesale ? ' *[ATACADO]*' : ''}\n`;
+            });
             message += `\n*Total: ${formatCurrency(total)}*`;
             window.open(`https://wa.me/55${storeData.whatsapp}?text=${encodeURIComponent(message)}`, '_blank');
         }

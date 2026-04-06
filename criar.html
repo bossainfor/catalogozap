@@ -174,6 +174,7 @@
                                         <i data-lucide="camera" class="w-4 h-4"></i>
                                         <span class="hidden sm:inline">Subir</span>
                                     </button>
+                                    <p class="absolute -bottom-6 left-0 text-[8px] text-slate-400 font-bold uppercase">Clique em "Permitir" se o celular pedir</p>
                                     <input type="file" id="banner-file" class="hidden" accept="image/*" onchange="window.handleFileUpload(this, 'banner-image', 'banner-preview')">
                                 </div>
                             </div>
@@ -236,11 +237,12 @@
         window.products = [{ id: Date.now().toString(), name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', description: '' }];
 
         function proxyImg(url) {
-            if (!url) return '';
+            if (!url || url === 'undefined' || url === 'null') return '';
             let u = String(url).trim();
+            if (u === '' || u === 'undefined' || u === 'null') return '';
             
-            // Se for base64 ou link do Firebase, retorna direto
-            if (u.startsWith('data:') || u.toLowerCase().includes('firebasestorage')) return u;
+            // Se for base64, retorna direto
+            if (u.startsWith('data:')) return u;
 
             // Se for link de visualizador do ImgBB
             if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) {
@@ -251,8 +253,8 @@
                 u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
             }
 
-            // Só adiciona https:// se não tiver protocolo e não for base64
-            if (!u.startsWith('http') && !u.startsWith('//') && !u.startsWith('data:')) {
+            // Só adiciona https:// se não tiver protocolo
+            if (!u.startsWith('http') && !u.startsWith('//')) {
                 u = 'https://' + u;
             }
             
@@ -470,13 +472,9 @@
                 const img = document.getElementById(previewId);
                 const icon = document.getElementById(productId ? `icon-${productId}` : 'banner-icon');
                 if (img) {
-                    // Remove o onerror temporariamente para evitar que ele esconda a prévia local
-                    const oldOnError = img.onerror;
-                    img.onerror = null;
+                    img.onerror = null; // Desativa o onerror para a prévia local
                     img.src = e.target.result;
                     img.classList.remove('hidden');
-                    // Restaura o onerror após um pequeno delay
-                    setTimeout(() => { img.onerror = oldOnError; }, 1000);
                 }
                 if (icon) icon.classList.add('hidden');
             };
@@ -521,6 +519,7 @@
                         if (productId) {
                             window.updateProduct(productId, 'image', downloadURL);
                         } else {
+                            window.updateBannerPreview(downloadURL);
                             window.saveDraft();
                         }
                     }

@@ -74,9 +74,13 @@
                 u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
             }
             // Se for link de visualizador do Postimages
-            if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) {
-                // Tenta converter link de página em link direto (chute comum)
-                u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
+            if ((u.includes('postimg.cc/') || u.includes('postimages.org/')) && !u.includes('i.postimg.cc/')) {
+                // Tenta converter link de página em link direto
+                const parts = u.split('/');
+                const id = parts[parts.length - 1].split('?')[0];
+                if (id && id.length > 3) {
+                    u = `https://i.postimg.cc/${id}/image.png`;
+                }
             }
 
             // Só adiciona https:// se não tiver protocolo e não for base64

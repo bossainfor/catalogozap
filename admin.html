@@ -205,8 +205,17 @@
                 empty.classList.add('hidden');
             }
 
+            // Conta ocorrências de cada número para detectar duplicatas
+            const whatsappCounts = {};
+            stores.forEach(s => {
+                const w = s.w ? s.w.replace(/\D/g, '') : '';
+                if (w) whatsappCounts[w] = (whatsappCounts[w] || 0) + 1;
+            });
+
             stores.forEach((data) => {
                 const id = data.id;
+                const whatsappClean = data.w ? data.w.replace(/\D/g, '') : '';
+                const isDuplicate = whatsappCounts[whatsappClean] > 1;
                 const expiresAt = new Date(data.expiresAt || data.createdAt);
                 const isExpired = new Date() > expiresAt;
                 
@@ -238,6 +247,7 @@
                         <a href="https://wa.me/55${data.w}" target="_blank" class="text-xs font-bold text-slate-600 hover:text-green-500 flex items-center gap-1">
                             <i data-lucide="phone" size="12"></i> ${data.w || '-'}
                         </a>
+                        ${isDuplicate ? '<div class="text-[8px] text-orange-500 font-black uppercase mt-1 flex items-center gap-1"><i data-lucide="alert-triangle" class="w-2 h-2"></i> Número Repetido</div>' : ''}
                     </td>
                     <td class="px-6 py-4 text-center">
                         ${statusBadge}
@@ -286,6 +296,7 @@
                             <a href="https://wa.me/55${data.w}" target="_blank" class="font-bold text-slate-600 flex items-center gap-1">
                                 <i data-lucide="phone" size="10"></i> ${data.w || '-'}
                             </a>
+                            ${isDuplicate ? '<div class="text-[8px] text-orange-500 font-black uppercase mt-1 flex items-center gap-1"><i data-lucide="alert-triangle" class="w-2 h-2"></i> Número Repetido</div>' : ''}
                         </div>
                         <div>
                             <div class="text-slate-400 uppercase font-bold text-[9px] tracking-widest mb-1">Expira em</div>

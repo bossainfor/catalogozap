@@ -661,10 +661,10 @@
             data.b = document.getElementById('secondary-color').value.replace('#', '');
             data.t = document.getElementById('niche').value;
             
-            const validProducts = window.products.filter(p => p.name);
+            const validProducts = window.products.filter(p => p.name || p.image);
             if (validProducts.length > 0) {
                 data.p = validProducts.map(p => {
-                    const item = { id: p.id, n: p.name };
+                    const item = { id: p.id || Date.now().toString(), n: p.name || 'Produto sem nome' };
                     if (p.price) item.p = p.price;
                     if (p.image) item.i = p.image;
                     if (p.description) item.d = p.description;

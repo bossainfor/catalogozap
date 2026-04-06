@@ -241,10 +241,18 @@
             
             // Se for base64 ou link do Firebase, retorna direto
             if (u.startsWith('data:') || u.includes('firebasestorage.googleapis.com')) return u;
-            
-            if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
-            if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
+
+            // Se for link de visualizador do ImgBB
+            if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) {
+                u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
+            }
+            // Se for link de visualizador do Postimages
+            if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) {
+                u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
+            }
+
             if (!u.startsWith('http') && !u.startsWith('//')) u = 'https://' + u;
+            
             return u;
         }
 

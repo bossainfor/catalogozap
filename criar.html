@@ -162,7 +162,7 @@
                         <div class="flex flex-col gap-3">
                             <div class="flex items-center gap-4">
                                 <div class="w-20 h-12 bg-slate-100 rounded-xl overflow-hidden border-2 border-slate-200 flex items-center justify-center flex-shrink-0">
-                                    <img id="banner-preview" src="" class="w-full h-full object-cover hidden" onerror="this.classList.add('hidden'); document.getElementById('banner-icon').classList.remove('hidden')">
+                                    <img id="banner-preview" src="" class="w-full h-full object-cover hidden" referrerpolicy="no-referrer" onerror="this.classList.add('hidden'); document.getElementById('banner-icon').classList.remove('hidden')">
                                     <i id="banner-icon" data-lucide="image" class="text-slate-300 w-5 h-5"></i>
                                 </div>
                                 <div class="flex-1 flex gap-2 min-w-0">
@@ -241,9 +241,13 @@
                 u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
             }
             // Se for link de visualizador do Postimages
-            if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) {
-                // Tenta converter link de página em link direto (chute comum)
-                u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
+            if ((u.includes('postimg.cc/') || u.includes('postimages.org/')) && !u.includes('i.postimg.cc/')) {
+                // Tenta converter link de página em link direto
+                const parts = u.split('/');
+                const id = parts[parts.length - 1].split('?')[0];
+                if (id && id.length > 3) {
+                    u = `https://i.postimg.cc/${id}/image.png`;
+                }
             }
 
             // Só adiciona https:// se não tiver protocolo e não for base64
@@ -418,12 +422,12 @@
                     </div>
                     
                     <div class="space-y-1">
-                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Imagem do Produto (Formato Reels 9:16)</label>
+                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Imagem do Produto</label>
                         <div class="flex flex-col gap-2">
-                            <div class="flex items-start gap-3">
-                                <div class="w-24 aspect-[9/16] bg-white rounded-xl border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center relative shadow-inner">
-                                    <img id="preview-${p.id}" src="${proxyImg(p.image)}" class="w-full h-full object-cover ${p.image ? '' : 'hidden'}" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden')">
-                                    <i data-lucide="image" class="text-slate-300 w-8 h-8 ${p.image ? 'hidden' : ''}" id="icon-${p.id}"></i>
+                            <div class="flex items-center gap-3">
+                                <div class="w-16 h-16 bg-white rounded-xl border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center relative shadow-sm">
+                                    <img id="preview-${p.id}" src="${proxyImg(p.image)}" class="w-full h-full object-cover ${p.image ? '' : 'hidden'}" referrerpolicy="no-referrer" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden')">
+                                    <i data-lucide="image" class="text-slate-300 w-6 h-6 ${p.image ? 'hidden' : ''}" id="icon-${p.id}"></i>
                                 </div>
                                 <div class="flex-1 flex flex-col gap-2 min-w-0">
                                     <div class="flex gap-2">
@@ -432,7 +436,7 @@
                                             <i data-lucide="camera" class="w-4 h-4"></i>
                                         </button>
                                     </div>
-                                    <p class="text-[9px] text-slate-400 font-medium leading-tight">Dica: No Postimages, use o <span class="text-blue-600 font-bold">"Link Direto"</span> para que a foto apareça corretamente.</p>
+                                    <p class="text-[9px] text-slate-400 font-medium leading-tight">Clique na câmera para subir a foto e cole o <span class="text-blue-600 font-bold">"Link Direto"</span> aqui.</p>
                                 </div>
                             </div>
                         </div>

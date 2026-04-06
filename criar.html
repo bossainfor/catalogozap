@@ -470,15 +470,26 @@
                 const existingId = urlParams.get('edit') || urlParams.get('id');
                 const { doc, getDoc, setDoc } = window.fs;
 
-                // TRAVA DE WHATSAPP (OPÇÃO 2): Verifica se o número já usou o teste
-                if (!existingId) {
-                    const historySnap = await getDoc(doc(window.db, "trial_history", whatsappClean));
-                    if (historySnap.exists()) {
-                        alert("AVISO: Este número de WhatsApp já utilizou o período de teste gratuito. Para reativar seu catálogo ou criar um novo, entre em contato com o suporte.");
-                        btn.innerHTML = originalText;
-                        btn.disabled = false;
-                        if (window.lucide) lucide.createIcons();
-                        return;
+                // TRAVA DE WHATSAPP REFORÇADA: Verifica se o número já possui uma loja
+                const whatsappClean = whatsapp.replace(/\D/g, '');
+                const { doc, getDoc, setDoc } = window.fs;
+                const historySnap = await getDoc(doc(window.db, "trial_history", whatsappClean));
+                
+                if (historySnap.exists()) {
+                    const historyData = historySnap.data();
+                    // Se for uma criação nova OU se estiver editando mas o ID for diferente do registrado para esse número
+                    if (!existingId || (existingId !== historyData.storeId)) {
+                        const confirmEdit = confirm(`AVISO: O número ${whatsappClean} já está vinculado à loja "${historyData.storeId}".\n\nVocê deseja editar a loja existente em vez de criar uma nova?`);
+                        if (confirmEdit) {
+                            window.location.href = `criar.html?edit=${historyData.storeId}`;
+                            return;
+                        } else {
+                            alert("Não é permitido criar múltiplas lojas com o mesmo número de WhatsApp.");
+                            btn.innerHTML = originalText;
+                            btn.disabled = false;
+                            if (window.lucide) lucide.createIcons();
+                            return;
+                        }
                     }
                 }
 

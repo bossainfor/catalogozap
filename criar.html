@@ -145,6 +145,7 @@
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Nicho</label>
                             <select id="niche" onchange="window.saveDraft()" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
                                 <option value="loja">Loja</option>
+                                <option value="vendas">Vendas</option>
                                 <option value="cardapio">Cardápio</option>
                                 <option value="servicos">Serviços</option>
                                 <option value="portfolio">Portfólio</option>
@@ -237,12 +238,13 @@
         function proxyImg(url) {
             if (!url) return '';
             let u = url.trim();
-            // Se for link do Firebase, não precisa de proxy
-            if (u.includes('firebasestorage.googleapis.com')) return u;
+            
+            // Se for base64 ou link do Firebase, retorna direto
+            if (u.startsWith('data:') || u.includes('firebasestorage.googleapis.com')) return u;
             
             if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
             if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
-            if (!u.startsWith('http')) u = 'https://' + u;
+            if (!u.startsWith('http') && !u.startsWith('//')) u = 'https://' + u;
             return u;
         }
 

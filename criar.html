@@ -239,7 +239,7 @@
         function proxyImg(url) {
             if (!url || url === 'undefined' || url === 'null') return '';
             let u = String(url).trim();
-            if (u === '' || u === 'undefined' || u === 'null') return '';
+            if (u === '' || u === 'undefined' || u === 'null' || u.length < 5) return '';
             
             // Se for base64, retorna direto
             if (u.startsWith('data:')) return u;
@@ -253,8 +253,8 @@
                 u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
             }
 
-            // Só adiciona https:// se não tiver protocolo
-            if (!u.startsWith('http') && !u.startsWith('//')) {
+            // Só adiciona https:// se não tiver protocolo e não for base64
+            if (!u.startsWith('http') && !u.startsWith('//') && !u.startsWith('data:')) {
                 u = 'https://' + u;
             }
             
@@ -488,6 +488,11 @@
             const { ref, uploadBytesResumable, getDownloadURL } = window.st;
             const storageRef = ref(window.storage, path);
             const uploadTask = uploadBytesResumable(storageRef, file);
+            
+            // Desativa botão de salvar durante upload
+            window.isUploading = true;
+            const saveBtn = document.querySelector('button[onclick="window.generateStore()"]');
+            if (saveBtn) saveBtn.disabled = true;
 
             const progressContainer = document.getElementById(productId ? `progress-${productId}` : 'banner-progress');
             const progressBar = document.getElementById(productId ? `progress-bar-${productId}` : 'banner-progress-bar');
@@ -507,11 +512,19 @@
                     } else {
                         alert("Erro ao subir imagem. Verifique sua internet.");
                     }
+                    window.isUploading = false;
+                    const saveBtn = document.querySelector('button[onclick="window.generateStore()"]');
+                    if (saveBtn) saveBtn.disabled = false;
+                    
                     if (progressContainer) progressContainer.classList.add('hidden');
                 }, 
                 async () => {
                     // Upload concluído com sucesso
                     const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                    window.isUploading = false;
+                    const saveBtn = document.querySelector('button[onclick="window.generateStore()"]');
+                    if (saveBtn) saveBtn.disabled = false;
+
                     const inputEl = document.getElementById(inputId);
                     if (inputEl) {
                         inputEl.value = downloadURL;

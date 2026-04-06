@@ -457,8 +457,13 @@
                 const img = document.getElementById(previewId);
                 const icon = document.getElementById(productId ? `icon-${productId}` : 'banner-icon');
                 if (img) {
+                    // Remove o onerror temporariamente para evitar que ele esconda a prévia local
+                    const oldOnError = img.onerror;
+                    img.onerror = null;
                     img.src = e.target.result;
                     img.classList.remove('hidden');
+                    // Restaura o onerror após um pequeno delay
+                    setTimeout(() => { img.onerror = oldOnError; }, 1000);
                 }
                 if (icon) icon.classList.add('hidden');
             };

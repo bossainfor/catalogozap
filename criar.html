@@ -66,9 +66,6 @@
                         <i data-lucide="history" class="w-3 h-3"></i> <span class="hidden xs:inline">Última</span>
                     </button>
                 </div>
-                <button onclick="window.open('https://postimages.org/', '_blank')" class="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-xl text-[9px] sm:text-[10px] font-bold hover:bg-blue-700 flex items-center gap-1">
-                    <i data-lucide="upload-cloud" class="w-3 h-3"></i> Postimages
-                </button>
             </div>
         </div>
     </header>
@@ -175,15 +172,11 @@
                                 </div>
                                 <div class="flex-1 flex gap-2 min-w-0">
                                     <input type="text" id="banner-image" oninput="window.updateBannerPreview(this.value); window.saveDraft()" placeholder="Link ou use o botão" class="flex-1 min-w-0 px-4 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold text-sm">
-                                    <button type="button" onclick="document.getElementById('banner-file').click()" class="bg-blue-600 text-white px-4 sm:px-6 rounded-2xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 flex-shrink-0">
+                                    <button type="button" onclick="window.open('https://postimages.org/', '_blank')" class="bg-blue-600 text-white px-4 sm:px-6 rounded-2xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 flex-shrink-0">
                                         <i data-lucide="camera" class="w-4 h-4"></i>
                                         <span class="hidden sm:inline">Subir</span>
                                     </button>
-                                    <input type="file" id="banner-file" class="hidden" accept="image/*" onchange="window.handleFileUpload(this, 'banner-image', 'banner-preview')">
                                 </div>
-                            </div>
-                            <div id="banner-progress" class="hidden w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                                <div id="banner-progress-bar" class="bg-orange-500 h-full transition-all" style="width: 0%"></div>
                             </div>
                         </div>
                     </div>
@@ -239,7 +232,6 @@
     <script>
         // Tornar funções globais explicitamente para garantir funcionamento em botões
         window.products = [{ id: Date.now().toString(), name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', description: '' }];
-        window.activeUploads = 0;
 
         function proxyImg(url) {
             if (!url) return '';
@@ -437,130 +429,16 @@
                                 </div>
                                 <div class="flex-1 flex gap-2 min-w-0">
                                     <input type="text" value="${p.image.replace(/"/g, '&quot;')}" id="input-${p.id}" oninput="window.updateProduct('${p.id}', 'image', this.value)" placeholder="Link ou use o botão" class="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 text-xs focus:border-orange-500 outline-none transition-all">
-                                    <button type="button" onclick="document.getElementById('file-${p.id}').click()" class="bg-blue-600 text-white px-4 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 flex-shrink-0">
+                                    <button type="button" onclick="window.open('https://postimages.org/', '_blank')" class="bg-blue-600 text-white px-4 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 flex-shrink-0">
                                         <i data-lucide="camera" class="w-4 h-4"></i>
                                     </button>
-                                    <input type="file" id="file-${p.id}" class="hidden" accept="image/*" onchange="window.handleFileUpload(this, 'input-${p.id}', 'preview-${p.id}', '${p.id}')">
                                 </div>
-                            </div>
-                            <div id="progress-${p.id}" class="hidden w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
-                                <div id="progress-bar-${p.id}" class="bg-orange-500 h-full transition-all" style="width: 0%"></div>
                             </div>
                         </div>
                     </div>
                 </div>
             `).join('');
             if (window.lucide) lucide.createIcons();
-        }
-
-        window.handleFileUpload = async function(input, inputId, previewId, productId = null) {
-            const file = input.files[0];
-            if (!file) return;
-
-            console.log(`Iniciando upload para ${productId || 'banner'}...`);
-            window.activeUploads++;
-            updateMainButtonState();
-
-            // 1. Verificar se o sistema de upload carregou
-            if (!window.st || !window.storage) {
-                alert("O sistema de fotos ainda está iniciando. Aguarde 2 segundos e tente novamente.");
-                return;
-            }
-
-            // 2. Validação de tamanho
-            if (file.size > 5 * 1024 * 1024) {
-                alert("A imagem é muito grande! Máximo 5MB.");
-                return;
-            }
-
-            // 3. Mostrar prévia local IMEDIATA
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = document.getElementById(previewId);
-                const icon = document.getElementById(productId ? `icon-${productId}` : 'banner-icon');
-                if (img) {
-                    img.src = e.target.result;
-                    img.classList.remove('hidden');
-                }
-                if (icon) icon.classList.add('hidden');
-            };
-            reader.readAsDataURL(file);
-
-            // 4. Iniciar Upload real
-            const urlParams = new URLSearchParams(window.location.search);
-            const currentStoreId = urlParams.get('edit') || urlParams.get('id');
-            const storeName = document.getElementById('store-name').value || 'temp';
-            const slug = currentStoreId || window.slugify(storeName);
-            const timestamp = Date.now();
-            const path = `stores/${slug}/${productId ? 'products/' + productId + '_' + timestamp : 'banner_' + timestamp}`;
-            
-            const { ref, uploadBytesResumable, getDownloadURL } = window.st;
-            const storageRef = ref(window.storage, path);
-            const uploadTask = uploadBytesResumable(storageRef, file);
-
-            const progressContainer = document.getElementById(productId ? `progress-${productId}` : 'banner-progress');
-            const progressBar = document.getElementById(productId ? `progress-bar-${productId}` : 'banner-progress-bar');
-            
-            if (progressContainer) progressContainer.classList.remove('hidden');
-
-            uploadTask.on('state_changed', 
-                (snapshot) => {
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    if (progressBar) progressBar.style.width = progress + '%';
-                }, 
-                (error) => {
-                    console.error("Erro no upload:", error);
-                    alert("Erro ao subir imagem: " + error.message);
-                    window.activeUploads--;
-                    updateMainButtonState();
-                    if (progressContainer) progressContainer.classList.add('hidden');
-                }, 
-                async () => {
-                    try {
-                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                        console.log("Upload concluído! URL:", downloadURL);
-                        
-                        const inputEl = document.getElementById(inputId);
-                        if (inputEl) inputEl.value = downloadURL;
-
-                        if (productId) {
-                            window.updateProduct(productId, 'image', downloadURL);
-                        } else {
-                            document.getElementById('banner-image').value = downloadURL;
-                            window.updateBannerPreview(downloadURL);
-                            window.saveDraft();
-                        }
-                    } catch (e) {
-                        console.error("Erro ao obter URL de download:", e);
-                        alert("Erro ao finalizar upload.");
-                    } finally {
-                        window.activeUploads--;
-                        updateMainButtonState();
-                        if (progressContainer) {
-                            setTimeout(() => progressContainer.classList.add('hidden'), 1000);
-                        }
-                    }
-                }
-            );
-        }
-
-        function updateMainButtonState() {
-            const btn = document.getElementById('main-action-btn');
-            const btnText = document.getElementById('btn-text');
-            if (!btn) return;
-
-            if (window.activeUploads > 0) {
-                btn.disabled = true;
-                btn.classList.add('opacity-50', 'cursor-not-allowed');
-                if (btnText) btnText.innerText = "Aguarde o upload das fotos...";
-            } else {
-                btn.disabled = false;
-                btn.classList.remove('opacity-50', 'cursor-not-allowed');
-                // Restaura o texto baseado no estado (Gerar ou Atualizar)
-                const urlParams = new URLSearchParams(window.location.search);
-                const isEditing = urlParams.get('edit') || urlParams.get('id') || window.existingStoreId;
-                if (btnText) btnText.innerText = isEditing ? "Atualizar Meu Catálogo" : "Gerar Minha Página";
-            }
         }
 
         window.slugify = function(text) {
@@ -613,18 +491,6 @@
         }
 
         window.generateStore = async function() {
-            if (window.activeUploads > 0) {
-                alert("Aguarde o fim do upload das imagens antes de salvar!");
-                return;
-            }
-
-            const btn = document.getElementById('main-action-btn');
-            const btnText = document.getElementById('btn-text');
-            const originalText = btnText ? btnText.innerText : '';
-            
-            if (btn) btn.disabled = true;
-            if (btnText) btnText.innerText = "Salvando Catálogo...";
-
             // Aguarda o Firebase inicializar
             let attempts = 0;
             while (!window.db && attempts < 50) {
@@ -821,8 +687,8 @@
                 console.error("Erro ao salvar:", error);
                 alert("Erro ao salvar no banco de dados. Verifique sua conexão e tente novamente. (Erro: " + error.message + ")");
             } finally {
-                if (btn) btn.disabled = false;
-                if (btnText) btnText.innerText = originalText;
+                btn.innerHTML = originalText;
+                btn.disabled = false;
                 if (window.lucide) lucide.createIcons();
             }
         }

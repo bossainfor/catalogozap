@@ -64,10 +64,10 @@
         // Proxy de Imagem (Simplificado e Direto)
         function proxyImg(url) {
             if (!url) return '';
-            let u = url.trim();
+            let u = String(url).trim();
             
             // Se for base64 ou link do Firebase, retorna direto
-            if (u.startsWith('data:') || u.includes('firebasestorage.googleapis.com')) return u;
+            if (u.startsWith('data:') || u.toLowerCase().includes('firebasestorage')) return u;
 
             // Se for link de visualizador do ImgBB
             if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) {
@@ -78,7 +78,10 @@
                 u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
             }
 
-            if (!u.startsWith('http') && !u.startsWith('//')) u = 'https://' + u;
+            // Só adiciona https:// se não tiver protocolo e não for base64
+            if (!u.startsWith('http') && !u.startsWith('//') && !u.startsWith('data:')) {
+                u = 'https://' + u;
+            }
             
             return u;
         }
@@ -281,14 +284,19 @@
 
             const productsHTML = storeData.products.map(p => {
                 const imgUrl = proxyImg(p.image);
+                const hasImage = imgUrl && imgUrl.length > 10;
                 
                 return `
                 <div class="bg-white rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex flex-col">
                     <div class="relative overflow-hidden bg-slate-50 w-full" style="aspect-ratio: 9/16 !important;">
-                        <img src="${imgUrl || 'https://picsum.photos/seed/' + p.id + '/400/700'}" 
-                             class="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-500" 
-                             referrerpolicy="no-referrer" 
-                             onerror="if(!this.dataset.tried){this.dataset.tried=true; this.src='https://picsum.photos/seed/'+Math.random()+'/400/700';}">
+                        ${hasImage ? `
+                            <img src="${imgUrl}" 
+                                 class="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-500" 
+                                 onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
+                        ` : ''}
+                        <div class="absolute inset-0 flex items-center justify-center text-slate-200 ${hasImage ? 'hidden' : ''}">
+                            <i data-lucide="image" class="w-12 h-12"></i>
+                        </div>
                     </div>
                     <div class="p-3 sm:p-5 flex flex-col flex-1">
                         <h3 class="font-bold text-sm sm:text-lg mb-1 line-clamp-2 leading-tight h-10 sm:h-auto">${p.name}</h3>

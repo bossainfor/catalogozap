@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="referrer" content="no-referrer">
     <title>Carregando Catálogo...</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -65,7 +64,7 @@
         function proxyImg(url) {
             if (!url || url === 'undefined' || url === 'null') return '';
             let u = String(url).trim();
-            if (u === '' || u === 'undefined' || u === 'null') return '';
+            if (u === '' || u === 'undefined' || u === 'null' || u.length < 5) return '';
             
             // Se for base64, retorna direto
             if (u.startsWith('data:')) return u;
@@ -79,8 +78,8 @@
                 u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
             }
 
-            // Só adiciona https:// se não tiver protocolo
-            if (!u.startsWith('http') && !u.startsWith('//')) {
+            // Só adiciona https:// se não tiver protocolo e não for base64
+            if (!u.startsWith('http') && !u.startsWith('//') && !u.startsWith('data:')) {
                 u = 'https://' + u;
             }
             
@@ -285,7 +284,7 @@
 
             const productsHTML = storeData.products.map(p => {
                 const imgUrl = proxyImg(p.image);
-                const hasImage = imgUrl && imgUrl.length > 10; // Aumentado para evitar URLs falsas como "https://undefined"
+                const hasImage = imgUrl && imgUrl.length > 8; 
                 
                 return `
                 <div class="bg-white rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex flex-col">
@@ -293,7 +292,6 @@
                         ${hasImage ? `
                             <img src="${imgUrl}" 
                                  class="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-500" 
-                                 referrerpolicy="no-referrer"
                                  onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
                         ` : ''}
                         <div class="absolute inset-0 flex items-center justify-center text-slate-300 ${hasImage ? 'hidden' : ''}">
@@ -317,7 +315,7 @@
             app.innerHTML = `
                 <div class="min-h-screen bg-white flex flex-col">
                     <div class="relative py-12 sm:py-20 px-6 text-center overflow-hidden" style="background-color: ${storeData.secondaryColor}; color: #ffffff">
-                        ${storeData.bannerImage ? `<img src="${proxyImg(storeData.bannerImage)}" class="absolute inset-0 w-full h-full object-cover opacity-30 z-0" referrerpolicy="no-referrer">` : ''}
+                        ${storeData.bannerImage ? `<img src="${proxyImg(storeData.bannerImage)}" class="absolute inset-0 w-full h-full object-cover opacity-30 z-0">` : ''}
                         <div class="relative z-10">
                             <h1 class="text-3xl sm:text-5xl md:text-6xl font-black italic uppercase tracking-tighter mb-4">${storeData.name}</h1>
                             <div class="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest">

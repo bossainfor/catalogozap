@@ -240,6 +240,15 @@
             if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) {
                 u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
             }
+            
+            // Se for link de visualizador do Postimages
+            if ((u.includes('postimg.cc/') || u.includes('postimages.org/')) && !u.includes('i.postimg.cc/')) {
+                u = u.replace('postimg.cc/', 'i.postimg.cc/').replace('postimages.org/', 'i.postimg.cc/');
+                u = u.split('?')[0].split('#')[0];
+                if (!u.endsWith('/image.png') && !u.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                    u += '/image.png';
+                }
+            }
 
             // Só adiciona https:// se não tiver protocolo e não for base64
             if (!u.startsWith('http') && !u.startsWith('//') && !u.startsWith('data:')) {

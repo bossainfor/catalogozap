@@ -216,7 +216,7 @@
 
     <script>
         // Tornar funções globais explicitamente para garantir funcionamento em botões
-        window.products = [{ id: Date.now().toString(), name: '', price: '', image: '', description: '' }];
+        window.products = [{ id: Date.now().toString(), name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', description: '' }];
 
         function proxyImg(url) {
             if (!url) return '';
@@ -294,7 +294,7 @@
         }
 
         window.addProduct = function() {
-            window.products.push({ id: Date.now().toString(), name: '', price: '', image: '', description: '' });
+            window.products.push({ id: Date.now().toString(), name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', description: '' });
             window.renderProducts();
             window.saveDraft();
         }
@@ -369,8 +369,19 @@
                             <input type="text" value="${p.name.replace(/"/g, '&quot;')}" oninput="window.updateProduct('${p.id}', 'name', this.value)" placeholder="Ex: Camiseta Branca" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold focus:border-orange-500 outline-none transition-all">
                         </div>
                         <div class="space-y-1">
-                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Preço (R$)</label>
+                            <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Preço Varejo (R$)</label>
                             <input type="text" value="${p.price.replace(/"/g, '&quot;')}" oninput="window.updateProduct('${p.id}', 'price', this.value)" placeholder="Ex: 49,90" class="w-full px-4 py-3 rounded-xl border border-slate-200 font-bold focus:border-orange-500 outline-none transition-all">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold uppercase tracking-widest text-orange-400 ml-1">Preço Atacado (Opcional)</label>
+                            <input type="text" value="${(p.wholesalePrice || '').replace(/"/g, '&quot;')}" oninput="window.updateProduct('${p.id}', 'wholesalePrice', this.value)" placeholder="Ex: 35,00" class="w-full px-4 py-3 rounded-xl border border-orange-100 bg-orange-50/30 font-bold focus:border-orange-500 outline-none transition-all">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-[10px] font-bold uppercase tracking-widest text-orange-400 ml-1">Qtd Mínima Atacado</label>
+                            <input type="number" value="${p.wholesaleMinQty || ''}" oninput="window.updateProduct('${p.id}', 'wholesaleMinQty', this.value)" placeholder="Ex: 3" class="w-full px-4 py-3 rounded-xl border border-orange-100 bg-orange-50/30 font-bold focus:border-orange-500 outline-none transition-all">
                         </div>
                     </div>
                     
@@ -460,6 +471,8 @@
                     const item = { n: p.name, p: p.price };
                     if (p.image) item.i = p.image;
                     if (p.description) item.d = p.description;
+                    if (p.wholesalePrice) item.wp = p.wholesalePrice;
+                    if (p.wholesaleMinQty) item.wq = parseInt(p.wholesaleMinQty);
                     return item;
                 });
             }
@@ -718,6 +731,8 @@
                             id: Math.random().toString(36).substr(2, 9),
                             name: p.n,
                             price: p.p,
+                            wholesalePrice: p.wp || '',
+                            wholesaleMinQty: p.wq || '',
                             image: p.i,
                             description: p.d || ''
                         }));

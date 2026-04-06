@@ -74,6 +74,15 @@
                 u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
             }
 
+            // Se for link de visualizador do Postimages
+            if ((u.includes('postimg.cc/') || u.includes('postimages.org/')) && !u.includes('i.postimg.cc/')) {
+                u = u.replace('postimg.cc/', 'i.postimg.cc/').replace('postimages.org/', 'i.postimg.cc/');
+                u = u.split('?')[0].split('#')[0];
+                if (!u.endsWith('/image.png') && !u.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
+                    u += '/image.png';
+                }
+            }
+
             // Só adiciona https:// se não tiver protocolo e não for base64
             if (!u.startsWith('http') && !u.startsWith('//') && !u.startsWith('data:')) {
                 u = 'https://' + u;
@@ -288,6 +297,7 @@
                         ${hasImage ? `
                             <img src="${imgUrl}" 
                                  class="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-500" 
+                                 referrerpolicy="no-referrer"
                                  onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
                         ` : ''}
                         <div class="absolute inset-0 flex items-center justify-center text-slate-300 ${hasImage ? 'hidden' : ''}">

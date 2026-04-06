@@ -73,7 +73,7 @@
             // Se for base64, retorna direto
             if (u.startsWith('data:image')) return u;
             // Se for link do Firebase, não precisa de proxy
-            if (u.includes('firebasestorage.googleapis.com')) return u;
+            if (u.includes('firebasestorage.')) return u;
             
             if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
             if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
@@ -93,7 +93,7 @@
                 if (!docSnap.exists()) return null;
 
                 const data = docSnap.data();
-                console.log("Dados brutos do Firestore:", data);
+                console.log("Dados do Catálogo:", data);
                 return {
                     name: data.n,
                     whatsapp: data.w,
@@ -106,15 +106,18 @@
                     type: data.t,
                     status: data.status || 'active',
                     expiresAt: data.expiresAt || data.createdAt,
-                    products: (data.p || []).map(p => ({
-                        id: Math.random().toString(36).substr(2, 9),
-                        name: p.n,
-                        price: p.p,
-                        wholesalePrice: p.wp || '',
-                        wholesaleMinQty: p.wq || '',
-                        image: p.i,
-                        description: p.d || ''
-                    }))
+                    products: (data.p || []).map(p => {
+                        console.log(`Produto: ${p.n}, Imagem URL: ${p.i}`);
+                        return {
+                            id: Math.random().toString(36).substr(2, 9),
+                            name: p.n,
+                            price: p.p,
+                            wholesalePrice: p.wp || '',
+                            wholesaleMinQty: p.wq || '',
+                            image: p.i,
+                            description: p.d || ''
+                        };
+                    })
                 };
             } catch (e) { 
                 console.error("Erro ao buscar dados:", e);
@@ -277,10 +280,18 @@
             const btnAction = isService ? 'requestQuote' : 'addToCart';
             const btnIcon = isService ? 'message-circle' : 'shopping-cart';
 
-            const productsHTML = storeData.products.map(p => `
+            const productsHTML = storeData.products.map(p => {
+                const imageUrl = proxyImg(p.image);
+                return `
                 <div class="bg-white rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex flex-col">
                     <div class="relative overflow-hidden bg-slate-50 w-full" style="aspect-ratio: 9/16 !important;">
-                        <img src="${proxyImg(p.image)}" class="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-500" referrerpolicy="no-referrer" onerror="this.src='https://picsum.photos/seed/'+Math.random()+'/400/700'">
+                        ${imageUrl ? `
+                            <img src="${imageUrl}" class="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-500" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://placehold.co/400x700/f8fafc/cbd5e1?text=Imagem+Indisponível'; console.error('Erro ao carregar imagem:', '${p.image}')">
+                        ` : `
+                            <div class="absolute inset-0 flex items-center justify-center bg-slate-100 text-slate-300">
+                                <i data-lucide="image" class="w-12 h-12"></i>
+                            </div>
+                        `}
                     </div>
                     <div class="p-3 sm:p-5 flex flex-col flex-1">
                         <h3 class="font-bold text-sm sm:text-lg mb-1 line-clamp-2 leading-tight h-10 sm:h-auto">${p.name}</h3>
@@ -294,7 +305,7 @@
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `;}).join('');
 
             app.innerHTML = `
                 <div class="min-h-screen bg-white flex flex-col">

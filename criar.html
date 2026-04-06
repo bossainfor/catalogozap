@@ -456,11 +456,17 @@
             if (window.lucide) lucide.createIcons();
         }
 
+        window.isUploading = false;
+
         window.handleFileUpload = async function(input, inputId, previewId, productId = null) {
             const file = input.files[0];
             if (!file) return;
 
-            // 1. Verificar se o sistema de upload carregou
+            window.isUploading = true;
+            const btn = document.getElementById('main-action-btn');
+            const btnText = document.getElementById('btn-text');
+            if (btn) btn.disabled = true;
+            if (btnText) btnText.innerText = "Aguarde o upload da foto...";
             if (!window.st || !window.storage) {
                 alert("O sistema de fotos ainda está iniciando. Aguarde 2 segundos e tente novamente.");
                 return;
@@ -514,6 +520,15 @@
                     console.log(`Upload: ${progress.toFixed(2)}%`);
                 }, 
                 (error) => {
+                    window.isUploading = false;
+                    const btn = document.getElementById('main-action-btn');
+                    const btnText = document.getElementById('btn-text');
+                    if (btn) btn.disabled = false;
+                    if (btnText) {
+                        const urlParams = new URLSearchParams(window.location.search);
+                        btnText.innerText = (urlParams.get('edit') || window.existingStoreId) ? "Atualizar Meu Catálogo" : "Gerar Minha Página";
+                    }
+
                     console.error("Erro detalhado no upload:", error);
                     // Se der erro, avisamos o usuário
                     if (error.code === 'storage/unauthorized') {
@@ -533,6 +548,15 @@
                 }, 
                 async () => {
                     try {
+                        window.isUploading = false;
+                        const btn = document.getElementById('main-action-btn');
+                        const btnText = document.getElementById('btn-text');
+                        if (btn) btn.disabled = false;
+                        if (btnText) {
+                            const urlParams = new URLSearchParams(window.location.search);
+                            btnText.innerText = (urlParams.get('edit') || window.existingStoreId) ? "Atualizar Meu Catálogo" : "Gerar Minha Página";
+                        }
+
                         // Upload concluído com sucesso
                         const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
                         console.log("Upload concluído! URL:", downloadURL);
@@ -611,6 +635,11 @@
         }
 
         window.generateStore = async function() {
+            if (window.isUploading) {
+                alert("Aguarde o fim do upload da imagem antes de salvar!");
+                return;
+            }
+
             // Aguarda o Firebase inicializar
             let attempts = 0;
             while (!window.db && attempts < 50) {

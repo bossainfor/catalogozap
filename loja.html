@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
     <title>Carregando Catálogo...</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -62,32 +63,23 @@
 
         // Proxy de Imagem (Simplificado e Direto)
         function proxyImg(url) {
-            if (!url || url === 'undefined' || url === 'null') return '';
-            let u = String(url).trim();
-            if (u === '' || u === 'undefined' || u === 'null' || u.length < 5) return '';
+            if (!url) return '';
+            let u = url.trim();
             
-            // Se for base64, retorna direto
-            if (u.startsWith('data:')) return u;
+            // Se for link do Firebase, não precisa de proxy
+            if (u.includes('firebasestorage.googleapis.com')) return u;
 
-            // Se for link de visualizador do ImgBB
+            // Se for link de visualizador, tenta corrigir (mas o ideal é o link direto)
             if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) {
                 u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
             }
-
-            // Se for link de visualizador do Postimages
-            if ((u.includes('postimg.cc/') || u.includes('postimages.org/')) && !u.includes('i.postimg.cc/')) {
-                u = u.replace('postimg.cc/', 'i.postimg.cc/').replace('postimages.org/', 'i.postimg.cc/');
-                u = u.split('?')[0].split('#')[0];
-                if (!u.endsWith('/image.png') && !u.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-                    u += '/image.png';
-                }
+            if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) {
+                u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
             }
 
-            // Só adiciona https:// se não tiver protocolo e não for base64
-            if (!u.startsWith('http') && !u.startsWith('//') && !u.startsWith('data:')) {
-                u = 'https://' + u;
-            }
+            if (!u.startsWith('http')) u = 'https://' + u;
             
+            // Retorna o link direto sem atravessadores
             return u;
         }
 
@@ -122,7 +114,7 @@
                         price: p.p,
                         wholesalePrice: p.wp || '',
                         wholesaleMinQty: p.wq || '',
-                        image: p.i || p.image, // Tenta ambos os campos por segurança
+                        image: p.i,
                         description: p.d || ''
                     }))
                 };
@@ -287,22 +279,10 @@
             const btnAction = isService ? 'requestQuote' : 'addToCart';
             const btnIcon = isService ? 'message-circle' : 'shopping-cart';
 
-            const productsHTML = storeData.products.map(p => {
-                const imgUrl = proxyImg(p.image);
-                const hasImage = imgUrl && imgUrl.length > 8; 
-                
-                return `
+            const productsHTML = storeData.products.map(p => `
                 <div class="bg-white rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex flex-col">
-                    <div class="relative overflow-hidden bg-slate-100 w-full aspect-[9/16]">
-                        ${hasImage ? `
-                            <img src="${imgUrl}" 
-                                 class="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-500" 
-                                 referrerpolicy="no-referrer"
-                                 onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
-                        ` : ''}
-                        <div class="absolute inset-0 flex items-center justify-center text-slate-300 ${hasImage ? 'hidden' : ''}">
-                            <i data-lucide="image" class="w-12 h-12"></i>
-                        </div>
+                    <div class="relative overflow-hidden bg-slate-50 w-full" style="aspect-ratio: 9/16 !important;">
+                        <img src="${proxyImg(p.image)}" class="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-500" referrerpolicy="no-referrer" onerror="this.src='https://picsum.photos/seed/'+Math.random()+'/400/700'">
                     </div>
                     <div class="p-3 sm:p-5 flex flex-col flex-1">
                         <h3 class="font-bold text-sm sm:text-lg mb-1 line-clamp-2 leading-tight h-10 sm:h-auto">${p.name}</h3>
@@ -316,7 +296,7 @@
                         </div>
                     </div>
                 </div>
-            `;}).join('');
+            `).join('');
 
             app.innerHTML = `
                 <div class="min-h-screen bg-white flex flex-col">

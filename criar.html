@@ -61,6 +61,20 @@
             </div>
         </div>
     </div>
+
+    <!-- OVERLAY DE CARREGAMENTO -->
+    <div id="loading-overlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[200] hidden items-center justify-center flex-col gap-6">
+        <div class="relative">
+            <div class="w-24 h-24 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin"></div>
+            <div class="absolute inset-0 flex items-center justify-center">
+                <i data-lucide="zap" class="text-orange-500 w-8 h-8 animate-pulse"></i>
+            </div>
+        </div>
+        <div class="text-center">
+            <h3 class="text-white text-2xl font-black uppercase italic tracking-tighter mb-2">Salvando seu Catálogo</h3>
+            <p class="text-slate-400 text-xs font-bold uppercase tracking-widest animate-pulse">Aguarde um instante...</p>
+        </div>
+    </div>
     <header class="bg-white border-b border-slate-200 sticky top-0 z-10 px-4">
         <div class="max-w-4xl mx-auto h-16 flex items-center justify-between">
             <div class="flex items-center gap-2">
@@ -458,65 +472,118 @@
 
         window.isUploading = false;
 
+        // Função para comprimir imagem antes do upload
+        async function compressImage(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        try {
+                            const canvas = document.createElement('canvas');
+                            let width = img.width;
+                            let height = img.height;
+                            const max_size = 1200;
+
+                            if (width > height) {
+                                if (width > max_size) {
+                                    height *= max_size / width;
+                                    width = max_size;
+                                }
+                            } else {
+                                if (height > max_size) {
+                                    width *= max_size / height;
+                                    height = max_size;
+                                }
+                            }
+
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, width, height);
+                            
+                            if (canvas.toBlob) {
+                                canvas.toBlob((blob) => {
+                                    if (blob) {
+                                        blob.name = file.name;
+                                        resolve(blob);
+                                    } else {
+                                        resolve(file);
+                                    }
+                                }, 'image/jpeg', 0.7);
+                            } else {
+                                resolve(file);
+                            }
+                        } catch (e) {
+                            console.error("Erro na compressão:", e);
+                            resolve(file);
+                        }
+                    };
+                    img.onerror = () => resolve(file);
+                };
+                reader.onerror = () => resolve(file);
+            });
+        }
+
         window.handleFileUpload = async function(input, inputId, previewId, productId = null) {
-            const file = input.files[0];
+            let file = input.files[0];
             if (!file) return;
+
+            // Prévia local imediata para feedback instantâneo
+            const localUrl = URL.createObjectURL(file);
+            const imgPreview = document.getElementById(previewId);
+            const iconPreview = document.getElementById(productId ? `icon-${productId}` : 'banner-icon');
+            if (imgPreview) {
+                imgPreview.src = localUrl;
+                imgPreview.classList.remove('hidden');
+            }
+            if (iconPreview) iconPreview.classList.add('hidden');
 
             window.isUploading = true;
             const btn = document.getElementById('main-action-btn');
             const btnText = document.getElementById('btn-text');
             if (btn) btn.disabled = true;
-            if (btnText) btnText.innerText = "Aguarde o upload da foto...";
+            if (btnText) btnText.innerText = "Processando imagem...";
+
+            // 1. Verificar se o sistema de upload carregou
             if (!window.st || !window.storage) {
                 alert("O sistema de fotos ainda está iniciando. Aguarde 2 segundos e tente novamente.");
+                window.isUploading = false;
+                if (btn) btn.disabled = false;
                 return;
             }
 
-            // 2. Validação de tamanho
-            if (file.size > 5 * 1024 * 1024) {
-                alert("A imagem é muito grande! Máximo 5MB.");
-                return;
-            }
-
-            // 3. Mostrar prévia local IMEDIATA para o usuário não achar que travou
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = document.getElementById(previewId);
-                const icon = document.getElementById(productId ? `icon-${productId}` : 'banner-icon');
-                if (img) {
-                    // Remove o onerror temporariamente para evitar que ele esconda a prévia local
-                    const oldOnError = img.onerror;
-                    img.onerror = null;
-                    img.src = e.target.result;
-                    img.classList.remove('hidden');
-                    // Restaura o onerror após um pequeno delay
-                    setTimeout(() => { img.onerror = oldOnError; }, 1000);
+            try {
+                // Comprimir se for maior que 500KB
+                if (file.size > 500 * 1024) {
+                    if (btnText) btnText.innerText = "Otimizando foto...";
+                    const originalName = file.name;
+                    file = await compressImage(file);
+                    // Garantir que o nome do arquivo seja preservado para o Storage
+                    if (!file.name && originalName) file.name = originalName;
                 }
-                if (icon) icon.classList.add('hidden');
-            };
-            reader.readAsDataURL(file);
+            } catch (e) {
+                console.error("Erro na compressão:", e);
+            }
 
-            // 4. Iniciar Upload real
-            const urlParams = new URLSearchParams(window.location.search);
-            const currentStoreId = urlParams.get('edit') || urlParams.get('id');
-            const storeName = document.getElementById('store-name').value || 'temp';
-            const slug = currentStoreId || window.slugify(storeName);
-            const timestamp = Date.now();
-            const path = `stores/${slug}/${productId ? 'products/' + productId + '_' + timestamp : 'banner_' + timestamp}`;
-            
-            const { ref, uploadBytesResumable, getDownloadURL } = window.st;
-            const storageRef = ref(window.storage, path);
-            const uploadTask = uploadBytesResumable(storageRef, file);
+            if (btnText) btnText.innerText = "Subindo para o servidor... 0%";
 
             const progressContainer = document.getElementById(productId ? `progress-${productId}` : 'banner-progress');
             const progressBar = document.getElementById(productId ? `progress-bar-${productId}` : 'banner-progress-bar');
             
             if (progressContainer) progressContainer.classList.remove('hidden');
 
+            const fileName = file.name || `foto-${Date.now()}.jpg`;
+            const storageRef = window.st.ref(window.storage, `catalogo/${Date.now()}-${fileName}`);
+            const uploadTask = window.st.uploadBytesResumable(storageRef, file);
+
             uploadTask.on('state_changed', 
                 (snapshot) => {
                     const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
                     if (progressBar) progressBar.style.width = progress + '%';
+                    if (btnText) btnText.innerText = `Subindo foto... ${Math.round(progress)}%`;
                     console.log(`Upload: ${progress.toFixed(2)}%`);
                 }, 
                 (error) => {
@@ -665,7 +732,14 @@
             }
 
             const btn = document.getElementById('main-action-btn');
+            const loadingOverlay = document.getElementById('loading-overlay');
             const originalText = btn.innerHTML;
+            
+            if (loadingOverlay) {
+                loadingOverlay.classList.remove('hidden');
+                loadingOverlay.classList.add('flex');
+            }
+            
             btn.innerHTML = '<i class="animate-spin" data-lucide="loader-2"></i> Salvando...';
             btn.disabled = true;
             if (window.lucide) lucide.createIcons();
@@ -836,6 +910,11 @@
                 console.error("Erro ao salvar:", error);
                 alert("Erro ao salvar no banco de dados. Verifique sua conexão e tente novamente. (Erro: " + error.message + ")");
             } finally {
+                const loadingOverlay = document.getElementById('loading-overlay');
+                if (loadingOverlay) {
+                    loadingOverlay.classList.add('hidden');
+                    loadingOverlay.classList.remove('flex');
+                }
                 btn.innerHTML = originalText;
                 btn.disabled = false;
                 if (window.lucide) lucide.createIcons();

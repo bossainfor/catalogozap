@@ -73,15 +73,6 @@
             if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) {
                 u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
             }
-            // Se for link de visualizador do Postimages
-            if ((u.includes('postimg.cc/') || u.includes('postimages.org/')) && !u.includes('i.postimg.cc/')) {
-                // Tenta converter link de página em link direto
-                const parts = u.split('/');
-                const id = parts[parts.length - 1].split('?')[0];
-                if (id && id.length > 3) {
-                    u = `https://i.postimg.cc/${id}/image.png`;
-                }
-            }
 
             // Só adiciona https:// se não tiver protocolo e não for base64
             if (!u.startsWith('http') && !u.startsWith('//') && !u.startsWith('data:')) {
@@ -320,7 +311,7 @@
             app.innerHTML = `
                 <div class="min-h-screen bg-white flex flex-col">
                     <div class="relative py-12 sm:py-20 px-6 text-center overflow-hidden" style="background-color: ${storeData.secondaryColor}; color: #ffffff">
-                        ${storeData.bannerImage ? `<img src="${proxyImg(storeData.bannerImage)}" class="absolute inset-0 w-full h-full object-cover opacity-30 z-0">` : ''}
+                        ${storeData.bannerImage ? `<img src="${proxyImg(storeData.bannerImage)}" class="absolute inset-0 w-full h-full object-cover opacity-30 z-0" referrerpolicy="no-referrer">` : ''}
                         <div class="relative z-10">
                             <h1 class="text-3xl sm:text-5xl md:text-6xl font-black italic uppercase tracking-tighter mb-4">${storeData.name}</h1>
                             <div class="inline-flex items-center gap-2 bg-white/20 px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest">

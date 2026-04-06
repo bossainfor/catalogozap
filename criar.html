@@ -9,6 +9,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAJaxRdA6uzbN41JvAw8xO7F5mzJaDfMBc",
@@ -21,9 +22,12 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app, "ai-studio-2395f72f-4dac-4517-9681-c654cd1a03ca");
+        const storage = getStorage(app);
 
         window.db = db;
+        window.storage = storage;
         window.fs = { doc, setDoc, getDoc, deleteDoc };
+        window.st = { ref, uploadBytesResumable, getDownloadURL, deleteObject };
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
@@ -156,13 +160,25 @@
                         </div>
                     </div>
                     <div class="space-y-2">
-                        <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">URL da Imagem de Banner (Opcional)</label>
-                        <div class="flex items-center gap-4">
-                            <div class="w-20 h-12 bg-slate-100 rounded-xl overflow-hidden border-2 border-slate-200 flex items-center justify-center flex-shrink-0">
-                                <img id="banner-preview" src="" class="w-full h-full object-cover hidden" onerror="this.classList.add('hidden'); document.getElementById('banner-icon').classList.remove('hidden')">
-                                <i id="banner-icon" data-lucide="image" class="text-slate-300 w-5 h-5"></i>
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Imagem de Banner (Opcional)</label>
+                        <div class="flex flex-col gap-3">
+                            <div class="flex items-center gap-4">
+                                <div class="w-20 h-12 bg-slate-100 rounded-xl overflow-hidden border-2 border-slate-200 flex items-center justify-center flex-shrink-0">
+                                    <img id="banner-preview" src="" class="w-full h-full object-cover hidden" onerror="this.classList.add('hidden'); document.getElementById('banner-icon').classList.remove('hidden')">
+                                    <i id="banner-icon" data-lucide="image" class="text-slate-300 w-5 h-5"></i>
+                                </div>
+                                <div class="flex-1 flex gap-2">
+                                    <input type="text" id="banner-image" oninput="window.updateBannerPreview(this.value); window.saveDraft()" placeholder="Link da imagem ou use o botão ao lado" class="flex-1 px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold text-sm">
+                                    <button type="button" onclick="document.getElementById('banner-file').click()" class="bg-orange-500 text-white px-6 rounded-2xl font-bold hover:bg-orange-600 transition-all flex items-center gap-2">
+                                        <i data-lucide="camera" class="w-4 h-4"></i>
+                                        <span class="hidden sm:inline">Subir</span>
+                                    </button>
+                                    <input type="file" id="banner-file" class="hidden" accept="image/*" onchange="window.handleFileUpload(this, 'banner-image', 'banner-preview')">
+                                </div>
                             </div>
-                            <input type="text" id="banner-image" oninput="window.updateBannerPreview(this.value); window.saveDraft()" placeholder="https://i.ibb.co/minhafoto.jpg" class="flex-1 px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                            <div id="banner-progress" class="hidden w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                <div id="banner-progress-bar" class="bg-orange-500 h-full transition-all" style="width: 0%"></div>
+                            </div>
                         </div>
                     </div>
                 </section>
@@ -391,18 +407,78 @@
                     </div>
                     
                     <div class="space-y-1">
-                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Link da Imagem</label>
-                        <div class="flex items-center gap-3">
-                            <div class="w-12 h-12 bg-white rounded-xl border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
-                                <img id="preview-${p.id}" src="${proxyImg(p.image)}" class="w-full h-full object-cover ${p.image ? '' : 'hidden'}" onerror="this.classList.add('hidden'); document.getElementById('icon-${p.id}').classList.remove('hidden')">
-                                <i data-lucide="image" class="text-slate-300 w-5 h-5 ${p.image ? 'hidden' : ''}" id="icon-${p.id}"></i>
+                        <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Imagem do Produto</label>
+                        <div class="flex flex-col gap-2">
+                            <div class="flex items-center gap-3">
+                                <div class="w-12 h-12 bg-white rounded-xl border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                                    <img id="preview-${p.id}" src="${proxyImg(p.image)}" class="w-full h-full object-cover ${p.image ? '' : 'hidden'}" onerror="this.classList.add('hidden'); document.getElementById('icon-${p.id}').classList.remove('hidden')">
+                                    <i data-lucide="image" class="text-slate-300 w-5 h-5 ${p.image ? 'hidden' : ''}" id="icon-${p.id}"></i>
+                                </div>
+                                <div class="flex-1 flex gap-2">
+                                    <input type="text" value="${p.image.replace(/"/g, '&quot;')}" id="input-${p.id}" oninput="window.updateProduct('${p.id}', 'image', this.value)" placeholder="Link da foto ou use o botão" class="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-xs focus:border-orange-500 outline-none transition-all">
+                                    <button type="button" onclick="document.getElementById('file-${p.id}').click()" class="bg-slate-900 text-white px-4 rounded-xl font-bold hover:bg-slate-800 transition-all flex items-center gap-2">
+                                        <i data-lucide="camera" class="w-4 h-4"></i>
+                                    </button>
+                                    <input type="file" id="file-${p.id}" class="hidden" accept="image/*" onchange="window.handleFileUpload(this, 'input-${p.id}', 'preview-${p.id}', '${p.id}')">
+                                </div>
                             </div>
-                            <input type="text" value="${p.image.replace(/"/g, '&quot;')}" oninput="window.updateProduct('${p.id}', 'image', this.value)" placeholder="Cole o link da foto aqui" class="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-xs focus:border-orange-500 outline-none transition-all">
+                            <div id="progress-${p.id}" class="hidden w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                                <div id="progress-bar-${p.id}" class="bg-orange-500 h-full transition-all" style="width: 0%"></div>
+                            </div>
                         </div>
                     </div>
                 </div>
             `).join('');
             if (window.lucide) lucide.createIcons();
+        }
+
+        window.handleFileUpload = async function(input, inputId, previewId, productId = null) {
+            const file = input.files[0];
+            if (!file) return;
+
+            if (file.size > 5 * 1024 * 1024) {
+                alert("A imagem é muito grande! Máximo 5MB.");
+                return;
+            }
+
+            const storeName = document.getElementById('store-name').value || 'temp';
+            const slug = window.slugify(storeName);
+            // Usar um nome fixo para facilitar a exclusão posterior se necessário, 
+            // mas adicionando um timestamp para evitar cache agressivo do navegador se desejar.
+            // Para simplificar a exclusão, vamos usar apenas o ID do produto ou 'banner'.
+            const path = `stores/${slug}/${productId ? 'products/' + productId : 'banner'}`;
+            
+            const { ref, uploadBytesResumable, getDownloadURL } = window.st;
+            const storageRef = ref(window.storage, path);
+            const uploadTask = uploadBytesResumable(storageRef, file);
+
+            const progressContainer = document.getElementById(productId ? `progress-${productId}` : 'banner-progress');
+            const progressBar = document.getElementById(productId ? `progress-bar-${productId}` : 'banner-progress-bar');
+            
+            if (progressContainer) progressContainer.classList.remove('hidden');
+
+            uploadTask.on('state_changed', 
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    if (progressBar) progressBar.style.width = progress + '%';
+                }, 
+                (error) => {
+                    console.error("Erro no upload:", error);
+                    alert("Erro ao subir imagem. Tente novamente.");
+                    if (progressContainer) progressContainer.classList.add('hidden');
+                }, 
+                async () => {
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                    const inputEl = document.getElementById(inputId);
+                    if (inputEl) {
+                        inputEl.value = downloadURL;
+                        inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+                    }
+                    if (progressContainer) {
+                        setTimeout(() => progressContainer.classList.add('hidden'), 1000);
+                    }
+                }
+            );
         }
 
         window.slugify = function(text) {

@@ -27,7 +27,14 @@
         const auth = getAuth(app);
 
         // Login anônimo para permitir upload se as regras exigirem
-        signInAnonymously(auth).catch(err => console.error("Erro no login anônimo:", err));
+        signInAnonymously(auth)
+            .then(() => console.log("Login anônimo realizado com sucesso!"))
+            .catch(err => {
+                console.error("Erro no login anônimo:", err);
+                if (err.code === 'auth/unauthorized-domain') {
+                    alert("ERRO CRÍTICO: Este domínio não está autorizado no Firebase. Adicione '" + window.location.hostname + "' em Authentication > Settings > Authorized Domains no Console do Firebase.");
+                }
+            });
 
         window.db = db;
         window.storage = storage;
@@ -504,33 +511,51 @@
                 (snapshot) => {
                     const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
                     if (progressBar) progressBar.style.width = progress + '%';
+                    console.log(`Upload: ${progress.toFixed(2)}%`);
                 }, 
                 (error) => {
-                    console.error("Erro no upload:", error);
+                    console.error("Erro detalhado no upload:", error);
                     // Se der erro, avisamos o usuário
                     if (error.code === 'storage/unauthorized') {
-                        alert("Erro: Sem permissão para salvar. Verifique as regras do seu Firebase Storage.");
+                        alert("Erro: Sem permissão para salvar no Storage. Verifique se você adicionou o domínio '" + window.location.hostname + "' no Firebase Console (Authentication > Settings > Authorized Domains) e se as regras do Storage permitem acesso.");
+                    } else if (error.code === 'storage/quota-exceeded') {
+                        alert("Erro: Limite de armazenamento do Firebase atingido.");
                     } else {
-                        alert("Erro ao subir imagem. Verifique sua internet.");
+                        alert("Erro ao subir imagem: " + error.message);
                     }
                     if (progressContainer) progressContainer.classList.add('hidden');
+                    
+                    // Limpa a prévia se falhou o upload real
+                    const img = document.getElementById(previewId);
+                    const icon = document.getElementById(productId ? `icon-${productId}` : 'banner-icon');
+                    if (img) img.classList.add('hidden');
+                    if (icon) icon.classList.remove('hidden');
                 }, 
                 async () => {
-                    // Upload concluído com sucesso
-                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                    const inputEl = document.getElementById(inputId);
-                    if (inputEl) {
-                        inputEl.value = downloadURL;
-                        // Atualiza o dado no rascunho/produto
-                        if (productId) {
-                            window.updateProduct(productId, 'image', downloadURL);
-                        } else {
-                            window.updateBannerPreview(downloadURL);
-                            window.saveDraft();
+                    try {
+                        // Upload concluído com sucesso
+                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                        console.log("Upload concluído! URL:", downloadURL);
+                        
+                        const inputEl = document.getElementById(inputId);
+                        if (inputEl) {
+                            inputEl.value = downloadURL;
+                            // Atualiza o dado no rascunho/produto
+                            if (productId) {
+                                window.updateProduct(productId, 'image', downloadURL);
+                            } else {
+                                window.updateBannerPreview(downloadURL);
+                                window.saveDraft();
+                            }
+                            alert("Imagem carregada com sucesso! Não esqueça de clicar em 'Gerar/Atualizar Minha Página' para salvar.");
                         }
-                    }
-                    if (progressContainer) {
-                        setTimeout(() => progressContainer.classList.add('hidden'), 1000);
+                    } catch (urlErr) {
+                        console.error("Erro ao obter URL de download:", urlErr);
+                        alert("Erro ao processar imagem após upload.");
+                    } finally {
+                        if (progressContainer) {
+                            setTimeout(() => progressContainer.classList.add('hidden'), 1000);
+                        }
                     }
                 }
             );

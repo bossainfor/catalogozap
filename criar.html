@@ -10,6 +10,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAJaxRdA6uzbN41JvAw8xO7F5mzJaDfMBc",
@@ -23,9 +24,14 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app, "ai-studio-2395f72f-4dac-4517-9681-c654cd1a03ca");
         const storage = getStorage(app);
+        const auth = getAuth(app);
+
+        // Login anônimo para permitir upload se as regras exigirem
+        signInAnonymously(auth).catch(err => console.error("Erro no login anônimo:", err));
 
         window.db = db;
         window.storage = storage;
+        window.auth = auth;
         window.fs = { doc, setDoc, getDoc, deleteDoc };
         window.st = { ref, uploadBytesResumable, getDownloadURL, deleteObject };
     </script>
@@ -60,6 +66,9 @@
                         <i data-lucide="history" class="w-3 h-3"></i> <span class="hidden xs:inline">Última</span>
                     </button>
                 </div>
+                <button onclick="window.open('https://postimages.org/', '_blank')" class="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-xl text-[9px] sm:text-[10px] font-bold hover:bg-blue-700 flex items-center gap-1">
+                    <i data-lucide="upload-cloud" class="w-3 h-3"></i> Postimages
+                </button>
             </div>
         </div>
     </header>
@@ -142,7 +151,6 @@
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Nicho</label>
                             <select id="niche" onchange="window.saveDraft()" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
                                 <option value="loja">Loja</option>
-                                <option value="vendas">Vendas</option>
                                 <option value="cardapio">Cardápio</option>
                                 <option value="servicos">Serviços</option>
                                 <option value="portfolio">Portfólio</option>
@@ -162,16 +170,20 @@
                         <div class="flex flex-col gap-3">
                             <div class="flex items-center gap-4">
                                 <div class="w-20 h-12 bg-slate-100 rounded-xl overflow-hidden border-2 border-slate-200 flex items-center justify-center flex-shrink-0">
-                                    <img id="banner-preview" src="" class="w-full h-full object-cover hidden" referrerpolicy="no-referrer" onerror="this.classList.add('hidden'); document.getElementById('banner-icon').classList.remove('hidden')">
+                                    <img id="banner-preview" src="" class="w-full h-full object-cover hidden" onerror="this.classList.add('hidden'); document.getElementById('banner-icon').classList.remove('hidden')">
                                     <i id="banner-icon" data-lucide="image" class="text-slate-300 w-5 h-5"></i>
                                 </div>
                                 <div class="flex-1 flex gap-2 min-w-0">
-                                    <input type="text" id="banner-image" oninput="window.updateBannerPreview(this.value); window.saveDraft()" placeholder="Cole o LINK DIRETO aqui" class="flex-1 min-w-0 px-4 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold text-sm">
-                                    <button type="button" onclick="window.open('https://postimages.org/', '_blank')" class="bg-blue-600 text-white px-4 sm:px-6 rounded-2xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 flex-shrink-0">
+                                    <input type="text" id="banner-image" oninput="window.updateBannerPreview(this.value); window.saveDraft()" placeholder="Link ou use o botão" class="flex-1 min-w-0 px-4 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold text-sm">
+                                    <button type="button" onclick="document.getElementById('banner-file').click()" class="bg-blue-600 text-white px-4 sm:px-6 rounded-2xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 flex-shrink-0">
                                         <i data-lucide="camera" class="w-4 h-4"></i>
-                                        <span class="hidden sm:inline">Link</span>
+                                        <span class="hidden sm:inline">Subir</span>
                                     </button>
+                                    <input type="file" id="banner-file" class="hidden" accept="image/*" onchange="window.handleFileUpload(this, 'banner-image', 'banner-preview')">
                                 </div>
+                            </div>
+                            <div id="banner-progress" class="hidden w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                <div id="banner-progress-bar" class="bg-orange-500 h-full transition-all" style="width: 0%"></div>
                             </div>
                         </div>
                     </div>
@@ -229,32 +241,14 @@
         window.products = [{ id: Date.now().toString(), name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', description: '' }];
 
         function proxyImg(url) {
-            if (!url || url === 'undefined' || url === 'null') return '';
-            let u = String(url).trim();
-            if (u === '' || u === 'undefined' || u === 'null' || u.length < 5) return '';
+            if (!url) return '';
+            let u = url.trim();
+            // Se for link do Firebase, não precisa de proxy
+            if (u.includes('firebasestorage.googleapis.com')) return u;
             
-            // Se for base64, retorna direto
-            if (u.startsWith('data:')) return u;
-
-            // Se for link de visualizador do ImgBB
-            if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) {
-                u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
-            }
-            
-            // Se for link de visualizador do Postimages
-            if ((u.includes('postimg.cc/') || u.includes('postimages.org/')) && !u.includes('i.postimg.cc/')) {
-                u = u.replace('postimg.cc/', 'i.postimg.cc/').replace('postimages.org/', 'i.postimg.cc/');
-                u = u.split('?')[0].split('#')[0];
-                if (!u.endsWith('/image.png') && !u.match(/\.(jpg|jpeg|png|gif|webp)$/i)) {
-                    u += '/image.png';
-                }
-            }
-
-            // Só adiciona https:// se não tiver protocolo e não for base64
-            if (!u.startsWith('http') && !u.startsWith('//') && !u.startsWith('data:')) {
-                u = 'https://' + u;
-            }
-            
+            if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
+            if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
+            if (!u.startsWith('http')) u = 'https://' + u;
             return u;
         }
 
@@ -425,25 +419,110 @@
                         <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Imagem do Produto</label>
                         <div class="flex flex-col gap-2">
                             <div class="flex items-center gap-3">
-                                <div class="w-16 h-16 bg-white rounded-xl border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center relative shadow-sm">
-                                    <img id="preview-${p.id}" src="${proxyImg(p.image)}" class="w-full h-full object-cover ${p.image ? '' : 'hidden'}" referrerpolicy="no-referrer" onerror="this.classList.add('hidden'); this.nextElementSibling.classList.remove('hidden')">
-                                    <i data-lucide="image" class="text-slate-300 w-6 h-6 ${p.image ? 'hidden' : ''}" id="icon-${p.id}"></i>
+                                <div class="w-12 h-12 bg-white rounded-xl border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
+                                    <img id="preview-${p.id}" src="${proxyImg(p.image)}" class="w-full h-full object-cover ${p.image ? '' : 'hidden'}" onerror="this.classList.add('hidden'); document.getElementById('icon-${p.id}').classList.remove('hidden')">
+                                    <i data-lucide="image" class="text-slate-300 w-5 h-5 ${p.image ? 'hidden' : ''}" id="icon-${p.id}"></i>
                                 </div>
-                                <div class="flex-1 flex flex-col gap-2 min-w-0">
-                                    <div class="flex gap-2">
-                                        <input type="text" value="${p.image.replace(/"/g, '&quot;')}" id="input-${p.id}" oninput="window.updateProduct('${p.id}', 'image', this.value)" placeholder="Cole o LINK DIRETO aqui" class="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 text-xs focus:border-orange-500 outline-none transition-all">
-                                        <button type="button" onclick="window.open('https://postimages.org/', '_blank')" class="bg-blue-600 text-white px-4 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 flex-shrink-0" title="Subir Foto">
-                                            <i data-lucide="camera" class="w-4 h-4"></i>
-                                        </button>
-                                    </div>
-                                    <p class="text-[9px] text-slate-400 font-medium leading-tight">No Postimages, use o campo <span class="text-blue-600 font-bold">"Link Direto"</span> (o que termina com .jpg ou .png).</p>
+                                <div class="flex-1 flex gap-2 min-w-0">
+                                    <input type="text" value="${p.image.replace(/"/g, '&quot;')}" id="input-${p.id}" oninput="window.updateProduct('${p.id}', 'image', this.value)" placeholder="Link ou use o botão" class="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 text-xs focus:border-orange-500 outline-none transition-all">
+                                    <button type="button" onclick="document.getElementById('file-${p.id}').click()" class="bg-blue-600 text-white px-4 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 flex-shrink-0">
+                                        <i data-lucide="camera" class="w-4 h-4"></i>
+                                    </button>
+                                    <input type="file" id="file-${p.id}" class="hidden" accept="image/*" onchange="window.handleFileUpload(this, 'input-${p.id}', 'preview-${p.id}', '${p.id}')">
                                 </div>
+                            </div>
+                            <div id="progress-${p.id}" class="hidden w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                                <div id="progress-bar-${p.id}" class="bg-orange-500 h-full transition-all" style="width: 0%"></div>
                             </div>
                         </div>
                     </div>
                 </div>
             `).join('');
             if (window.lucide) lucide.createIcons();
+        }
+
+        window.handleFileUpload = async function(input, inputId, previewId, productId = null) {
+            const file = input.files[0];
+            if (!file) return;
+
+            // 1. Verificar se o sistema de upload carregou
+            if (!window.st || !window.storage) {
+                alert("O sistema de fotos ainda está iniciando. Aguarde 2 segundos e tente novamente.");
+                return;
+            }
+
+            // 2. Validação de tamanho
+            if (file.size > 5 * 1024 * 1024) {
+                alert("A imagem é muito grande! Máximo 5MB.");
+                return;
+            }
+
+            // 3. Mostrar prévia local IMEDIATA para o usuário não achar que travou
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = document.getElementById(previewId);
+                const icon = document.getElementById(productId ? `icon-${productId}` : 'banner-icon');
+                if (img) {
+                    // Remove o onerror temporariamente para evitar que ele esconda a prévia local
+                    const oldOnError = img.onerror;
+                    img.onerror = null;
+                    img.src = e.target.result;
+                    img.classList.remove('hidden');
+                    // Restaura o onerror após um pequeno delay
+                    setTimeout(() => { img.onerror = oldOnError; }, 1000);
+                }
+                if (icon) icon.classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+
+            // 4. Iniciar Upload real
+            const storeName = document.getElementById('store-name').value || 'temp';
+            const slug = window.slugify(storeName);
+            const timestamp = Date.now();
+            const path = `stores/${slug}/${productId ? 'products/' + productId + '_' + timestamp : 'banner_' + timestamp}`;
+            
+            const { ref, uploadBytesResumable, getDownloadURL } = window.st;
+            const storageRef = ref(window.storage, path);
+            const uploadTask = uploadBytesResumable(storageRef, file);
+
+            const progressContainer = document.getElementById(productId ? `progress-${productId}` : 'banner-progress');
+            const progressBar = document.getElementById(productId ? `progress-bar-${productId}` : 'banner-progress-bar');
+            
+            if (progressContainer) progressContainer.classList.remove('hidden');
+
+            uploadTask.on('state_changed', 
+                (snapshot) => {
+                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    if (progressBar) progressBar.style.width = progress + '%';
+                }, 
+                (error) => {
+                    console.error("Erro no upload:", error);
+                    // Se der erro, avisamos o usuário
+                    if (error.code === 'storage/unauthorized') {
+                        alert("Erro: Sem permissão para salvar. Verifique as regras do seu Firebase Storage.");
+                    } else {
+                        alert("Erro ao subir imagem. Verifique sua internet.");
+                    }
+                    if (progressContainer) progressContainer.classList.add('hidden');
+                }, 
+                async () => {
+                    // Upload concluído com sucesso
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                    const inputEl = document.getElementById(inputId);
+                    if (inputEl) {
+                        inputEl.value = downloadURL;
+                        // Atualiza o dado no rascunho/produto
+                        if (productId) {
+                            window.updateProduct(productId, 'image', downloadURL);
+                        } else {
+                            window.saveDraft();
+                        }
+                    }
+                    if (progressContainer) {
+                        setTimeout(() => progressContainer.classList.add('hidden'), 1000);
+                    }
+                }
+            );
         }
 
         window.slugify = function(text) {

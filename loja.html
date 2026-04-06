@@ -10,6 +10,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAJaxRdA6uzbN41JvAw8xO7F5mzJaDfMBc",
@@ -22,6 +23,10 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app, "ai-studio-2395f72f-4dac-4517-9681-c654cd1a03ca");
+        const auth = getAuth(app);
+
+        // Login anônimo para garantir acesso ao Storage se as regras forem restritivas
+        signInAnonymously(auth).catch(err => console.error("Erro no login anônimo:", err));
 
         window.db = db;
         window.firebaseUtils = { doc, getDoc };
@@ -65,21 +70,14 @@
         function proxyImg(url) {
             if (!url) return '';
             let u = url.trim();
-            
+            // Se for base64, retorna direto
+            if (u.startsWith('data:image')) return u;
             // Se for link do Firebase, não precisa de proxy
             if (u.includes('firebasestorage.googleapis.com')) return u;
-
-            // Se for link de visualizador, tenta corrigir (mas o ideal é o link direto)
-            if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) {
-                u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
-            }
-            if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) {
-                u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
-            }
-
-            if (!u.startsWith('http')) u = 'https://' + u;
             
-            // Retorna o link direto sem atravessadores
+            if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
+            if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
+            if (!u.startsWith('http')) u = 'https://' + u;
             return u;
         }
 
@@ -96,30 +94,25 @@
 
                 const data = docSnap.data();
                 console.log("Dados brutos do Firestore:", data);
-                
-                // Fallback de cores para evitar erro .startsWith
-                const pColor = data.c || 'f97316';
-                const sColor = data.b || '0f172a';
-
                 return {
-                    name: data.n || 'Minha Loja',
-                    whatsapp: data.w || '',
-                    address: data.a || '',
-                    instagram: data.ig || '',
-                    facebook: data.fb || '',
-                    primaryColor: pColor.startsWith('#') ? pColor : '#' + pColor,
-                    secondaryColor: sColor.startsWith('#') ? sColor : '#' + sColor,
+                    name: data.n,
+                    whatsapp: data.w,
+                    address: data.a,
+                    instagram: data.ig,
+                    facebook: data.fb,
+                    primaryColor: data.c.startsWith('#') ? data.c : '#' + data.c,
+                    secondaryColor: data.b.startsWith('#') ? data.b : '#' + data.b,
                     bannerImage: data.bi,
-                    type: data.t || 'loja',
+                    type: data.t,
                     status: data.status || 'active',
                     expiresAt: data.expiresAt || data.createdAt,
                     products: (data.p || []).map(p => ({
-                        id: p.id || Math.random().toString(36).substr(2, 9),
-                        name: p.n || 'Produto sem nome',
-                        price: p.p || '',
+                        id: Math.random().toString(36).substr(2, 9),
+                        name: p.n,
+                        price: p.p,
                         wholesalePrice: p.wp || '',
                         wholesaleMinQty: p.wq || '',
-                        image: p.i || '',
+                        image: p.i,
                         description: p.d || ''
                     }))
                 };
@@ -287,7 +280,7 @@
             const productsHTML = storeData.products.map(p => `
                 <div class="bg-white rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex flex-col">
                     <div class="relative overflow-hidden bg-slate-50 w-full" style="aspect-ratio: 9/16 !important;">
-                        <img src="${proxyImg(p.image)}" class="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-500" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://picsum.photos/seed/'+Math.random()+'/400/700'; console.log('Erro ao carregar imagem:', '${p.image}')">
+                        <img src="${proxyImg(p.image)}" class="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-500" referrerpolicy="no-referrer" onerror="this.src='https://picsum.photos/seed/'+Math.random()+'/400/700'">
                     </div>
                     <div class="p-3 sm:p-5 flex flex-col flex-1">
                         <h3 class="font-bold text-sm sm:text-lg mb-1 line-clamp-2 leading-tight h-10 sm:h-auto">${p.name}</h3>

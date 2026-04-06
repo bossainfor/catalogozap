@@ -122,6 +122,7 @@
         }
 
         function formatCurrency(value) {
+            if (!value || value === '0' || value === '0,00') return 'Peça Orçamento';
             const num = typeof value === 'string' ? parseFloat(value.replace(',', '.')) : value;
             return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(num || 0);
         }
@@ -170,7 +171,7 @@
                 itemsContainer.innerHTML = cart.map(item => {
                     const isWholesale = item.wholesaleMinQty && item.quantity >= item.wholesaleMinQty;
                     const priceToUse = isWholesale ? item.wholesalePrice : item.price;
-                    const subtotal = parseFloat(priceToUse.replace(',', '.')) * item.quantity;
+                    const subtotal = parseFloat((priceToUse || '0').replace(',', '.')) * item.quantity;
                     total += subtotal;
 
                     return `
@@ -210,9 +211,10 @@
             cart.forEach(item => {
                 const isWholesale = item.wholesaleMinQty && item.quantity >= item.wholesaleMinQty;
                 const priceToUse = isWholesale ? item.wholesalePrice : item.price;
-                const subtotal = parseFloat(priceToUse.replace(',', '.')) * item.quantity;
+                const subtotal = parseFloat((priceToUse || '0').replace(',', '.')) * item.quantity;
                 total += subtotal;
-                message += `- ${item.quantity}x ${item.name} (${formatCurrency(priceToUse)})${isWholesale ? ' *[ATACADO]*' : ''}\n`;
+                const priceDisplay = (!priceToUse || priceToUse === '0' || priceToUse === '0,00') ? 'Peça Orçamento' : formatCurrency(priceToUse);
+                message += `- ${item.quantity}x ${item.name} (${priceDisplay})${isWholesale ? ' *[ATACADO]*' : ''}\n`;
             });
             message += `\n*Total: ${formatCurrency(total)}*`;
             window.open(`https://wa.me/55${storeData.whatsapp}?text=${encodeURIComponent(message)}`, '_blank');

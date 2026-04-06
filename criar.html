@@ -617,10 +617,11 @@
             data.b = document.getElementById('secondary-color').value.replace('#', '');
             data.t = document.getElementById('niche').value;
             
-            const validProducts = window.products.filter(p => p.name && p.price);
+            const validProducts = window.products.filter(p => p.name);
             if (validProducts.length > 0) {
                 data.p = validProducts.map(p => {
-                    const item = { n: p.name, p: p.price };
+                    const item = { n: p.name };
+                    if (p.price) item.p = p.price;
                     if (p.image) item.i = p.image;
                     if (p.description) item.d = p.description;
                     if (p.wholesalePrice) item.wp = p.wholesalePrice;

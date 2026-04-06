@@ -240,15 +240,6 @@
             if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) {
                 u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
             }
-            // Se for link de visualizador do Postimages
-            if ((u.includes('postimg.cc/') || u.includes('postimages.org/')) && !u.includes('i.postimg.cc/')) {
-                // Tenta converter link de página em link direto
-                const parts = u.split('/');
-                const id = parts[parts.length - 1].split('?')[0];
-                if (id && id.length > 3) {
-                    u = `https://i.postimg.cc/${id}/image.png`;
-                }
-            }
 
             // Só adiciona https:// se não tiver protocolo e não for base64
             if (!u.startsWith('http') && !u.startsWith('//') && !u.startsWith('data:')) {
@@ -432,11 +423,11 @@
                                 <div class="flex-1 flex flex-col gap-2 min-w-0">
                                     <div class="flex gap-2">
                                         <input type="text" value="${p.image.replace(/"/g, '&quot;')}" id="input-${p.id}" oninput="window.updateProduct('${p.id}', 'image', this.value)" placeholder="Cole o LINK DIRETO aqui" class="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 text-xs focus:border-orange-500 outline-none transition-all">
-                                        <button type="button" onclick="window.open('https://postimages.org/', '_blank')" class="bg-blue-600 text-white px-4 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 flex-shrink-0">
+                                        <button type="button" onclick="window.open('https://postimages.org/', '_blank')" class="bg-blue-600 text-white px-4 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 flex-shrink-0" title="Subir Foto">
                                             <i data-lucide="camera" class="w-4 h-4"></i>
                                         </button>
                                     </div>
-                                    <p class="text-[9px] text-slate-400 font-medium leading-tight">Clique na câmera para subir a foto e cole o <span class="text-blue-600 font-bold">"Link Direto"</span> aqui.</p>
+                                    <p class="text-[9px] text-slate-400 font-medium leading-tight">No Postimages, use o campo <span class="text-blue-600 font-bold">"Link Direto"</span> (o que termina com .jpg ou .png).</p>
                                 </div>
                             </div>
                         </div>

@@ -96,25 +96,30 @@
 
                 const data = docSnap.data();
                 console.log("Dados brutos do Firestore:", data);
+                
+                // Fallback de cores para evitar erro .startsWith
+                const pColor = data.c || 'f97316';
+                const sColor = data.b || '0f172a';
+
                 return {
-                    name: data.n,
-                    whatsapp: data.w,
-                    address: data.a,
-                    instagram: data.ig,
-                    facebook: data.fb,
-                    primaryColor: data.c.startsWith('#') ? data.c : '#' + data.c,
-                    secondaryColor: data.b.startsWith('#') ? data.b : '#' + data.b,
+                    name: data.n || 'Minha Loja',
+                    whatsapp: data.w || '',
+                    address: data.a || '',
+                    instagram: data.ig || '',
+                    facebook: data.fb || '',
+                    primaryColor: pColor.startsWith('#') ? pColor : '#' + pColor,
+                    secondaryColor: sColor.startsWith('#') ? sColor : '#' + sColor,
                     bannerImage: data.bi,
-                    type: data.t,
+                    type: data.t || 'loja',
                     status: data.status || 'active',
                     expiresAt: data.expiresAt || data.createdAt,
                     products: (data.p || []).map(p => ({
                         id: p.id || Math.random().toString(36).substr(2, 9),
-                        name: p.n,
-                        price: p.p,
+                        name: p.n || 'Produto sem nome',
+                        price: p.p || '',
                         wholesalePrice: p.wp || '',
                         wholesaleMinQty: p.wq || '',
-                        image: p.i,
+                        image: p.i || '',
                         description: p.d || ''
                     }))
                 };

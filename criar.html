@@ -239,6 +239,7 @@
     <script>
         // Tornar funções globais explicitamente para garantir funcionamento em botões
         window.products = [{ id: Date.now().toString(), name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', description: '' }];
+        window.activeUploads = 0;
 
         function proxyImg(url) {
             if (!url) return '';
@@ -246,7 +247,7 @@
             // Se for base64, retorna direto
             if (u.startsWith('data:image')) return u;
             // Se for link do Firebase, não precisa de proxy
-            if (u.includes('firebasestorage.googleapis.com')) return u;
+            if (u.includes('firebasestorage.')) return u;
             
             if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
             if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
@@ -457,6 +458,8 @@
             if (!file) return;
 
             console.log(`Iniciando upload para ${productId || 'banner'}...`);
+            window.activeUploads++;
+            updateMainButtonState();
 
             // 1. Verificar se o sistema de upload carregou
             if (!window.st || !window.storage) {
@@ -508,6 +511,8 @@
                 (error) => {
                     console.error("Erro no upload:", error);
                     alert("Erro ao subir imagem: " + error.message);
+                    window.activeUploads--;
+                    updateMainButtonState();
                     if (progressContainer) progressContainer.classList.add('hidden');
                 }, 
                 async () => {
@@ -529,12 +534,33 @@
                         console.error("Erro ao obter URL de download:", e);
                         alert("Erro ao finalizar upload.");
                     } finally {
+                        window.activeUploads--;
+                        updateMainButtonState();
                         if (progressContainer) {
                             setTimeout(() => progressContainer.classList.add('hidden'), 1000);
                         }
                     }
                 }
             );
+        }
+
+        function updateMainButtonState() {
+            const btn = document.getElementById('main-action-btn');
+            const btnText = document.getElementById('btn-text');
+            if (!btn) return;
+
+            if (window.activeUploads > 0) {
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                if (btnText) btnText.innerText = "Aguarde o upload das fotos...";
+            } else {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                // Restaura o texto baseado no estado (Gerar ou Atualizar)
+                const urlParams = new URLSearchParams(window.location.search);
+                const isEditing = urlParams.get('edit') || urlParams.get('id') || window.existingStoreId;
+                if (btnText) btnText.innerText = isEditing ? "Atualizar Meu Catálogo" : "Gerar Minha Página";
+            }
         }
 
         window.slugify = function(text) {
@@ -587,6 +613,18 @@
         }
 
         window.generateStore = async function() {
+            if (window.activeUploads > 0) {
+                alert("Aguarde o fim do upload das imagens antes de salvar!");
+                return;
+            }
+
+            const btn = document.getElementById('main-action-btn');
+            const btnText = document.getElementById('btn-text');
+            const originalText = btnText ? btnText.innerText : '';
+            
+            if (btn) btn.disabled = true;
+            if (btnText) btnText.innerText = "Salvando Catálogo...";
+
             // Aguarda o Firebase inicializar
             let attempts = 0;
             while (!window.db && attempts < 50) {
@@ -783,8 +821,8 @@
                 console.error("Erro ao salvar:", error);
                 alert("Erro ao salvar no banco de dados. Verifique sua conexão e tente novamente. (Erro: " + error.message + ")");
             } finally {
-                btn.innerHTML = originalText;
-                btn.disabled = false;
+                if (btn) btn.disabled = false;
+                if (btnText) btnText.innerText = originalText;
                 if (window.lucide) lucide.createIcons();
             }
         }

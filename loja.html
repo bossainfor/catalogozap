@@ -75,6 +75,7 @@
             }
             // Se for link de visualizador do Postimages
             if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) {
+                // Tenta converter link de página em link direto (chute comum)
                 u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
             }
 
@@ -288,7 +289,7 @@
                 
                 return `
                 <div class="bg-white rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex flex-col">
-                    <div class="relative overflow-hidden bg-slate-100 w-full aspect-square">
+                    <div class="relative overflow-hidden bg-slate-100 w-full aspect-[9/16]">
                         ${hasImage ? `
                             <img src="${imgUrl}" 
                                  class="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-500" 

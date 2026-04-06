@@ -122,7 +122,7 @@
                         </div>
                         <div class="space-y-2">
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">WhatsApp (DDD + Número)</label>
-                            <input type="text" id="whatsapp" oninput="window.saveDraft()" placeholder="Ex: 11999999999" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                            <input type="text" id="whatsapp" oninput="window.saveDraft(); window.checkWhatsApp(this.value)" placeholder="Ex: 11999999999" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
                         </div>
                         <div class="space-y-2 md:col-span-2">
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Endereço da Loja</label>
@@ -523,6 +523,45 @@
                 .replace(/-+$/, '');            // Remove - do fim
         }
 
+        window.checkWhatsApp = async function(val) {
+            const whatsappClean = val.replace(/\D/g, '');
+            if (whatsappClean.length < 10) return;
+
+            // Se já estivermos editando uma loja específica via URL, não mudamos o comportamento
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('edit') || urlParams.get('id')) return;
+
+            try {
+                const { doc, getDoc } = window.fs;
+                const historySnap = await getDoc(doc(window.db, "trial_history", whatsappClean));
+                
+                const btn = document.getElementById('main-action-btn');
+                const btnText = document.getElementById('btn-text');
+                const btnIcon = btn.querySelector('i');
+
+                if (historySnap.exists()) {
+                    const historyData = historySnap.data();
+                    window.existingStoreId = historyData.storeId;
+                    
+                    // Muda para modo ATUALIZAR
+                    btn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+                    btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    if (btnText) btnText.innerText = "Atualizar Meu Catálogo";
+                    if (btnIcon) btnIcon.setAttribute('data-lucide', 'refresh-cw');
+                } else {
+                    window.existingStoreId = null;
+                    // Volta para modo GERAR
+                    btn.classList.add('bg-slate-900', 'hover:bg-slate-800');
+                    btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    if (btnText) btnText.innerText = "Gerar Minha Página";
+                    if (btnIcon) btnIcon.setAttribute('data-lucide', 'smartphone');
+                }
+                if (window.lucide) lucide.createIcons();
+            } catch (e) {
+                console.error("Erro ao verificar WhatsApp:", e);
+            }
+        }
+
         window.generateStore = async function() {
             // Aguarda o Firebase inicializar
             let attempts = 0;
@@ -588,8 +627,14 @@
             try {
                 const whatsappClean = whatsapp.replace(/\D/g, '');
                 const urlParams = new URLSearchParams(window.location.search);
-                const existingId = urlParams.get('edit') || urlParams.get('id');
+                const existingId = urlParams.get('edit') || urlParams.get('id') || window.existingStoreId;
                 const { doc, getDoc, setDoc } = window.fs;
+
+                // Se não estivermos editando explicitamente, mas o número já existe
+                if (!urlParams.get('edit') && !urlParams.get('id') && window.existingStoreId) {
+                    // Opcional: Você pode carregar os dados da loja antiga aqui se quiser, 
+                    // mas por enquanto vamos apenas salvar por cima do ID existente.
+                }
 
                 // TRAVA DE WHATSAPP REFORÇADA: Verifica se o número já possui uma loja
                 const historySnap = await getDoc(doc(window.db, "trial_history", whatsappClean));

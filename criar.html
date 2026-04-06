@@ -237,6 +237,9 @@
         function proxyImg(url) {
             if (!url) return '';
             let u = url.trim();
+            // Se for link do Firebase, não precisa de proxy
+            if (u.includes('firebasestorage.googleapis.com')) return u;
+            
             if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
             if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
             if (!u.startsWith('http')) u = 'https://' + u;
@@ -436,16 +439,34 @@
             const file = input.files[0];
             if (!file) return;
 
+            // 1. Verificar se o sistema de upload carregou
+            if (!window.st || !window.storage) {
+                alert("O sistema de fotos ainda está iniciando. Aguarde 2 segundos e tente novamente.");
+                return;
+            }
+
+            // 2. Validação de tamanho
             if (file.size > 5 * 1024 * 1024) {
                 alert("A imagem é muito grande! Máximo 5MB.");
                 return;
             }
 
+            // 3. Mostrar prévia local IMEDIATA para o usuário não achar que travou
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = document.getElementById(previewId);
+                const icon = document.getElementById(productId ? `icon-${productId}` : 'banner-icon');
+                if (img) {
+                    img.src = e.target.result;
+                    img.classList.remove('hidden');
+                }
+                if (icon) icon.classList.add('hidden');
+            };
+            reader.readAsDataURL(file);
+
+            // 4. Iniciar Upload real
             const storeName = document.getElementById('store-name').value || 'temp';
             const slug = window.slugify(storeName);
-            // Usar um nome fixo para facilitar a exclusão posterior se necessário, 
-            // mas adicionando um timestamp para evitar cache agressivo do navegador se desejar.
-            // Para simplificar a exclusão, vamos usar apenas o ID do produto ou 'banner'.
             const path = `stores/${slug}/${productId ? 'products/' + productId : 'banner'}`;
             
             const { ref, uploadBytesResumable, getDownloadURL } = window.st;
@@ -464,15 +485,26 @@
                 }, 
                 (error) => {
                     console.error("Erro no upload:", error);
-                    alert("Erro ao subir imagem. Tente novamente.");
+                    // Se der erro, avisamos o usuário
+                    if (error.code === 'storage/unauthorized') {
+                        alert("Erro: Sem permissão para salvar. Verifique as regras do seu Firebase Storage.");
+                    } else {
+                        alert("Erro ao subir imagem. Verifique sua internet.");
+                    }
                     if (progressContainer) progressContainer.classList.add('hidden');
                 }, 
                 async () => {
+                    // Upload concluído com sucesso
                     const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
                     const inputEl = document.getElementById(inputId);
                     if (inputEl) {
                         inputEl.value = downloadURL;
-                        inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+                        // Atualiza o dado no rascunho/produto
+                        if (productId) {
+                            window.updateProduct(productId, 'image', downloadURL);
+                        } else {
+                            window.saveDraft();
+                        }
                     }
                     if (progressContainer) {
                         setTimeout(() => progressContainer.classList.add('hidden'), 1000);

@@ -183,6 +183,9 @@
                                         <i data-lucide="camera" class="w-4 h-4"></i>
                                         <span class="hidden sm:inline">Subir</span>
                                     </button>
+                                    <button type="button" onclick="document.getElementById('banner-image').value=''; window.updateBannerPreview(''); window.saveDraft()" class="bg-red-100 text-red-600 px-4 rounded-2xl hover:bg-red-200 transition-all flex items-center justify-center flex-shrink-0" title="Remover imagem">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -440,6 +443,9 @@
                                     <input type="text" value="${p.image.replace(/"/g, '&quot;')}" id="input-${p.id}" oninput="window.updateProduct('${p.id}', 'image', this.value)" placeholder="Link ou use o botão" class="flex-1 min-w-0 px-4 py-3 rounded-xl border border-slate-200 text-xs focus:border-orange-500 outline-none transition-all">
                                     <button type="button" onclick="window.open('https://postimages.org/', '_blank')" class="bg-blue-600 text-white px-4 rounded-xl font-bold hover:bg-blue-700 transition-all flex items-center gap-2 flex-shrink-0">
                                         <i data-lucide="camera" class="w-4 h-4"></i>
+                                    </button>
+                                    <button type="button" onclick="document.getElementById('input-${p.id}').value=''; window.updateProduct('${p.id}', 'image', '')" class="bg-red-100 text-red-600 px-3 rounded-xl hover:bg-red-200 transition-all flex items-center justify-center flex-shrink-0" title="Remover imagem">
+                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
                                     </button>
                                 </div>
                             </div>

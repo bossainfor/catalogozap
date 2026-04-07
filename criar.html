@@ -143,7 +143,7 @@
                 </section>
 
                 <section class="space-y-6">
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <div class="space-y-2">
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Nicho</label>
                             <select id="niche" onchange="window.saveDraft()" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
@@ -151,6 +151,13 @@
                                 <option value="cardapio">Cardápio</option>
                                 <option value="servicos">Serviços</option>
                                 <option value="portfolio">Portfólio</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Formato das Fotos</label>
+                            <select id="image-format" onchange="window.saveDraft()" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                                <option value="vertical">Vertical (9:16)</option>
+                                <option value="quadrado">Quadrado (1:1)</option>
                             </select>
                         </div>
                         <div class="space-y-2">
@@ -260,6 +267,7 @@
                 instagram: document.getElementById('instagram').value,
                 facebook: document.getElementById('facebook').value,
                 niche: document.getElementById('niche').value,
+                imageFormat: document.getElementById('image-format').value,
                 primaryColor: document.getElementById('primary-color').value,
                 secondaryColor: document.getElementById('secondary-color').value,
                 bannerImage: document.getElementById('banner-image').value,
@@ -306,6 +314,7 @@
                 document.getElementById('instagram').value = draft.instagram || '';
                 document.getElementById('facebook').value = draft.facebook || '';
                 document.getElementById('niche').value = draft.niche || 'loja';
+                document.getElementById('image-format').value = draft.imageFormat || 'vertical';
                 document.getElementById('primary-color').value = draft.primaryColor || '#f97316';
                 document.getElementById('secondary-color').value = draft.secondaryColor || '#0f172a';
                 document.getElementById('banner-image').value = draft.bannerImage || '';
@@ -540,6 +549,7 @@
             data.c = document.getElementById('primary-color').value.replace('#', '');
             data.b = document.getElementById('secondary-color').value.replace('#', '');
             data.t = document.getElementById('niche').value;
+            data.imf = document.getElementById('image-format').value;
             
             const validProducts = window.products.filter(p => p.name);
             if (validProducts.length > 0) {
@@ -825,6 +835,7 @@
                     document.getElementById('banner-image').value = data.bi || '';
                     window.updateBannerPreview(data.bi);
                     document.getElementById('niche').value = data.t || 'loja';
+                    document.getElementById('image-format').value = data.imf || 'vertical';
                     
                     if (data.p && data.p.length > 0) {
                         window.products = data.p.map(p => ({

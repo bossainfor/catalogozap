@@ -275,6 +275,9 @@
                             <button onclick="deleteStore('${id}')" title="Excluir" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
                                 <i data-lucide="trash-2" size="16"></i>
                             </button>
+                            <button onclick="copyEditLink('${id}')" title="Copiar Link de Edição" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
+                                <i data-lucide="copy" size="16"></i>
+                            </button>
                             <a href="loja.html?id=${id}" target="_blank" title="Ver Loja" class="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors">
                                 <i data-lucide="external-link" size="16"></i>
                             </a>
@@ -316,6 +319,9 @@
                         </button>
                         <button onclick="deleteStore('${id}')" class="p-3 bg-red-50 text-red-600 rounded-xl">
                             <i data-lucide="trash-2" size="16"></i>
+                        </button>
+                        <button onclick="copyEditLink('${id}')" class="p-3 bg-blue-50 text-blue-600 rounded-xl">
+                            <i data-lucide="copy" size="16"></i>
                         </button>
                         <a href="loja.html?id=${id}" target="_blank" class="p-3 bg-slate-100 text-slate-600 rounded-xl">
                             <i data-lucide="external-link" size="16"></i>
@@ -398,6 +404,13 @@
                 console.error("Erro ao excluir:", error);
                 alert("Erro ao excluir.");
             }
+        }
+
+        window.copyEditLink = function(id) {
+            const baseUrl = window.location.href.split('admin.html')[0];
+            const editUrl = `${baseUrl}criar.html?edit=${id}`;
+            navigator.clipboard.writeText(editUrl);
+            alert("Link de edição copiado para a área de transferência!");
         }
 
         window.onload = () => {

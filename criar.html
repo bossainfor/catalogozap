@@ -552,6 +552,13 @@
             if (urlParams.get('edit') || urlParams.get('id')) return;
 
             try {
+                // Aguarda o Firebase inicializar
+                let attempts = 0;
+                while ((!window.db || !window.fs) && attempts < 50) {
+                    await new Promise(r => setTimeout(r, 100));
+                    attempts++;
+                }
+
                 const { doc, getDoc } = window.fs;
                 const historySnap = await getDoc(doc(window.db, "trial_history", whatsappClean));
                 
@@ -568,6 +575,14 @@
                     btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
                     if (btnText) btnText.innerText = "Atualizar Meu Catálogo";
                     if (btnIcon) btnIcon.setAttribute('data-lucide', 'refresh-cw');
+
+                    // Oferece carregar os dados se o formulário estiver vazio
+                    const storeName = document.getElementById('store-name').value;
+                    if (!storeName || storeName === '') {
+                        if (confirm(`Encontramos sua loja "${historyData.storeId}". Deseja carregar os dados dela para continuar editando?`)) {
+                            window.loadFromFirebase(historyData.storeId);
+                        }
+                    }
                 } else {
                     window.existingStoreId = null;
                     // Volta para modo GERAR
@@ -852,15 +867,15 @@
             }
         }
 
-        window.loadFromFirebase = async function() {
+        window.loadFromFirebase = async function(forcedId = null) {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
-                const storeId = urlParams.get('edit') || urlParams.get('id');
+                const storeId = forcedId || urlParams.get('edit') || urlParams.get('id');
                 if (!storeId) return;
 
                 // Aguarda o Firebase inicializar
                 let attempts = 0;
-                while (!window.db && attempts < 50) {
+                while ((!window.db || !window.fs) && attempts < 50) {
                     await new Promise(r => setTimeout(r, 100));
                     attempts++;
                 }
@@ -872,20 +887,21 @@
                     const data = docSnap.data();
                     
                     // Verifica se o rascunho local é mais recente que o dado do servidor
-                    const draftStr = localStorage.getItem('catalog_draft');
-                    if (draftStr) {
-                        try {
-                            const draft = JSON.parse(draftStr);
-                            if (draft.storeId === storeId && draft.lastUpdated) {
-                                const serverUpdate = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
-                                if (draft.lastUpdated > serverUpdate) {
-                                    console.log("Usando rascunho local mais recente");
-                                    // O rascunho já foi carregado pelo loadDraft() no onload
-                                    // Então não sobrescrevemos com os dados do Firebase
-                                    return;
+                    // Só faz isso se NÃO for um carregamento forçado pelo WhatsApp
+                    if (!forcedId) {
+                        const draftStr = localStorage.getItem('catalog_draft');
+                        if (draftStr) {
+                            try {
+                                const draft = JSON.parse(draftStr);
+                                if (draft.storeId === storeId && draft.lastUpdated) {
+                                    const serverUpdate = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
+                                    if (draft.lastUpdated > serverUpdate) {
+                                        console.log("Usando rascunho local mais recente");
+                                        return;
+                                    }
                                 }
-                            }
-                        } catch (e) { console.error("Erro ao comparar rascunho:", e); }
+                            } catch (e) { console.error("Erro ao comparar rascunho:", e); }
+                        }
                     }
 
                     // Tenta atualizar a interface
@@ -930,16 +946,19 @@
                             image: p.i,
                             description: p.d || ''
                         }));
+                    } else {
+                        // Se a loja existe mas não tem produtos salvos, mantém o padrão ou limpa
+                        // window.products = [{ id: Date.now().toString(), name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', description: '' }];
                     }
                     window.renderProducts();
                 }
             } catch (e) { console.error("Erro ao carregar dados:", e); }
         }
 
-        window.onload = () => {
+        window.onload = async () => {
             window.loadDraft();
             window.checkLastStore();
-            window.loadFromFirebase();
+            await window.loadFromFirebase();
             window.renderProducts();
         };
     </script>

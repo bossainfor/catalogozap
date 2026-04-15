@@ -101,9 +101,9 @@
 
         <!-- AVISO IMPORTANTE -->
         <div class="bg-slate-900 text-white p-4 rounded-2xl mb-8 shadow-lg flex items-center gap-4 border-l-8 border-orange-500">
-            <div class="bg-white/20 p-3 rounded-full text-orange-500"><i data-lucide="alert-circle"></i></div>
+            <div class="bg-white/20 p-3 rounded-full text-orange-500"><i data-lucide="zap"></i></div>
             <p class="text-xs font-bold leading-tight">
-                USE O POSTIMAGES: Suba a foto e copie o <span class="text-orange-500 underline">"LINK DIRETO"</span>. É o único que funciona 100% no celular!
+                <span class="text-orange-500 uppercase">Dica de Qualidade:</span> Use o botão <span class="text-orange-500 underline">"SUBIR FOTO"</span> para máxima nitidez. Se usar o Postimages, o sistema agora corrige o link automaticamente!
             </p>
         </div>
         <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
@@ -249,16 +249,33 @@
         // Tornar funções globais explicitamente para garantir funcionamento em botões
         window.products = [{ id: Date.now().toString(), name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', category: '', description: '' }];
 
+        // Proxy de Imagem (Melhorado para Postimages e outros)
         function proxyImg(url) {
             if (!url) return '';
             let u = url.trim();
+            
             // Se for base64, retorna direto
             if (u.startsWith('data:image')) return u;
+            
             // Se for link do Firebase, não precisa de proxy
             if (u.includes('firebasestorage.')) return u;
             
-            if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
-            if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
+            // Tratamento inteligente para Postimages
+            if (u.includes('postimg.cc/')) {
+                // Se o cliente colou o link da página (ex: postimg.cc/65sF32Sj)
+                // Transformamos no link direto (ex: i.postimg.cc/65sF32Sj/image.jpg)
+                if (!u.includes('i.postimg.cc/')) {
+                    const parts = u.split('/');
+                    const id = parts[parts.length - 1];
+                    u = `https://i.postimg.cc/${id}/image.jpg`;
+                }
+            }
+            
+            // Tratamento para ImgBB
+            if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) {
+                u = u.replace('ibb.co/', 'i.ibb.co/') + '.png';
+            }
+
             if (!u.startsWith('http')) u = 'https://' + u;
             return u;
         }

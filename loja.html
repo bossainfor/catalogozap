@@ -38,6 +38,8 @@
         .cart-drawer.open { transform: translateX(0); }
         .overlay { opacity: 0; pointer-events: none; transition: opacity 0.3s; }
         .overlay.open { opacity: 1; pointer-events: auto; }
+        .category-scroll::-webkit-scrollbar { display: none; }
+        .category-scroll { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="bg-white text-slate-900">
@@ -65,6 +67,7 @@
     <script>
         let storeData = null;
         let cart = [];
+        let selectedCategory = 'Todos';
 
         // Proxy de Imagem (Simplificado e Direto)
         function proxyImg(url) {
@@ -116,6 +119,7 @@
                             wholesalePrice: p.wp || '',
                             wholesaleMinQty: p.wq || '',
                             image: p.i,
+                            category: p.cat || '',
                             description: p.d || ''
                         };
                     })
@@ -235,6 +239,25 @@
             window.open(`https://wa.me/55${storeData.whatsapp}?text=${encodeURIComponent(message)}`, '_blank');
         }
 
+        window.filterByCategory = function(cat) {
+            selectedCategory = cat;
+            renderStore();
+            // Scroll suave para o topo dos produtos
+            const productsGrid = document.getElementById('products-grid');
+            if (productsGrid) {
+                const offset = 100;
+                const bodyRect = document.body.getBoundingClientRect().top;
+                const elementRect = productsGrid.getBoundingClientRect().top;
+                const elementPosition = elementRect - bodyRect;
+                const offsetPosition = elementPosition - offset;
+
+                window.scrollTo({
+                    top: offsetPosition,
+                    behavior: 'smooth'
+                });
+            }
+        }
+
         function renderStore() {
             const urlParams = new URLSearchParams(window.location.search);
             const app = document.getElementById('app');
@@ -281,7 +304,15 @@
             const btnAction = isService ? 'requestQuote' : 'addToCart';
             const btnIcon = isService ? 'message-circle' : 'shopping-cart';
 
-            const productsHTML = storeData.products.map(p => {
+            // Extrair Categorias Únicas
+            const categories = ['Todos', ...new Set(storeData.products.filter(p => p.category).map(p => p.category))];
+            const hasCategories = categories.length > 1;
+
+            const filteredProducts = selectedCategory === 'Todos' 
+                ? storeData.products 
+                : storeData.products.filter(p => p.category === selectedCategory);
+
+            const productsHTML = filteredProducts.map(p => {
                 const imageUrl = proxyImg(p.image);
                 return `
                 <div class="bg-white rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex flex-col">
@@ -320,7 +351,26 @@
                         </div>
                     </div>
 
-                    <main class="max-w-6xl mx-auto px-3 sm:px-6 py-6 sm:py-10 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-8 flex-1 w-full">
+                    ${hasCategories ? `
+                    <div class="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-100">
+                        <div class="max-w-6xl mx-auto px-4 py-4 flex gap-2 overflow-x-auto category-scroll">
+                            ${categories.map(cat => `
+                                <button onclick="window.filterByCategory('${cat}')" 
+                                        class="px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap border-2"
+                                        style="
+                                            background-color: ${selectedCategory === cat ? storeData.primaryColor : 'transparent'};
+                                            color: ${selectedCategory === cat ? '#ffffff' : storeData.primaryColor};
+                                            border-color: ${storeData.primaryColor};
+                                            opacity: ${selectedCategory === cat ? '1' : '0.6'}
+                                        ">
+                                    ${cat}
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                    ` : ''}
+
+                    <main id="products-grid" class="max-w-6xl mx-auto px-3 sm:px-6 py-6 sm:py-10 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-8 flex-1 w-full">
                         ${productsHTML}
                     </main>
 

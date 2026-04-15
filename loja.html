@@ -69,17 +69,33 @@
         let cart = [];
         let selectedCategory = 'Todos';
 
-        // Proxy de Imagem (Simplificado e Direto)
+        // Proxy de Imagem (Melhorado para Postimages e outros)
         function proxyImg(url) {
             if (!url) return '';
             let u = url.trim();
+            
             // Se for base64, retorna direto
             if (u.startsWith('data:image')) return u;
+            
             // Se for link do Firebase, não precisa de proxy
             if (u.includes('firebasestorage.')) return u;
             
-            if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) u = u.replace('ibb.co/', 'i.ibb.co/') + '.png'; 
-            if (u.includes('postimg.cc/') && !u.includes('i.postimg.cc/')) u = u.replace('postimg.cc/', 'i.postimg.cc/') + '/image.png';
+            // Tratamento inteligente para Postimages
+            if (u.includes('postimg.cc/')) {
+                // Se o cliente colou o link da página (ex: postimg.cc/65sF32Sj)
+                // Transformamos no link direto (ex: i.postimg.cc/65sF32Sj/image.jpg)
+                if (!u.includes('i.postimg.cc/')) {
+                    const parts = u.split('/');
+                    const id = parts[parts.length - 1];
+                    u = `https://i.postimg.cc/${id}/image.jpg`;
+                }
+            }
+            
+            // Tratamento para ImgBB
+            if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) {
+                u = u.replace('ibb.co/', 'i.ibb.co/') + '.png';
+            }
+
             if (!u.startsWith('http')) u = 'https://' + u;
             return u;
         }

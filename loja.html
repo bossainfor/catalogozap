@@ -368,20 +368,32 @@
                     </div>
 
                     ${hasCategories ? `
-                    <div class="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-100">
-                        <div class="max-w-6xl mx-auto px-4 py-4 flex gap-2 overflow-x-auto category-scroll">
-                            ${categories.map(cat => `
-                                <button onclick="window.filterByCategory('${cat}')" 
-                                        class="px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap border-2"
-                                        style="
-                                            background-color: ${selectedCategory === cat ? storeData.primaryColor : 'transparent'};
-                                            color: ${selectedCategory === cat ? '#ffffff' : storeData.primaryColor};
-                                            border-color: ${storeData.primaryColor};
-                                            opacity: ${selectedCategory === cat ? '1' : '0.6'}
-                                        ">
-                                    ${cat}
-                                </button>
-                            `).join('')}
+                    <div class="sticky top-0 z-30 bg-white/80 backdrop-blur-md border-b border-slate-100 group">
+                        <div class="max-w-6xl mx-auto px-1 sm:px-4 py-4 relative flex items-center">
+                            <!-- Seta Esquerda -->
+                            <button onclick="document.getElementById('cat-scroll').scrollBy({left: -200, behavior: 'smooth'})" class="absolute left-0 sm:left-2 z-40 bg-white/90 shadow-md rounded-full p-1.5 text-slate-400 hover:text-orange-500 hidden md:flex items-center justify-center border border-slate-100 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                            </button>
+
+                            <div id="cat-scroll" class="flex gap-2 overflow-x-auto category-scroll scroll-smooth px-4 w-full">
+                                ${categories.map(cat => `
+                                    <button onclick="window.filterByCategory('${cat}')" 
+                                            class="px-6 py-2.5 rounded-full text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap border-2 flex-shrink-0"
+                                            style="
+                                                background-color: ${selectedCategory === cat ? storeData.primaryColor : 'transparent'};
+                                                color: ${selectedCategory === cat ? '#ffffff' : storeData.primaryColor};
+                                                border-color: ${storeData.primaryColor};
+                                                opacity: ${selectedCategory === cat ? '1' : '0.6'}
+                                            ">
+                                        ${cat}
+                                    </button>
+                                `).join('')}
+                            </div>
+
+                            <!-- Seta Direita -->
+                            <button onclick="document.getElementById('cat-scroll').scrollBy({left: 200, behavior: 'smooth'})" class="absolute right-0 sm:right-2 z-40 bg-white/90 shadow-md rounded-full p-1.5 text-slate-400 hover:text-orange-500 hidden md:flex items-center justify-center border border-slate-100 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                            </button>
                         </div>
                     </div>
                     ` : ''}

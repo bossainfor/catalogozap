@@ -991,10 +991,21 @@
                 const docSnap = await getDoc(doc(window.db, "stores", storeId));
 
                 if (docSnap.exists()) {
+                    // Re-utiliza a lógica de UI de edição
+                    const mainBtn = document.getElementById('main-action-btn');
+                    if (mainBtn) {
+                        mainBtn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+                        mainBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    }
+                    const btnTextEl = document.getElementById('btn-text');
+                    if (btnTextEl) btnTextEl.innerText = "Atualizar Minha Página";
+                    
+                    const activatePlanContainer = document.getElementById('activate-plan-container');
+                    if (activatePlanContainer) activatePlanContainer.classList.remove('hidden');
+
                     const data = docSnap.data();
                     
                     // Verifica se o rascunho local é mais recente que o dado do servidor
-                    // Só faz isso se NÃO for um carregamento forçado pelo WhatsApp
                     if (!forcedId) {
                         const draftStr = localStorage.getItem('catalog_draft');
                         if (draftStr) {
@@ -1004,6 +1015,7 @@
                                     const serverUpdate = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
                                     if (draft.lastUpdated > serverUpdate) {
                                         console.log("Usando rascunho local mais recente");
+                                        if (window.lucide) lucide.createIcons();
                                         return;
                                     }
                                 }
@@ -1011,25 +1023,7 @@
                         }
                     }
 
-                    // Tenta atualizar a interface
-                    try {
-                        const mainBtn = document.getElementById('main-action-btn');
-                        if (mainBtn) {
-                            mainBtn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
-                            mainBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
-                        }
-                        
-                        const btnTextEl = document.getElementById('btn-text');
-                        if (btnTextEl) btnTextEl.innerText = "Atualizar Minha Página";
-                        
-                        const activatePlanContainer = document.getElementById('activate-plan-container');
-                        if (activatePlanContainer) activatePlanContainer.classList.remove('hidden');
-                        
-                        if (window.lucide) lucide.createIcons();
-                    } catch (uiError) {
-                        console.error("Erro ao atualizar interface no carregamento:", uiError);
-                    }
-
+                    // Preenche os campos se não usou rascunho
                     document.getElementById('owner-name').value = data.cn || '';
                     document.getElementById('store-name').value = data.n || '';
                     document.getElementById('whatsapp').value = data.w || '';

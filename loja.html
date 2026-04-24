@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="referrer" content="no-referrer">
+    <meta name="referrer" content="no-referrer-when-downgrade">
     <title>Carregando Catálogo...</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -113,11 +113,11 @@
             // YouTube
             if (u.includes('youtube.com/watch?v=') || u.includes('youtu.be/')) {
                 const id = u.includes('watch?v=') ? u.split('v=')[1].split('&')[0] : u.split('youtu.be/')[1].split('?')[0];
-                return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&enablejsapi=1&origin=${window.location.origin}`;
+                return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1`;
             }
             if (u.includes('youtube.com/shorts/')) {
                 const id = u.split('shorts/')[1].split('?')[0];
-                return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&enablejsapi=1&origin=${window.location.origin}`;
+                return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1`;
             }
             
             // Instagram

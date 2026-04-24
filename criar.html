@@ -276,7 +276,7 @@
 
     <script>
         // Tornar funções globais explicitamente para garantir funcionamento em botões
-        window.products = [{ id: Date.now().toString(), name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', category: '', description: '' }];
+        window.products = [{ id: Date.now().toString(), name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', videoUrl: '', category: '', description: '' }];
         window.storePlan = 'free';
         window.vendors = [];
 
@@ -328,7 +328,10 @@
                 primaryColor: document.getElementById('primary-color').value,
                 secondaryColor: document.getElementById('secondary-color').value,
                 bannerImage: document.getElementById('banner-image').value,
-                products: window.products,
+                products: window.products.map(p => ({
+                    ...p,
+                    videoUrl: p.videoUrl || ''
+                })),
                 lastUpdated: Date.now()
             };
             localStorage.setItem('catalog_draft', JSON.stringify(draft));
@@ -377,7 +380,10 @@
                 document.getElementById('banner-image').value = draft.bannerImage || '';
                 window.updateBannerPreview(draft.bannerImage);
                 if (draft.products && Array.isArray(draft.products) && draft.products.length > 0) {
-                    window.products = draft.products;
+                    window.products = draft.products.map(p => ({
+                        ...p,
+                        videoUrl: p.videoUrl || ''
+                    }));
                 }
             } catch (e) {
                 console.error("Erro ao carregar rascunho:", e);
@@ -401,7 +407,7 @@
                 return;
             }
             const id = Date.now().toString();
-            window.products.push({ id: id, name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', category: '', description: '' });
+            window.products.push({ id: id, name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', videoUrl: '', category: '', description: '' });
             window.renderProducts();
             // Auto-expandir o novo produto
             setTimeout(() => window.toggleProduct(id), 50);
@@ -674,6 +680,18 @@
                                 </div>
                             </div>
                         </div>
+
+                        <div class="space-y-2 mt-6">
+                            <div class="flex items-center justify-between">
+                                <label class="text-[10px] font-bold uppercase tracking-widest ${window.storePlan === 'premium' ? 'text-indigo-500' : 'text-slate-400'} ml-1">Vídeo do Produto (YouTube, TikTok, Instagram)</label>
+                                ${window.storePlan !== 'premium' ? '<span class="text-[8px] bg-indigo-50 text-indigo-500 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">Premium</span>' : ''}
+                            </div>
+                            <input type="text" value="${(p.videoUrl || '').replace(/"/g, '&quot;')}" 
+                                   ${window.storePlan !== 'premium' || isLocked ? 'readonly disabled' : ''} 
+                                   oninput="window.updateProduct('${p.id}', 'videoUrl', this.value)" 
+                                   placeholder="${window.storePlan === 'premium' ? 'Cole o link do vídeo (YT, TikTok, Insta)' : 'Apenas no Plano Profissional'}" 
+                                   class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-indigo-500 outline-none transition-all font-bold text-xs ${window.storePlan !== 'premium' || isLocked ? 'opacity-50 cursor-not-allowed bg-slate-50' : ''}">
+                        </div>
                         
                         <div class="pt-6 flex justify-center">
                             <button type="button" onclick="window.toggleProduct('${p.id}')" class="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-orange-500 transition-colors">Fechar Edição</button>
@@ -910,6 +928,7 @@
                     const item = { id: p.id, n: p.name };
                     if (p.price) item.p = p.price;
                     if (p.image) item.i = p.image;
+                    if (p.videoUrl) item.v = p.videoUrl;
                     if (p.description) item.d = p.description;
                     if (p.category) item.cat = p.category;
                     if (p.wholesalePrice) item.wp = p.wholesalePrice;
@@ -1202,6 +1221,7 @@
                             wholesalePrice: p.wp || '',
                             wholesaleMinQty: p.wq || '',
                             image: p.i,
+                            videoUrl: p.v || '',
                             category: p.cat || '',
                             description: p.d || ''
                         }));

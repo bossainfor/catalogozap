@@ -19,6 +19,8 @@
             box-shadow: 0 30px 60px -12px rgba(0,0,0,0.2);
             border: 6px solid white;
         }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 2rem; }
     </style>
 </head>
 <body class="bg-slate-900 text-white">
@@ -28,15 +30,35 @@
                 <img src="https://i.postimg.cc/8cgHJgH8/catalogo.png" alt="CatálogoZap" class="h-40 sm:h-48 w-auto" referrerpolicy="no-referrer">
             </div>
             <h1 class="text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter uppercase italic leading-[0.85]">
-                Venda mais pelo <br><span class="text-orange-500">WhatsApp</span>
+                Venda mais pelo <br><span class="text-green-500">WhatsApp</span>
             </h1>
             
             <p class="text-lg sm:text-xl md:text-2xl text-slate-300 font-medium max-w-2xl mx-auto leading-relaxed">
                 Crie seu catálogo profissional em segundos e receba pedidos organizados direto no seu celular.
             </p>
 
-            <div class="pt-4">
-                <a href="criar.html" class="inline-flex items-center gap-3 px-12 py-6 bg-slate-900 text-white rounded-2xl font-black uppercase italic tracking-widest text-xl hover:bg-orange-600 transition-all shadow-2xl hover:scale-105 active:scale-95">
+            <!-- TUTORIAIS -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-8">
+                <div class="space-y-4">
+                    <h3 class="font-black uppercase italic tracking-tighter text-xl text-white">Passo a Passo</h3>
+                    <div class="p-1 bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="video-container">
+                            <iframe src="https://www.youtube.com/embed/TCl0JDZ_GJ4" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <h3 class="font-black uppercase italic tracking-tighter text-xl text-white">Funcionalidades Premium</h3>
+                    <div class="p-1 bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="video-container">
+                            <iframe src="https://www.youtube.com/embed/q82XaWvy3BA" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-12">
+                <a href="criar.html" class="inline-flex items-center gap-3 px-12 py-6 bg-slate-900 text-white rounded-2xl font-black uppercase italic tracking-widest text-xl hover:bg-green-600 transition-all shadow-2xl hover:scale-105 active:scale-95 border-2 border-green-500">
                     <i data-lucide="zap"></i> Criar Agora
                 </a>
             </div>

@@ -389,8 +389,13 @@
         }
 
         window.addProduct = function() {
-            if (window.storePlan === 'free' && window.products.length >= 8) {
-                alert("Limite atingido: O plano FREE permite apenas 8 produtos (fotos).\n\nPara cadastrar itens ilimitados, ative o Plano Profissional clicando no botão abaixo ou fale com nosso suporte.");
+            let limit = 999;
+            if (window.storePlan === 'free') limit = 8;
+            else if (window.storePlan === 'basic') limit = 15;
+
+            if (window.products.length >= limit) {
+                const planName = window.storePlan.toUpperCase();
+                alert(`Limite atingido: O plano ${planName} permite apenas ${limit} produtos.\n\nPara cadastrar mais itens, mude para o Plano Profissional (Ilimitado) falando com nosso suporte.`);
                 const activateBtn = document.getElementById('activate-plan-container');
                 if (activateBtn) activateBtn.scrollIntoView({ behavior: 'smooth' });
                 return;
@@ -557,7 +562,11 @@
             const list = document.getElementById('products-list');
             if (!list) return;
             
-            const isLocked = window.storePlan === 'free' && window.products.length >= 8;
+            let limit = 999;
+            if (window.storePlan === 'free') limit = 8;
+            else if (window.storePlan === 'basic') limit = 15;
+
+            const isLocked = window.products.length >= limit;
 
             list.innerHTML = window.products.map((p, index) => `
                 <div id="container-${p.id}" class="bg-slate-50/50 rounded-[2rem] border border-slate-200 overflow-hidden transition-all duration-300">
@@ -673,6 +682,13 @@
                 </div>
             `).join('');
             if (window.lucide) lucide.createIcons();
+
+            if (isLocked) {
+                const planDisplay = window.storePlan === 'free' ? 'PLANO FREE' : 'PLANO BÁSICO';
+                alert(`Sua vitrine está no ${planDisplay} e já atingiu o limite de fotos.\n\nPara gerenciar ou adicionar mais itens, ative o Plano Profissional.`);
+                const activateBtn = document.getElementById('activate-plan-container');
+                if (activateBtn) activateBtn.scrollIntoView({ behavior: 'smooth' });
+            }
         }
 
         window.addVendor = function() {
@@ -711,6 +727,7 @@
                 restrictedMsg.classList.add('hidden');
                 manager.classList.remove('hidden');
                 badge.classList.remove('hidden');
+                badge.innerText = "Plano Profissional";
             } else {
                 restrictedMsg.classList.remove('hidden');
                 manager.classList.add('hidden');

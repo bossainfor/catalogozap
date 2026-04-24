@@ -406,23 +406,40 @@
                 const videoUrl = p.videoUrl ? getEmbedUrl(p.videoUrl) : null;
                 const hasMediaSwipe = imageUrl && videoUrl;
 
+                const swiperId = `swiper-${p.id}`;
                 return `
-                <div class="bg-white rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex flex-col">
+                <div class="bg-white rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex flex-col group/card">
                     <div class="relative overflow-hidden bg-white w-full" style="aspect-ratio: ${storeData.imageFormat === 'quadrado' ? '1/1' : '9/16'} !important;">
                         ${hasMediaSwipe ? `
-                            <div class="media-swiper absolute inset-0 flex overflow-x-auto snap-x snap-mandatory scroll-smooth w-full h-full">
+                            <div id="${swiperId}" class="media-swiper absolute inset-0 flex overflow-x-auto snap-x snap-mandatory scroll-smooth w-full h-full">
                                 <div class="snap-start flex-shrink-0 w-full h-full relative">
                                     <img src="${imageUrl}" class="absolute inset-0 w-full h-full object-contain" referrerpolicy="no-referrer">
-                                    <div class="absolute bottom-4 right-4 bg-black/40 backdrop-blur-md text-white/80 p-1.5 rounded-lg flex items-center gap-1.5 animate-bounce">
-                                        <i data-lucide="arrow-right-left" class="w-3 h-3"></i>
-                                        <span class="text-[8px] font-black uppercase tracking-widest">Vídeo ao lado</span>
+                                    <div class="absolute bottom-4 right-4 bg-black/40 backdrop-blur-md text-white/80 p-2 rounded-xl flex items-center gap-2 animate-pulse border border-white/20">
+                                        <i data-lucide="video" class="w-4 h-4"></i>
+                                        <span class="text-[9px] font-black uppercase tracking-widest">Vídeo ao lado</span>
                                     </div>
                                 </div>
                                 <div class="snap-start flex-shrink-0 w-full h-full relative bg-black">
                                     <div class="video-wrapper">
                                         <iframe src="${videoUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                                     </div>
+                                    <div class="absolute bottom-4 left-4 bg-black/40 backdrop-blur-md text-white/80 p-2 rounded-xl flex items-center gap-2 border border-white/20">
+                                        <i data-lucide="image" class="w-4 h-4"></i>
+                                        <span class="text-[9px] font-black uppercase tracking-widest">Foto ao lado</span>
+                                    </div>
                                 </div>
+                            </div>
+                            
+                            <!-- Controles do Swiper (Apenas visíveis no PC/Hover ou sempre no mobile) -->
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-2 opacity-0 group-hover/card:opacity-100 transition-opacity pointer-events-none">
+                                <button onclick="const s = document.getElementById('${swiperId}'); s.scrollTo({left: 0, behavior: 'smooth'})" class="p-2 bg-white/90 shadow-xl rounded-full text-slate-800 pointer-events-auto active:scale-90 transition-transform border border-slate-100">
+                                    <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                                </button>
+                            </div>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 opacity-0 group-hover/card:opacity-100 transition-opacity pointer-events-none">
+                                <button onclick="const s = document.getElementById('${swiperId}'); s.scrollTo({left: s.offsetWidth, behavior: 'smooth'})" class="p-2 bg-white/90 shadow-xl rounded-full text-slate-800 pointer-events-auto active:scale-90 transition-transform border border-slate-100">
+                                    <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                                </button>
                             </div>
                         ` : (videoUrl ? `
                             <div class="absolute inset-0 bg-black">

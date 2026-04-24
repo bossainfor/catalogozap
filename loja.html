@@ -126,6 +126,7 @@
                     imageFormat: data.imf || 'vertical',
                     status: data.status || 'active',
                     expiresAt: data.expiresAt || data.createdAt,
+                    vendors: data.v || [],
                     products: (data.p || []).map(p => {
                         console.log(`Produto: ${p.n}, Imagem URL: ${p.i}`);
                         return {
@@ -236,6 +237,16 @@
 
         function checkout() {
             let message = `*Novo Pedido - ${storeData.name}*\n\n`;
+            
+            // Adiciona vendedor se existir
+            const urlParams = new URLSearchParams(window.location.search);
+            const vendorCode = urlParams.get('v');
+            if (vendorCode) {
+                // Tenta encontrar o nome do vendedor nos dados da loja
+                const vendorObj = (storeData.vendors || []).find(v => v.code === vendorCode);
+                message += `*Vendedor:* ${vendorObj ? vendorObj.name : vendorCode}\n\n`;
+            }
+
             let total = 0;
             cart.forEach(item => {
                 const isWholesale = item.wholesaleMinQty && item.quantity >= item.wholesaleMinQty;

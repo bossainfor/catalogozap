@@ -36,7 +36,8 @@
               "id": { "type": "string", "description": "Product Unique ID" },
               "n": { "type": "string", "description": "Product Name" },
               "p": { "type": "string", "description": "Product Price" },
-              "i": { "type": "string", "description": "Product Image URL" }
+              "i": { "type": "string", "description": "Product Image URL" },
+              "v": { "type": "string", "description": "Optional Product Video URL (Premium only)" }
             }
           }
         },

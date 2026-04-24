@@ -113,11 +113,11 @@
             // YouTube
             if (u.includes('youtube.com/watch?v=') || u.includes('youtu.be/')) {
                 const id = u.includes('watch?v=') ? u.split('v=')[1].split('&')[0] : u.split('youtu.be/')[1].split('?')[0];
-                return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1`;
+                return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&enablejsapi=1&origin=${window.location.origin}`;
             }
             if (u.includes('youtube.com/shorts/')) {
                 const id = u.split('shorts/')[1].split('?')[0];
-                return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1`;
+                return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&enablejsapi=1&origin=${window.location.origin}`;
             }
             
             // Instagram

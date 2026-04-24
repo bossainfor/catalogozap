@@ -21,7 +21,8 @@
             "type": "object",
             "properties": {
               "name": { "type": "string", "description": "Vendor Name" },
-              "code": { "type": "string", "description": "Unique vendor referral code" }
+              "code": { "type": "string", "description": "Unique vendor referral code" },
+              "clicks": { "type": "integer", "description": "Number of clicks on the vendor link" }
             }
           }
         },

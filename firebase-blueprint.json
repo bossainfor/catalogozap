@@ -14,6 +14,17 @@
         "b": { "type": "string", "description": "Secondary Color (Hex without #)" },
         "bi": { "type": "string", "description": "Banner Image URL" },
         "t": { "type": "string", "description": "Niche/Type" },
+        "plan": { "type": "string", "enum": ["free", "premium"], "description": "Subscription plan" },
+        "v": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "description": "Vendor Name" },
+              "code": { "type": "string", "description": "Unique vendor referral code" }
+            }
+          }
+        },
         "status": { "type": "string", "enum": ["trial", "active", "blocked"], "description": "Subscription status" },
         "expiresAt": { "type": "string", "format": "date-time", "description": "Expiration date" },
         "p": {

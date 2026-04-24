@@ -93,6 +93,7 @@
                                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">WhatsApp</th>
                                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Status</th>
                                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Plano</th>
+                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Vendedores</th>
                                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Expira em</th>
                                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Ações</th>
                             </tr>
@@ -241,9 +242,17 @@
                 }
 
                 const plan = data.plan || 'free';
-                const planBadge = plan === 'premium' ? 
-                    '<span class="bg-indigo-100 text-indigo-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Premium</span>' :
-                    '<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Free</span>';
+                let planBadge = '';
+                if (plan === 'premium') {
+                    planBadge = '<span class="bg-indigo-100 text-indigo-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Premium</span>';
+                } else if (plan === 'basic') {
+                    planBadge = '<span class="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Básico</span>';
+                } else {
+                    planBadge = '<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Free</span>';
+                }
+
+                const vendors = data.v || [];
+                const vendorCount = vendors.length;
 
                 // Desktop Row
                 const row = document.createElement('tr');
@@ -264,6 +273,11 @@
                     </td>
                     <td class="px-6 py-4 text-center">
                         ${planBadge}
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <button onclick="showVendors('${id}')" class="text-xs font-bold text-slate-600 hover:text-blue-600 flex items-center justify-center gap-1 mx-auto">
+                            <i data-lucide="users" size="14"></i> ${vendorCount} Vendedores
+                        </button>
                     </td>
                     <td class="px-6 py-4">
                         <div class="text-xs font-bold ${isExpired ? 'text-red-500' : 'text-slate-600'}">
@@ -374,7 +388,10 @@
         }
 
         async function togglePlan(id, currentPlan) {
-            const nextPlan = currentPlan === 'premium' ? 'free' : 'premium';
+            const plans = ['free', 'basic', 'premium'];
+            const currentIndex = plans.indexOf(currentPlan);
+            const nextPlan = plans[(currentIndex + 1) % plans.length];
+            
             if (!confirm(`Deseja alterar o plano desta loja para ${nextPlan.toUpperCase()}?`)) return;
             
             try {
@@ -386,6 +403,47 @@
             } catch (error) {
                 alert("Erro ao atualizar plano.");
             }
+        }
+
+        function showVendors(storeId) {
+            const store = allStores.find(s => s.id === storeId);
+            if (!store) return;
+            
+            const vendors = store.v || [];
+            const modal = document.createElement('div');
+            modal.id = 'vendors-modal';
+            modal.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-6';
+            modal.innerHTML = `
+                <div class="bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[80vh]">
+                    <div class="p-6 bg-slate-900 text-white flex items-center justify-between">
+                        <div>
+                            <h3 class="font-black uppercase italic tracking-tighter text-xl">Vendedores</h3>
+                            <p class="text-xs text-white/50 font-bold uppercase tracking-widest">${store.n || 'Loja'}</p>
+                        </div>
+                        <button onclick="document.getElementById('vendors-modal').remove()" class="text-white/50 hover:text-white transition-colors">
+                            <i data-lucide="x"></i>
+                        </button>
+                    </div>
+                    <div class="p-6 overflow-y-auto space-y-4">
+                        ${vendors.length === 0 ? '<p class="text-center text-slate-400 py-8">Nenhum vendedor cadastrado.</p>' : vendors.map(v => `
+                            <div class="bg-slate-50 p-4 rounded-2xl flex items-center justify-between border border-slate-100">
+                                <div>
+                                    <div class="font-black text-slate-800 uppercase italic tracking-tighter">${v.name}</div>
+                                    <div class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">${v.code}</div>
+                                </div>
+                                <div class="bg-blue-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                                    ${v.clicks || 0} Cliques
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="p-6 border-t border-slate-100">
+                         <button onclick="document.getElementById('vendors-modal').remove()" class="w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-200 transition-all">Fechar</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            lucide.createIcons();
         }
 
         async function blockStore(id) {

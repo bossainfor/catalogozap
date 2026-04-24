@@ -9,7 +9,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -29,7 +29,7 @@
         signInAnonymously(auth).catch(err => console.error("Erro no login anônimo:", err));
 
         window.db = db;
-        window.firebaseUtils = { doc, getDoc };
+        window.firebaseUtils = { doc, getDoc, updateDoc };
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
@@ -113,7 +113,7 @@
 
                 const data = docSnap.data();
                 console.log("Dados do Catálogo:", data);
-                return {
+                const result = {
                     name: data.n,
                     whatsapp: data.w,
                     address: data.a,
@@ -141,6 +141,28 @@
                         };
                     })
                 };
+
+                // Lógica de Traqueamento de Cliques do Vendedor
+                const vendorCode = urlParams.get('v');
+                if (vendorCode && data.v && data.v.length > 0) {
+                    const vendorIndex = data.v.findIndex(v => v.code === vendorCode);
+                    if (vendorIndex !== -1) {
+                        try {
+                            const newVendors = [...data.v];
+                            newVendors[vendorIndex].clicks = (newVendors[vendorIndex].clicks || 0) + 1;
+                            
+                            const { updateDoc } = window.firebaseUtils;
+                            const storeRef = doc(window.db, "stores", storeId);
+                            await updateDoc(storeRef, { v: newVendors });
+                            console.log(`Clique registrado para vendedor: ${vendorCode}`);
+                            result.vendors = newVendors;
+                        } catch (e) {
+                            console.error("Erro ao registrar clique:", e);
+                        }
+                    }
+                }
+
+                return result;
             } catch (e) { 
                 console.error("Erro ao buscar dados:", e);
                 return null; 

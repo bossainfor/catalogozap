@@ -40,6 +40,12 @@
         .overlay.open { opacity: 1; pointer-events: auto; }
         .category-scroll::-webkit-scrollbar { display: none; }
         .category-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        /* Media Swiper Styles */
+        .media-swiper::-webkit-scrollbar { display: none; }
+        .media-swiper { -ms-overflow-style: none; scrollbar-width: none; }
+        .video-wrapper { position: relative; width: 100%; height: 100%; }
+        .video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
     </style>
 </head>
 <body class="bg-white text-slate-900">
@@ -100,6 +106,39 @@
             return u;
         }
 
+        function getEmbedUrl(url) {
+            if (!url) return '';
+            let u = url.trim();
+            
+            // YouTube
+            if (u.includes('youtube.com/watch?v=') || u.includes('youtu.be/')) {
+                const id = u.includes('watch?v=') ? u.split('v=')[1].split('&')[0] : u.split('youtu.be/')[1].split('?')[0];
+                return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1`;
+            }
+            if (u.includes('youtube.com/shorts/')) {
+                const id = u.split('shorts/')[1].split('?')[0];
+                return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1`;
+            }
+            
+            // Instagram
+            if (u.includes('instagram.com/')) {
+                // Remove query strings e adiciona o sufixo de embed
+                let cleanUrl = u.split('?')[0];
+                if (!cleanUrl.endsWith('/')) cleanUrl += '/';
+                return `${cleanUrl}embed/captioned/`;
+            }
+            
+            // TikTok
+            if (u.includes('tiktok.com/')) {
+                // TikTok embed é mais complexo com iframes diretos, variamos pelo ID
+                const parts = u.split('/');
+                const id = parts[parts.length - 1].split('?')[0];
+                return `https://www.tiktok.com/embed/v2/${id}`;
+            }
+
+            return u;
+        }
+
         async function decodeData() {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
@@ -130,12 +169,13 @@
                     products: (data.p || []).map(p => {
                         console.log(`Produto: ${p.n}, Imagem URL: ${p.i}`);
                         return {
-                            id: Math.random().toString(36).substr(2, 9),
+                            id: p.id || Math.random().toString(36).substr(2, 9),
                             name: p.n,
                             price: p.p,
                             wholesalePrice: p.wp || '',
                             wholesaleMinQty: p.wq || '',
                             image: p.i,
+                            videoUrl: p.v || '',
                             category: p.cat || '',
                             description: p.d || ''
                         };
@@ -363,16 +403,40 @@
 
             const productsHTML = filteredProducts.map(p => {
                 const imageUrl = proxyImg(p.image);
+                const videoUrl = p.videoUrl ? getEmbedUrl(p.videoUrl) : null;
+                const hasMediaSwipe = imageUrl && videoUrl;
+
                 return `
                 <div class="bg-white rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100 shadow-sm hover:shadow-md transition-shadow flex flex-col">
                     <div class="relative overflow-hidden bg-white w-full" style="aspect-ratio: ${storeData.imageFormat === 'quadrado' ? '1/1' : '9/16'} !important;">
-                        ${imageUrl ? `
-                            <img src="${imageUrl}" class="absolute inset-0 w-full h-full object-contain hover:scale-105 transition-transform duration-500" style="image-rendering: -webkit-optimize-contrast;" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://picsum.photos/seed/'+Math.random()+'/400/700'; console.error('Erro ao carregar imagem:', '${p.image}')">
+                        ${hasMediaSwipe ? `
+                            <div class="media-swiper absolute inset-0 flex overflow-x-auto snap-x snap-mandatory scroll-smooth w-full h-full">
+                                <div class="snap-start flex-shrink-0 w-full h-full relative">
+                                    <img src="${imageUrl}" class="absolute inset-0 w-full h-full object-contain" referrerpolicy="no-referrer">
+                                    <div class="absolute bottom-4 right-4 bg-black/40 backdrop-blur-md text-white/80 p-1.5 rounded-lg flex items-center gap-1.5 animate-bounce">
+                                        <i data-lucide="arrow-right-left" class="w-3 h-3"></i>
+                                        <span class="text-[8px] font-black uppercase tracking-widest">Vídeo ao lado</span>
+                                    </div>
+                                </div>
+                                <div class="snap-start flex-shrink-0 w-full h-full relative bg-black">
+                                    <div class="video-wrapper">
+                                        <iframe src="${videoUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : (videoUrl ? `
+                            <div class="absolute inset-0 bg-black">
+                                <div class="video-wrapper">
+                                    <iframe src="${videoUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                </div>
+                            </div>
+                        ` : (imageUrl ? `
+                            <img src="${imageUrl}" class="absolute inset-0 w-full h-full object-contain hover:scale-105 transition-transform duration-500" style="image-rendering: -webkit-optimize-contrast;" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://picsum.photos/seed/'+Math.random()+'/400/700';">
                         ` : `
                             <div class="absolute inset-0 flex items-center justify-center bg-slate-100 text-slate-300">
                                 <i data-lucide="image" class="w-12 h-12"></i>
                             </div>
-                        `}
+                        `))}
                     </div>
                     <div class="p-3 sm:p-5 flex flex-col flex-1">
                         <h3 class="font-bold text-sm sm:text-lg mb-1 line-clamp-2 leading-tight h-10 sm:h-auto">${p.name}</h3>

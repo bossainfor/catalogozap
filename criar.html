@@ -728,10 +728,19 @@
                 manager.classList.remove('hidden');
                 badge.classList.remove('hidden');
                 badge.innerText = "Plano Profissional";
+                badge.className = "bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest";
             } else {
                 restrictedMsg.classList.remove('hidden');
                 manager.classList.add('hidden');
-                badge.classList.add('hidden');
+                badge.classList.remove('hidden');
+                
+                if (window.storePlan === 'basic') {
+                    badge.innerText = "Plano Básico";
+                    badge.className = "bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest";
+                } else {
+                    badge.innerText = "Plano Free";
+                    badge.className = "bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest";
+                }
             }
 
             if (!list) return;

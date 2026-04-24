@@ -14,7 +14,7 @@
         "b": { "type": "string", "description": "Secondary Color (Hex without #)" },
         "bi": { "type": "string", "description": "Banner Image URL" },
         "t": { "type": "string", "description": "Niche/Type" },
-        "plan": { "type": "string", "enum": ["free", "premium"], "description": "Subscription plan" },
+        "plan": { "type": "string", "enum": ["free", "basic", "premium"], "description": "Subscription plan" },
         "v": {
           "type": "array",
           "items": {

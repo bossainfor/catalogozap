@@ -92,6 +92,7 @@
                                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Loja / Cliente</th>
                                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">WhatsApp</th>
                                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Status</th>
+                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Plano</th>
                                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Expira em</th>
                                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Ações</th>
                             </tr>
@@ -239,6 +240,11 @@
                     statusBadge = '<span class="bg-green-100 text-green-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Ativo</span>';
                 }
 
+                const plan = data.plan || 'free';
+                const planBadge = plan === 'premium' ? 
+                    '<span class="bg-indigo-100 text-indigo-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Premium</span>' :
+                    '<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Free</span>';
+
                 // Desktop Row
                 const row = document.createElement('tr');
                 row.className = "border-b border-slate-50 hover:bg-slate-50/50 transition-colors";
@@ -256,6 +262,9 @@
                     <td class="px-6 py-4 text-center">
                         ${statusBadge}
                     </td>
+                    <td class="px-6 py-4 text-center">
+                        ${planBadge}
+                    </td>
                     <td class="px-6 py-4">
                         <div class="text-xs font-bold ${isExpired ? 'text-red-500' : 'text-slate-600'}">
                             ${expiresAt.toLocaleDateString('pt-BR')}
@@ -268,6 +277,9 @@
                         <div class="flex items-center justify-end gap-2">
                             <button onclick="activateStore('${id}', '${data.expiresAt}')" title="Ativar +30 dias" class="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
                                 <i data-lucide="calendar-plus" size="16"></i>
+                            </button>
+                            <button onclick="togglePlan('${id}', '${plan}')" title="Mudar Plano" class="p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors">
+                                <i data-lucide="${plan === 'premium' ? 'star-off' : 'star'}" size="16"></i>
                             </button>
                             <button onclick="blockStore('${id}')" title="Bloquear" class="p-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors">
                                 <i data-lucide="lock" size="16"></i>
@@ -295,7 +307,10 @@
                             <div class="font-bold text-base">${data.n || 'Sem Nome'}</div>
                             <div class="text-[10px] text-slate-400 font-medium uppercase tracking-widest">${data.cn || 'Dono não informado'}</div>
                         </div>
-                        ${statusBadge}
+                        <div class="flex flex-col items-end gap-1">
+                            ${statusBadge}
+                            ${planBadge}
+                        </div>
                     </div>
                     <div class="grid grid-cols-2 gap-4 text-xs">
                         <div>
@@ -313,6 +328,9 @@
                     <div class="flex items-center gap-2 pt-2">
                         <button onclick="activateStore('${id}', '${data.expiresAt}')" class="flex-1 py-3 bg-green-50 text-green-600 rounded-xl font-bold text-xs flex items-center justify-center gap-2">
                             <i data-lucide="calendar-plus" size="14"></i> Ativar
+                        </button>
+                        <button onclick="togglePlan('${id}', '${plan}')" class="flex-1 py-3 bg-indigo-50 text-indigo-600 rounded-xl font-bold text-xs flex items-center justify-center gap-2">
+                             <i data-lucide="${plan === 'premium' ? 'star-off' : 'star'}" size="14"></i> Plano
                         </button>
                         <button onclick="blockStore('${id}')" class="flex-1 py-3 bg-orange-50 text-orange-600 rounded-xl font-bold text-xs flex items-center justify-center gap-2">
                             <i data-lucide="lock" size="14"></i> Bloquear
@@ -352,6 +370,21 @@
                 loadStores();
             } catch (error) {
                 alert("Erro ao atualizar status.");
+            }
+        }
+
+        async function togglePlan(id, currentPlan) {
+            const nextPlan = currentPlan === 'premium' ? 'free' : 'premium';
+            if (!confirm(`Deseja alterar o plano desta loja para ${nextPlan.toUpperCase()}?`)) return;
+            
+            try {
+                await window.fs.updateDoc(window.fs.doc(window.db, "stores", id), {
+                    plan: nextPlan
+                });
+                alert("Plano atualizado com sucesso!");
+                loadStores();
+            } catch (error) {
+                alert("Erro ao atualizar plano.");
             }
         }
 

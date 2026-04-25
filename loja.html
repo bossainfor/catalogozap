@@ -89,14 +89,14 @@
     <div id="overlay" class="overlay fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[60]" onclick="toggleCart(false); closeModal()"></div>
     
     <!-- Modal de Detalhes do Produto -->
-    <div id="product-modal" class="modal fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4">
+    <div id="product-modal" class="modal fixed inset-0 z-[200] flex items-center justify-center p-2 sm:p-4">
         <div class="modal-content bg-white dark:bg-slate-800 w-full max-w-2xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh] sm:max-h-[90vh]">
-            <div id="modal-media-container" class="relative h-60 sm:h-[450px] bg-black shrink-0">
-                <button onclick="closeModal()" class="absolute top-4 right-4 z-50 bg-black/50 text-white p-3 rounded-full backdrop-blur-md active:scale-90 transition-transform">
+            <div id="modal-media-container" class="relative h-[45vh] sm:h-[450px] bg-black shrink-0 overflow-hidden">
+                <button onclick="closeModal()" class="absolute top-4 right-4 z-[210] bg-black/60 text-white p-3 rounded-full backdrop-blur-md active:scale-90 transition-transform touch-manipulation">
                     <i data-lucide="x" class="w-6 h-6"></i>
                 </button>
             </div>
-            <div class="p-5 sm:p-8 overflow-y-auto min-h-0">
+            <div class="p-5 sm:p-8 overflow-y-auto min-h-0 flex-1 bg-white dark:bg-slate-800">
                 <div id="modal-badge-container" class="mb-2"></div>
                 <h2 id="modal-title" class="text-2xl sm:text-3xl font-black uppercase italic tracking-tighter mb-2 dark:text-white leading-tight"></h2>
                 <p id="modal-price" class="text-xl sm:text-2xl font-black mb-4"></p>
@@ -106,13 +106,14 @@
                 <div id="variations-container" class="space-y-6 mb-8">
                     <!-- Gerado via JS -->
                 </div>
+            </div>
 
-                <div class="flex gap-3 pt-2">
-                    <button id="modal-add-btn" class="flex-1 py-4 sm:py-5 text-white font-black uppercase italic tracking-widest rounded-xl sm:rounded-2xl shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3 text-sm sm:text-base">
-                        <i data-lucide="shopping-cart" class="w-5 h-5 sm:w-6 h-6"></i>
-                        <span>Adicionar ao Carrinho</span>
-                    </button>
-                </div>
+            <!-- Footer do Modal (Fixo na parte inferior) -->
+            <div class="p-4 sm:p-8 border-t border-slate-100 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md shrink-0">
+                <button id="modal-add-btn" class="w-full py-4 sm:py-5 text-white font-black uppercase italic tracking-widest rounded-xl sm:rounded-2xl shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3 text-sm sm:text-base touch-manipulation">
+                    <i data-lucide="shopping-cart" class="w-5 h-5 sm:w-6 h-6"></i>
+                    <span>Adicionar ao Carrinho</span>
+                </button>
             </div>
         </div>
     </div>
@@ -167,10 +168,24 @@
             });
         }, 1000);
 
+        window.selectVariation = function(label, value, btn) {
+            currentVariations[label] = value;
+            const parent = btn.parentElement;
+            parent.querySelectorAll('.var-btn').forEach(b => {
+                b.classList.remove('bg-orange-50', 'text-orange-600', 'dark:bg-orange-900/20');
+                b.style.borderColor = '';
+            });
+            btn.classList.add('bg-orange-50', 'text-orange-600', 'dark:bg-orange-900/20');
+            btn.style.borderColor = storeData.primaryColor;
+        }
+
         window.openProductModal = function(productId) {
-            console.log("Abrindo modal para o produto:", productId);
+            console.log("Chamando modal para:", productId);
             const product = storeData.products.find(p => p.id === productId);
-            if (!product) return;
+            if (!product) {
+                console.error("Produto não encontrado:", productId);
+                return;
+            }
 
             const modal = document.getElementById('product-modal');
             const overlay = document.getElementById('overlay');
@@ -180,7 +195,7 @@
             const videoUrl = product.videoUrl ? getEmbedUrl(product.videoUrl) : null;
             const hasMediaSwipe = imageUrl && videoUrl;
 
-            let mediaHTML = `<button onclick="closeModal()" class="absolute top-4 right-4 z-50 bg-black/50 text-white p-3 rounded-full backdrop-blur-md active:scale-90"><i data-lucide="x"></i></button>`;
+            let mediaHTML = `<button onclick="closeModal()" class="absolute top-4 right-4 z-[210] bg-black/60 text-white p-3 rounded-full backdrop-blur-md active:scale-90"><i data-lucide="x"></i></button>`;
             
             if (hasMediaSwipe) {
                 const swiperId = `modal-swiper-${product.id}`;

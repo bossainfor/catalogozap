@@ -56,9 +56,11 @@
         
         /* Media Swiper Styles */
         .media-swiper::-webkit-scrollbar { display: none; }
-        .media-swiper { -ms-overflow-style: none; scrollbar-width: none; }
+        .media-swiper { -ms-overflow-style: none; scrollbar-width: none; touch-action: pan-y; }
         .video-wrapper { position: relative; width: 100%; height: 100%; }
         .video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        /* Impede que o iframe bloqueie o scroll no mobile se tocado nas bordas */
+        .video-wrapper::before { content: ''; position: absolute; inset: 0; pointer-events: none; border: 20px solid transparent; z-index: 10; }
 
         /* Dark Mode overrides */
         .dark .bg-white { background-color: #1e293b; }
@@ -89,11 +91,10 @@
     <!-- Modal de Detalhes do Produto -->
     <div id="product-modal" class="modal fixed inset-0 z-[60] flex items-center justify-center p-4">
         <div class="modal-content bg-white dark:bg-slate-800 w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div class="relative h-64 sm:h-96 bg-black">
-                <button onclick="closeModal()" class="absolute top-4 right-4 z-10 bg-black/50 text-white p-2 rounded-full backdrop-blur-md">
+            <div id="modal-media-container" class="relative h-64 sm:h-[450px] bg-black">
+                <button onclick="closeModal()" class="absolute top-4 right-4 z-40 bg-black/50 text-white p-2 rounded-full backdrop-blur-md">
                     <i data-lucide="x"></i>
                 </button>
-                <img id="modal-img" class="w-full h-full object-contain">
             </div>
             <div class="p-6 overflow-y-auto">
                 <div id="modal-badge-container" class="mb-2"></div>
@@ -171,7 +172,44 @@
             const modal = document.getElementById('product-modal');
             const overlay = document.getElementById('overlay');
             
-            document.getElementById('modal-img').src = proxyImg(product.image);
+            const mediaCont = document.getElementById('modal-media-container');
+            const imageUrl = proxyImg(product.image);
+            const videoUrl = product.videoUrl ? getEmbedUrl(product.videoUrl) : null;
+            const hasMediaSwipe = imageUrl && videoUrl;
+
+            let mediaHTML = `<button onclick="closeModal()" class="absolute top-4 right-4 z-40 bg-black/50 text-white p-2 rounded-full backdrop-blur-md"><i data-lucide="x"></i></button>`;
+            
+            if (hasMediaSwipe) {
+                const swiperId = `modal-swiper-${product.id}`;
+                mediaHTML += `
+                    <div id="${swiperId}" onscroll="updateDots('${swiperId}')" class="media-swiper absolute inset-0 flex overflow-x-auto snap-x snap-mandatory scroll-smooth w-full h-full">
+                        <div class="snap-start flex-shrink-0 w-full h-full relative">
+                            <img src="${imageUrl}" class="w-full h-full object-contain">
+                        </div>
+                        <div class="snap-start flex-shrink-0 w-full h-full relative bg-black">
+                            <div class="video-wrapper">
+                                <iframe src="${videoUrl}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="absolute inset-y-0 left-0 flex items-center pl-4 z-30">
+                        <button onclick="document.getElementById('${swiperId}').scrollBy({left: -300, behavior: 'smooth'})" class="p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-white border border-white/20"><i data-lucide="chevron-left"></i></button>
+                    </div>
+                    <div class="absolute inset-y-0 right-0 flex items-center pr-4 z-30">
+                        <button onclick="document.getElementById('${swiperId}').scrollBy({left: 300, behavior: 'smooth'})" class="p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-white border border-white/20"><i data-lucide="chevron-right"></i></button>
+                    </div>
+                    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex gap-2" id="dots-${swiperId}">
+                        <div class="w-2.5 h-2.5 rounded-full bg-white shadow-md border border-black/10 transition-all"></div>
+                        <div class="w-2.5 h-2.5 rounded-full bg-white/40 shadow-sm transition-all border border-transparent"></div>
+                    </div>
+                `;
+            } else if (videoUrl) {
+                mediaHTML += `<div class="video-wrapper"><iframe src="${videoUrl}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+            } else {
+                mediaHTML += `<img src="${imageUrl}" class="w-full h-full object-contain">`;
+            }
+            mediaCont.innerHTML = mediaHTML;
+
             document.getElementById('modal-title').innerText = product.name;
             document.getElementById('modal-price').innerText = formatCurrency(product.price);
             document.getElementById('modal-price').style.color = storeData.primaryColor;
@@ -247,6 +285,24 @@
         function closeModal() {
             document.getElementById('product-modal').classList.remove('open');
             document.getElementById('overlay').classList.remove('open');
+        }
+
+        function updateDots(swiperId) {
+            const swiper = document.getElementById(swiperId);
+            const dotsCont = document.getElementById(`dots-${swiperId}`);
+            if (!swiper || !dotsCont) return;
+            
+            const index = Math.round(swiper.scrollLeft / swiper.offsetWidth);
+            const dots = dotsCont.querySelectorAll('div');
+            dots.forEach((dot, i) => {
+                if (i === index) {
+                    dot.classList.remove('bg-white/40', 'border-transparent');
+                    dot.classList.add('bg-white', 'border-black/10', 'w-3');
+                } else {
+                    dot.classList.remove('bg-white', 'border-black/10', 'w-3');
+                    dot.classList.add('bg-white/40', 'border-transparent');
+                }
+            });
         }
 
         // Proxy de Imagem (Melhorado para Postimages e outros)
@@ -622,12 +678,12 @@
                         ` : ''}
 
                         ${hasMediaSwipe ? `
-                            <div id="${swiperId}" class="media-swiper absolute inset-0 flex overflow-x-auto snap-x snap-mandatory scroll-smooth w-full h-full">
+                            <div id="${swiperId}" onscroll="updateDots('${swiperId}')" class="media-swiper absolute inset-0 flex overflow-x-auto snap-x snap-mandatory scroll-smooth w-full h-full">
                                 <div class="snap-start flex-shrink-0 w-full h-full relative">
                                     <img src="${imageUrl}" class="absolute inset-0 w-full h-full object-contain" referrerpolicy="no-referrer">
                                     <div class="absolute bottom-4 right-4 bg-black/40 backdrop-blur-md text-white/80 p-2 rounded-xl flex items-center gap-2 animate-pulse border border-white/20">
                                         <i data-lucide="video" class="w-4 h-4"></i>
-                                        <span class="text-[9px] font-black uppercase tracking-widest">Vídeo ao lado</span>
+                                        <span class="text-[9px] font-black uppercase tracking-widest">Ver Vídeo</span>
                                     </div>
                                 </div>
                                 <div class="snap-start flex-shrink-0 w-full h-full relative bg-black">
@@ -636,9 +692,25 @@
                                     </div>
                                     <div class="absolute bottom-4 left-4 bg-black/40 backdrop-blur-md text-white/80 p-2 rounded-xl flex items-center gap-2 border border-white/20">
                                         <i data-lucide="image" class="w-4 h-4"></i>
-                                        <span class="text-[9px] font-black uppercase tracking-widest">Foto ao lado</span>
+                                        <span class="text-[9px] font-black uppercase tracking-widest">Ver Foto</span>
                                     </div>
                                 </div>
+                            </div>
+                            <!-- Controles do Swiper -->
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-2 z-30">
+                                <button onclick="event.stopPropagation(); const s = document.getElementById('${swiperId}'); s.scrollTo({left: 0, behavior: 'smooth'})" class="p-2 bg-white/90 dark:bg-slate-800 shadow-xl rounded-full text-slate-800 dark:text-white active:scale-90 transition-transform border border-slate-100 dark:border-slate-700">
+                                    <i data-lucide="chevron-left" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                                </button>
+                            </div>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 z-30">
+                                <button onclick="event.stopPropagation(); const s = document.getElementById('${swiperId}'); s.scrollTo({left: s.offsetWidth, behavior: 'smooth'})" class="p-2 bg-white/90 dark:bg-slate-800 shadow-xl rounded-full text-slate-800 dark:text-white active:scale-90 transition-transform border border-slate-100 dark:border-slate-700">
+                                    <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                                </button>
+                            </div>
+                            <!-- Indicadores -->
+                            <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex gap-1.5" id="dots-${swiperId}">
+                                <div class="w-2 h-2 rounded-full bg-white shadow-md border border-black/10 transition-all"></div>
+                                <div class="w-2 h-2 rounded-full bg-white/40 shadow-sm transition-all border border-transparent"></div>
                             </div>
                         ` : (videoUrl ? `
                             <div class="absolute inset-0 bg-black">

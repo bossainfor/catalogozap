@@ -113,11 +113,11 @@
             // YouTube
             if (u.includes('youtube.com/watch?v=') || u.includes('youtu.be/')) {
                 const id = u.includes('watch?v=') ? u.split('v=')[1].split('&')[0] : u.split('youtu.be/')[1].split('?')[0];
-                return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1`;
+                return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=0`;
             }
             if (u.includes('youtube.com/shorts/')) {
                 const id = u.split('shorts/')[1].split('?')[0];
-                return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1`;
+                return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=0`;
             }
             
             // Instagram
@@ -421,7 +421,7 @@
                                 </div>
                                 <div class="snap-start flex-shrink-0 w-full h-full relative bg-black">
                                     <div class="video-wrapper">
-                                        <iframe src="${videoUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                        <iframe src="${videoUrl}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                                     </div>
                                     <div class="absolute bottom-4 left-4 bg-black/40 backdrop-blur-md text-white/80 p-2 rounded-xl flex items-center gap-2 border border-white/20">
                                         <i data-lucide="image" class="w-4 h-4"></i>
@@ -444,7 +444,7 @@
                         ` : (videoUrl ? `
                             <div class="absolute inset-0 bg-black">
                                 <div class="video-wrapper">
-                                    <iframe src="${videoUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                    <iframe src="${videoUrl}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                                 </div>
                             </div>
                         ` : (imageUrl ? `

@@ -568,8 +568,145 @@
             }
             
             storeData = await decodeData();
+            if (storeData) window.fullCatalog = storeData.products;
             renderStore();
         };
+    </script>
+    <!-- ATENDENTE INTELIGENTE (IA LOCAL) -->
+    <div id="ai-attendant" class="fixed bottom-24 right-6 z-50 pointer-events-none opacity-0 transition-all duration-500 transform translate-y-10">
+        <div class="bg-white rounded-3xl shadow-2xl border border-slate-100 w-80 overflow-hidden pointer-events-auto">
+            <!-- Header -->
+            <div class="bg-slate-900 p-4 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-[#25D366] rounded-full flex items-center justify-center animate-pulse">
+                        <i data-lucide="bot" class="w-5 h-5 text-slate-900"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-white text-sm font-black uppercase italic leading-none">Atendente Virtual</h4>
+                        <span class="text-[#25D366] text-[10px] font-bold uppercase tracking-wider">Online agora</span>
+                    </div>
+                </div>
+                <button onclick="toggleAI(false)" class="text-slate-400 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <!-- Chat Area -->
+            <div id="ai-messages" class="h-64 overflow-y-auto p-4 space-y-3 bg-slate-50 flex flex-col">
+                <div class="bg-slate-200 text-slate-700 p-3 rounded-2xl rounded-tl-none text-xs font-medium self-start shadow-sm">
+                    Olá! Sou o assistente da loja. Posso te ajudar a encontrar algum produto? Experimente perguntar algo como "Tem camisa?" ou "Quais as formas de pagamento?".
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="p-3 bg-white border-t border-slate-100 flex gap-2">
+                <input type="text" id="ai-input" placeholder="Pergunte aqui..." class="flex-grow bg-slate-100 border-none rounded-xl px-4 py-2 text-xs font-bold focus:ring-2 focus:ring-[#25D366] outline-none">
+                <button onclick="askAI()" class="bg-[#25D366] text-slate-900 p-2 rounded-xl hover:scale-105 active:scale-95 transition-all">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Trigger -->
+    <button id="ai-trigger" onclick="toggleAI(true)" class="fixed bottom-6 right-6 z-50 bg-slate-900 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-xl hover:scale-110 active:scale-90 transition-all border-2 border-[#25D366] opacity-0 pointer-events-none">
+        <i data-lucide="message-square" class="w-6 h-6 text-[#25D366]"></i>
+    </button>
+
+    <script>
+        // Lógica do Atendente Inteligente
+        let aiOpen = false;
+
+        function toggleAI(show) {
+            aiOpen = show;
+            const widget = document.getElementById('ai-attendant');
+            const trigger = document.getElementById('ai-trigger');
+            
+            if(show) {
+                widget.classList.remove('opacity-0', 'translate-y-10', 'pointer-events-none');
+                trigger.classList.add('opacity-0', 'pointer-events-none');
+                document.getElementById('ai-input').focus();
+            } else {
+                widget.classList.add('opacity-0', 'translate-y-10', 'pointer-events-none');
+                trigger.classList.remove('opacity-0', 'pointer-events-none');
+            }
+        }
+
+        async function askAI() {
+            const input = document.getElementById('ai-input');
+            const messages = document.getElementById('ai-messages');
+            const query = input.value.trim().toLowerCase();
+            
+            if(!query) return;
+
+            // Mostrar mensagem do usuário
+            appendMessage(input.value, 'user');
+            input.value = '';
+
+            // Lógica de Busca (O CORAÇÃO DO ATENDENTE)
+            setTimeout(() => {
+                const response = findResponse(query);
+                appendMessage(response, 'bot');
+                messages.scrollTop = messages.scrollHeight;
+            }, 500);
+        }
+
+        function appendMessage(text, type) {
+            const messages = document.getElementById('ai-messages');
+            const div = document.createElement('div');
+            div.className = type === 'user' 
+                ? 'bg-slate-900 text-white p-3 rounded-2xl rounded-tr-none text-xs font-bold self-end shadow-md max-w-[80%]'
+                : 'bg-white border border-slate-200 text-slate-700 p-3 rounded-2xl rounded-tl-none text-xs font-medium self-start shadow-sm max-w-[80%]';
+            div.textContent = text;
+            messages.appendChild(div);
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        function findResponse(query) {
+            // Perguntas sobre Pagamento
+            if(query.includes('pagamento') || query.includes('paga') || query.includes('pix') || query.includes('cartao')) {
+                return "Aceitamos PIX, Dinheiro e Cartão. No cartão, aplicamos a taxa da maquininha. Qual seria sua preferência?";
+            }
+
+            // Perguntas sobre Entrega
+            if(query.includes('entrega') || query.includes('frete') || query.includes('envia') || query.includes('recebe')) {
+                return "Entregamos em toda a região! Informe seu endereço após fechar o pedido para calcularmos o tempo de entrega.";
+            }
+
+            // Busca de Produtos
+            const products = window.fullCatalog || [];
+            const matches = products.filter(p => 
+                p.nome.toLowerCase().includes(query) || 
+                p.descricao.toLowerCase().includes(query) ||
+                p.categoria.toLowerCase().includes(query)
+            );
+
+            if(matches.length > 0) {
+                if(matches.length === 1) {
+                    return `Encontrei o produto: "${matches[0].nome}". Ele custa R$ ${matches[0].preco}. Deseja ver na categoria ${matches[0].categoria}?`;
+                }
+                return `Encontrei ${matches.length} itens que podem te interessar, como o "${matches[0].nome}". Digite "ver tudo" para eu te mostrar onde estão.`;
+            }
+
+            if(query.includes('ver tudo') || query.includes('loja')) {
+                return "Você pode navegar pelas categorias no topo da página para ver todos os nossos produtos disponíveis!";
+            }
+
+            return "Ainda estou aprendendo sobre todos os nossos itens, mas você pode conferir as categorias acima. Se precisar de algo específico, pode me perguntar sobre pagamento ou entrega também!";
+        }
+
+        // Mostrar o botão após carregar
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('ai-trigger').classList.remove('opacity-0', 'pointer-events-none');
+                lucide.createIcons();
+            }, 2000);
+        });
+
+        // Enviar com Enter
+        document.getElementById('ai-input').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') askAI();
+        });
     </script>
 </body>
 </html>

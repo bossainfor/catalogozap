@@ -663,36 +663,44 @@
         }
 
         function findResponse(query) {
+            const queryLower = query.toLowerCase();
+            const products = window.fullCatalog || [];
+
             // Perguntas sobre Pagamento
-            if(query.includes('pagamento') || query.includes('paga') || query.includes('pix') || query.includes('cartao')) {
+            if(queryLower.includes('pagamento') || queryLower.includes('paga') || queryLower.includes('pix') || queryLower.includes('cartao')) {
                 return "Aceitamos PIX, Dinheiro e Cartão. No cartão, aplicamos a taxa da maquininha. Qual seria sua preferência?";
             }
 
             // Perguntas sobre Entrega
-            if(query.includes('entrega') || query.includes('frete') || query.includes('envia') || query.includes('recebe')) {
+            if(queryLower.includes('entrega') || queryLower.includes('frete') || queryLower.includes('envia') || queryLower.includes('recebe')) {
                 return "Entregamos em toda a região! Informe seu endereço após fechar o pedido para calcularmos o tempo de entrega.";
             }
 
-            // Busca de Produtos
-            const products = window.fullCatalog || [];
-            const matches = products.filter(p => 
-                p.nome.toLowerCase().includes(query) || 
-                p.descricao.toLowerCase().includes(query) ||
-                p.categoria.toLowerCase().includes(query)
-            );
+            // Busca de Produtos (Melhorada)
+            // 1. Tenta encontrar o nome do produto dentro da pergunta do usuário
+            const matches = products.filter(p => {
+                const name = p.name.toLowerCase();
+                const desc = (p.description || '').toLowerCase();
+                const cat = (p.category || '').toLowerCase();
+                
+                // Se o nome do produto está na pergunta OU a pergunta está no nome (flexível)
+                return queryLower.includes(name) || name.includes(queryLower) || 
+                       queryLower.includes(desc) || desc.includes(queryLower) ||
+                       queryLower.includes(cat);
+            });
 
             if(matches.length > 0) {
                 if(matches.length === 1) {
-                    return `Encontrei o produto: "${matches[0].nome}". Ele custa R$ ${matches[0].preco}. Deseja ver na categoria ${matches[0].categoria}?`;
+                    return `Sim! Temos "${matches[0].name}" disponível. O valor é ${formatCurrency(matches[0].price)}. Gostaria de adicionar ao carrinho?`;
                 }
-                return `Encontrei ${matches.length} itens que podem te interessar, como o "${matches[0].nome}". Digite "ver tudo" para eu te mostrar onde estão.`;
+                return `Encontrei ${matches.length} itens relacionados, como o "${matches[0].name}". Você pode vê-los na categoria ${matches[0].category}!`;
             }
 
-            if(query.includes('ver tudo') || query.includes('loja')) {
+            if(queryLower.includes('ver tudo') || queryLower.includes('loja') || queryLower.includes('catalogo')) {
                 return "Você pode navegar pelas categorias no topo da página para ver todos os nossos produtos disponíveis!";
             }
 
-            return "Ainda estou aprendendo sobre todos os nossos itens, mas você pode conferir as categorias acima. Se precisar de algo específico, pode me perguntar sobre pagamento ou entrega também!";
+            return "Ainda estou aprendendo, mas se estiver procurando por algum produto específico, pode digitar o nome dele aqui! Também sei informar sobre formas de pagamento e entrega.";
         }
 
         // Mostrar o botão após carregar

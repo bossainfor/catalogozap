@@ -666,24 +666,44 @@
             const queryLower = query.toLowerCase();
             const products = window.fullCatalog || [];
 
-            // Perguntas sobre Pagamento
-            if(queryLower.includes('pagamento') || queryLower.includes('paga') || queryLower.includes('pix') || queryLower.includes('cartao')) {
-                return "Aceitamos PIX, Dinheiro e Cartão. No cartão, aplicamos a taxa da maquininha. Qual seria sua preferência?";
+            // Banco de Conhecimento Extendido (FAQ)
+            const knowledgeBase = [
+                {
+                    keys: ['pagamento', 'paga', 'pix', 'cartao', 'cartão', 'dinheiro', 'taxa', 'parcela'],
+                    response: "Aceitamos PIX, Dinheiro e Cartão. No cartão, aplicamos a taxa da maquininha. Você pode parcelar suas compras também!"
+                },
+                {
+                    keys: ['entrega', 'frete', 'envia', 'recebe', 'chega', 'correio', 'retirada'],
+                    response: "Entregamos em toda a região! O frete é calculado com base no seu endereço. Você também pode combinar a retirada se preferir."
+                },
+                {
+                    keys: ['horario', 'aberto', 'funciona', 'atendimento', 'horas'],
+                    response: "Nosso catálogo online funciona 24h! Para suporte humano via WhatsApp, atendemos em horário comercial."
+                },
+                {
+                    keys: ['confiavel', 'seguro', 'golpe', 'garantia'],
+                    response: "Sim! Somos uma loja verificada. Você faz o pedido pelo catálogo e finaliza o pagamento diretamente com o vendedor via WhatsApp, garantindo total segurança."
+                },
+                {
+                    keys: ['tamanho', 'medida', 'p', 'm', 'g', 'gg', 'numero'],
+                    response: "Trabalhamos com diversos tamanhos. Você pode ver os detalhes na descrição de cada produto clicando sobre a foto."
+                }
+            ];
+
+            // 1. Busca primeiro no Banco de Conhecimento
+            for (const item of knowledgeBase) {
+                if (item.keys.some(key => queryLower.includes(key))) {
+                    return item.response;
+                }
             }
 
-            // Perguntas sobre Entrega
-            if(queryLower.includes('entrega') || queryLower.includes('frete') || queryLower.includes('envia') || queryLower.includes('recebe')) {
-                return "Entregamos em toda a região! Informe seu endereço após fechar o pedido para calcularmos o tempo de entrega.";
-            }
-
-            // Busca de Produtos (Melhorada)
-            // 1. Tenta encontrar o nome do produto dentro da pergunta do usuário
+            // 2. Busca de Produtos (Melhorada com sinônimos e contexto)
             const matches = products.filter(p => {
-                const name = p.name.toLowerCase();
+                const name = (p.name || '').toLowerCase();
                 const desc = (p.description || '').toLowerCase();
                 const cat = (p.category || '').toLowerCase();
                 
-                // Se o nome do produto está na pergunta OU a pergunta está no nome (flexível)
+                // Normalização básica para ajudar na busca
                 return queryLower.includes(name) || name.includes(queryLower) || 
                        queryLower.includes(desc) || desc.includes(queryLower) ||
                        queryLower.includes(cat);
@@ -691,16 +711,19 @@
 
             if(matches.length > 0) {
                 if(matches.length === 1) {
-                    return `Sim! Temos "${matches[0].name}" disponível. O valor é ${formatCurrency(matches[0].price)}. Gostaria de adicionar ao carrinho?`;
+                    const priceStr = typeof formatCurrency === 'function' ? formatCurrency(matches[0].price) : `R$ ${matches[0].price}`;
+                    return `Sim! Temos "${matches[0].name}" disponível por ${priceStr}. Gostaria de ver os detalhes na categoria ${matches[0].category}?`;
                 }
-                return `Encontrei ${matches.length} itens relacionados, como o "${matches[0].name}". Você pode vê-los na categoria ${matches[0].category}!`;
+                return `Encontrei ${matches.length} itens que podem te interessar, incluindo "${matches[0].name}". Você pode conferir tudo na categoria ${matches[0].category}!`;
             }
 
-            if(queryLower.includes('ver tudo') || queryLower.includes('loja') || queryLower.includes('catalogo')) {
-                return "Você pode navegar pelas categorias no topo da página para ver todos os nossos produtos disponíveis!";
+            // 3. Respostas de Navegação
+            if(queryLower.includes('ver tudo') || queryLower.includes('loja') || queryLower.includes('catalogo') || queryLower.includes('catálogo')) {
+                return "Para ver todos os itens, basta navegar pelas categorias no topo da página. Temos várias opções incríveis!";
             }
 
-            return "Ainda estou aprendendo, mas se estiver procurando por algum produto específico, pode digitar o nome dele aqui! Também sei informar sobre formas de pagamento e entrega.";
+            // 4. Fallback Inteligente
+            return "Ainda não tenho essa informação específica, mas posso te falar sobre nossas formas de pagamento, entregas, ou buscar algum produto pelo nome. O que prefere?";
         }
 
         // Mostrar o botão após carregar

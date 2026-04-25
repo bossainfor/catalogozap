@@ -632,41 +632,55 @@
             }
         }
 
-        async function askAI() {
-            const input = document.getElementById('ai-input');
-            const messages = document.getElementById('ai-messages');
-            const query = input.value.trim().toLowerCase();
-            
-            if(!query) return;
-
-            // Mostrar mensagem do usuário
-            appendMessage(input.value, 'user');
-            input.value = '';
-
-            // Lógica de Busca (O CORAÇÃO DO ATENDENTE)
-            setTimeout(() => {
-                const response = findResponse(query);
-                appendMessage(response, 'bot');
-                messages.scrollTop = messages.scrollHeight;
-            }, 500);
-        }
-
-        function appendMessage(text, type) {
+        function appendMessage(text, type, productLink = null) {
             const messages = document.getElementById('ai-messages');
             const div = document.createElement('div');
             div.className = type === 'user' 
                 ? 'bg-slate-900 text-white p-3 rounded-2xl rounded-tr-none text-xs font-bold self-end shadow-md max-w-[80%]'
-                : 'bg-white border border-slate-200 text-slate-700 p-3 rounded-2xl rounded-tl-none text-xs font-medium self-start shadow-sm max-w-[80%]';
-            div.textContent = text;
+                : 'bg-white border border-slate-200 text-slate-700 p-3 rounded-2xl rounded-tl-none text-xs font-medium self-start shadow-sm max-w-[80%] flex flex-col gap-2';
+            
+            const textSpan = document.createElement('span');
+            textSpan.textContent = text;
+            div.appendChild(textSpan);
+
+            if(productLink) {
+                const btn = document.createElement('button');
+                btn.className = 'mt-1 bg-[#25D366] text-slate-900 text-[10px] font-black uppercase py-2 px-3 rounded-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1 shadow-sm';
+                btn.innerHTML = `<i data-lucide="eye" class="w-3.5 h-3.5"></i> Abrir Produto`;
+                btn.onclick = () => {
+                    openProductModal(productLink.id);
+                    toggleAI(false);
+                };
+                div.appendChild(btn);
+                setTimeout(() => lucide.createIcons(), 0);
+            }
+
             messages.appendChild(div);
             messages.scrollTop = messages.scrollHeight;
         }
 
         function findResponse(query) {
-            const queryLower = query.toLowerCase();
+            const queryLower = query.toLowerCase().trim();
             const products = window.fullCatalog || [];
 
-            // Banco de Conhecimento Extendido (FAQ)
+            // 1. PRIORIDADE: Busca de Produtos
+            const matches = products.filter(p => {
+                const name = (p.name || '').toLowerCase();
+                const desc = (p.description || '').toLowerCase();
+                // Busca se o nome do produto está contido na pergunta ou vice-versa (mínimo 3 caracteres para evitar falsos positivos)
+                return queryLower.length >= 3 && (name.includes(queryLower) || queryLower.includes(name));
+            });
+
+            if(matches.length > 0) {
+                const p = matches[0];
+                const price = typeof formatCurrency === 'function' ? formatCurrency(p.price) : `R$ ${p.price}`;
+                return {
+                    text: `Sim! Temos "${p.name}" por apenas ${price}. Clique no botão abaixo para ver as fotos e detalhes:`,
+                    product: p
+                };
+            }
+
+            // 2. FAQ (Banco de Conhecimento)
             const knowledgeBase = [
                 {
                     keys: ['pagamento', 'paga', 'pix', 'cartao', 'cartão', 'dinheiro', 'taxa', 'parcela'],
@@ -682,7 +696,7 @@
                 },
                 {
                     keys: ['confiavel', 'seguro', 'golpe', 'garantia'],
-                    response: "Sim! Somos uma loja verificada. Você faz o pedido pelo catálogo e finaliza o pagamento diretamente com o vendedor via WhatsApp, garantindo total segurança."
+                    response: "Sim! Somos uma loja verificada. Você faz o pedido pelo catálogo e finaliza o pagamento diretamente com o vendedor via WhatsApp."
                 },
                 {
                     keys: ['tamanho', 'medida', 'p', 'm', 'g', 'gg', 'numero'],
@@ -690,40 +704,40 @@
                 }
             ];
 
-            // 1. Busca primeiro no Banco de Conhecimento
+            // Busca no FAQ com precisão (evita que 'g' de 'gravação' ative o FAQ de tamanhos)
             for (const item of knowledgeBase) {
-                if (item.keys.some(key => queryLower.includes(key))) {
-                    return item.response;
+                if (item.keys.some(key => {
+                    if (key.length <= 2) {
+                        // Para chaves curtas como p, g, m, usa regex de palavra inteira
+                        const regex = new RegExp(`\\b${key}\\b`, 'i');
+                        return regex.test(queryLower);
+                    }
+                    return queryLower.includes(key);
+                })) {
+                    return { text: item.response };
                 }
             }
 
-            // 2. Busca de Produtos (Melhorada com sinônimos e contexto)
-            const matches = products.filter(p => {
-                const name = (p.name || '').toLowerCase();
-                const desc = (p.description || '').toLowerCase();
-                const cat = (p.category || '').toLowerCase();
-                
-                // Normalização básica para ajudar na busca
-                return queryLower.includes(name) || name.includes(queryLower) || 
-                       queryLower.includes(desc) || desc.includes(queryLower) ||
-                       queryLower.includes(cat);
-            });
-
-            if(matches.length > 0) {
-                if(matches.length === 1) {
-                    const priceStr = typeof formatCurrency === 'function' ? formatCurrency(matches[0].price) : `R$ ${matches[0].price}`;
-                    return `Sim! Temos "${matches[0].name}" disponível por ${priceStr}. Gostaria de ver os detalhes na categoria ${matches[0].category}?`;
-                }
-                return `Encontrei ${matches.length} itens que podem te interessar, incluindo "${matches[0].name}". Você pode conferir tudo na categoria ${matches[0].category}!`;
-            }
-
-            // 3. Respostas de Navegação
+            // 3. Navegação
             if(queryLower.includes('ver tudo') || queryLower.includes('loja') || queryLower.includes('catalogo') || queryLower.includes('catálogo')) {
-                return "Para ver todos os itens, basta navegar pelas categorias no topo da página. Temos várias opções incríveis!";
+                return { text: "Você pode navegar pelas categorias no topo da página para ver todos os nossos produtos!" };
             }
 
-            // 4. Fallback Inteligente
-            return "Ainda não tenho essa informação específica, mas posso te falar sobre nossas formas de pagamento, entregas, ou buscar algum produto pelo nome. O que prefere?";
+            return { text: "Ainda não tenho essa informação, mas se digitar o nome de um produto, eu tento encontrar para você! Também sei sobre pagamentos e entregas." };
+        }
+
+        async function askAI() {
+            const input = document.getElementById('ai-input');
+            const query = input.value.trim();
+            if(!query) return;
+
+            appendMessage(query, 'user');
+            input.value = '';
+
+            setTimeout(() => {
+                const responseObj = findResponse(query);
+                appendMessage(responseObj.text, 'bot', responseObj.product);
+            }, 400);
         }
 
         // Mostrar o botão após carregar

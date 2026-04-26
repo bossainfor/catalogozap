@@ -149,20 +149,33 @@
                         </div>
                     </div>
                     <div class="space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="space-y-2">
-                                <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Link da Logomarca (Opcional)</label>
-                                <div class="flex gap-2">
-                                    <input type="text" id="store-logo" oninput="window.saveDraft()" placeholder="Cole o link da logo" class="flex-1 px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
-                                    <button type="button" onclick="window.open('https://postimages.org/', '_blank')" class="bg-slate-100 text-slate-500 px-4 rounded-2xl font-bold hover:bg-slate-200 transition-all flex items-center gap-2 flex-shrink-0 active-scale" title="Pegar link da logo">
-                                        <i data-lucide="image" class="w-4 h-4"></i>
-                                    </button>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Logomarca (Opcional)</label>
+                            <div class="flex flex-col gap-3">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-20 h-20 bg-slate-100 rounded-full overflow-hidden border-2 border-slate-200 flex items-center justify-center flex-shrink-0 shadow-inner">
+                                        <img id="logo-preview" src="" class="w-full h-full object-cover hidden" referrerpolicy="no-referrer" onerror="this.classList.add('hidden'); document.getElementById('logo-icon').classList.remove('hidden')">
+                                        <i id="logo-icon" data-lucide="image" class="text-slate-300 w-6 h-6"></i>
+                                    </div>
+                                    <div class="flex-1 flex flex-col sm:flex-row gap-2 min-w-0">
+                                        <input type="text" id="store-logo" oninput="window.updateLogoPreview(this.value); window.saveDraft()" placeholder="Link da Logomarca" class="flex-1 min-w-0 px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold text-sm">
+                                        <div class="flex gap-2">
+                                            <button type="button" onclick="window.open('https://postimages.org/', '_blank')" class="flex-1 sm:flex-none bg-blue-600 text-white px-6 py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all flex items-center justify-center gap-2 active-scale shadow-lg shadow-blue-100">
+                                                <i data-lucide="camera" class="w-5 h-5"></i>
+                                                <span class="sm:hidden">Upload</span>
+                                            </button>
+                                            <button type="button" onclick="document.getElementById('store-logo').value=''; window.updateLogoPreview(''); window.saveDraft()" class="bg-red-100 text-red-600 px-6 py-4 rounded-2xl hover:bg-red-200 transition-all flex items-center justify-center flex-shrink-0 active-scale" title="Remover Logo">
+                                                <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="space-y-2">
-                                <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Chave PIX</label>
-                                <input type="text" id="pix-key" oninput="window.saveDraft()" placeholder="E-mail, Celular ou CPF" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
-                            </div>
+                        </div>
+
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Chave PIX (Para pedidos)</label>
+                            <input type="text" id="pix-key" oninput="window.saveDraft()" placeholder="E-mail, Celular ou CPF" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold shadow-sm">
                         </div>
                     </div>
                     <div class="space-y-2">
@@ -406,6 +419,20 @@
             }
         }
 
+        window.updateLogoPreview = function(url) {
+            const img = document.getElementById('logo-preview');
+            const icon = document.getElementById('logo-icon');
+            if (url) {
+                img.src = proxyImg(url);
+                img.classList.remove('hidden');
+                if (icon) icon.classList.add('hidden');
+            } else {
+                img.src = '';
+                img.classList.add('hidden');
+                if (icon) icon.classList.remove('hidden');
+            }
+        }
+
         window.loadDraft = function() {
             const urlParams = new URLSearchParams(window.location.search);
             const currentStoreId = urlParams.get('edit') || urlParams.get('id');
@@ -436,6 +463,7 @@
                 document.getElementById('pix-key').value = draft.pixKey || '';
                 window.shippingZones = draft.shippingZones || [];
                 window.updateBannerPreview(draft.bannerImage);
+                window.updateLogoPreview(draft.storeLogo);
                 if (draft.products && Array.isArray(draft.products) && draft.products.length > 0) {
                     window.products = draft.products.map(p => ({
                         ...p,
@@ -1352,6 +1380,7 @@
                     document.getElementById('secondary-color').value = data.b ? '#' + data.b : '#0f172a';
                     document.getElementById('banner-image').value = data.bi || '';
                     window.updateBannerPreview(data.bi);
+                    window.updateLogoPreview(data.lg);
                     document.getElementById('niche').value = data.t || 'loja';
                     document.getElementById('image-format').value = data.imf || 'vertical';
                     

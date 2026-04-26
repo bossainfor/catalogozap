@@ -724,25 +724,45 @@
             const manager = document.getElementById('vendors-manager');
             const badge = document.getElementById('vendor-plan-badge');
             
-            // Sugestões de upgrade
-            const upgradeContainer = document.getElementById('upgrade-path-container');
-            if (upgradeContainer) {
-                if (window.storePlan === 'free') {
-                    upgradeContainer.innerHTML = `
-                        <button onclick="window.open('https://wa.me/5585992862177?text=Olá! Estou no Plano FREE e quero subir para o Plano BASIC para cadastrar 15 produtos.', '_blank')" class="w-full py-4 bg-blue-50 text-blue-600 rounded-2xl border border-blue-100 font-bold uppercase tracking-widest text-[10px] hover:bg-blue-100 transition-all flex items-center justify-center gap-2 active-scale">
-                            <i data-lucide="arrow-up-circle" class="w-3.5 h-3.5"></i> Atualize para o Plano Basic
-                        </button>
-                    `;
-                } else if (window.storePlan === 'basic') {
-                    upgradeContainer.innerHTML = `
-                        <button onclick="window.open('https://wa.me/5585992862177?text=Olá! Estou no Plano BASIC e quero subir para o Plano PREMIUM para produtos ilimitados e vídeos.', '_blank')" class="w-full py-4 bg-indigo-50 text-indigo-600 rounded-2xl border border-indigo-100 font-bold uppercase tracking-widest text-[10px] hover:bg-indigo-100 transition-all flex items-center justify-center gap-2 active-scale">
-                            <i data-lucide="zap" class="w-3.5 h-3.5"></i> Atualize para o Plano Premium
-                        </button>
-                    `;
-                } else {
-                    upgradeContainer.innerHTML = '';
+                // Sugestões de upgrade
+                const upgradeContainer = document.getElementById('upgrade-path-container');
+                if (upgradeContainer) {
+                    if (window.storePlan === 'free') {
+                        upgradeContainer.innerHTML = `
+                            <div class="mt-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900 rounded-[2rem] border-2 border-blue-100 dark:border-blue-900/30 shadow-xl overflow-hidden relative">
+                                <div class="absolute top-0 right-0 p-4 opacity-10">
+                                    <i data-lucide="zap" class="w-12 h-12 text-blue-600"></i>
+                                </div>
+                                <div class="relative z-10">
+                                    <span class="bg-blue-600 text-white text-[9px] font-black uppercase px-3 py-1 rounded-full mb-3 inline-block tracking-widest">Oportunidade</span>
+                                    <h4 class="text-slate-900 dark:text-white font-black uppercase italic italic tracking-tighter text-lg leading-tight mb-2">Subir para o Plano Basic?</h4>
+                                    <p class="text-slate-500 dark:text-slate-400 text-xs font-medium mb-5 leading-relaxed">Libere espaço para até 15 produtos e tenha um catálogo mais completo.</p>
+                                    <button onclick="window.open('https://wa.me/5585992862177?text=Olá! Estou no Plano FREE e quero subir para o Plano BASIC para cadastrar 15 produtos.', '_blank')" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase italic tracking-widest text-xs hover:bg-blue-700 transition-all flex items-center justify-center gap-2 active-scale shadow-lg shadow-blue-600/20">
+                                        <i data-lucide="arrow-up-circle" class="w-4 h-4"></i> Atualizar para o Basic
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    } else if (window.storePlan === 'basic') {
+                        upgradeContainer.innerHTML = `
+                            <div class="mt-8 p-6 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-slate-800 dark:to-slate-900 rounded-[2rem] border-2 border-indigo-100 dark:border-indigo-900/30 shadow-xl overflow-hidden relative">
+                                <div class="absolute top-0 right-0 p-4 opacity-10">
+                                    <i data-lucide="crown" class="w-12 h-12 text-indigo-600"></i>
+                                </div>
+                                <div class="relative z-10">
+                                    <span class="bg-indigo-600 text-white text-[9px] font-black uppercase px-3 py-1 rounded-full mb-3 inline-block tracking-widest">Recomendado</span>
+                                    <h4 class="text-slate-900 dark:text-white font-black uppercase italic italic tracking-tighter text-lg leading-tight mb-2">Vá para o Plano Premium</h4>
+                                    <p class="text-slate-500 dark:text-slate-400 text-xs font-medium mb-5 leading-relaxed">Produtos ILIMITADOS, vídeos e todas as funções liberadas.</p>
+                                    <button onclick="window.open('https://wa.me/5585992862177?text=Olá! Estou no Plano BASIC e quero subir para o Plano PREMIUM para produtos ilimitados e vídeos.', '_blank')" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase italic tracking-widest text-xs hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 active-scale shadow-lg shadow-indigo-600/20">
+                                        <i data-lucide="zap" class="w-4 h-4"></i> Atualizar para o Premium
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        upgradeContainer.innerHTML = '';
+                    }
                 }
-            }
 
             if (window.storePlan === 'premium') {
                 restrictedMsg.classList.add('hidden');

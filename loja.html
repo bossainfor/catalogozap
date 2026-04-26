@@ -84,6 +84,7 @@
             user-select: none; 
             touch-action: manipulation;
         }
+        .active-scale:active { transform: scale(0.95); transition: transform 0.1s; }
     </style>
 </head>
 <body class="bg-white text-slate-900">
@@ -97,10 +98,10 @@
     
     <!-- Modal de Detalhes do Produto -->
     <div id="product-modal" class="modal fixed inset-0 z-[1010] flex items-center justify-center p-2 sm:p-4">
-        <div class="modal-content bg-white dark:bg-slate-800 w-full max-w-2xl md:max-w-4xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[95vh] sm:max-h-[90vh] md:h-[600px]">
+        <div class="modal-content bg-white dark:bg-slate-800 w-full max-w-2xl md:max-w-5xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[95vh] sm:max-h-[90vh] md:h-[min(650px,85vh)]">
             <!-- Coluna de Mídia -->
-            <div id="modal-media-container" class="relative h-[40vh] sm:h-[45vh] md:h-auto md:w-[45%] bg-black shrink-0 overflow-hidden">
-                <button onclick="closeModal()" class="md:hidden absolute top-4 right-4 z-[1020] bg-black/60 text-white p-3 rounded-full backdrop-blur-md active:scale-90 transition-transform touch-manipulation">
+            <div id="modal-media-container" class="relative h-[45vh] sm:h-[50vh] md:h-auto md:w-[50%] bg-black shrink-0 overflow-hidden flex items-center justify-center">
+                <button onclick="closeModal()" class="md:hidden absolute top-4 right-4 z-[1020] bg-black/60 text-white p-3 rounded-full backdrop-blur-md active-scale transition-transform touch-manipulation">
                     <i data-lucide="x" class="w-6 h-6"></i>
                 </button>
             </div>
@@ -126,7 +127,7 @@
 
                 <!-- Footer do Modal (Fixo na parte inferior) -->
                 <div class="p-4 sm:p-6 md:p-8 border-t border-slate-100 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md shrink-0">
-                    <button id="modal-add-btn" class="w-full py-4 sm:py-5 text-white font-black uppercase italic tracking-widest rounded-xl sm:rounded-2xl shadow-xl transition-all active:scale-95 flex items-center justify-center gap-3 text-sm sm:text-base touch-manipulation select-none">
+                    <button id="modal-add-btn" class="w-full py-4 sm:py-5 text-white font-black uppercase italic tracking-widest rounded-xl sm:rounded-2xl shadow-xl transition-all active-scale flex items-center justify-center gap-3 text-sm sm:text-base touch-manipulation select-none">
                         <i data-lucide="shopping-cart" class="w-5 h-5 sm:w-6 h-6"></i>
                         <span>Adicionar ao Carrinho</span>
                     </button>
@@ -221,7 +222,7 @@
                 const swiperId = `modal-swiper-${product.id}`;
                 mediaHTML += `
                     <div id="${swiperId}" onscroll="updateDots('${swiperId}')" class="media-swiper absolute inset-0 flex overflow-x-auto snap-x snap-mandatory scroll-smooth w-full h-full bg-black">
-                        <div class="snap-start flex-shrink-0 w-full h-full relative flex items-center justify-center">
+                        <div class="snap-start flex-shrink-0 w-full h-full relative flex items-center justify-center bg-black">
                             <img src="${imageUrl}" class="w-full h-full object-contain">
                         </div>
                         <div class="snap-start flex-shrink-0 w-full h-full relative bg-black flex items-center justify-center">
@@ -231,10 +232,10 @@
                         </div>
                     </div>
                     <div class="absolute inset-y-0 left-0 flex items-center pl-4 z-30">
-                        <button onclick="document.getElementById('${swiperId}').scrollBy({left: -300, behavior: 'smooth'})" class="p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-white border border-white/20 active:scale-90"><i data-lucide="chevron-left"></i></button>
+                        <button onclick="document.getElementById('${swiperId}').scrollBy({left: -300, behavior: 'smooth'})" class="p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-white border border-white/20 active-scale"><i data-lucide="chevron-left"></i></button>
                     </div>
                     <div class="absolute inset-y-0 right-0 flex items-center pr-4 z-30">
-                        <button onclick="document.getElementById('${swiperId}').scrollBy({left: 300, behavior: 'smooth'})" class="p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-white border border-white/20 active:scale-90"><i data-lucide="chevron-right"></i></button>
+                        <button onclick="document.getElementById('${swiperId}').scrollBy({left: 300, behavior: 'smooth'})" class="p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-white border border-white/20 active-scale"><i data-lucide="chevron-right"></i></button>
                     </div>
                     <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex gap-2" id="dots-${swiperId}">
                         <div class="w-2.5 h-2.5 rounded-full bg-white shadow-md border border-black/10 transition-all"></div>
@@ -762,7 +763,7 @@
                         ${p.description ? `<p class="hidden sm:block text-slate-500 dark:text-slate-400 text-xs mb-3 line-clamp-2">${p.description}</p>` : ''}
                         <div class="mt-auto">
                             ${!isService ? `<p class="font-black text-base sm:text-xl mb-3 dark:text-white" style="color: ${storeData.primaryColor}">${formatCurrency(p.price)}</p>` : ''}
-                            <button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.openProductModal('${p.id}')" class="w-full py-3.5 sm:py-4 text-white font-bold rounded-lg sm:rounded-xl text-[11px] sm:text-base uppercase tracking-widest italic flex items-center justify-center gap-2 touch-manipulation relative z-10 shadow-md active:scale-95 transition-transform select-none" style="background-color: ${storeData.primaryColor}">
+                            <button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.openProductModal('${p.id}')" class="w-full py-3.5 sm:py-4 text-white font-bold rounded-lg sm:rounded-xl text-[11px] sm:text-base uppercase tracking-widest italic flex items-center justify-center gap-2 touch-manipulation relative z-10 shadow-md active-scale transition-transform select-none" style="background-color: ${storeData.primaryColor}">
                                 <i data-lucide="eye" class="w-4 h-4 sm:w-5 sm:h-5"></i>
                                 <span>Ver Detalhes</span>
                             </button>

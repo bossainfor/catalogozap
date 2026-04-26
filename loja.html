@@ -47,10 +47,10 @@
     <style>
         body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
         .dark body { background-color: #0f172a; color: #f8fafc; }
-        .cart-drawer { transform: translateX(100%); transition: transform 0.3s ease-in-out; }
-        .cart-drawer.open { transform: translateX(0); }
-        .overlay { opacity: 0; pointer-events: none; transition: opacity 0.3s; }
-        .overlay.open { opacity: 1; pointer-events: auto; }
+        .cart-drawer { transform: translateX(100%); transition: transform 0.3s ease-in-out; visibility: hidden; }
+        .cart-drawer.open { transform: translateX(0); visibility: visible; }
+        .overlay { opacity: 0; pointer-events: none; transition: opacity 0.3s; visibility: hidden; }
+        .overlay.open { opacity: 1; pointer-events: auto; visibility: visible; }
         .category-scroll::-webkit-scrollbar { display: none; }
         .category-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         
@@ -73,8 +73,8 @@
         .dark .bg-slate-900 { background-color: #020617; }
 
         /* Modal Styles */
-        .modal { opacity: 0; pointer-events: none; transition: opacity 0.3s; }
-        .modal.open { opacity: 1; pointer-events: auto; }
+        .modal { opacity: 0; pointer-events: none; transition: opacity 0.3s; visibility: hidden; }
+        .modal.open { opacity: 1; pointer-events: auto; visibility: visible; }
         .modal-content { transform: translateY(20px); transition: transform 0.3s; }
         .modal.open .modal-content { transform: translateY(0); }
         
@@ -718,20 +718,20 @@
 
                 const swiperId = `swiper-${p.id}`;
                 return `
-                <div onclick="window.openProductModal('${p.id}')" class="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all flex flex-col group/card cursor-pointer active:scale-[0.98] md:active:scale-100 touch-manipulation">
-                    <div class="relative overflow-hidden bg-white dark:bg-slate-900 w-full" style="aspect-ratio: ${storeData.imageFormat === 'quadrado' ? '1/1' : '9/16'} !important;">
+                <div onclick="window.openProductModal('${p.id}')" class="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all flex flex-col group/card cursor-pointer active:scale-[0.98] md:active:scale-100 touch-manipulation" role="button" tabindex="0">
+                    <div class="relative overflow-hidden bg-white dark:bg-slate-900 w-full pointer-events-none" style="aspect-ratio: ${storeData.imageFormat === 'quadrado' ? '1/1' : '9/16'} !important;">
                         
-                        ${badge ? `<div class="absolute top-2 left-2 z-20 bg-orange-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-full shadow-lg pointer-events-none">${badge}</div>` : ''}
+                        ${badge ? `<div class="absolute top-2 left-2 z-20 bg-orange-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-full shadow-lg">${badge}</div>` : ''}
                         
                         ${offerEndsAt ? `
-                            <div class="absolute top-2 right-2 z-20 bg-black/60 backdrop-blur-md text-white text-[9px] font-black px-2 py-1 rounded-lg border border-white/20 flex flex-col items-center pointer-events-none">
+                            <div class="absolute top-2 right-2 z-20 bg-black/60 backdrop-blur-md text-white text-[9px] font-black px-2 py-1 rounded-lg border border-white/20 flex flex-col items-center">
                                 <span class="text-[7px] text-white/60 mb-0.5">ACABA EM</span>
                                 <span data-countdown="${offerEndsAt.toISOString()}">00:00:00</span>
                             </div>
                         ` : ''}
 
                         ${hasMediaSwipe ? `
-                            <div id="${swiperId}" onscroll="updateDots('${swiperId}')" class="media-swiper absolute inset-0 flex overflow-x-auto snap-x snap-mandatory scroll-smooth w-full h-full">
+                            <div id="${swiperId}" onscroll="updateDots('${swiperId}')" class="media-swiper absolute inset-0 flex overflow-x-auto snap-x snap-mandatory scroll-smooth w-full h-full pointer-events-auto">
                                 <div class="snap-start flex-shrink-0 w-full h-full relative">
                                     <img src="${imageUrl}" class="absolute inset-0 w-full h-full object-contain" referrerpolicy="no-referrer">
                                     <div class="absolute bottom-4 right-4 bg-black/40 backdrop-blur-md text-white/80 p-2 rounded-xl flex items-center gap-2 animate-pulse border border-white/20">
@@ -750,36 +750,36 @@
                                 </div>
                             </div>
                             <!-- Controles do Swiper -->
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-2 z-30">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-2 z-30 pointer-events-auto">
                                 <button onclick="event.stopPropagation(); const s = document.getElementById('${swiperId}'); s.scrollTo({left: 0, behavior: 'smooth'})" class="p-2 bg-white/90 dark:bg-slate-800 shadow-xl rounded-full text-slate-800 dark:text-white active-scale transition-transform border border-slate-100 dark:border-slate-700">
                                     <i data-lucide="chevron-left" class="w-4 h-4 sm:w-5 sm:h-5"></i>
                                 </button>
                             </div>
-                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 z-30">
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 z-30 pointer-events-auto">
                                 <button onclick="event.stopPropagation(); const s = document.getElementById('${swiperId}'); s.scrollTo({left: s.offsetWidth, behavior: 'smooth'})" class="p-2 bg-white/90 dark:bg-slate-800 shadow-xl rounded-full text-slate-800 dark:text-white active-scale transition-transform border border-slate-100 dark:border-slate-700">
                                     <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5"></i>
                                 </button>
                             </div>
                             <!-- Indicadores -->
-                            <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex gap-1.5 pointer-events-none" id="dots-${swiperId}">
+                            <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex gap-1.5" id="dots-${swiperId}">
                                 <div class="w-2 h-2 rounded-full bg-white shadow-md border border-black/10 transition-all"></div>
                                 <div class="w-2 h-2 rounded-full bg-white/40 shadow-sm transition-all border border-transparent"></div>
                             </div>
                         ` : (videoUrl ? `
-                            <div class="absolute inset-0 bg-black pointer-events-none">
+                            <div class="absolute inset-0 bg-black pointer-events-auto">
                                 <div class="video-wrapper">
                                     <iframe src="${videoUrl}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                                 </div>
                             </div>
                         ` : (imageUrl ? `
-                            <img src="${imageUrl}" class="absolute inset-0 w-full h-full object-contain hover:scale-105 transition-transform duration-500 pointer-events-none" style="image-rendering: -webkit-optimize-contrast;" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://picsum.photos/seed/'+Math.random()+'/400/700';">
+                            <img src="${imageUrl}" class="absolute inset-0 w-full h-full object-contain hover:scale-105 transition-transform duration-500" style="image-rendering: -webkit-optimize-contrast;" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://picsum.photos/seed/'+Math.random()+'/400/700';">
                         ` : `
-                            <div class="absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-300 pointer-events-none">
+                            <div class="absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-300">
                                 <i data-lucide="image" class="w-12 h-12"></i>
                             </div>
                         `))}
                     </div>
-                    <div class="p-3 sm:p-5 flex flex-col flex-1">
+                    <div class="p-3 sm:p-5 flex flex-col flex-1 pointer-events-none">
                         <h3 class="font-bold text-sm sm:text-lg mb-1 line-clamp-2 leading-tight h-10 sm:h-auto dark:text-white">${p.name}</h3>
                         ${p.description ? `<p class="hidden sm:block text-slate-500 dark:text-slate-400 text-xs mb-3 line-clamp-2">${p.description}</p>` : ''}
                         <div class="mt-auto pt-4">
@@ -929,7 +929,6 @@
         </div>
     </div>
 
-    <!-- Botão da IA movido para um local que não atrapalhe os cliques -->
     <button id="ai-trigger" onclick="toggleAI(true)" class="fixed bottom-24 left-4 sm:left-auto sm:right-6 sm:bottom-32 z-50 bg-slate-900 dark:bg-slate-800 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-xl hover:scale-110 active-scale transition-all border-2 border-[#25D366] opacity-0 pointer-events-none">
         <i data-lucide="message-square" class="w-6 h-6 text-[#25D366]"></i>
     </button>
@@ -944,11 +943,13 @@
             const trigger = document.getElementById('ai-trigger');
             
             if(show) {
+                widget.style.visibility = 'visible';
                 widget.classList.remove('opacity-0', 'translate-y-10', 'pointer-events-none');
                 trigger.classList.add('opacity-0', 'pointer-events-none');
                 document.getElementById('ai-input').focus();
             } else {
                 widget.classList.add('opacity-0', 'translate-y-10', 'pointer-events-none');
+                setTimeout(() => { if(!aiOpen) widget.style.visibility = 'hidden'; }, 500);
                 trigger.classList.remove('opacity-0', 'pointer-events-none');
             }
         }

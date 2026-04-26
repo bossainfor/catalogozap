@@ -148,6 +148,18 @@
                             <input type="color" id="secondary-color" oninput="window.saveDraft()" value="#0f172a" class="w-full h-14 rounded-2xl cursor-pointer">
                         </div>
                     </div>
+                    <div class="space-y-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Link da Logomarca (Opcional)</label>
+                                <input type="text" id="store-logo" oninput="window.saveDraft()" placeholder="Cole o link da logo quadrada" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Chave PIX</label>
+                                <input type="text" id="pix-key" oninput="window.saveDraft()" placeholder="E-mail, Celular ou CPF" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                            </div>
+                        </div>
+                    </div>
                     <div class="space-y-2">
                         <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Imagem de Banner (Opcional)</label>
                         <div class="flex flex-col gap-3">
@@ -362,6 +374,8 @@
                 primaryColor: document.getElementById('primary-color').value,
                 secondaryColor: document.getElementById('secondary-color').value,
                 bannerImage: document.getElementById('banner-image').value,
+                storeLogo: document.getElementById('store-logo').value,
+                pixKey: document.getElementById('pix-key').value,
                 shippingZones: window.shippingZones,
                 products: window.products.map(p => ({
                     ...p,
@@ -413,6 +427,8 @@
                 document.getElementById('primary-color').value = draft.primaryColor || '#f97316';
                 document.getElementById('secondary-color').value = draft.secondaryColor || '#0f172a';
                 document.getElementById('banner-image').value = draft.bannerImage || '';
+                document.getElementById('store-logo').value = draft.storeLogo || '';
+                document.getElementById('pix-key').value = draft.pixKey || '';
                 window.shippingZones = draft.shippingZones || [];
                 window.updateBannerPreview(draft.bannerImage);
                 if (draft.products && Array.isArray(draft.products) && draft.products.length > 0) {
@@ -1029,6 +1045,12 @@
             if (facebook) data.fb = facebook;
             if (bannerImage) data.bi = bannerImage;
             
+            // Novos campos: Logo e PIX
+            const logoVal = document.getElementById('store-logo').value;
+            const pixVal = document.getElementById('pix-key').value;
+            if (logoVal) data.lg = logoVal;
+            if (pixVal) data.px = pixVal;
+            
             data.c = document.getElementById('primary-color').value.replace('#', '');
             data.b = document.getElementById('secondary-color').value.replace('#', '');
             data.t = document.getElementById('niche').value;
@@ -1292,6 +1314,9 @@
                     window.storePlan = data.plan || 'free';
                     window.vendors = data.v || [];
                     window.shippingZones = data.sh || [];
+                    
+                    if (data.lg) document.getElementById('store-logo').value = data.lg;
+                    if (data.px) document.getElementById('pix-key').value = data.px;
                     
                     // Verifica se o rascunho local é mais recente que o dado do servidor
                     if (!forcedId) {

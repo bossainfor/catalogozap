@@ -33,6 +33,7 @@
         window.storage = storage;
         window.auth = auth;
         window.firebaseUtils = { doc, setDoc, getDoc, deleteDoc, ref, uploadBytesResumable, getDownloadURL, deleteObject };
+
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
@@ -182,6 +183,26 @@
                 <section class="p-4 sm:p-8 bg-slate-50 rounded-[2rem] sm:rounded-[3rem] border border-slate-200 mt-6 space-y-6">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div class="space-y-1">
+                            <h3 class="font-black uppercase italic tracking-tighter text-2xl sm:text-3xl leading-none">Taxas de Entrega</h3>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-tight">Cadastre bairros e valores de frete</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input type="text" id="new-neighborhood" placeholder="Nome do Bairro" class="flex-1 px-6 py-5 rounded-[1.5rem] bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-lg shadow-sm">
+                            <input type="text" id="new-shipping-price" placeholder="Preço (ex: 5,00)" class="w-full sm:w-40 px-6 py-5 rounded-[1.5rem] bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-lg shadow-sm">
+                            <button onclick="window.addShippingZone()" class="bg-orange-600 text-white px-8 py-5 rounded-[1.5rem] font-black uppercase italic tracking-widest hover:bg-orange-700 transition-all flex items-center justify-center gap-2 active-scale shadow-xl shadow-orange-200">
+                                <i data-lucide="plus" class="w-5 h-5"></i> Add
+                            </button>
+                        </div>
+                        <div id="shipping-zones-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+                    </div>
+                </section>
+
+                <section class="p-4 sm:p-8 bg-slate-50 rounded-[2rem] sm:rounded-[3rem] border border-slate-200 mt-6 space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="space-y-1">
                             <h3 class="font-black uppercase italic tracking-tighter text-2xl sm:text-3xl leading-none">Gestão de Vendedores</h3>
                             <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-tight">Gere links únicos e saiba quem vendeu</p>
                         </div>
@@ -253,6 +274,7 @@
         window.products = [{ id: Date.now().toString(), name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', videoUrl: '', category: '', description: '' }];
         window.storePlan = 'free';
         window.vendors = [];
+        window.shippingZones = [];
 
         // Helper para normalizar categorias (Case-Insensitive)
         window.getNormalizedCategory = function(input, currentProductId) {
@@ -340,6 +362,7 @@
                 primaryColor: document.getElementById('primary-color').value,
                 secondaryColor: document.getElementById('secondary-color').value,
                 bannerImage: document.getElementById('banner-image').value,
+                shippingZones: window.shippingZones,
                 products: window.products.map(p => ({
                     ...p,
                     videoUrl: p.videoUrl || ''
@@ -390,6 +413,7 @@
                 document.getElementById('primary-color').value = draft.primaryColor || '#f97316';
                 document.getElementById('secondary-color').value = draft.secondaryColor || '#0f172a';
                 document.getElementById('banner-image').value = draft.bannerImage || '';
+                window.shippingZones = draft.shippingZones || [];
                 window.updateBannerPreview(draft.bannerImage);
                 if (draft.products && Array.isArray(draft.products) && draft.products.length > 0) {
                     window.products = draft.products.map(p => ({
@@ -417,7 +441,7 @@
                 return;
             }
             const id = Date.now().toString();
-            window.products.push({ id: id, name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', videoUrl: '', category: '', description: '' });
+            window.products.push({ id: id, name: '', price: '', available: true, vars: '', wholesalePrice: '', wholesaleMinQty: '', image: '', videoUrl: '', category: '', description: '' });
             window.renderProducts();
             // Auto-expandir o novo produto
             setTimeout(() => window.toggleProduct(id), 50);
@@ -435,7 +459,7 @@
                 return;
             }
 
-            // Validar tamanho (limite de 5MB para não estourar o Firebase grátis rápido)
+            // Validar tamanho (limite de 5MB)
             if (file.size > 5 * 1024 * 1024) {
                 alert("A imagem é muito grande! Escolha uma de até 5MB.");
                 return;
@@ -527,6 +551,10 @@
                     window.updateCategoriesDatalist();
                 } else {
                     p[field] = value;
+                }
+
+                if (field === 'available') {
+                    window.renderProducts();
                 }
                 
                 // Atualizações em tempo real no cabeçalho
@@ -652,10 +680,23 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
                             <div class="space-y-2">
                                 <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Preço Varejo (R$)</label>
                                 <input type="text" value="${p.price.replace(/"/g, '&quot;')}" oninput="window.updateProduct('${p.id}', 'price', this.value)" placeholder="Ex: 49,90" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Variações (P, M, G ou Cores)</label>
+                                <input type="text" value="${(p.vars || '').replace(/"/g, '&quot;')}" oninput="window.updateProduct('${p.id}', 'vars', this.value)" placeholder="Ex: P, M, G" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold">
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Disponibilidade</label>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <button onclick="window.updateProduct('${p.id}', 'available', ${p.available === false ? 'true' : 'false'})" class="w-full py-4 rounded-2xl font-black uppercase text-[10px] transition-all flex items-center justify-center gap-2 border-2 ${p.available !== false ? 'bg-green-50 border-green-500 text-green-600' : 'bg-red-50 border-red-500 text-red-600'}">
+                                        <i data-lucide="${p.available !== false ? 'check-circle' : 'x-circle'}" class="w-4 h-4"></i>
+                                        ${p.available !== false ? 'Disponível' : 'Esgotado'}
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -1004,6 +1045,8 @@
                     if (p.category) item.cat = p.category;
                     if (p.wholesalePrice) item.wp = p.wholesalePrice;
                     if (p.wholesaleMinQty) item.wq = parseInt(p.wholesaleMinQty);
+                    if (p.available === false) item.av = false;
+                    if (p.vars) item.vars = p.vars;
                     return item;
                 });
             }
@@ -1012,6 +1055,9 @@
             data.plan = window.storePlan;
             if (window.vendors.length > 0) {
                 data.v = window.vendors.map(v => ({ name: v.name, code: v.code }));
+            }
+            if (window.shippingZones.length > 0) {
+                data.sh = window.shippingZones;
             }
 
             try {
@@ -1245,6 +1291,7 @@
                     const data = docSnap.data();
                     window.storePlan = data.plan || 'free';
                     window.vendors = data.v || [];
+                    window.shippingZones = data.sh || [];
                     
                     // Verifica se o rascunho local é mais recente que o dado do servidor
                     if (!forcedId) {
@@ -1288,7 +1335,9 @@
                             image: p.i,
                             videoUrl: p.v || '',
                             category: p.cat || '',
-                            description: p.d || ''
+                            description: p.d || '',
+                            available: p.av !== false,
+                            vars: p.vars || ''
                         }));
                         // Normalização retroativa de categorias no carregamento
                         const tempCategories = {};
@@ -1318,7 +1367,50 @@
             await window.loadFromFirebase();
             window.renderProducts();
             window.renderVendors();
+            window.renderShippingZones();
         };
+
+        window.addShippingZone = function() {
+            const neighborhoodInput = document.getElementById('new-neighborhood');
+            const priceInput = document.getElementById('new-shipping-price');
+            const neighborhood = neighborhoodInput.value.trim();
+            const price = priceInput.value.trim();
+
+            if (!neighborhood || !price) {
+                alert("Preencha o nome do bairro e o valor do frete!");
+                return;
+            }
+
+            window.shippingZones.push({ neighborhood, price });
+            neighborhoodInput.value = '';
+            priceInput.value = '';
+            window.renderShippingZones();
+            window.saveDraft();
+        }
+
+        window.removeShippingZone = function(index) {
+            window.shippingZones.splice(index, 1);
+            window.renderShippingZones();
+            window.saveDraft();
+        }
+
+        window.renderShippingZones = function() {
+            const list = document.getElementById('shipping-zones-list');
+            if (!list) return;
+
+            list.innerHTML = window.shippingZones.map((z, index) => `
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
+                    <div class="flex flex-col">
+                        <span class="font-bold text-slate-800 text-sm">${z.neighborhood}</span>
+                        <span class="text-[10px] font-black text-orange-500 uppercase tracking-widest">Frete: R$ ${z.price}</span>
+                    </div>
+                    <button onclick="window.removeShippingZone(${index})" class="text-red-400 hover:text-red-600 p-2 bg-red-50 rounded-lg active-scale">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            `).join('');
+            if (window.lucide) lucide.createIcons();
+        }
     </script>
 </body>
 </html>

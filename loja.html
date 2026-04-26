@@ -47,10 +47,10 @@
     <style>
         body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
         .dark body { background-color: #0f172a; color: #f8fafc; }
-        .cart-drawer { transform: translateX(100%); transition: transform 0.3s ease-in-out; visibility: hidden; }
-        .cart-drawer.open { transform: translateX(0); visibility: visible; }
-        .overlay { opacity: 0; pointer-events: none; transition: opacity 0.3s; visibility: hidden; }
-        .overlay.open { opacity: 1; pointer-events: auto; visibility: visible; }
+        .cart-drawer { transform: translateX(100%); transition: transform 0.3s ease-in-out; display: none; }
+        .cart-drawer.open { transform: translateX(0); display: flex; }
+        .overlay { opacity: 0; pointer-events: none; transition: opacity 0.3s; display: none; }
+        .overlay.open { opacity: 1; pointer-events: auto; display: block; }
         .category-scroll::-webkit-scrollbar { display: none; }
         .category-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         
@@ -73,16 +73,14 @@
         .dark .bg-slate-900 { background-color: #020617; }
 
         /* Modal Styles */
-        .modal { opacity: 0; pointer-events: none; transition: opacity 0.3s; visibility: hidden; }
-        .modal.open { opacity: 1; pointer-events: auto; visibility: visible; }
+        .modal { opacity: 0; pointer-events: none; transition: opacity 0.3s; display: none; }
+        .modal.open { opacity: 1; pointer-events: auto; display: flex; }
         .modal-content { transform: translateY(20px); transition: transform 0.3s; }
         .modal.open .modal-content { transform: translateY(0); }
         
-        /* Prevenção de seleção acidental e brilho de toque */
+        /* Prevenção de brilho de toque */
         button, a, .cursor-pointer { 
             -webkit-tap-highlight-color: transparent; 
-            user-select: none; 
-            touch-action: manipulation;
         }
         .active-scale:active { transform: scale(0.96); }
         .active-scale { transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1); will-change: transform; }
@@ -898,7 +896,7 @@
         };
     </script>
     <!-- ATENDENTE INTELIGENTE (IA LOCAL) -->
-    <div id="ai-attendant" class="fixed bottom-24 left-4 right-4 sm:left-auto sm:right-6 z-[90] pointer-events-none opacity-0 transition-all duration-500 transform translate-y-10">
+    <div id="ai-attendant" class="fixed bottom-24 left-4 right-4 sm:left-auto sm:right-6 z-[90] pointer-events-none opacity-0 transition-all duration-500 transform translate-y-10 hidden">
         <div class="bg-white dark:bg-slate-800 w-full sm:w-80 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden pointer-events-auto">
             <!-- Header -->
             <div class="bg-slate-900 p-4 flex items-center justify-between">
@@ -946,12 +944,14 @@
             const widget = document.getElementById('ai-attendant');
             
             if(show) {
-                widget.style.visibility = 'visible';
-                widget.classList.remove('opacity-0', 'translate-y-10', 'pointer-events-none');
-                document.getElementById('ai-input').focus();
+                widget.style.display = 'block';
+                setTimeout(() => {
+                    widget.classList.remove('opacity-0', 'translate-y-10', 'pointer-events-none');
+                    document.getElementById('ai-input').focus();
+                }, 10);
             } else {
                 widget.classList.add('opacity-0', 'translate-y-10', 'pointer-events-none');
-                setTimeout(() => { if(!aiOpen) widget.style.visibility = 'hidden'; }, 500);
+                setTimeout(() => { if(!aiOpen) widget.style.display = 'none'; }, 500);
             }
         }
 

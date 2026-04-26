@@ -223,12 +223,6 @@
                 
                 <div id="upgrade-path-container" class="space-y-4"></div>
 
-                <div id="activate-plan-container" class="hidden mt-6">
-                    <button onclick="window.open('https://wa.me/5585992862177?text=Olá! Quero ativar o plano profissional do meu catálogo.', '_blank')" class="w-full py-5 sm:py-6 bg-green-500 text-white rounded-[1.5rem] sm:rounded-[2rem] font-black uppercase italic tracking-widest text-base sm:text-lg hover:bg-green-600 transition-all flex items-center justify-center gap-3 shadow-xl active-scale">
-                        <i data-lucide="zap" class="w-6 h-6"></i> Ativar Plano Profissional
-                    </button>
-                    <p class="text-[10px] text-center text-slate-400 mt-4 font-bold uppercase tracking-widest">Remova o limite de produtos e venda sem parar!</p>
-                </div>
             </div>
         </div>
 
@@ -387,8 +381,6 @@
             if (window.products.length >= limit) {
                 const planName = window.storePlan.toUpperCase();
                 alert(`Limite atingido: O plano ${planName} permite apenas ${limit} produtos.\n\nPara cadastrar mais itens, mude para o Plano Profissional (Ilimitado) falando com nosso suporte.`);
-                const activateBtn = document.getElementById('activate-plan-container');
-                if (activateBtn) activateBtn.scrollIntoView({ behavior: 'smooth' });
                 return;
             }
             const id = Date.now().toString();
@@ -689,8 +681,6 @@
             if (isLocked) {
                 const planDisplay = window.storePlan === 'free' ? 'PLANO FREE' : 'PLANO BÁSICO';
                 alert(`Sua vitrine está no ${planDisplay} e já atingiu o limite de fotos.\n\nPara gerenciar ou adicionar mais itens, ative o Plano Profissional.`);
-                const activateBtn = document.getElementById('activate-plan-container');
-                if (activateBtn) activateBtn.scrollIntoView({ behavior: 'smooth' });
             }
         }
 
@@ -1073,9 +1063,6 @@
                     const btnTextEl = document.getElementById('btn-text');
                     if (btnTextEl) btnTextEl.innerText = "Atualizar Minha Página";
                     
-                    const activatePlanContainer = document.getElementById('activate-plan-container');
-                    if (activatePlanContainer) activatePlanContainer.classList.remove('hidden');
-                    
                     const publicLinkEl = document.getElementById('public-link');
                     if (publicLinkEl) publicLinkEl.innerText = publicUrl;
                     
@@ -1216,9 +1203,6 @@
                     const btnTextEl = document.getElementById('btn-text');
                     if (btnTextEl) btnTextEl.innerText = "Atualizar Minha Página";
                     
-                    const activatePlanContainer = document.getElementById('activate-plan-container');
-                    if (activatePlanContainer) activatePlanContainer.classList.remove('hidden');
-
                     const data = docSnap.data();
                     window.storePlan = data.plan || 'free';
                     window.vendors = data.v || [];

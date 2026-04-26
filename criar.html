@@ -211,6 +211,7 @@
                                 <i data-lucide="plus" class="w-5 h-5"></i> Add
                             </button>
                         </div>
+                        <div id="vendor-upgrade-suggestion"></div>
                         <div id="vendors-list" class="space-y-4"></div>
                     </div>
                 </section>
@@ -218,6 +219,7 @@
                 <button id="main-action-btn" onclick="window.generateStore()" class="w-full py-6 sm:py-8 bg-slate-900 text-white rounded-[2rem] sm:rounded-[2.5rem] font-black uppercase italic tracking-widest text-xl sm:text-2xl hover:bg-slate-800 transition-all flex items-center justify-center gap-3 shadow-2xl active-scale touch-manipulation select-none">
                     <i data-lucide="smartphone" class="w-6 h-6 sm:w-8 sm:h-8"></i> <span id="btn-text">Gerar Minha Página</span>
                 </button>
+                <div id="product-upgrade-suggestion"></div>
                 
                 <div id="upgrade-path-container" class="space-y-4"></div>
 
@@ -724,6 +726,18 @@
             const manager = document.getElementById('vendors-manager');
             const badge = document.getElementById('vendor-plan-badge');
             
+                // Sugestões de upgrade nos botões
+                const vendorSugg = document.getElementById('vendor-upgrade-suggestion');
+                const productSugg = document.getElementById('product-upgrade-suggestion');
+                const upgradeMsg = window.storePlan === 'free' ? 'Upgrade para Basic (15 produtos)' : (window.storePlan === 'basic' ? 'Upgrade para Premium (Ilimitado)' : '');
+                const upgradeLink = window.storePlan === 'free' ? 'https://wa.me/5585992862177?text=Olá! Estou no Plano FREE e quero subir para o Plano BASIC.' : 'https://wa.me/5585992862177?text=Olá! Estou no Plano BASIC e quero subir para o Plano PREMIUM.';
+                
+                if (window.storePlan !== 'premium') {
+                    const btnHTML = `<button onclick="window.open('${upgradeLink}', '_blank')" class="w-full mt-2 py-3 bg-blue-50 text-blue-600 rounded-xl border border-blue-100 font-bold uppercase tracking-widest text-[9px] hover:bg-blue-100 transition-all flex items-center justify-center gap-2 active-scale">🚀 ${upgradeMsg}</button>`;
+                    if(vendorSugg) vendorSugg.innerHTML = btnHTML;
+                    if(productSugg) productSugg.innerHTML = btnHTML;
+                }
+
                 // Sugestões de upgrade
                 const upgradeContainer = document.getElementById('upgrade-path-container');
                 if (upgradeContainer) {

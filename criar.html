@@ -218,11 +218,14 @@
                 <button id="main-action-btn" onclick="window.generateStore()" class="w-full py-6 sm:py-8 bg-slate-900 text-white rounded-[2rem] sm:rounded-[2.5rem] font-black uppercase italic tracking-widest text-xl sm:text-2xl hover:bg-slate-800 transition-all flex items-center justify-center gap-3 shadow-2xl active-scale touch-manipulation select-none">
                     <i data-lucide="smartphone" class="w-6 h-6 sm:w-8 sm:h-8"></i> <span id="btn-text">Gerar Minha Página</span>
                 </button>
+                
+                <div id="upgrade-path-container" class="space-y-4"></div>
+
                 <div id="activate-plan-container" class="hidden mt-6">
                     <button onclick="window.open('https://wa.me/5585992862177?text=Olá! Quero ativar o plano profissional do meu catálogo.', '_blank')" class="w-full py-5 sm:py-6 bg-green-500 text-white rounded-[1.5rem] sm:rounded-[2rem] font-black uppercase italic tracking-widest text-base sm:text-lg hover:bg-green-600 transition-all flex items-center justify-center gap-3 shadow-xl active-scale">
                         <i data-lucide="zap" class="w-6 h-6"></i> Ativar Plano Profissional
                     </button>
-                    <p class="text-[10px] text-center text-slate-400 mt-4 font-bold uppercase tracking-widest">Remova o limite de 3 dias e venda sem parar!</p>
+                    <p class="text-[10px] text-center text-slate-400 mt-4 font-bold uppercase tracking-widest">Remova o limite de produtos e venda sem parar!</p>
                 </div>
             </div>
         </div>
@@ -721,6 +724,26 @@
             const manager = document.getElementById('vendors-manager');
             const badge = document.getElementById('vendor-plan-badge');
             
+            // Sugestões de upgrade
+            const upgradeContainer = document.getElementById('upgrade-path-container');
+            if (upgradeContainer) {
+                if (window.storePlan === 'free') {
+                    upgradeContainer.innerHTML = `
+                        <button onclick="window.open('https://wa.me/5585992862177?text=Olá! Estou no Plano FREE e quero subir para o Plano BASIC para cadastrar 15 produtos.', '_blank')" class="w-full py-4 bg-blue-50 text-blue-600 rounded-2xl border border-blue-100 font-bold uppercase tracking-widest text-[10px] hover:bg-blue-100 transition-all flex items-center justify-center gap-2 active-scale">
+                            <i data-lucide="arrow-up-circle" class="w-3.5 h-3.5"></i> Atualize para o Plano Basic
+                        </button>
+                    `;
+                } else if (window.storePlan === 'basic') {
+                    upgradeContainer.innerHTML = `
+                        <button onclick="window.open('https://wa.me/5585992862177?text=Olá! Estou no Plano BASIC e quero subir para o Plano PREMIUM para produtos ilimitados e vídeos.', '_blank')" class="w-full py-4 bg-indigo-50 text-indigo-600 rounded-2xl border border-indigo-100 font-bold uppercase tracking-widest text-[10px] hover:bg-indigo-100 transition-all flex items-center justify-center gap-2 active-scale">
+                            <i data-lucide="zap" class="w-3.5 h-3.5"></i> Atualize para o Plano Premium
+                        </button>
+                    `;
+                } else {
+                    upgradeContainer.innerHTML = '';
+                }
+            }
+
             if (window.storePlan === 'premium') {
                 restrictedMsg.classList.add('hidden');
                 manager.classList.remove('hidden');

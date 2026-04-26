@@ -751,14 +751,10 @@
             }
 
             document.title = storeData.name;
-            console.log("Renderizando loja:", storeData);
 
             // Lógica de Botão por Nicho
             const isService = storeData.type === 'servicos' || storeData.type === 'portfolio';
-            const btnText = isService ? 'Pedir Orçamento' : 'Comprar';
-            const btnAction = isService ? 'requestQuote' : 'addToCart';
-            const btnIcon = isService ? 'message-circle' : 'shopping-cart';
-
+            
             // Extrair Categorias Únicas
             const categories = ['Todos', ...new Set(storeData.products.filter(p => p.category && p.available !== false).map(p => p.category))];
             const hasCategories = categories.length > 1;
@@ -790,7 +786,6 @@
                 const videoUrl = p.videoUrl ? getEmbedUrl(p.videoUrl) : null;
                 const hasMediaSwipe = imageUrl && videoUrl;
 
-                // Extrair Badge se houver algo na descrição como [OFFER] ou similar
                 let badge = '';
                 if (p.description && p.description.includes('[') && p.description.includes(']')) {
                     const match = p.description.match(/\[(.*?)\]/);
@@ -798,23 +793,19 @@
                 }
                 p.badge = badge;
 
-                // Extrair Data de Fim de Oferta (Simulado se houver badge de oferta)
                 const offerEndsAt = badge.toLowerCase().includes('oferta') ? new Date(new Date().getTime() + 1000 * 60 * 60 * 3) : null;
-
                 const swiperId = `swiper-${p.id}`;
+                
                 return `
                 <div onclick="window.openProductModal('${p.id}')" class="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all flex flex-col group/card cursor-pointer active-scale md:active:scale-100 touch-manipulation" role="button" aria-label="Ver detalhes de ${p.name}">
                     <div class="relative overflow-hidden bg-white dark:bg-slate-900 w-full" style="aspect-ratio: ${storeData.imageFormat === 'quadrado' ? '1/1' : '9/16'} !important;">
-                        
                         ${badge ? `<div class="absolute top-2 left-2 z-20 bg-orange-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-full shadow-lg">${badge}</div>` : ''}
-                        
                         ${offerEndsAt ? `
                             <div class="absolute top-2 right-2 z-20 bg-black/60 backdrop-blur-md text-white text-[9px] font-black px-2 py-1 rounded-lg border border-white/20 flex flex-col items-center">
                                 <span class="text-[7px] text-white/60 mb-0.5">ACABA EM</span>
                                 <span data-countdown="${offerEndsAt.toISOString()}">00:00:00</span>
                             </div>
                         ` : ''}
-
                         ${hasMediaSwipe ? `
                             <div id="${swiperId}" onscroll="updateDots('${swiperId}')" class="media-swiper absolute inset-0 flex overflow-x-auto snap-x snap-mandatory scroll-smooth w-full h-full">
                                 <div class="snap-start flex-shrink-0 w-full h-full relative">
@@ -857,7 +848,7 @@
                                 </div>
                             </div>
                         ` : (imageUrl ? `
-                            <img src="${imageUrl}" class="absolute inset-0 w-full h-full object-contain hover:scale-105 transition-transform duration-500" style="image-rendering: -webkit-optimize-contrast;" referrerpolicy="no-referrer" onerror="this.onerror=null; this.src='https://picsum.photos/seed/'+Math.random()+'/400/700';">
+                            <img src="${imageUrl}" class="absolute inset-0 w-full h-full object-contain hover:scale-105 transition-transform duration-500" style="image-rendering: -webkit-optimize-contrast;" referrerpolicy="no-referrer">
                         ` : `
                             <div class="absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-300">
                                 <i data-lucide="image" class="w-12 h-12"></i>
@@ -886,10 +877,34 @@
                                 <p class="text-slate-400 text-sm font-bold uppercase tracking-widest">Tente buscar por outro termo ou categoria.</p>
                              </div>`;
 
+            // Se o grid já existe, apenas atualiza o conteúdo dinâmico
+            const existingGrid = document.getElementById('products-grid');
+            if (existingGrid) {
+                existingGrid.innerHTML = productsHTML;
+                // Atualiza também os botões de categoria se houver
+                const catScroll = document.getElementById('cat-scroll');
+                if (catScroll) {
+                    catScroll.innerHTML = categories.map(cat => `
+                        <button onclick="window.filterByCategory('${cat}')" 
+                                class="px-5 py-3 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap border-2 flex-shrink-0 active:scale-95 touch-manipulation"
+                                style="
+                                    background-color: ${selectedCategory === cat ? storeData.primaryColor : 'transparent'};
+                                    color: ${selectedCategory === cat ? '#ffffff' : storeData.primaryColor};
+                                    border-color: ${storeData.primaryColor};
+                                    opacity: ${selectedCategory === cat ? '1' : '0.7'}
+                                ">
+                            ${cat}
+                        </button>
+                    `).join('');
+                }
+                if (window.lucide) lucide.createIcons();
+                return;
+            }
+
             app.innerHTML = `
                 <div class="min-h-screen bg-white dark:bg-slate-900 flex flex-col">
                     <div class="relative py-12 sm:py-20 px-6 text-center overflow-hidden" style="background-color: ${storeData.secondaryColor}; color: #ffffff">
-                <button onclick="toggleTheme()" class="absolute top-4 left-4 z-50 bg-white/20 p-3 rounded-full backdrop-blur-md hover:bg-white/30 transition-all active-scale">
+                        <button onclick="toggleTheme()" class="absolute top-4 left-4 z-50 bg-white/20 p-3 rounded-full backdrop-blur-md hover:bg-white/30 transition-all active-scale">
                             <i data-lucide="sun" class="hidden dark:block w-6 h-6"></i>
                             <i data-lucide="moon" class="dark:hidden w-6 h-6"></i>
                         </button>
@@ -970,12 +985,7 @@
                 </div>
             `;
             
-            // Força a renderização dos ícones várias vezes para garantir
-            if (window.lucide) {
-                lucide.createIcons();
-                setTimeout(() => lucide.createIcons(), 500);
-                setTimeout(() => lucide.createIcons(), 2000);
-            }
+            if (window.lucide) lucide.createIcons();
         }
 
         window.onload = async () => {

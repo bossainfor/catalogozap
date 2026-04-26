@@ -176,6 +176,7 @@
                         <button type="button" onclick="window.addProduct()" class="bg-orange-600 text-white px-6 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest hover:bg-orange-700 active-scale shadow-lg shadow-orange-100">Adicionar Item</button>
                     </div>
                     <div id="products-list" class="space-y-4"></div>
+                    <datalist id="categories-datalist"></datalist>
                 </section>
 
                 <section class="p-4 sm:p-8 bg-slate-50 rounded-[2rem] sm:rounded-[3rem] border border-slate-200 mt-6 space-y-6">
@@ -252,6 +253,44 @@
         window.products = [{ id: Date.now().toString(), name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', videoUrl: '', category: '', description: '' }];
         window.storePlan = 'free';
         window.vendors = [];
+
+        // Helper para normalizar categorias (Case-Insensitive)
+        window.getNormalizedCategory = function(input, currentProductId) {
+            if (!input) return '';
+            const trimmed = input.trim();
+            if (!trimmed) return '';
+
+            // Pegamos todas as categorias únicas de OUTROS produtos
+            const otherCategories = [...new Set(window.products
+                .filter(p => !currentProductId || p.id !== currentProductId)
+                .map(p => (p.category || '').trim())
+                .filter(c => c !== '')
+            )];
+            
+            // Procura uma que bata ignorando case
+            const match = otherCategories.find(c => c.toLowerCase() === trimmed.toLowerCase());
+            
+            // Se encontrou, retorna a versão que já existe no sistema (mantém o padrão)
+            if (match) {
+                return { value: match, exists: true };
+            }
+
+            // Se for nova, sugere um padrão (Primeira Maiúscula)
+            return { value: trimmed.charAt(0).toUpperCase() + trimmed.slice(1), exists: false };
+        }
+
+        window.updateCategoriesDatalist = function() {
+            const datalist = document.getElementById('categories-datalist');
+            if (!datalist) return;
+            
+            const categories = [...new Set(window.products
+                .map(p => (p.category || '').trim())
+                .filter(c => c !== '')
+                .sort()
+            )];
+            
+            datalist.innerHTML = categories.map(c => `<option value="${c}">`).join('');
+        }
 
         // Proxy de Imagem (Melhorado para Postimages e outros)
         function proxyImg(url) {
@@ -472,7 +511,23 @@
         window.updateProduct = function(id, field, value) {
             const p = window.products.find(p => p.id === id);
             if (p) {
-                p[field] = value;
+                if (field === 'category') {
+                    const normalizedObj = window.getNormalizedCategory(value, id);
+                    p[field] = normalizedObj.value;
+                    
+                    const msgEl = document.getElementById(`cat-msg-${id}`);
+                    if (msgEl) {
+                        if (normalizedObj.exists && value.trim() !== '') {
+                            msgEl.innerText = `Categoria existente: ${normalizedObj.value}`;
+                            msgEl.classList.remove('hidden');
+                        } else {
+                            msgEl.classList.add('hidden');
+                        }
+                    }
+                    window.updateCategoriesDatalist();
+                } else {
+                    p[field] = value;
+                }
                 
                 // Atualizações em tempo real no cabeçalho
                 if (field === 'name') {
@@ -536,6 +591,7 @@
         }
 
         window.renderProducts = function() {
+            window.updateCategoriesDatalist();
             const list = document.getElementById('products-list');
             if (!list) return;
             
@@ -588,8 +644,11 @@
                                 <input type="text" value="${p.name.replace(/"/g, '&quot;')}" oninput="window.updateProduct('${p.id}', 'name', this.value)" placeholder="Ex: Camiseta Branca" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold">
                             </div>
                             <div class="space-y-2">
-                                <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Categoria (Ex: Bebidas, Roupas...)</label>
-                                <input type="text" value="${(p.category || '').replace(/"/g, '&quot;')}" oninput="window.updateProduct('${p.id}', 'category', this.value)" placeholder="Ex: Bermudas" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold">
+                                <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1 flex justify-between items-center">
+                                    <span>Categoria (Ex: Bebidas, Roupas...)</span>
+                                    <span id="cat-msg-${p.id}" class="text-[8px] text-blue-500 hidden font-black tracking-tighter">Categoria existente</span>
+                                </label>
+                                <input type="text" list="categories-datalist" value="${(p.category || '').replace(/"/g, '&quot;')}" oninput="window.updateProduct('${p.id}', 'category', this.value)" onblur="this.value = window.products.find(prod => prod.id === '${p.id}').category" placeholder="Ex: Bermudas" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold">
                             </div>
                         </div>
 
@@ -1231,6 +1290,18 @@
                             category: p.cat || '',
                             description: p.d || ''
                         }));
+                        // Normalização retroativa de categorias no carregamento
+                        const tempCategories = {};
+                        window.products.forEach(p => {
+                            const cat = (p.category || '').trim();
+                            if (!cat) return;
+                            const key = cat.toLowerCase();
+                            if (!tempCategories[key]) {
+                                tempCategories[key] = cat;
+                            } else {
+                                p.category = tempCategories[key];
+                            }
+                        });
                     } else {
                         // Se a loja existe mas não tem produtos salvos, mantém o padrão ou limpa
                         // window.products = [{ id: Date.now().toString(), name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', description: '' }];

@@ -84,7 +84,8 @@
             user-select: none; 
             touch-action: manipulation;
         }
-        .active-scale:active { transform: scale(0.95); transition: transform 0.1s; }
+        .active-scale:active { transform: scale(0.96); }
+        .active-scale { transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1); will-change: transform; }
     </style>
 </head>
 <body class="bg-white text-slate-900">
@@ -97,37 +98,43 @@
     <div id="overlay" class="overlay fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[1000]" onclick="toggleCart(false); closeModal()"></div>
     
     <!-- Modal de Detalhes do Produto -->
-    <div id="product-modal" class="modal fixed inset-0 z-[1010] flex items-center justify-center p-2 sm:p-4">
-        <div class="modal-content bg-white dark:bg-slate-800 w-full max-w-2xl md:max-w-5xl rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[95vh] sm:max-h-[90vh] md:h-[min(650px,85vh)]">
+    <div id="product-modal" class="modal fixed inset-0 z-[1010] flex items-center justify-center p-3 sm:p-6 lg:p-8">
+        <div class="modal-content bg-white dark:bg-slate-800 w-full max-w-5xl lg:max-w-6xl rounded-2xl sm:rounded-[2rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-[min(700px,85vh)] border border-slate-100 dark:border-slate-700">
             <!-- Coluna de Mídia -->
-            <div id="modal-media-container" class="relative h-[45vh] sm:h-[50vh] md:h-auto md:w-[50%] bg-black shrink-0 overflow-hidden flex items-center justify-center">
-                <button onclick="closeModal()" class="md:hidden absolute top-4 right-4 z-[1020] bg-black/60 text-white p-3 rounded-full backdrop-blur-md active-scale transition-transform touch-manipulation">
+            <div id="modal-media-container" class="relative h-[40vh] sm:h-[45vh] md:h-auto md:w-[45%] lg:w-[50%] bg-slate-950 shrink-0 overflow-hidden flex items-center justify-center border-r border-slate-50 dark:border-slate-900/50">
+                <button onclick="closeModal()" class="md:hidden absolute top-4 right-4 z-[1020] bg-black/40 hover:bg-black/60 text-white p-3 rounded-full backdrop-blur-md active-scale transition-all touch-manipulation">
                     <i data-lucide="x" class="w-6 h-6"></i>
                 </button>
             </div>
             
             <!-- Coluna de Informações -->
-            <div class="flex flex-col flex-1 min-h-0 bg-white dark:bg-slate-800">
-                <div class="p-4 sm:p-6 border-b border-slate-50 dark:border-slate-700 md:flex items-center justify-between hidden">
-                    <h3 class="text-xs font-black uppercase tracking-widest text-slate-400">Detalhes do Produto</h3>
-                    <button onclick="closeModal()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors dark:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            <div class="flex flex-col flex-1 min-h-0 bg-white dark:bg-slate-800 relative">
+                <div class="p-5 sm:p-6 border-b border-slate-50 dark:border-slate-700 md:flex items-center justify-between hidden">
+                    <div class="flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
+                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Especificações</h3>
+                    </div>
+                    <button onclick="closeModal()" class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-all active-scale dark:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
                 </div>
                 
-                <div class="p-5 sm:p-8 overflow-y-auto min-h-0 flex-1">
-                    <div id="modal-badge-container" class="mb-2"></div>
-                    <h2 id="modal-title" class="text-2xl sm:text-3xl font-black uppercase italic tracking-tighter mb-2 dark:text-white leading-tight"></h2>
-                    <p id="modal-price" class="text-xl sm:text-2xl font-black mb-4"></p>
-                    <div id="modal-desc" class="text-slate-500 dark:text-slate-400 text-sm sm:text-base mb-6 leading-relaxed"></div>
+                <div class="p-6 sm:p-10 lg:p-12 overflow-y-auto min-h-0 flex-1 custom-scrollbar">
+                    <div id="modal-badge-container" class="mb-4"></div>
+                    <h2 id="modal-title" class="text-3xl lg:text-4xl font-black uppercase italic tracking-tighter mb-4 dark:text-white leading-none"></h2>
+                    <div class="flex items-baseline gap-3 mb-6">
+                        <p id="modal-price" class="text-2xl lg:text-3xl font-black"></p>
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">À vista no PIX</span>
+                    </div>
+                    <div id="modal-desc" class="text-slate-500 dark:text-slate-400 text-sm sm:text-base mb-8 leading-relaxed font-medium"></div>
                     
                     <!-- Variações -->
-                    <div id="variations-container" class="space-y-6 mb-4">
+                    <div id="variations-container" class="space-y-8">
                         <!-- Gerado via JS -->
                     </div>
                 </div>
 
-                <!-- Footer do Modal (Fixo na parte inferior) -->
-                <div class="p-4 sm:p-6 md:p-8 border-t border-slate-100 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md shrink-0">
-                    <button id="modal-add-btn" class="w-full py-4 sm:py-5 text-white font-black uppercase italic tracking-widest rounded-xl sm:rounded-2xl shadow-xl transition-all active-scale flex items-center justify-center gap-3 text-sm sm:text-base touch-manipulation select-none">
+                <!-- Footer do Modal -->
+                <div class="p-5 sm:p-8 border-t border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50 backdrop-blur-sm shrink-0">
+                    <button id="modal-add-btn" class="w-full py-5 sm:py-6 text-white font-black uppercase italic tracking-widest rounded-2xl shadow-[0_12px_24px_-8px_rgba(249,115,22,0.4)] transition-all active-scale flex items-center justify-center gap-3 text-sm sm:text-base touch-manipulation select-none">
                         <i data-lucide="shopping-cart" class="w-5 h-5 sm:w-6 h-6"></i>
                         <span>Adicionar ao Carrinho</span>
                     </button>
@@ -145,10 +152,10 @@
         <div id="cart-footer" class="p-4 sm:p-6 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 space-y-4"></div>
     </div>
 
-    <button id="cart-fab" onclick="toggleCart(true)" class="hidden fixed bottom-6 right-6 sm:bottom-8 sm:right-8 text-white p-4 sm:p-5 rounded-full shadow-2xl z-50 flex items-center justify-center active:scale-95 transition-transform">
+    <button id="cart-fab" onclick="toggleCart(true)" class="hidden fixed bottom-6 right-6 sm:bottom-8 sm:right-8 text-white p-4 sm:p-5 rounded-full shadow-2xl z-[60] flex items-center justify-center active-scale transition-all border-4 border-white dark:border-slate-800">
         <div class="relative">
             <i data-lucide="shopping-cart" size="28"></i>
-            <span id="cart-count" class="absolute -top-1 -right-1 bg-slate-900 text-white text-[10px] font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-white">0</span>
+            <span id="cart-count" class="absolute -top-1 -right-1 bg-slate-900 text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center border-2 border-white">0</span>
         </div>
     </button>
 
@@ -198,6 +205,10 @@
         }
 
         window.openProductModal = function(productId) {
+            if (window._isOpeningModal) return;
+            window._isOpeningModal = true;
+            setTimeout(() => window._isOpeningModal = false, 500);
+
             console.log("Chamando modal para:", productId);
             const product = storeData.products.find(p => p.id === productId);
             if (!product) {
@@ -216,48 +227,48 @@
             const videoUrl = product.videoUrl ? getEmbedUrl(product.videoUrl) : null;
             const hasMediaSwipe = imageUrl && videoUrl;
 
-            let mediaHTML = `<button onclick="closeModal()" class="md:hidden absolute top-4 right-4 z-[1020] bg-black/60 text-white p-3 rounded-full backdrop-blur-md active:scale-90 transition-transform touch-manipulation"><i data-lucide="x" class="w-6 h-6"></i></button>`;
+            let mediaHTML = `<button onclick="closeModal()" class="md:hidden absolute top-4 right-4 z-[1020] bg-black/40 text-white p-3 rounded-full backdrop-blur-md active-scale transition-all touch-manipulation"><i data-lucide="x" class="w-6 h-6"></i></button>`;
             
             if (hasMediaSwipe) {
                 const swiperId = `modal-swiper-${product.id}`;
                 mediaHTML += `
-                    <div id="${swiperId}" onscroll="updateDots('${swiperId}')" class="media-swiper absolute inset-0 flex overflow-x-auto snap-x snap-mandatory scroll-smooth w-full h-full bg-black">
-                        <div class="snap-start flex-shrink-0 w-full h-full relative flex items-center justify-center bg-black">
+                    <div id="${swiperId}" onscroll="updateDots('${swiperId}')" class="media-swiper absolute inset-0 flex overflow-x-auto snap-x snap-mandatory scroll-smooth w-full h-full bg-slate-950">
+                        <div class="snap-start flex-shrink-0 w-full h-full relative flex items-center justify-center bg-slate-950">
                             <img src="${imageUrl}" class="w-full h-full object-contain">
                         </div>
-                        <div class="snap-start flex-shrink-0 w-full h-full relative bg-black flex items-center justify-center">
+                        <div class="snap-start flex-shrink-0 w-full h-full relative bg-slate-950 flex items-center justify-center">
                             <div class="video-wrapper">
                                 <iframe src="${videoUrl}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                             </div>
                         </div>
                     </div>
                     <div class="absolute inset-y-0 left-0 flex items-center pl-4 z-30">
-                        <button onclick="document.getElementById('${swiperId}').scrollBy({left: -300, behavior: 'smooth'})" class="p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-white border border-white/20 active-scale"><i data-lucide="chevron-left"></i></button>
+                        <button onclick="document.getElementById('${swiperId}').scrollBy({left: -document.getElementById('${swiperId}').offsetWidth, behavior: 'smooth'})" class="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white border border-white/10 active-scale"><i data-lucide="chevron-left"></i></button>
                     </div>
                     <div class="absolute inset-y-0 right-0 flex items-center pr-4 z-30">
-                        <button onclick="document.getElementById('${swiperId}').scrollBy({left: 300, behavior: 'smooth'})" class="p-3 bg-white/20 dark:bg-black/20 backdrop-blur-md rounded-full text-white border border-white/20 active-scale"><i data-lucide="chevron-right"></i></button>
+                        <button onclick="document.getElementById('${swiperId}').scrollBy({left: document.getElementById('${swiperId}').offsetWidth, behavior: 'smooth'})" class="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white border border-white/10 active-scale"><i data-lucide="chevron-right"></i></button>
                     </div>
-                    <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-30 flex gap-2" id="dots-${swiperId}">
-                        <div class="w-2.5 h-2.5 rounded-full bg-white shadow-md border border-black/10 transition-all"></div>
-                        <div class="w-2.5 h-2.5 rounded-full bg-white/40 shadow-sm transition-all border border-transparent"></div>
+                    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-2.5" id="dots-${swiperId}">
+                        <div class="w-2.5 h-2.5 rounded-full bg-white shadow-xl border border-white/20 transition-all"></div>
+                        <div class="w-2.5 h-2.5 rounded-full bg-white/30 shadow-sm transition-all border border-transparent"></div>
                     </div>
                 `;
             } else if (videoUrl) {
                 mediaHTML += `<div class="video-wrapper"><iframe src="${videoUrl}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
             } else {
-                mediaHTML += `<div class="w-full h-full flex items-center justify-center bg-black"><img src="${imageUrl}" class="w-full h-full object-contain"></div>`;
+                mediaHTML += `<div class="w-full h-full flex items-center justify-center bg-slate-950 px-4 md:px-0"><img src="${imageUrl}" class="w-full h-full object-contain selection:bg-none"></div>`;
             }
             mediaCont.innerHTML = mediaHTML;
 
             document.getElementById('modal-title').innerText = product.name;
             document.getElementById('modal-price').innerText = formatCurrency(product.price);
             document.getElementById('modal-price').style.color = storeData.primaryColor;
-            document.getElementById('modal-desc').innerText = product.description || 'Sem descrição disponível.';
+            document.getElementById('modal-desc').innerText = product.description || 'Este item ainda não possui uma descrição detalhada disponível.';
             
             const badgeCont = document.getElementById('modal-badge-container');
             badgeCont.innerHTML = '';
             if (product.badge) {
-                badgeCont.innerHTML = `<span class="bg-orange-500 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full">${product.badge}</span>`;
+                badgeCont.innerHTML = `<span class="bg-orange-500 text-white text-[10px] font-black uppercase px-4 py-1.5 rounded-lg shadow-lg shadow-orange-500/20">${product.badge}</span>`;
             }
 
             const variationsCont = document.getElementById('variations-container');
@@ -265,22 +276,26 @@
             currentVariations = {};
 
             const options = [];
-            if (product.description && product.description.includes('[') && product.description.includes(']')) {
-                const matches = product.description.match(/\[(.*?)\]/g);
-                matches.forEach(m => {
-                    const values = m.replace('[','').replace(']','').split(',');
-                    const label = values.length > 0 && values[0].length > 2 ? 'Opção' : 'Tam';
-                    options.push({ label, values: values.map(v => v.trim()) });
-                });
+            if (product.description && (product.description.includes('[') || product.description.includes('('))) {
+                const matches = product.description.match(/[\[\(](.*?)[\]\)]/g);
+                if (matches) {
+                    matches.forEach(m => {
+                        const values = m.substring(1, m.length - 1).split(',');
+                        if (values.length > 1 || values[0].length < 15) {
+                            const label = values.length > 0 && values[0].length > 3 ? 'Opção' : 'Tam';
+                            options.push({ label, values: values.map(v => v.trim()) });
+                        }
+                    });
+                }
             }
 
             options.forEach((opt, idx) => {
                 const div = document.createElement('div');
                 div.innerHTML = `
-                    <p class="text-xs font-black uppercase tracking-widest mb-3 text-slate-400">${opt.label}</p>
+                    <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4 text-slate-400">Escolha seu ${opt.label}</p>
                     <div class="flex flex-wrap gap-3">
                         ${opt.values.map(val => `
-                            <button onclick="selectVariation('${opt.label}', '${val}', this)" class="var-btn border-2 border-slate-200 dark:border-slate-700 px-5 py-3 rounded-xl text-xs font-bold transition-all hover:border-slate-400 dark:text-white active:scale-95">
+                            <button onclick="selectVariation('${opt.label}', '${val}', this)" class="var-btn border-2 border-slate-100 dark:border-slate-700/50 px-6 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all hover:border-slate-300 dark:text-white active-scale">
                                 ${val}
                             </button>
                         `).join('')}
@@ -293,9 +308,11 @@
             addBtn.style.backgroundColor = storeData.primaryColor;
             
             const isService = storeData.type === 'servicos' || storeData.type === 'portfolio';
-            addBtn.innerHTML = `<i data-lucide="${isService ? 'message-circle' : 'shopping-cart'}"></i> <span>${isService ? 'Pedir Orçamento' : 'Adicionar ao Carrinho'}</span>`;
+            addBtn.innerHTML = `<i data-lucide="${isService ? 'message-circle' : 'shopping-cart'}" class="w-5 h-5"></i> <span>${isService ? 'Solicitar via WhatsApp' : 'Adicionar ao Carrinho'}</span>`;
             
-            addBtn.onclick = () => {
+            addBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 const varsStr = Object.entries(currentVariations).map(([k, v]) => `${k}: ${v}`).join(', ');
                 if (isService) {
                     requestQuote(productId, varsStr);
@@ -307,15 +324,19 @@
 
             modal.classList.add('open');
             overlay.classList.add('open');
+            document.body.style.overflow = 'hidden'; // Previne scroll do fundo no mobile
             setTimeout(() => lucide.createIcons(), 50);
         }
 
         window.closeModal = function() {
             document.getElementById('product-modal').classList.remove('open');
             document.getElementById('overlay').classList.remove('open');
+            document.body.style.overflow = '';
             // Limpa o container de mídia para parar vídeos se houver
             setTimeout(() => {
-                document.getElementById('modal-media-container').innerHTML = '';
+                if (!document.getElementById('product-modal').classList.contains('open')) {
+                    document.getElementById('modal-media-container').innerHTML = '';
+                }
             }, 300);
         }
 
@@ -761,12 +782,14 @@
                     <div class="p-3 sm:p-5 flex flex-col flex-1">
                         <h3 class="font-bold text-sm sm:text-lg mb-1 line-clamp-2 leading-tight h-10 sm:h-auto dark:text-white">${p.name}</h3>
                         ${p.description ? `<p class="hidden sm:block text-slate-500 dark:text-slate-400 text-xs mb-3 line-clamp-2">${p.description}</p>` : ''}
-                        <div class="mt-auto">
-                            ${!isService ? `<p class="font-black text-base sm:text-xl mb-3 dark:text-white" style="color: ${storeData.primaryColor}">${formatCurrency(p.price)}</p>` : ''}
-                            <button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.openProductModal('${p.id}')" class="w-full py-3.5 sm:py-4 text-white font-bold rounded-lg sm:rounded-xl text-[11px] sm:text-base uppercase tracking-widest italic flex items-center justify-center gap-2 touch-manipulation relative z-10 shadow-md active-scale transition-transform select-none" style="background-color: ${storeData.primaryColor}">
-                                <i data-lucide="eye" class="w-4 h-4 sm:w-5 sm:h-5"></i>
-                                <span>Ver Detalhes</span>
-                            </button>
+                        <div class="mt-auto pt-4">
+                            ${!isService ? `<p class="font-black text-lg sm:text-2xl mb-4 dark:text-white tracking-tighter" style="color: ${storeData.primaryColor}">${formatCurrency(p.price)}</p>` : ''}
+                            <div class="grid grid-cols-1 gap-2">
+                                <button type="button" onclick="event.preventDefault(); event.stopPropagation(); window.openProductModal('${p.id}')" class="w-full py-4 sm:py-5 text-white font-black rounded-2xl text-[10px] sm:text-xs uppercase tracking-[0.2em] italic flex items-center justify-center gap-3 touch-manipulation relative z-10 shadow-[0_8px_16px_-4px_rgba(0,0,0,0.1)] active-scale transition-all select-none" style="background-color: ${storeData.primaryColor}">
+                                    <i data-lucide="eye" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                                    <span>Ver Detalhes</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -810,7 +833,7 @@
                     </div>
                     ` : ''}
 
-                    <main id="products-grid" class="max-w-6xl mx-auto px-3 sm:px-6 py-6 sm:py-10 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-8 flex-1 w-full">
+                    <main id="products-grid" class="max-w-6xl mx-auto px-3 sm:px-6 py-6 sm:py-10 pb-32 sm:pb-40 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-8 flex-1 w-full">
                         ${productsHTML}
                     </main>
 
@@ -884,22 +907,22 @@
                         <span class="text-[#25D366] text-[10px] font-bold uppercase tracking-wider">Online agora</span>
                     </div>
                 </div>
-                <button onclick="toggleAI(false)" class="text-slate-400 hover:text-white transition-colors">
+                <button onclick="toggleAI(false)" class="text-slate-400 hover:text-white transition-colors active-scale">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
             
             <!-- Chat Area -->
-            <div id="ai-messages" class="h-64 overflow-y-auto p-4 space-y-3 bg-slate-50 flex flex-col">
-                <div class="bg-slate-200 text-slate-700 p-3 rounded-2xl rounded-tl-none text-xs font-medium self-start shadow-sm">
+            <div id="ai-messages" class="h-64 overflow-y-auto p-4 space-y-3 bg-slate-50 flex flex-col custom-scrollbar">
+                <div class="bg-slate-200 text-slate-700 p-3 rounded-2xl rounded-tl-none text-[11px] font-medium self-start shadow-sm leading-relaxed">
                     Olá! Sou o assistente da loja. Posso te ajudar a encontrar algum produto? Experimente perguntar algo como "Tem camisa?" ou "Quais as formas de pagamento?".
                 </div>
             </div>
 
             <!-- Input Area -->
             <div class="p-3 bg-white border-t border-slate-100 flex gap-2">
-                <input type="text" id="ai-input" placeholder="Pergunte aqui..." class="flex-grow bg-slate-100 border-none rounded-xl px-4 py-2 text-xs font-bold focus:ring-2 focus:ring-[#25D366] outline-none">
-                <button onclick="askAI()" class="bg-[#25D366] text-slate-900 p-2 rounded-xl hover:scale-105 active:scale-95 transition-all">
+                <input type="text" id="ai-input" placeholder="Pergunte aqui..." class="flex-grow bg-slate-100 border-none rounded-xl px-4 py-3 text-[11px] font-bold focus:ring-2 focus:ring-[#25D366] outline-none">
+                <button onclick="askAI()" class="bg-[#25D366] text-slate-900 p-3 rounded-xl hover:scale-105 active-scale transition-all">
                     <i data-lucide="send" class="w-4 h-4"></i>
                 </button>
             </div>
@@ -907,7 +930,7 @@
     </div>
 
     <!-- Botão da IA movido para a esquerda no mobile para não sobrepor o carrinho -->
-    <button id="ai-trigger" onclick="toggleAI(true)" class="fixed bottom-6 left-6 sm:left-auto sm:right-28 z-50 bg-slate-900 dark:bg-slate-800 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-xl hover:scale-110 active:scale-90 transition-all border-2 border-[#25D366] opacity-0 pointer-events-none">
+    <button id="ai-trigger" onclick="toggleAI(true)" class="fixed bottom-24 left-6 sm:left-auto sm:right-6 sm:bottom-32 z-50 bg-slate-900 dark:bg-slate-800 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-xl hover:scale-110 active-scale transition-all border-2 border-[#25D366] opacity-0 pointer-events-none">
         <i data-lucide="message-square" class="w-6 h-6 text-[#25D366]"></i>
     </button>
 

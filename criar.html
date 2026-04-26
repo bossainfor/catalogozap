@@ -152,7 +152,12 @@
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="space-y-2">
                                 <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Link da Logomarca (Opcional)</label>
-                                <input type="text" id="store-logo" oninput="window.saveDraft()" placeholder="Cole o link da logo quadrada" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                                <div class="flex gap-2">
+                                    <input type="text" id="store-logo" oninput="window.saveDraft()" placeholder="Cole o link da logo" class="flex-1 px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                                    <button type="button" onclick="window.open('https://postimages.org/', '_blank')" class="bg-slate-100 text-slate-500 px-4 rounded-2xl font-bold hover:bg-slate-200 transition-all flex items-center gap-2 flex-shrink-0 active-scale" title="Pegar link da logo">
+                                        <i data-lucide="image" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="space-y-2">
                                 <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Chave PIX</label>

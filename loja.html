@@ -207,7 +207,7 @@
         window.openProductModal = function(productId) {
             if (window._isOpeningModal) return;
             window._isOpeningModal = true;
-            setTimeout(() => window._isOpeningModal = false, 300);
+            setTimeout(() => window._isOpeningModal = false, 200);
 
             console.log("Chamando modal para:", productId);
             const product = storeData.products.find(p => p.id === productId);
@@ -718,8 +718,8 @@
 
                 const swiperId = `swiper-${p.id}`;
                 return `
-                <div onclick="window.openProductModal('${p.id}')" class="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all flex flex-col group/card cursor-pointer active:scale-[0.98] md:active:scale-100 touch-manipulation" role="button" tabindex="0">
-                    <div class="relative overflow-hidden bg-white dark:bg-slate-900 w-full pointer-events-none" style="aspect-ratio: ${storeData.imageFormat === 'quadrado' ? '1/1' : '9/16'} !important;">
+                <div onclick="window.openProductModal('${p.id}')" class="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all flex flex-col group/card cursor-pointer active-scale md:active:scale-100 touch-manipulation" role="button" aria-label="Ver detalhes de ${p.name}">
+                    <div class="relative overflow-hidden bg-white dark:bg-slate-900 w-full" style="aspect-ratio: ${storeData.imageFormat === 'quadrado' ? '1/1' : '9/16'} !important;">
                         
                         ${badge ? `<div class="absolute top-2 left-2 z-20 bg-orange-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-full shadow-lg">${badge}</div>` : ''}
                         
@@ -731,7 +731,7 @@
                         ` : ''}
 
                         ${hasMediaSwipe ? `
-                            <div id="${swiperId}" onscroll="updateDots('${swiperId}')" class="media-swiper absolute inset-0 flex overflow-x-auto snap-x snap-mandatory scroll-smooth w-full h-full pointer-events-auto">
+                            <div id="${swiperId}" onscroll="updateDots('${swiperId}')" class="media-swiper absolute inset-0 flex overflow-x-auto snap-x snap-mandatory scroll-smooth w-full h-full">
                                 <div class="snap-start flex-shrink-0 w-full h-full relative">
                                     <img src="${imageUrl}" class="absolute inset-0 w-full h-full object-contain" referrerpolicy="no-referrer">
                                     <div class="absolute bottom-4 right-4 bg-black/40 backdrop-blur-md text-white/80 p-2 rounded-xl flex items-center gap-2 animate-pulse border border-white/20">
@@ -750,12 +750,12 @@
                                 </div>
                             </div>
                             <!-- Controles do Swiper -->
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-2 z-30 pointer-events-auto">
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-2 z-30">
                                 <button onclick="event.stopPropagation(); const s = document.getElementById('${swiperId}'); s.scrollTo({left: 0, behavior: 'smooth'})" class="p-2 bg-white/90 dark:bg-slate-800 shadow-xl rounded-full text-slate-800 dark:text-white active-scale transition-transform border border-slate-100 dark:border-slate-700">
                                     <i data-lucide="chevron-left" class="w-4 h-4 sm:w-5 sm:h-5"></i>
                                 </button>
                             </div>
-                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 z-30 pointer-events-auto">
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 z-30">
                                 <button onclick="event.stopPropagation(); const s = document.getElementById('${swiperId}'); s.scrollTo({left: s.offsetWidth, behavior: 'smooth'})" class="p-2 bg-white/90 dark:bg-slate-800 shadow-xl rounded-full text-slate-800 dark:text-white active-scale transition-transform border border-slate-100 dark:border-slate-700">
                                     <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5"></i>
                                 </button>
@@ -766,7 +766,7 @@
                                 <div class="w-2 h-2 rounded-full bg-white/40 shadow-sm transition-all border border-transparent"></div>
                             </div>
                         ` : (videoUrl ? `
-                            <div class="absolute inset-0 bg-black pointer-events-auto">
+                            <div class="absolute inset-0 bg-black">
                                 <div class="video-wrapper">
                                     <iframe src="${videoUrl}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                                 </div>
@@ -779,7 +779,7 @@
                             </div>
                         `))}
                     </div>
-                    <div class="p-3 sm:p-5 flex flex-col flex-1 pointer-events-none">
+                    <div class="p-3 sm:p-5 flex flex-col flex-1">
                         <h3 class="font-bold text-sm sm:text-lg mb-1 line-clamp-2 leading-tight h-10 sm:h-auto dark:text-white">${p.name}</h3>
                         ${p.description ? `<p class="hidden sm:block text-slate-500 dark:text-slate-400 text-xs mb-3 line-clamp-2">${p.description}</p>` : ''}
                         <div class="mt-auto pt-4">
@@ -798,9 +798,13 @@
             app.innerHTML = `
                 <div class="min-h-screen bg-white dark:bg-slate-900 flex flex-col">
                     <div class="relative py-12 sm:py-20 px-6 text-center overflow-hidden" style="background-color: ${storeData.secondaryColor}; color: #ffffff">
-                        <button onclick="toggleTheme()" class="absolute top-4 left-4 z-50 bg-white/20 p-3 rounded-full backdrop-blur-md hover:bg-white/30 transition-all active:scale-90">
+                <button onclick="toggleTheme()" class="absolute top-4 left-4 z-50 bg-white/20 p-3 rounded-full backdrop-blur-md hover:bg-white/30 transition-all active-scale">
                             <i data-lucide="sun" class="hidden dark:block w-6 h-6"></i>
                             <i data-lucide="moon" class="dark:hidden w-6 h-6"></i>
+                        </button>
+                        
+                        <button onclick="toggleAI(true)" class="absolute top-4 right-4 z-50 bg-white/20 p-3 rounded-full backdrop-blur-md hover:bg-white/30 transition-all active-scale">
+                            <i data-lucide="message-square" class="w-6 h-6"></i>
                         </button>
                         
                         ${storeData.bannerImage ? `<img src="${proxyImg(storeData.bannerImage)}" class="absolute inset-0 w-full h-full object-cover opacity-30 z-0" referrerpolicy="no-referrer">` : ''}
@@ -929,7 +933,7 @@
         </div>
     </div>
 
-    <button id="ai-trigger" onclick="toggleAI(true)" class="fixed bottom-24 left-4 sm:left-auto sm:right-6 sm:bottom-32 z-50 bg-slate-900 dark:bg-slate-800 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-xl hover:scale-110 active-scale transition-all border-2 border-[#25D366] opacity-0 pointer-events-none">
+    <button id="ai-trigger" onclick="toggleAI(true)" class="hidden fixed bottom-32 left-6 sm:left-auto sm:right-6 z-50 bg-slate-900 dark:bg-slate-800 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-xl hover:scale-110 active-scale transition-all border-2 border-[#25D366] opacity-0 pointer-events-none">
         <i data-lucide="message-square" class="w-6 h-6 text-[#25D366]"></i>
     </button>
 
@@ -940,17 +944,14 @@
         function toggleAI(show) {
             aiOpen = show;
             const widget = document.getElementById('ai-attendant');
-            const trigger = document.getElementById('ai-trigger');
             
             if(show) {
                 widget.style.visibility = 'visible';
                 widget.classList.remove('opacity-0', 'translate-y-10', 'pointer-events-none');
-                trigger.classList.add('opacity-0', 'pointer-events-none');
                 document.getElementById('ai-input').focus();
             } else {
                 widget.classList.add('opacity-0', 'translate-y-10', 'pointer-events-none');
                 setTimeout(() => { if(!aiOpen) widget.style.visibility = 'hidden'; }, 500);
-                trigger.classList.remove('opacity-0', 'pointer-events-none');
             }
         }
 

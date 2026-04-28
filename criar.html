@@ -201,6 +201,20 @@
                     </div>
                 </section>
 
+                <!-- NOVO: CATEGORIAS EM DESTAQUE (#1) -->
+                <section class="p-4 sm:p-8 bg-blue-50/50 rounded-[2rem] sm:rounded-[3rem] border border-blue-100 mt-6 space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="space-y-1">
+                            <h3 class="font-black uppercase italic tracking-tighter text-2xl sm:text-3xl leading-none text-blue-900">Destaques #1</h3>
+                            <p class="text-[10px] text-blue-400 font-bold uppercase tracking-widest leading-tight">Categorias em Carrossel (Topo)</p>
+                        </div>
+                        <button onclick="window.addFeaturedCategory()" class="bg-blue-600 text-white px-6 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest hover:bg-blue-700 active-scale shadow-lg shadow-blue-100">
+                            <i data-lucide="plus" class="w-4 h-4 inline mr-1"></i> Add Categoria
+                        </button>
+                    </div>
+                    <div id="featured-categories-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+                </section>
+
                 <section class="space-y-6">
                     <div class="flex items-center justify-between mb-2">
                         <h3 class="font-black uppercase italic tracking-widest text-sm text-orange-600">Itens do Catálogo</h3>
@@ -305,6 +319,7 @@
         window.storePlan = 'free';
         window.vendors = [];
         window.shippingZones = [];
+        window.featuredCategories = [];
 
         // Helper para normalizar categorias (Case-Insensitive)
         window.getNormalizedCategory = function(input, currentProductId) {
@@ -395,6 +410,7 @@
                 storeLogo: document.getElementById('store-logo').value,
                 pixKey: document.getElementById('pix-key').value,
                 shippingZones: window.shippingZones,
+                featuredCategories: window.featuredCategories,
                 products: window.products.map(p => ({
                     ...p,
                     videoUrl: p.videoUrl || ''
@@ -462,6 +478,7 @@
                 document.getElementById('store-logo').value = draft.storeLogo || '';
                 document.getElementById('pix-key').value = draft.pixKey || '';
                 window.shippingZones = draft.shippingZones || [];
+                window.featuredCategories = draft.featuredCategories || [];
                 window.updateBannerPreview(draft.bannerImage);
                 window.updateLogoPreview(draft.storeLogo);
                 if (draft.products && Array.isArray(draft.products) && draft.products.length > 0) {
@@ -1114,6 +1131,9 @@
             if (window.shippingZones.length > 0) {
                 data.sh = window.shippingZones;
             }
+            if (window.featuredCategories.length > 0) {
+                data.catd = window.featuredCategories.map(c => ({ n: c.name, i: c.image }));
+            }
 
             try {
                 const whatsappClean = whatsapp.replace(/\D/g, '');
@@ -1347,6 +1367,7 @@
                     window.storePlan = data.plan || 'free';
                     window.vendors = data.v || [];
                     window.shippingZones = data.sh || [];
+                    window.featuredCategories = (data.catd || []).map(c => ({ name: c.n, image: c.i }));
                     
                     if (data.lg) document.getElementById('store-logo').value = data.lg;
                     if (data.px) document.getElementById('pix-key').value = data.px;
@@ -1424,6 +1445,7 @@
             window.loadDraft();
             window.checkLastStore();
             await window.loadFromFirebase();
+            window.renderFeaturedCategories();
             window.renderProducts();
             window.renderVendors();
             window.renderShippingZones();
@@ -1464,6 +1486,41 @@
                         <span class="text-[10px] font-black text-orange-500 uppercase tracking-widest">Frete: R$ ${z.price}</span>
                     </div>
                     <button onclick="window.removeShippingZone(${index})" class="text-red-400 hover:text-red-600 p-2 bg-red-50 rounded-lg active-scale">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            `).join('');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        window.addFeaturedCategory = function() {
+            const name = prompt("Nome da Categoria em Destaque:");
+            if (!name) return;
+            const image = prompt("Link da Imagem/Ícone (ou suba no PostImages e cole o link):");
+            window.featuredCategories.push({ name, image: image || '' });
+            window.renderFeaturedCategories();
+            window.saveDraft();
+        }
+
+        window.removeFeaturedCategory = function(index) {
+            window.featuredCategories.splice(index, 1);
+            window.renderFeaturedCategories();
+            window.saveDraft();
+        }
+
+        window.renderFeaturedCategories = function() {
+            const list = document.getElementById('featured-categories-list');
+            if (!list) return;
+
+            list.innerHTML = window.featuredCategories.map((c, index) => `
+                <div class="bg-white p-4 rounded-2xl border border-blue-100 flex items-center justify-between shadow-sm">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-blue-50 border border-blue-100 overflow-hidden flex items-center justify-center">
+                            ${c.image ? `<img src="${proxyImg(c.image)}" class="w-full h-full object-cover">` : `<i data-lucide="tag" class="w-4 h-4 text-blue-300"></i>`}
+                        </div>
+                        <span class="font-bold text-slate-800 text-sm">${c.name}</span>
+                    </div>
+                    <button onclick="window.removeFeaturedCategory(${index})" class="text-red-400 hover:text-red-600 p-2 bg-red-50 rounded-lg active-scale">
                         <i data-lucide="trash-2" class="w-4 h-4"></i>
                     </button>
                 </div>

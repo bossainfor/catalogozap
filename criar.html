@@ -305,6 +305,7 @@
         window.storePlan = 'free';
         window.vendors = [];
         window.shippingZones = [];
+        window.expandedProducts = new Set();
 
         // Helper para normalizar categorias (Case-Insensitive)
         window.getNormalizedCategory = function(input, currentProductId) {
@@ -572,12 +573,14 @@
                 icon.style.transform = 'rotate(0deg)';
                 container.classList.remove('ring-2', 'ring-orange-500', 'bg-white');
                 container.classList.add('bg-slate-50/50');
+                window.expandedProducts.delete(id);
             } else {
                 // Opcional: fechar outros? Melhor não para permitir comparar
                 content.classList.add('open');
                 icon.style.transform = 'rotate(180deg)';
                 container.classList.add('ring-2', 'ring-orange-500', 'bg-white');
                 container.classList.remove('bg-slate-50/50');
+                window.expandedProducts.add(id);
             }
         }
 
@@ -602,7 +605,7 @@
                     p[field] = value;
                 }
 
-                if (field === 'available') {
+                if (field === 'available' || field === 'f') {
                     window.renderProducts();
                 }
                 
@@ -676,8 +679,10 @@
             if (window.storePlan === 'free') limit = 8;
             else if (window.storePlan === 'basic') limit = 15;
 
-            list.innerHTML = window.products.map((p, index) => `
-                <div id="container-${p.id}" class="bg-slate-50/50 rounded-[2rem] border border-slate-200 overflow-hidden transition-all duration-300">
+            list.innerHTML = window.products.map((p, index) => {
+                const isOpen = window.expandedProducts.has(p.id);
+                return `
+                <div id="container-${p.id}" class="${isOpen ? 'ring-2 ring-orange-500 bg-white' : 'bg-slate-50/50'} rounded-[2rem] border border-slate-200 overflow-hidden transition-all duration-300">
                     <!-- CABEÇALHO COMPACTO -->
                     <div onclick="window.toggleProduct('${p.id}')" class="p-4 flex items-center justify-between cursor-pointer hover:bg-white transition-colors">
                         <div class="flex items-center gap-4 overflow-hidden">
@@ -695,14 +700,14 @@
                         </div>
                         <div class="flex items-center gap-3">
                             ${index >= limit ? `<span class="bg-blue-50 text-blue-500 px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest flex items-center gap-1"><i data-lucide="lock" class="w-2.5 h-2.5"></i> Excedente</span>` : ''}
-                            <div id="chevron-${p.id}" class="text-slate-400 transition-transform duration-300">
+                            <div id="chevron-${p.id}" class="text-slate-400 transition-transform duration-300" style="${isOpen ? 'transform: rotate(180deg)' : ''}">
                                 <i data-lucide="chevron-down" class="w-6 h-6"></i>
                             </div>
                         </div>
                     </div>
 
                     <!-- CONTEÚDO DE EDIÇÃO -->
-                    <div id="content-${p.id}" class="collapsible-content px-4 sm:px-8">
+                    <div id="content-${p.id}" class="collapsible-content px-4 sm:px-8 ${isOpen ? 'open' : ''}">
                         <div class="flex justify-end gap-2 mb-6">
                             <button type="button" onclick="event.stopPropagation(); window.moveProduct('${p.id}', -1)" class="p-2.5 bg-white text-slate-400 hover:text-slate-600 rounded-xl border border-slate-100 shadow-sm transition-all ${index === 0 ? 'invisible' : ''}" title="Mover para cima">
                                 <i data-lucide="chevron-up" class="w-4 h-4"></i>
@@ -741,9 +746,13 @@
                             <div class="space-y-2">
                                 <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Disponibilidade</label>
                                 <div class="flex items-center gap-2 mt-2">
-                                    <button onclick="window.updateProduct('${p.id}', 'available', ${p.available === false ? 'true' : 'false'})" class="w-full py-4 rounded-2xl font-black uppercase text-[10px] transition-all flex items-center justify-center gap-2 border-2 ${p.available !== false ? 'bg-green-50 border-green-500 text-green-600' : 'bg-red-50 border-red-500 text-red-600'}">
+                                    <button onclick="window.updateProduct('${p.id}', 'available', ${p.available === false ? 'true' : 'false'})" class="flex-1 py-4 rounded-2xl font-black uppercase text-[10px] transition-all flex items-center justify-center gap-2 border-2 ${p.available !== false ? 'bg-green-50 border-green-500 text-green-600' : 'bg-red-50 border-red-500 text-red-600'}">
                                         <i data-lucide="${p.available !== false ? 'check-circle' : 'x-circle'}" class="w-4 h-4"></i>
                                         ${p.available !== false ? 'Disponível' : 'Esgotado'}
+                                    </button>
+                                    <button onclick="window.updateProduct('${p.id}', 'f', ${p.f ? 'false' : 'true'})" class="flex-1 py-4 rounded-2xl font-black uppercase text-[10px] transition-all flex items-center justify-center gap-2 border-2 ${p.f ? 'bg-orange-50 border-orange-500 text-orange-600' : 'bg-slate-50 border-slate-200 text-slate-400'}">
+                                        <i data-lucide="star" class="w-4 h-4 ${p.f ? 'fill-current' : ''}"></i>
+                                        ${p.f ? 'Em Destaque' : 'Destacar'}
                                     </button>
                                 </div>
                             </div>
@@ -809,7 +818,8 @@
                         </div>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
             if (window.lucide) lucide.createIcons();
         }
 
@@ -1102,6 +1112,7 @@
                     if (p.wholesaleMinQty) item.wq = parseInt(p.wholesaleMinQty);
                     if (p.available === false) item.av = false;
                     if (p.vars) item.vars = p.vars;
+                    if (p.f) item.f = true;
                     return item;
                 });
             }
@@ -1396,7 +1407,8 @@
                             category: p.cat || '',
                             description: p.d || '',
                             available: p.av !== false,
-                            vars: p.vars || ''
+                            vars: p.vars || '',
+                            f: p.f || false
                         }));
                         // Normalização retroativa de categorias no carregamento
                         const tempCategories = {};

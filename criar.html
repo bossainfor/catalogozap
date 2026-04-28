@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, deleteDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
@@ -28,11 +28,11 @@
 
         // Login anônimo para permitir upload se as regras exigirem
         signInAnonymously(auth).catch(err => console.error("Erro no login anônimo:", err));
-
+        
         window.db = db;
         window.storage = storage;
         window.auth = auth;
-        window.firebaseUtils = { doc, setDoc, getDoc, deleteDoc, ref, uploadBytesResumable, getDownloadURL, deleteObject };
+        window.firebaseUtils = { doc, setDoc, getDoc, deleteDoc, collection, query, where, getDocs, ref, uploadBytesResumable, getDownloadURL, deleteObject };
 
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -1022,16 +1022,30 @@
                     attempts++;
                 }
 
-                const { doc, getDoc } = window.firebaseUtils;
+                const { doc, getDoc, collection, query, where, getDocs } = window.firebaseUtils;
                 const historySnap = await getDoc(doc(window.db, "trial_history", whatsappClean));
                 
                 const btn = document.getElementById('main-action-btn');
                 const btnText = document.getElementById('btn-text');
                 const btnIcon = btn ? btn.querySelector('i') : null;
 
+                let existingStore = null;
+
                 if (historySnap.exists()) {
-                    const historyData = historySnap.data();
-                    window.existingStoreId = historyData.storeId;
+                    existingStore = historySnap.data();
+                    existingStore.storeId = existingStore.storeId;
+                } else {
+                    // Fallback: Busca direta na coleção stores
+                    const q = query(collection(window.db, "stores"), where("w", "==", whatsappClean));
+                    const querySnap = await getDocs(q);
+                    if (!querySnap.empty) {
+                        const firstDoc = querySnap.docs[0];
+                        existingStore = { storeId: firstDoc.id, ...firstDoc.data() };
+                    }
+                }
+
+                if (existingStore) {
+                    window.existingStoreId = existingStore.storeId;
                     
                     // Mostra mensagem de loja encontrada
                     if (matchMsg) matchMsg.classList.remove('hidden');
@@ -1045,9 +1059,9 @@
                     }
 
                     // Oferece carregar os dados se o formulário estiver vazio
-                    const storeName = document.getElementById('store-name').value;
-                    if (!storeName || storeName === '') {
-                        if (confirm(`Encontramos sua loja "${historyData.storeId}". Deseja carregar os dados dela para continuar editando?`)) {
+                    const storeNameInput = document.getElementById('store-name');
+                    if (storeNameInput && (!storeNameInput.value || storeNameInput.value === '')) {
+                        if (confirm(`Encontramos sua loja "${existingStore.n || existingStore.storeId}". Deseja carregar os dados dela para continuar editando?`)) {
                             window.loadFoundStore();
                         }
                     }

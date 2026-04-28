@@ -1029,34 +1029,76 @@
                 let foundStoreId = null;
                 let foundStoreData = null;
 
-                // 1. Tenta pelo histórico (mais rápido)
-                const historySnap = await getDoc(doc(window.db, "trial_history", whatsappClean));
-                if (historySnap.exists()) {
-                    foundStoreData = historySnap.data();
-                    foundStoreId = foundStoreData.storeId;
-                } else {
-                    // 2. Tenta busca direta na coleção stores pelo campo 'w'
-                    const q = query(collection(window.db, "stores"), where("w", "==", whatsappClean));
-                    const querySnap = await getDocs(q);
+                // Lista de variações para tentar encontrar a loja
+                const variations = [whatsappClean];
+                if (whatsappClean.startsWith('55') && whatsappClean.length > 11) {
+                    variations.push(whatsappClean.substring(2)); // Tenta sem o 55
+                } else if (!whatsappClean.startsWith('55') && (whatsappClean.length === 10 || whatsappClean.length === 11)) {
+                    variations.push('55' + whatsappClean); // Tenta com o 55
+                }
+
+                console.log("Verificando WhatsApp:", variations);
+
+                // Tenta cada variação
+                for (const v of variations) {
+                    // A. Tenta pelo histórico (ID do documento é o número)
+                    const historySnap = await getDoc(doc(window.db, "trial_history", v));
+                    if (historySnap.exists()) {
+                        const hData = historySnap.data();
+                        foundStoreId = hData.storeId;
+                        console.log("Loja encontrada no histórico por:", v, foundStoreId);
+                        break;
+                    }
+
+                    // B. Tenta busca direta na coleção stores pelo campo 'w'
+                    const q2 = query(collection(window.db, "stores"), where("w", "==", v));
+                    const querySnap = await getDocs(q2);
                     if (!querySnap.empty) {
                         const firstDoc = querySnap.docs[0];
                         foundStoreId = firstDoc.id;
                         foundStoreData = firstDoc.data();
+                        console.log("Loja encontrada na coleção stores por:", v, foundStoreId);
+                        break;
                     }
+                }
+                
+                // Se ainda não temos os dados da loja mas temos o ID, busca
+                if (foundStoreId && !foundStoreData) {
+                    const snap = await getDoc(doc(window.db, "stores", foundStoreId));
+                    if (snap.exists()) foundStoreData = snap.data();
                 }
                 
                 const btn = document.getElementById('main-action-btn');
                 const btnText = document.getElementById('btn-text');
                 const btnIcon = btn ? btn.querySelector('i') : null;
 
-                if (foundStoreId) {
+                if (foundStoreId && foundStoreData) {
                     window.existingStoreId = foundStoreId;
                     
                     // Mostra mensagem de loja encontrada
                     if (matchMsg) {
-                        matchMsg.classList.remove('hidden');
+                        matchMsg.classList.remove('hidden', 'animate-pulse');
+                        matchMsg.classList.add('bg-blue-600', 'text-white', 'border-blue-700');
                         const statusText = matchMsg.querySelector('p');
-                        if (statusText) statusText.innerHTML = `<i data-lucide="check-circle" class="w-3 h-3"></i> Loja "${foundStoreData.n || foundStoreId}" encontrada!`;
+                        if (statusText) {
+                            statusText.className = "text-xs font-bold flex items-center gap-2";
+                            statusText.innerHTML = `
+                                <i data-lucide="check-circle" class="w-4 h-4 text-white"></i> 
+                                <span>Loja <span class="uppercase italic">"${foundStoreData.n || foundStoreId}"</span> já cadastrada!</span>
+                            `;
+                        }
+                        
+                        // Atualiza o botão de carregar para ser mais visível
+                        let loadBtn = matchMsg.querySelector('button');
+                        if (!loadBtn) {
+                            loadBtn = document.createElement('button');
+                            matchMsg.appendChild(loadBtn);
+                        }
+                        loadBtn.onclick = (e) => { e.preventDefault(); window.loadFoundStore(); };
+                        loadBtn.className = "bg-white text-blue-600 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest shadow-lg hover:bg-blue-50 transition-all active:scale-95 flex-shrink-0";
+                        loadBtn.innerText = "Carregar Dados";
+                        
+                        if (window.lucide) lucide.createIcons();
                     }
 
                     // Muda botão para modo ATUALIZAR
@@ -1065,25 +1107,27 @@
                         btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
                         if (btnText) btnText.innerText = "Atualizar Meu Catálogo";
                         if (btnIcon) btnIcon.setAttribute('data-lucide', 'refresh-cw');
+                        if (window.lucide) lucide.createIcons();
                     }
 
                     // Oferece carregar se estiver vazio
                     const nameInput = document.getElementById('store-name');
                     if (nameInput && !nameInput.value) {
-                        if (confirm(`Encontramos sua loja "${foundStoreData.n || foundStoreId}". Deseja carregar os dados agora?`)) {
-                            window.loadFoundStore();
-                        }
+                        // Usamos um pequeno atraso para não interromper a digitação abruptamente
+                        setTimeout(() => {
+                            if (!document.getElementById('store-name').value) {
+                                if (confirm(`Encontramos sua loja "${foundStoreData.n || foundStoreId}". Deseja carregar os dados agora para facilitar sua edição?`)) {
+                                    window.loadFoundStore();
+                                }
+                            }
+                        }, 1000);
                     }
                 } else {
                     window.existingStoreId = null;
-                    if (matchMsg) matchMsg.classList.add('hidden');
-                    if (btn) {
-                        btn.classList.add('bg-slate-900', 'hover:bg-slate-800');
-                        btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                        if (btnText) btnText.innerText = "Gerar Minha Página";
-                        if (btnIcon) btnIcon.setAttribute('data-lucide', 'smartphone');
+                    if (matchMsg) {
+                        matchMsg.classList.add('hidden');
+                        matchMsg.classList.remove('bg-blue-600', 'text-white', 'border-blue-700');
                     }
-                }
                 if (window.lucide) lucide.createIcons();
             } catch (e) {
                 console.error("Erro ao verificar WhatsApp:", e);

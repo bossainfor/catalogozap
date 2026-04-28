@@ -260,10 +260,10 @@
             }
             mediaCont.innerHTML = mediaHTML;
 
-            document.getElementById('modal-title').innerText = product.name;
-            document.getElementById('modal-price').innerText = formatCurrency(product.price);
+            document.getElementById('modal-title').innerText = product.n || 'Produto Sem Nome';
+            document.getElementById('modal-price').innerText = formatCurrency(product.p || 0);
             document.getElementById('modal-price').style.color = storeData.primaryColor;
-            document.getElementById('modal-desc').innerText = product.description || 'Este item ainda não possui uma descrição detalhada disponível.';
+            document.getElementById('modal-desc').innerText = product.d || 'Este item ainda não possui uma descrição detalhada disponível.';
             
             const badgeCont = document.getElementById('modal-badge-container');
             badgeCont.innerHTML = '';
@@ -885,18 +885,18 @@
                 // Produtos em Destaque (#2)
                 const featProdCont = document.getElementById('featured-products-container');
                 const featProdList = document.getElementById('featured-products-list');
-                const featuredProducts = storeData.products.filter(p => p.featured === true && p.available !== false);
+                const featuredProducts = storeData.products.filter(p => p.f === true && p.av !== false);
                 
                 if (featuredProducts.length > 0) {
                     featProdCont.classList.remove('hidden');
                     featProdList.innerHTML = featuredProducts.map(p => `
                         <div onclick="window.openProductModal('${p.id}')" class="flex-shrink-0 w-64 group/feat cursor-pointer active-scale">
                             <div class="aspect-video rounded-3xl overflow-hidden bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-800 shadow-md transition-all group-hover/feat:shadow-2xl">
-                                <img src="${proxyImg(p.image)}" class="w-full h-full object-cover">
+                                <img src="${proxyImg(p.i)}" class="w-full h-full object-cover">
                             </div>
                             <div class="mt-4 px-2">
-                                <h4 class="font-black text-sm uppercase italic tracking-tighter dark:text-white truncate">${p.name}</h4>
-                                <p class="text-xs font-bold mt-1" style="color: ${storeData.c ? '#' + storeData.c : '#f97316'}">${formatCurrency(parseFloat(p.price || 0))}</p>
+                                <h4 class="font-black text-sm uppercase italic tracking-tighter dark:text-white truncate">${p.n || 'Sem Nome'}</h4>
+                                <p class="text-xs font-bold mt-1" style="color: ${storeData.c ? '#' + storeData.c : '#f97316'}">${formatCurrency(parseFloat(p.p || 0))}</p>
                             </div>
                         </div>
                     `).join('');
@@ -906,18 +906,18 @@
             }
 
             // Filter Products
-            let filtered = storeData.products.filter(p => p.available !== false);
-            if (selectedCategory !== 'Todos') filtered = filtered.filter(p => (p.category || '') === selectedCategory);
+            let filtered = storeData.products.filter(p => p.av !== false);
+            if (selectedCategory !== 'Todos') filtered = filtered.filter(p => (p.cat || '') === selectedCategory);
             if (searchQuery) {
                 const s = searchQuery.toLowerCase();
-                filtered = filtered.filter(p => p.name.toLowerCase().includes(s) || (p.description && p.description.toLowerCase().includes(s)) || (p.category && p.category.toLowerCase().includes(s)));
+                filtered = filtered.filter(p => (p.n && p.n.toLowerCase().includes(s)) || (p.d && p.d.toLowerCase().includes(s)) || (p.cat && p.cat.toLowerCase().includes(s)));
             }
 
             const grid = document.getElementById('products-grid');
             grid.innerHTML = filtered.length > 0 ? filtered.map(p => renderProductCard(p)).join('') : '<div class="col-span-full py-20 text-center text-slate-400 font-bold uppercase italic tracking-tighter">Nenhum item encontrado</div>';
 
             // Cat Scroll (Tabs)
-            const categories = ['Todos', ...new Set(storeData.products.filter(p => p.category && p.available !== false).map(p => p.category))];
+            const categories = ['Todos', ...new Set(storeData.products.filter(p => p.cat && p.av !== false).map(p => p.cat))];
             const tabsCont = document.getElementById('categories-tabs');
             const catScroll = document.getElementById('cat-scroll');
             if (categories.length > 1) {
@@ -941,12 +941,12 @@
         }
 
         function renderProductCard(p) {
-            const imageUrl = proxyImg(p.image);
-            const videoUrl = p.videoUrl ? getEmbedUrl(p.videoUrl) : null;
+            const imageUrl = proxyImg(p.i);
+            const videoUrl = p.v ? getEmbedUrl(p.v) : null;
             const hasMediaSwipe = imageUrl && videoUrl;
             const swiperId = `swiper-${p.id}`;
             const primaryColor = storeData.primaryColor || (storeData.c ? '#' + storeData.c : '#f97316');
-            const price = parseFloat((p.price || '0').replace(',', '.'));
+            const price = parseFloat((p.p || '0').toString().replace(',', '.'));
 
             return `
                 <div onclick="window.openProductModal('${p.id}')" class="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all flex flex-col group/card cursor-pointer active-scale touch-manipulation">
@@ -955,8 +955,8 @@
                         <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity"></div>
                     </div>
                     <div class="p-3 sm:p-5 flex flex-col flex-1">
-                        <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 leading-none truncate">${p.category || 'Geral'}</span>
-                        <h3 class="font-black text-sm sm:text-lg mb-2 line-clamp-2 leading-tight dark:text-white uppercase italic italic tracking-tighter">${p.name}</h3>
+                        <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 leading-none truncate">${p.cat || 'Geral'}</span>
+                        <h3 class="font-black text-sm sm:text-lg mb-2 line-clamp-2 leading-tight dark:text-white uppercase italic italic tracking-tighter">${p.n || 'Sem Nome'}</h3>
                         <div class="mt-auto">
                             <p class="font-black text-lg sm:text-2xl dark:text-white tracking-tighter leading-none" style="color: ${primaryColor}">${formatCurrency(price)}</p>
                             <div class="mt-4 w-full py-3 sm:py-4 text-white font-black rounded-xl text-[9px] sm:text-[10px] uppercase tracking-widest italic flex items-center justify-center gap-2 transition-all shadow-sm" style="background-color: ${primaryColor}">

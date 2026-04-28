@@ -941,12 +941,12 @@
         }
 
         function renderProductCard(p) {
-            const imageUrl = proxyImg(p.i);
-            const videoUrl = p.v ? getEmbedUrl(p.v) : null;
+            const imageUrl = proxyImg(p.image);
+            const videoUrl = p.videoUrl ? getEmbedUrl(p.videoUrl) : null;
             const hasMediaSwipe = imageUrl && videoUrl;
             const swiperId = `swiper-${p.id}`;
-            const primaryColor = storeData.c ? '#' + storeData.c : '#f97316';
-            const price = parseFloat(p.p || 0);
+            const primaryColor = storeData.primaryColor || (storeData.c ? '#' + storeData.c : '#f97316');
+            const price = parseFloat((p.price || '0').replace(',', '.'));
 
             return `
                 <div onclick="window.openProductModal('${p.id}')" class="bg-white dark:bg-slate-800 rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all flex flex-col group/card cursor-pointer active-scale touch-manipulation">
@@ -955,8 +955,8 @@
                         <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity"></div>
                     </div>
                     <div class="p-3 sm:p-5 flex flex-col flex-1">
-                        <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 leading-none truncate">${p.cat || 'Geral'}</span>
-                        <h3 class="font-black text-sm sm:text-lg mb-2 line-clamp-2 leading-tight dark:text-white uppercase italic italic tracking-tighter">${p.n}</h3>
+                        <span class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-1 leading-none truncate">${p.category || 'Geral'}</span>
+                        <h3 class="font-black text-sm sm:text-lg mb-2 line-clamp-2 leading-tight dark:text-white uppercase italic italic tracking-tighter">${p.name}</h3>
                         <div class="mt-auto">
                             <p class="font-black text-lg sm:text-2xl dark:text-white tracking-tighter leading-none" style="color: ${primaryColor}">${formatCurrency(price)}</p>
                             <div class="mt-4 w-full py-3 sm:py-4 text-white font-black rounded-xl text-[9px] sm:text-[10px] uppercase tracking-widest italic flex items-center justify-center gap-2 transition-all shadow-sm" style="background-color: ${primaryColor}">
@@ -966,9 +966,6 @@
                     </div>
                 </div>
             `;
-        }
-            
-            if (window.lucide) lucide.createIcons();
         }
 
         window.onload = async () => {

@@ -125,7 +125,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <div class="space-y-2">
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Nicho</label>
-                            <select id="niche" onchange="window.saveDraft()" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                            <select id="niche" onchange="window.saveDraft(); window.renderProducts()" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
                                 <option value="loja">Loja</option>
                                 <option value="cardapio">Cardápio</option>
                                 <option value="servicos">Serviços</option>
@@ -716,6 +716,9 @@
                 const list = document.getElementById('products-list');
                 if (!list) return;
                 
+                const niche = document.getElementById('niche').value;
+                const isService = ['servicos', 'portfolio'].includes(niche);
+
                 let limit = 999;
                 if (window.storePlan === 'free') limit = 8;
                 else if (window.storePlan === 'basic') limit = 15;
@@ -744,7 +747,7 @@
                                 <div class="truncate">
                                     <h4 id="title-${p.id}" class="font-black uppercase italic tracking-tighter text-slate-800 truncate">${p.name || 'Novo Item'}</h4>
                                     <div class="flex items-center gap-2">
-                                        <p id="price-display-${p.id}" class="text-[10px] font-bold text-orange-500 uppercase tracking-widest">${p.price ? 'R$ ' + p.price : 'Sem preço'}</p>
+                                        <p id="price-display-${p.id}" class="${isService ? 'hidden' : ''} text-[10px] font-bold text-orange-500 uppercase tracking-widest">${p.price ? 'R$ ' + p.price : 'Sem preço'}</p>
                                         <span class="text-[8px] bg-slate-100 text-slate-400 px-1.5 py-0.5 rounded uppercase font-bold tracking-tighter">Clique para editar</span>
                                     </div>
                                 </div>
@@ -785,16 +788,16 @@
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
-                                <div class="space-y-2">
+                             <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
+                                <div class="space-y-2 ${isService ? 'hidden' : ''}">
                                     <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Preço Varejo (R$)</label>
                                     <input type="text" value="${priceEscaped}" ${isLocked ? 'readonly disabled' : ''} oninput="window.updateProduct('${p.id}', 'price', this.value)" placeholder="Ex: 49,90" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold ${isLocked ? 'opacity-60 cursor-not-allowed bg-slate-50' : ''}">
                                 </div>
-                                <div class="space-y-2">
+                                <div class="space-y-2 ${isService ? 'hidden' : ''}">
                                     <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Variações (P, M, G ou Cores)</label>
                                     <input type="text" value="${varsEscaped}" ${isLocked ? 'readonly disabled' : ''} oninput="window.updateProduct('${p.id}', 'vars', this.value)" placeholder="Ex: P, M, G" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold ${isLocked ? 'opacity-60 cursor-not-allowed bg-slate-50' : ''}">
                                 </div>
-                                <div class="space-y-2">
+                                <div class="space-y-2 ${isService ? 'md:col-span-3' : ''}">
                                     <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Disponibilidade ${isLocked ? '(Bloqueado)' : ''}</label>
                                     <div class="flex items-center gap-2 mt-2">
                                         <button type="button" ${isLocked ? 'disabled' : ''} onclick="window.updateProduct('${p.id}', 'available', ${p.available === false ? 'true' : 'false'})" class="flex-1 py-4 rounded-2xl font-black uppercase text-[10px] transition-all flex items-center justify-center gap-2 border-2 ${p.available !== false ? 'bg-green-50 border-green-500 text-green-600' : 'bg-red-50 border-red-500 text-red-600'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}">
@@ -809,7 +812,7 @@
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 ${isService ? 'hidden' : ''}">
                                 <div class="space-y-2">
                                     <label class="text-[10px] font-bold uppercase tracking-widest text-orange-400 ml-1">Preço Atacado (Opcional)</label>
                                     <input type="text" value="${wPriceEscaped}" ${isLocked ? 'readonly disabled' : ''} oninput="window.updateProduct('${p.id}', 'wholesalePrice', this.value)" placeholder="Ex: 35,00" class="w-full px-5 py-4 rounded-2xl bg-orange-50/30 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold ${isLocked ? 'opacity-60 cursor-not-allowed bg-slate-50' : ''}">

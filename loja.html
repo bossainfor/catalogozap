@@ -515,14 +515,41 @@
         }
 
         function formatCurrency(value) {
-            const valStr = String(value || '').trim();
-            const isService = storeData && (storeData.type === 'servicos' || storeData.type === 'portfolio' || storeData.type === 'orcamento' || storeData.type === 'serviços');
-            
-            if (!valStr || valStr === '0' || valStr === '0,00' || valStr === 'undefined' || valStr === 'null') {
+            if (value === null || value === undefined) {
+                const isService = storeData && ['servicos', 'serviços', 'portfolio', 'orcamento'].includes(storeData.type);
                 return isService ? 'Sob Orçamento' : 'Consultar Preço';
             }
-            const num = typeof value === 'string' ? parseFloat(value.replace(',', '.')) : value;
-            if (isNaN(num) || num === 0) return isService ? 'Sob Orçamento' : 'Consultar Preço';
+
+            let valStr = String(value).trim();
+            const isService = storeData && ['servicos', 'serviços', 'portfolio', 'orcamento'].includes(storeData.type);
+            
+            if (!valStr || valStr === 'undefined' || valStr === 'null' || valStr === '0') {
+                return isService ? 'Sob Orçamento' : 'Consultar Preço';
+            }
+
+            // Tenta limpar o valor para tratar como número
+            let cleanStr = valStr.replace(/[^\d,.]/g, '');
+            
+            // Se não houver números mas houver texto, retorna o texto original (ex: "Grátis", "A combinar")
+            if (!cleanStr) {
+                return valStr;
+            }
+
+            // Lógica para converter para float (ex: "1.200,50" -> "1200.50" ou "1,79" -> "1.79")
+            let normalizedStr = cleanStr;
+            if (normalizedStr.includes('.') && normalizedStr.includes(',')) {
+                // Formato brasileiro com milhar: 1.000,00 -> 1000.00
+                normalizedStr = normalizedStr.replace(/\./g, '').replace(',', '.');
+            } else {
+                // Apenas um separador: 1,79 -> 1.79
+                normalizedStr = normalizedStr.replace(',', '.');
+            }
+
+            const num = parseFloat(normalizedStr);
+            
+            if (isNaN(num)) return valStr; // Se falhar no parsing mas tiver texto, mostra o texto
+            if (num === 0) return isService ? 'Sob Orçamento' : 'Consultar Preço';
+            
             return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(num);
         }
 

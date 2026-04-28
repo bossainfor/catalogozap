@@ -1003,8 +1003,10 @@
 
         window.checkWhatsApp = async function(val) {
             const whatsappClean = val.replace(/\D/g, '');
+            const matchMsg = document.getElementById('whatsapp-match-msg');
+            
             if (whatsappClean.length < 10) {
-                document.getElementById('whatsapp-match-msg').classList.add('hidden');
+                if (matchMsg) matchMsg.classList.add('hidden');
                 return;
             }
 
@@ -1025,21 +1027,22 @@
                 
                 const btn = document.getElementById('main-action-btn');
                 const btnText = document.getElementById('btn-text');
-                const btnIcon = btn.querySelector('i');
-                const matchMsg = document.getElementById('whatsapp-match-msg');
+                const btnIcon = btn ? btn.querySelector('i') : null;
 
                 if (historySnap.exists()) {
                     const historyData = historySnap.data();
                     window.existingStoreId = historyData.storeId;
                     
                     // Mostra mensagem de loja encontrada
-                    matchMsg.classList.remove('hidden');
+                    if (matchMsg) matchMsg.classList.remove('hidden');
 
                     // Muda para modo ATUALIZAR
-                    btn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
-                    btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
-                    if (btnText) btnText.innerText = "Atualizar Meu Catálogo";
-                    if (btnIcon) btnIcon.setAttribute('data-lucide', 'refresh-cw');
+                    if (btn) {
+                        btn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+                        btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                        if (btnText) btnText.innerText = "Atualizar Meu Catálogo";
+                        if (btnIcon) btnIcon.setAttribute('data-lucide', 'refresh-cw');
+                    }
 
                     // Oferece carregar os dados se o formulário estiver vazio
                     const storeName = document.getElementById('store-name').value;
@@ -1050,12 +1053,14 @@
                     }
                 } else {
                     window.existingStoreId = null;
-                    matchMsg.classList.add('hidden');
+                    if (matchMsg) matchMsg.classList.add('hidden');
                     // Volta para modo GERAR
-                    btn.classList.add('bg-slate-900', 'hover:bg-slate-800');
-                    btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                    if (btnText) btnText.innerText = "Gerar Minha Página";
-                    if (btnIcon) btnIcon.setAttribute('data-lucide', 'smartphone');
+                    if (btn) {
+                        btn.classList.add('bg-slate-900', 'hover:bg-slate-800');
+                        btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                        if (btnText) btnText.innerText = "Gerar Minha Página";
+                        if (btnIcon) btnIcon.setAttribute('data-lucide', 'smartphone');
+                    }
                 }
                 if (window.lucide) lucide.createIcons();
             } catch (e) {

@@ -53,6 +53,8 @@
         .overlay.open { opacity: 1; pointer-events: auto; display: block; }
         .category-scroll::-webkit-scrollbar { display: none; }
         .category-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         
         /* Media Swiper Styles */
         .media-swiper::-webkit-scrollbar { display: none; }
@@ -476,7 +478,8 @@
                             category: p.cat || '',
                             description: p.d || '',
                             available: p.av !== false,
-                            vars: p.vars || ''
+                            vars: p.vars || '',
+                            f: p.f || false
                         };
                     })
                 };
@@ -901,6 +904,42 @@
                 return;
             }
 
+            const featuredProducts = storeData.products.filter(p => p.f && p.available !== false);
+            const featuredHTML = featuredProducts.length > 0 ? `
+                <div class="bg-slate-50 dark:bg-slate-800/50 py-8 border-b border-slate-100 dark:border-slate-800">
+                    <div class="max-w-6xl mx-auto px-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-xl font-black italic uppercase tracking-tighter dark:text-white flex items-center gap-2">
+                                <i data-lucide="sparkles" class="w-5 h-5 text-orange-500"></i>
+                                Destaques
+                            </h2>
+                            <div class="flex gap-2">
+                                <button onclick="const s = document.getElementById('featured-carousel'); s.scrollBy({left: -200, behavior: 'smooth'})" class="p-2 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-700 transition-all text-slate-400">
+                                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                                </button>
+                                <button onclick="const s = document.getElementById('featured-carousel'); s.scrollBy({left: 200, behavior: 'smooth'})" class="p-2 rounded-full border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-700 transition-all text-slate-400">
+                                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div id="featured-carousel" class="flex gap-4 overflow-x-auto snap-x snap-mandatory scrollbar-hide pb-2">
+                            ${featuredProducts.map(p => `
+                                <div onclick="window.openProductModal('${p.id}')" class="snap-start flex-shrink-0 w-[200px] sm:w-[240px] bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all group/feat cursor-pointer active-scale">
+                                    <div class="relative aspect-square overflow-hidden rounded-t-2xl bg-slate-100 dark:bg-slate-900">
+                                        <img src="${proxyImg(p.image)}" class="absolute inset-0 w-full h-full object-contain p-2 group-hover/feat:scale-110 transition-transform duration-500" referrerpolicy="no-referrer">
+                                        <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                                    </div>
+                                    <div class="p-4">
+                                        <h3 class="font-bold text-xs sm:text-sm mb-1 line-clamp-1 dark:text-white uppercase tracking-tight">${p.name}</h3>
+                                        <p class="font-black text-sm sm:text-base dark:text-white italic tracking-tighter" style="color: ${storeData.primaryColor}">${formatCurrency(p.price)}</p>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            ` : '';
+
             app.innerHTML = `
                 <div class="min-h-screen bg-white dark:bg-slate-900 flex flex-col">
                     <div class="relative py-12 sm:py-20 px-6 text-center overflow-hidden" style="background-color: ${storeData.secondaryColor}; color: #ffffff">
@@ -922,6 +961,8 @@
                             </div>
                         </div>
                     </div>
+
+                    ${featuredHTML}
 
                     <div class="px-6 py-4 bg-white dark:bg-slate-900 sticky top-0 z-[45] border-b border-slate-100 dark:border-slate-800">
                         <div class="max-w-6xl mx-auto relative group">

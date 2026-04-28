@@ -1002,7 +1002,7 @@
         }
 
         window.checkWhatsApp = async function(val) {
-            const whatsappClean = val.replace(/\D/g, '');
+            const whatsappClean = (val || '').replace(/\D/g, '');
             const matchMsg = document.getElementById('whatsapp-match-msg');
             
             if (whatsappClean.length < 10) {
@@ -1022,35 +1022,44 @@
                     attempts++;
                 }
 
+                if (!window.db) return;
+
                 const { doc, getDoc, collection, query, where, getDocs } = window.firebaseUtils;
+                
+                let foundStoreId = null;
+                let foundStoreData = null;
+
+                // 1. Tenta pelo histórico (mais rápido)
                 const historySnap = await getDoc(doc(window.db, "trial_history", whatsappClean));
+                if (historySnap.exists()) {
+                    foundStoreData = historySnap.data();
+                    foundStoreId = foundStoreData.storeId;
+                } else {
+                    // 2. Tenta busca direta na coleção stores pelo campo 'w'
+                    const q = query(collection(window.db, "stores"), where("w", "==", whatsappClean));
+                    const querySnap = await getDocs(q);
+                    if (!querySnap.empty) {
+                        const firstDoc = querySnap.docs[0];
+                        foundStoreId = firstDoc.id;
+                        foundStoreData = firstDoc.data();
+                    }
+                }
                 
                 const btn = document.getElementById('main-action-btn');
                 const btnText = document.getElementById('btn-text');
                 const btnIcon = btn ? btn.querySelector('i') : null;
 
-                let existingStore = null;
-
-                if (historySnap.exists()) {
-                    existingStore = historySnap.data();
-                    existingStore.storeId = existingStore.storeId;
-                } else {
-                    // Fallback: Busca direta na coleção stores
-                    const q = query(collection(window.db, "stores"), where("w", "==", whatsappClean));
-                    const querySnap = await getDocs(q);
-                    if (!querySnap.empty) {
-                        const firstDoc = querySnap.docs[0];
-                        existingStore = { storeId: firstDoc.id, ...firstDoc.data() };
-                    }
-                }
-
-                if (existingStore) {
-                    window.existingStoreId = existingStore.storeId;
+                if (foundStoreId) {
+                    window.existingStoreId = foundStoreId;
                     
                     // Mostra mensagem de loja encontrada
-                    if (matchMsg) matchMsg.classList.remove('hidden');
+                    if (matchMsg) {
+                        matchMsg.classList.remove('hidden');
+                        const statusText = matchMsg.querySelector('p');
+                        if (statusText) statusText.innerHTML = `<i data-lucide="check-circle" class="w-3 h-3"></i> Loja "${foundStoreData.n || foundStoreId}" encontrada!`;
+                    }
 
-                    // Muda para modo ATUALIZAR
+                    // Muda botão para modo ATUALIZAR
                     if (btn) {
                         btn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
                         btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
@@ -1058,17 +1067,16 @@
                         if (btnIcon) btnIcon.setAttribute('data-lucide', 'refresh-cw');
                     }
 
-                    // Oferece carregar os dados se o formulário estiver vazio
-                    const storeNameInput = document.getElementById('store-name');
-                    if (storeNameInput && (!storeNameInput.value || storeNameInput.value === '')) {
-                        if (confirm(`Encontramos sua loja "${existingStore.n || existingStore.storeId}". Deseja carregar os dados dela para continuar editando?`)) {
+                    // Oferece carregar se estiver vazio
+                    const nameInput = document.getElementById('store-name');
+                    if (nameInput && !nameInput.value) {
+                        if (confirm(`Encontramos sua loja "${foundStoreData.n || foundStoreId}". Deseja carregar os dados agora?`)) {
                             window.loadFoundStore();
                         }
                     }
                 } else {
                     window.existingStoreId = null;
                     if (matchMsg) matchMsg.classList.add('hidden');
-                    // Volta para modo GERAR
                     if (btn) {
                         btn.classList.add('bg-slate-900', 'hover:bg-slate-800');
                         btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
@@ -1079,6 +1087,7 @@
                 if (window.lucide) lucide.createIcons();
             } catch (e) {
                 console.error("Erro ao verificar WhatsApp:", e);
+                // Opcional: alert("Não conseguimos buscar seus dados agora. Verifique a conexão.");
             }
         }
 

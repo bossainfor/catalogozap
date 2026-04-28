@@ -619,7 +619,7 @@
                     p[field] = value;
                 }
 
-                if (field === 'available') {
+                if (field === 'available' || field === 'featured') {
                     window.renderProducts();
                 }
                 
@@ -1506,9 +1506,9 @@
         }
 
         window.addFeaturedCategory = function() {
-            const name = prompt("Nome da Categoria em Destaque:");
+            const name = prompt("Qual o nome da categoria que deseja colocar no Carrossel do topo?");
             if (!name) return;
-            const image = prompt("Link da Imagem/Ícone (ou suba no PostImages e cole o link):");
+            const image = prompt("Link da imagem ou ícone para este botão (Opcional - deixe em branco se não tiver):");
             window.featuredCategories.push({ name, image: image || '' });
             window.renderFeaturedCategories();
             window.saveDraft();

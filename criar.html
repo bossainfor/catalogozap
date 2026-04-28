@@ -320,6 +320,7 @@
         window.vendors = [];
         window.shippingZones = [];
         window.featuredCategories = [];
+        window.expandedProductIds = []; // Global para manter o estado de abertura nas edições
 
         // Helper para normalizar categorias (Case-Insensitive)
         window.getNormalizedCategory = function(input, currentProductId) {
@@ -508,9 +509,13 @@
             }
             const id = Date.now().toString();
             window.products.push({ id: id, name: '', price: '', available: true, featured: false, vars: '', wholesalePrice: '', wholesaleMinQty: '', image: '', videoUrl: '', category: '', description: '' });
-            window.renderProducts();
+            
             // Auto-expandir o novo produto
-            setTimeout(() => window.toggleProduct(id), 50);
+            if (!window.expandedProductIds.includes(id)) {
+                window.expandedProductIds.push(id);
+            }
+            
+            window.renderProducts();
             window.saveDraft();
         }
 
@@ -580,6 +585,13 @@
         }
 
         window.toggleProduct = function(id) {
+            const index = window.expandedProductIds.indexOf(id);
+            if (index > -1) {
+                window.expandedProductIds.splice(index, 1);
+            } else {
+                window.expandedProductIds.push(id);
+            }
+
             const content = document.getElementById(`content-${id}`);
             const icon = document.getElementById(`chevron-${id}`);
             const container = document.getElementById(`container-${id}`);
@@ -693,8 +705,10 @@
             if (window.storePlan === 'free') limit = 8;
             else if (window.storePlan === 'basic') limit = 15;
 
-            list.innerHTML = window.products.map((p, index) => `
-                <div id="container-${p.id}" class="bg-slate-50/50 rounded-[2rem] border border-slate-200 overflow-hidden transition-all duration-300">
+            list.innerHTML = window.products.map((p, index) => {
+                const isOpen = window.expandedProductIds.includes(p.id);
+                return `
+                <div id="container-${p.id}" class="rounded-[2rem] border border-slate-200 overflow-hidden transition-all duration-300 ${isOpen ? 'ring-2 ring-orange-500 bg-white shadow-lg' : 'bg-slate-50/50'}">
                     <!-- CABEÇALHO COMPACTO -->
                     <div onclick="window.toggleProduct('${p.id}')" class="p-4 flex items-center justify-between cursor-pointer hover:bg-white transition-colors">
                         <div class="flex items-center gap-4 overflow-hidden">
@@ -712,14 +726,14 @@
                         </div>
                         <div class="flex items-center gap-3">
                             ${index >= limit ? `<span class="bg-blue-50 text-blue-500 px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest flex items-center gap-1"><i data-lucide="lock" class="w-2.5 h-2.5"></i> Excedente</span>` : ''}
-                            <div id="chevron-${p.id}" class="text-slate-400 transition-transform duration-300">
+                            <div id="chevron-${p.id}" class="text-slate-400 transition-transform duration-300" style="${isOpen ? 'transform: rotate(180deg)' : ''}">
                                 <i data-lucide="chevron-down" class="w-6 h-6"></i>
                             </div>
                         </div>
                     </div>
 
                     <!-- CONTEÚDO DE EDIÇÃO -->
-                    <div id="content-${p.id}" class="collapsible-content px-4 sm:px-8">
+                    <div id="content-${p.id}" class="collapsible-content px-4 sm:px-8 ${isOpen ? 'open' : ''}">
                         <div class="flex justify-end gap-2 mb-6">
                             <button type="button" onclick="event.stopPropagation(); window.moveProduct('${p.id}', -1)" class="p-2.5 bg-white text-slate-400 hover:text-slate-600 rounded-xl border border-slate-100 shadow-sm transition-all ${index === 0 ? 'invisible' : ''}" title="Mover para cima">
                                 <i data-lucide="chevron-up" class="w-4 h-4"></i>

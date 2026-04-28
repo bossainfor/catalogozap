@@ -896,7 +896,7 @@
                             </div>
                             <div class="mt-4 px-2">
                                 <h4 class="font-black text-sm uppercase italic tracking-tighter dark:text-white truncate">${p.name}</h4>
-                                <p class="text-xs font-bold mt-1" style="color: ${storeData.primaryColor}">${formatCurrency(p.price)}</p>
+                                <p class="text-xs font-bold mt-1" style="color: ${storeData.c ? '#' + storeData.c : '#f97316'}">${formatCurrency(parseFloat(p.price || 0))}</p>
                             </div>
                         </div>
                     `).join('');

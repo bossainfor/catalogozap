@@ -906,18 +906,18 @@
             }
 
             // Filter Products
-            let filtered = storeData.products.filter(p => p.av !== false);
-            if (selectedCategory !== 'Todos') filtered = filtered.filter(p => (p.cat || '') === selectedCategory);
+            let filtered = storeData.products.filter(p => p.available !== false);
+            if (selectedCategory !== 'Todos') filtered = filtered.filter(p => (p.category || '') === selectedCategory);
             if (searchQuery) {
                 const s = searchQuery.toLowerCase();
-                filtered = filtered.filter(p => p.n.toLowerCase().includes(s) || (p.d && p.d.toLowerCase().includes(s)) || (p.cat && p.cat.toLowerCase().includes(s)));
+                filtered = filtered.filter(p => p.name.toLowerCase().includes(s) || (p.description && p.description.toLowerCase().includes(s)) || (p.category && p.category.toLowerCase().includes(s)));
             }
 
             const grid = document.getElementById('products-grid');
             grid.innerHTML = filtered.length > 0 ? filtered.map(p => renderProductCard(p)).join('') : '<div class="col-span-full py-20 text-center text-slate-400 font-bold uppercase italic tracking-tighter">Nenhum item encontrado</div>';
 
             // Cat Scroll (Tabs)
-            const categories = ['Todos', ...new Set(storeData.products.filter(p => p.cat && p.av !== false).map(p => p.cat))];
+            const categories = ['Todos', ...new Set(storeData.products.filter(p => p.category && p.available !== false).map(p => p.category))];
             const tabsCont = document.getElementById('categories-tabs');
             const catScroll = document.getElementById('cat-scroll');
             if (categories.length > 1) {

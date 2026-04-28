@@ -763,9 +763,9 @@
             const hasCategories = categories.length > 1;
 
             const logoHTML = storeData.logo ? `
-                <div class="relative -mt-16 mb-4 flex justify-center">
-                    <div class="w-32 h-32 rounded-full border-4 border-white dark:border-slate-900 bg-white dark:bg-slate-800 overflow-hidden shadow-xl ring-4 ring-slate-100/20">
-                        <img src="${proxyImg(storeData.logo)}" class="w-full h-full object-cover" alt="Logo">
+                <div class="relative z-20 -mt-12 sm:-mt-16 mb-6 flex justify-center">
+                    <div class="w-28 h-28 sm:w-36 sm:h-36 rounded-full border-4 border-white dark:border-slate-900 bg-white dark:bg-slate-800 overflow-hidden shadow-2xl ring-8 ring-black/5 transition-transform hover:scale-105 duration-500">
+                        <img src="${proxyImg(storeData.logo)}" class="w-full h-full object-contain p-2" alt="Logo">
                     </div>
                 </div>
             ` : '';
@@ -942,7 +942,7 @@
 
             app.innerHTML = `
                 <div class="min-h-screen bg-white dark:bg-slate-900 flex flex-col">
-                    <div class="relative py-12 sm:py-20 px-6 text-center overflow-hidden" style="background-color: ${storeData.secondaryColor}; color: #ffffff">
+                    <div class="relative pt-20 pb-12 sm:pt-28 sm:pb-20 px-6 text-center" style="background-color: ${storeData.secondaryColor}; color: #ffffff">
                         <button onclick="toggleTheme()" class="absolute top-4 left-4 z-50 bg-white/20 p-3 rounded-full backdrop-blur-md hover:bg-white/30 transition-all active-scale">
                             <i data-lucide="sun" class="hidden dark:block w-6 h-6"></i>
                             <i data-lucide="moon" class="dark:hidden w-6 h-6"></i>

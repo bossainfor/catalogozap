@@ -315,7 +315,7 @@
 
     <script>
         // Tornar funções globais explicitamente para garantir funcionamento em botões
-        window.products = [{ id: Date.now().toString(), name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', videoUrl: '', category: '', description: '' }];
+        window.products = [{ id: Date.now().toString(), name: '', price: '', available: true, featured: false, vars: '', wholesalePrice: '', wholesaleMinQty: '', image: '', videoUrl: '', category: '', description: '' }];
         window.storePlan = 'free';
         window.vendors = [];
         window.shippingZones = [];
@@ -507,7 +507,7 @@
                 return;
             }
             const id = Date.now().toString();
-            window.products.push({ id: id, name: '', price: '', available: true, vars: '', wholesalePrice: '', wholesaleMinQty: '', image: '', videoUrl: '', category: '', description: '' });
+            window.products.push({ id: id, name: '', price: '', available: true, featured: false, vars: '', wholesalePrice: '', wholesaleMinQty: '', image: '', videoUrl: '', category: '', description: '' });
             window.renderProducts();
             // Auto-expandir o novo produto
             setTimeout(() => window.toggleProduct(id), 50);
@@ -746,7 +746,7 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
                             <div class="space-y-2">
                                 <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Preço Varejo (R$)</label>
                                 <input type="text" value="${p.price.replace(/"/g, '&quot;')}" oninput="window.updateProduct('${p.id}', 'price', this.value)" placeholder="Ex: 49,90" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold">
@@ -760,7 +760,16 @@
                                 <div class="flex items-center gap-2 mt-2">
                                     <button onclick="window.updateProduct('${p.id}', 'available', ${p.available === false ? 'true' : 'false'})" class="w-full py-4 rounded-2xl font-black uppercase text-[10px] transition-all flex items-center justify-center gap-2 border-2 ${p.available !== false ? 'bg-green-50 border-green-500 text-green-600' : 'bg-red-50 border-red-500 text-red-600'}">
                                         <i data-lucide="${p.available !== false ? 'check-circle' : 'x-circle'}" class="w-4 h-4"></i>
-                                        ${p.available !== false ? 'Disponível' : 'Esgotado'}
+                                        ${p.available !== false ? 'Sim' : 'Não'}
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="space-y-2">
+                                <label class="text-[10px] font-bold uppercase tracking-widest text-blue-500 ml-1">No Carrossel?</label>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <button onclick="window.updateProduct('${p.id}', 'featured', ${!p.featured})" class="w-full py-4 rounded-2xl font-black uppercase text-[10px] transition-all flex items-center justify-center gap-2 border-2 ${p.featured ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-slate-50 border-slate-200 text-slate-400'}">
+                                        <i data-lucide="${p.featured ? 'star' : 'star-off'}" class="w-4 h-4"></i>
+                                        ${p.featured ? 'Sim' : 'Não'}
                                     </button>
                                 </div>
                             </div>
@@ -1119,6 +1128,7 @@
                     if (p.wholesaleMinQty) item.wq = parseInt(p.wholesaleMinQty);
                     if (p.available === false) item.av = false;
                     if (p.vars) item.vars = p.vars;
+                    if (p.featured === true) item.f = true;
                     return item;
                 });
             }

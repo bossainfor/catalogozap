@@ -211,7 +211,7 @@
                     <datalist id="categories-datalist"></datalist>
                 </section>
 
-                <section class="p-4 sm:p-8 bg-slate-50 rounded-[2rem] sm:rounded-[3rem] border border-slate-200 mt-6 space-y-6">
+                <section id="shipping-section" class="p-4 sm:p-8 bg-slate-50 rounded-[2rem] sm:rounded-[3rem] border border-slate-200 mt-6 space-y-6">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div class="space-y-1">
                             <h3 class="font-black uppercase italic tracking-tighter text-2xl sm:text-3xl leading-none">Taxas de Entrega</h3>
@@ -720,6 +720,13 @@
                 const niche = document.getElementById('niche').value;
                 const isService = ['servicos', 'portfolio'].includes(niche);
                 const isAffiliate = niche === 'afiliados';
+
+                // Ocultar seção de frete para afiliados
+                const shippingSection = document.getElementById('shipping-section');
+                if (shippingSection) {
+                    if (isAffiliate) shippingSection.classList.add('hidden');
+                    else shippingSection.classList.remove('hidden');
+                }
 
                 let limit = 999;
                 if (window.storePlan === 'free') limit = 8;

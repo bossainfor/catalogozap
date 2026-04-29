@@ -130,6 +130,7 @@
                                 <option value="cardapio">Cardápio</option>
                                 <option value="servicos">Serviços</option>
                                 <option value="portfolio">Portfólio</option>
+                                <option value="afiliados">Afiliados</option>
                             </select>
                         </div>
                         <div class="space-y-2">
@@ -718,6 +719,7 @@
                 
                 const niche = document.getElementById('niche').value;
                 const isService = ['servicos', 'portfolio'].includes(niche);
+                const isAffiliate = niche === 'afiliados';
 
                 let limit = 999;
                 if (window.storePlan === 'free') limit = 8;
@@ -732,6 +734,7 @@
                     const priceEscaped = String(p.price || '').replace(/"/g, '&quot;');
                     const varsEscaped = String(p.vars || '').replace(/"/g, '&quot;');
                     const wPriceEscaped = String(p.wholesalePrice || '').replace(/"/g, '&quot;');
+                    const affiliateLinkEscaped = String(p.affiliateLink || '').replace(/"/g, '&quot;');
                     const imgEscaped = String(p.image || '').replace(/"/g, '&quot;');
                     const videoEscaped = String(p.videoUrl || '').replace(/"/g, '&quot;');
                     
@@ -793,9 +796,13 @@
                                     <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Preço Varejo (R$)</label>
                                     <input type="text" value="${priceEscaped}" ${isLocked ? 'readonly disabled' : ''} oninput="window.updateProduct('${p.id}', 'price', this.value)" placeholder="Ex: 49,90" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold ${isLocked ? 'opacity-60 cursor-not-allowed bg-slate-50' : ''}">
                                 </div>
-                                <div class="space-y-2 ${isService ? 'hidden' : ''}">
+                                <div class="space-y-2 ${isService || isAffiliate ? 'hidden' : ''}">
                                     <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Variações (P, M, G ou Cores)</label>
                                     <input type="text" value="${varsEscaped}" ${isLocked ? 'readonly disabled' : ''} oninput="window.updateProduct('${p.id}', 'vars', this.value)" placeholder="Ex: P, M, G" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold ${isLocked ? 'opacity-60 cursor-not-allowed bg-slate-50' : ''}">
+                                </div>
+                                <div class="space-y-2 ${isAffiliate ? '' : 'hidden'}">
+                                    <label class="text-[10px] font-bold uppercase tracking-widest text-blue-500 ml-1">Link de Afiliado (Obrigatório)</label>
+                                    <input type="text" value="${affiliateLinkEscaped}" ${isLocked ? 'readonly disabled' : ''} oninput="window.updateProduct('${p.id}', 'affiliateLink', this.value)" placeholder="Ex: https://amazon.com.br/item..." class="w-full px-5 py-4 rounded-2xl bg-blue-50 border-2 border-transparent focus:border-blue-500 outline-none transition-all font-bold ${isLocked ? 'opacity-60 cursor-not-allowed' : ''}">
                                 </div>
                                 <div class="space-y-2 ${isService ? 'md:col-span-3' : ''}">
                                     <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Disponibilidade ${isLocked ? '(Bloqueado)' : ''}</label>
@@ -812,7 +819,7 @@
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 ${isService ? 'hidden' : ''}">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 ${isService || isAffiliate ? 'hidden' : ''}">
                                 <div class="space-y-2">
                                     <label class="text-[10px] font-bold uppercase tracking-widest text-orange-400 ml-1">Preço Atacado (Opcional)</label>
                                     <input type="text" value="${wPriceEscaped}" ${isLocked ? 'readonly disabled' : ''} oninput="window.updateProduct('${p.id}', 'wholesalePrice', this.value)" placeholder="Ex: 35,00" class="w-full px-5 py-4 rounded-2xl bg-orange-50/30 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold ${isLocked ? 'opacity-60 cursor-not-allowed bg-slate-50' : ''}">
@@ -1170,6 +1177,7 @@
                     if (p.available === false) item.av = false;
                     if (p.vars) item.vars = p.vars;
                     if (p.f) item.f = true;
+                    if (p.affiliateLink) item.al = p.affiliateLink;
                     return item;
                 });
             }

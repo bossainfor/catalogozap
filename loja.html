@@ -1060,6 +1060,14 @@
             `;
             
             if (window.lucide) lucide.createIcons();
+
+            // Toggle do Carrinho flutuante (não aparece em serviços ou afiliados)
+            const cartFab = document.getElementById('cart-fab');
+            if (cartFab) {
+                if (isAffiliate || isService) cartFab.classList.add('hidden');
+                else if (filteredProducts.length > 0) cartFab.classList.remove('hidden');
+                else cartFab.classList.add('hidden');
+            }
         }
 
         window.onload = async () => {

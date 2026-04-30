@@ -1003,8 +1003,14 @@
                     </div>
 
                     ${hasCategories ? `
-                    <div class="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 group">
+                    <div class="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 group/nav">
                         <div class="max-w-6xl mx-auto px-0 py-3 relative flex items-center">
+                            <!-- Setas de navegação (visíveis no desktop) -->
+                            <button onclick="document.getElementById('cat-scroll').scrollBy({left: -200, behavior: 'smooth'})" 
+                                    class="absolute left-2 z-50 bg-white/80 dark:bg-slate-800/80 p-2 rounded-full shadow-lg border border-slate-100 dark:border-slate-700 hidden md:flex items-center justify-center text-slate-600 dark:text-slate-300 hover:scale-110 active:scale-95 transition-all opacity-0 group-hover/nav:opacity-100">
+                                <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                            </button>
+                            
                             <div id="cat-scroll" class="flex gap-2 overflow-x-auto category-scroll scroll-smooth px-6 w-full py-1">
                                 ${categories.map(cat => `
                                     <button onclick="window.filterByCategory('${cat}')" 
@@ -1019,6 +1025,11 @@
                                     </button>
                                 `).join('')}
                             </div>
+
+                            <button onclick="document.getElementById('cat-scroll').scrollBy({left: 200, behavior: 'smooth'})" 
+                                    class="absolute right-2 z-50 bg-white/80 dark:bg-slate-800/80 p-2 rounded-full shadow-lg border border-slate-100 dark:border-slate-700 hidden md:flex items-center justify-center text-slate-600 dark:text-slate-300 hover:scale-110 active:scale-95 transition-all opacity-0 group-hover/nav:opacity-100">
+                                <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                            </button>
                         </div>
                     </div>
                     ` : ''}

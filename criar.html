@@ -484,7 +484,7 @@
         window.addProduct = function() {
             try {
                 let limit = 999;
-                if (window.storePlan === 'free') limit = 8;
+                if (window.storePlan === 'free') limit = 5;
                 else if (window.storePlan === 'basic') limit = 15;
 
                 if (window.products.length >= limit) {
@@ -574,8 +574,8 @@
         }
 
         window.removeProduct = function(id) {
-            if (window.storePlan === 'free' && window.products.length >= 8) {
-                alert("🔒 Limite atingido! No Plano FREE, ao atingir 8 produtos, as edições e remoções são bloqueadas para novas atualizações.\n\nFale com o suporte para subir para o Plano Profissional e liberar edições ilimitadas!");
+            if (window.storePlan === 'free' && window.products.length >= 5) {
+                alert("🔒 Limite atingido! No Plano FREE, ao atingir 5 produtos, as edições e remoções são bloqueadas para novas atualizações.\n\nFale com o suporte para subir para o Plano Profissional e liberar edições ilimitadas!");
                 return;
             }
             if (window.products.length > 1) {
@@ -616,10 +616,10 @@
         }
 
         window.updateProduct = function(id, field, value) {
-            if (window.storePlan === 'free' && window.products.length >= 8) {
+            if (window.storePlan === 'free' && window.products.length >= 5) {
                 // Permitir apenas toggle de disponibilidade e destaque se o usuário quiser esconder algo? 
                 // Não, o usuário pediu para não conseguir atualizar NADA.
-                alert("🔒 Edição Bloqueada! Você atingiu o limite de 8 produtos no Plano FREE.\n\nPara continuar editando ou remover itens, faça o upgrade para o Plano Profissional.");
+                alert("🔒 Edição Bloqueada! Você atingiu o limite de 5 produtos no Plano FREE.\n\nPara continuar editando ou remover itens, faça o upgrade para o Plano Profissional.");
                 return;
             }
             const p = window.products.find(p => p.id === id);
@@ -693,8 +693,8 @@
         }
 
         window.moveProduct = function(id, direction) {
-            if (window.storePlan === 'free' && window.products.length >= 8) {
-                alert("🔒 Organização Bloqueada! No Plano FREE com 8 produtos, a ordem dos itens fica fixa.\n\nUpgrade para o Profissional para organizar seu catálogo!");
+            if (window.storePlan === 'free' && window.products.length >= 5) {
+                alert("🔒 Organização Bloqueada! No Plano FREE com 5 produtos, a ordem dos itens fica fixa.\n\nUpgrade para o Profissional para organizar seu catálogo!");
                 return;
             }
             const index = window.products.findIndex(p => p.id === id);
@@ -729,10 +729,10 @@
                 }
 
                 let limit = 999;
-                if (window.storePlan === 'free') limit = 8;
+                if (window.storePlan === 'free') limit = 5;
                 else if (window.storePlan === 'basic') limit = 15;
 
-                const isLocked = window.storePlan === 'free' && window.products.length >= 8;
+                const isLocked = window.storePlan === 'free' && window.products.length >= 5;
 
                 list.innerHTML = window.products.map((p, index) => {
                     const isOpen = window.expandedProducts.has(p.id);
@@ -871,14 +871,20 @@
 
                             <div class="space-y-2 mt-6">
                                 <div class="flex items-center justify-between">
-                                    <label class="text-[10px] font-bold uppercase tracking-widest ${window.storePlan === 'premium' ? 'text-indigo-500' : 'text-slate-400'} ml-1">Vídeo do Produto (YouTube, TikTok, Instagram)</label>
-                                    ${window.storePlan !== 'premium' ? '<span class="text-[8px] bg-indigo-50 text-indigo-500 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">Premium</span>' : ''}
+                                    <label class="text-[10px] font-bold uppercase tracking-widest ${window.storePlan !== 'free' ? 'text-indigo-500' : 'text-slate-400'} ml-1">Vídeo do Produto (YouTube, TikTok, Instagram)</label>
+                                    ${window.storePlan === 'free' ? '<span class="text-[8px] bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">Premium</span>' : (window.storePlan === 'basic' ? '<span class="text-[8px] bg-blue-50 text-blue-500 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">Básico (Máx 3)</span>' : '<span class="text-[8px] bg-indigo-50 text-indigo-500 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">Profissional</span>')}
                                 </div>
-                                <input type="text" value="${videoEscaped}" 
-                                       ${window.storePlan !== 'premium' ? 'readonly disabled' : ''} 
-                                       oninput="window.updateProduct('${p.id}', 'videoUrl', this.value)" 
-                                       placeholder="${window.storePlan === 'premium' ? 'Cole o link do vídeo (YT, TikTok, Insta)' : 'Apenas no Plano Profissional'}" 
-                                       class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-indigo-500 outline-none transition-all font-bold text-xs ${window.storePlan !== 'premium' ? 'opacity-50 cursor-not-allowed bg-slate-50' : ''}">
+                                ${(() => {
+                                    const videoCount = window.products.filter(p => p.videoUrl && p.videoUrl.trim() !== '').length;
+                                    const canAddMore = window.storePlan === 'premium' || (window.storePlan === 'basic' && (videoCount < 3 || (p.videoUrl && p.videoUrl.trim() !== '')));
+                                    const isVideoLocked = window.storePlan === 'free' || !canAddMore;
+                                    
+                                    return `<input type="text" value="${videoEscaped}" 
+                                           ${isVideoLocked ? 'readonly disabled' : ''} 
+                                           oninput="window.updateProduct('${p.id}', 'videoUrl', this.value)" 
+                                           placeholder="${window.storePlan === 'premium' ? 'Cole o link do vídeo (YT, TikTok, Insta)' : (window.storePlan === 'basic' ? (canAddMore ? 'Link do vídeo (Máximo 3 no plano)' : 'Limite de 3 vídeos atingido!') : 'Apenas no Plano Básico ou Premium')}" 
+                                           class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-indigo-500 outline-none transition-all font-bold text-xs ${isVideoLocked ? 'opacity-50 cursor-not-allowed bg-slate-50' : ''}">`;
+                                })()}
                             </div>
                             
                             <div class="pt-6 flex justify-center">

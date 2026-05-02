@@ -778,6 +778,7 @@
             // Lógica de Botão por Nicho
             const isService = ['servicos', 'serviços', 'portfolio', 'orcamento'].includes(storeData.type);
             const isAffiliate = storeData.type === 'afiliados';
+            const isFood = ['cardapio', 'restaurante', 'marmitaria', 'pizzaria', 'lanchonete', 'doceria', 'hamburgueria'].includes(storeData.type);
             
             // Extrair Categorias Únicas
             const categories = ['Todos', ...new Set(storeData.products.filter(p => p.category && p.available !== false).map(p => p.category))];
@@ -824,6 +825,29 @@
                 const buttonIcon = isAffiliate ? 'external-link' : (isService ? 'message-circle' : 'eye');
                 const buttonText = isAffiliate ? 'Comprar Agora' : (isService ? 'Pedir Orçamento' : 'Ver Detalhes');
                 const buttonAction = isAffiliate ? `event.stopPropagation(); window.open('${p.affiliateLink}', '_blank')` : `window.openProductModal('${p.id}')`;
+
+                // Layout de Cardápio (Novo)
+                if (isFood) {
+                    return `
+                    <div onclick="${buttonAction}" class="bg-white dark:bg-slate-800 rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-xl transition-all flex flex-col group/card cursor-pointer active-scale md:active:scale-100 touch-manipulation" role="button">
+                        <div class="relative overflow-hidden bg-slate-50 dark:bg-slate-950 w-full aspect-[4/5]">
+                            ${badge ? `<div class="absolute top-3 left-3 z-20 bg-orange-500 text-white text-[8px] font-black uppercase px-2 py-1 rounded-lg shadow-lg">${badge}</div>` : ''}
+                            <img src="${imageUrl}" class="absolute inset-0 w-full h-full object-cover group-hover/card:scale-110 transition-transform duration-700" referrerpolicy="no-referrer">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent"></div>
+                        </div>
+                        <div class="p-4 sm:p-5 flex flex-col flex-1">
+                            <h3 class="font-black text-slate-800 dark:text-white text-sm sm:text-base leading-tight uppercase line-clamp-1 mb-1">${p.name}</h3>
+                            <p class="text-slate-400 dark:text-slate-500 text-[10px] sm:text-xs font-medium line-clamp-2 mb-4 italic">${p.description || 'Sabor irresistível preparado na hora.'}</p>
+                            <div class="mt-auto flex items-end justify-between gap-2">
+                                <p class="font-black text-lg sm:text-xl dark:text-white tracking-tighter leading-none" style="color: ${storeData.primaryColor}">${formatCurrency(p.price)}</p>
+                                <button onclick="event.stopPropagation(); window.openProductModal('${p.id}')" class="w-10 h-10 sm:w-12 sm:h-12 bg-slate-900 dark:bg-slate-700 text-white rounded-2xl flex items-center justify-center shadow-lg active-scale transition-all">
+                                    <i data-lucide="plus" class="w-5 h-5 sm:w-6 h-6"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                }
 
                 return `
                 <div onclick="${buttonAction}" class="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all flex flex-col group/card cursor-pointer active-scale md:active:scale-100 touch-manipulation" role="button" aria-label="Ver detalhes de ${p.name}">
@@ -913,18 +937,35 @@
                 // Atualiza também os botões de categoria se houver
                 const catScroll = document.getElementById('cat-scroll');
                 if (catScroll) {
-                    catScroll.innerHTML = categories.map(cat => `
-                        <button onclick="window.filterByCategory('${cat}')" 
-                                class="px-5 py-3 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap border-2 flex-shrink-0 active:scale-95 touch-manipulation"
-                                style="
-                                    background-color: ${selectedCategory === cat ? storeData.primaryColor : 'transparent'};
-                                    color: ${selectedCategory === cat ? '#ffffff' : storeData.primaryColor};
-                                    border-color: ${storeData.primaryColor};
-                                    opacity: ${selectedCategory === cat ? '1' : '0.7'}
-                                ">
-                            ${cat}
-                        </button>
-                    `).join('');
+                    const isFood = ['cardapio', 'restaurante', 'marmitaria', 'pizzaria', 'lanchonete', 'doceria', 'hamburgueria'].includes(storeData.type);
+                    
+                    catScroll.innerHTML = categories.map(cat => {
+                        const active = selectedCategory === cat;
+                        if (isFood) {
+                            return `
+                                <button onclick="window.filterByCategory('${cat}')" 
+                                        class="px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap flex-shrink-0 active:scale-95 touch-manipulation"
+                                        style="
+                                            background-color: ${active ? '#0f172a' : '#f1f5f9'};
+                                            color: ${active ? '#ffffff' : '#64748b'};
+                                        ">
+                                    ${cat}
+                                </button>
+                            `;
+                        }
+                        return `
+                            <button onclick="window.filterByCategory('${cat}')" 
+                                    class="px-5 py-3 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap border-2 flex-shrink-0 active:scale-95 touch-manipulation"
+                                    style="
+                                        background-color: ${active ? storeData.primaryColor : 'transparent'};
+                                        color: ${active ? '#ffffff' : storeData.primaryColor};
+                                        border-color: ${storeData.primaryColor};
+                                        opacity: ${active ? '1' : '0.7'}
+                                    ">
+                                ${cat}
+                            </button>
+                        `;
+                    }).join('');
                 }
                 if (window.lucide) lucide.createIcons();
                 return;
@@ -1012,18 +1053,36 @@
                             </button>
                             
                             <div id="cat-scroll" class="flex gap-2 overflow-x-auto category-scroll scroll-smooth px-6 w-full py-1">
-                                ${categories.map(cat => `
-                                    <button onclick="window.filterByCategory('${cat}')" 
-                                            class="px-5 py-3 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap border-2 flex-shrink-0 active:scale-95 touch-manipulation"
-                                            style="
-                                                background-color: ${selectedCategory === cat ? storeData.primaryColor : 'transparent'};
-                                                color: ${selectedCategory === cat ? '#ffffff' : storeData.primaryColor};
-                                                border-color: ${storeData.primaryColor};
-                                                opacity: ${selectedCategory === cat ? '1' : '0.7'}
-                                            ">
-                                        ${cat}
-                                    </button>
-                                `).join('')}
+                                ${(() => {
+                                    const isFood = ['cardapio', 'restaurante', 'marmitaria', 'pizzaria', 'lanchonete', 'doceria', 'hamburgueria'].includes(storeData.type);
+                                    return categories.map(cat => {
+                                        const active = selectedCategory === cat;
+                                        if (isFood) {
+                                            return `
+                                                <button onclick="window.filterByCategory('${cat}')" 
+                                                        class="px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap flex-shrink-0 active:scale-95 touch-manipulation"
+                                                        style="
+                                                            background-color: ${active ? '#0f172a' : '#f1f5f9'};
+                                                            color: ${active ? '#ffffff' : '#64748b'};
+                                                        ">
+                                                    ${cat}
+                                                </button>
+                                            `;
+                                        }
+                                        return `
+                                            <button onclick="window.filterByCategory('${cat}')" 
+                                                    class="px-5 py-3 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest transition-all whitespace-nowrap border-2 flex-shrink-0 active:scale-95 touch-manipulation"
+                                                    style="
+                                                        background-color: ${active ? storeData.primaryColor : 'transparent'};
+                                                        color: ${active ? '#ffffff' : storeData.primaryColor};
+                                                        border-color: ${storeData.primaryColor};
+                                                        opacity: ${active ? '1' : '0.7'}
+                                                    ">
+                                                ${cat}
+                                            </button>
+                                        `;
+                                    }).join('');
+                                })()}
                             </div>
 
                             <button onclick="document.getElementById('cat-scroll').scrollBy({left: 200, behavior: 'smooth'})" 

@@ -66,24 +66,24 @@
             </div>
         </header>
 
-        <main class="max-w-6xl mx-auto w-full px-4 py-8 space-y-6">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
+        <main class="max-w-6xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div class="text-center md:text-left">
                     <h2 class="text-3xl font-black uppercase italic tracking-tighter">Gerenciar Lojas</h2>
-                    <p class="text-slate-500 font-medium">Controle de assinaturas e status dos clientes</p>
+                    <p class="text-slate-500 font-medium text-sm">Controle de assinaturas e status dos clientes</p>
                 </div>
                 <div class="flex flex-col sm:flex-row gap-3">
-                    <div class="relative">
+                    <div class="relative flex-1">
                         <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
-                        <input type="text" id="search-input" oninput="filterStores()" placeholder="Buscar loja ou cliente..." class="pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-slate-900 w-full sm:w-64">
+                        <input type="text" id="search-input" oninput="filterStores()" placeholder="Buscar loja ou cliente..." class="pl-10 pr-4 py-3 sm:py-2 bg-white border border-slate-200 rounded-2xl sm:rounded-xl text-sm focus:outline-none focus:border-slate-900 w-full sm:w-64 shadow-sm">
                     </div>
-                    <button onclick="loadStores()" class="bg-white border border-slate-200 px-4 py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-slate-50">
-                        <i data-lucide="refresh-cw" size="14"></i> Atualizar Lista
+                    <button onclick="loadStores()" class="bg-white border border-slate-200 px-4 py-3 sm:py-2 rounded-2xl sm:rounded-xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-slate-50 shadow-sm active:scale-95 transition-all">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar Lista
                     </button>
                 </div>
             </div>
 
-            <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+            <div class="bg-white rounded-[2rem] sm:rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
                 <!-- Desktop Table View -->
                 <div class="hidden md:block overflow-x-auto">
                     <table class="w-full text-left border-collapse">
@@ -348,25 +348,29 @@
                             <div class="font-bold ${isExpired ? 'text-red-500' : 'text-slate-600'}">${expiresAt.toLocaleDateString('pt-BR')}</div>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2 pt-2">
-                        <button onclick="activateStore('${id}', '${data.expiresAt}')" class="flex-1 py-3 bg-green-50 text-green-600 rounded-xl font-bold text-xs flex items-center justify-center gap-2">
-                            <i data-lucide="calendar-plus" size="14"></i> Ativar
-                        </button>
-                        <button onclick="togglePlan('${id}', '${plan}')" class="flex-1 py-3 ${planColorClass} rounded-xl font-bold text-xs flex items-center justify-center gap-2">
-                             <i data-lucide="${planIconAction}" size="14" class="${plan === 'free' ? '' : 'fill-current'}"></i> Plano
-                        </button>
-                        <button onclick="blockStore('${id}')" class="flex-1 py-3 bg-orange-50 text-orange-600 rounded-xl font-bold text-xs flex items-center justify-center gap-2">
-                            <i data-lucide="lock" size="14"></i> Bloquear
-                        </button>
-                        <button onclick="deleteStore('${id}')" class="p-3 bg-red-50 text-red-600 rounded-xl">
-                            <i data-lucide="trash-2" size="16"></i>
-                        </button>
-                        <button onclick="copyEditLink('${id}')" class="p-3 bg-blue-50 text-blue-600 rounded-xl">
-                            <i data-lucide="copy" size="16"></i>
-                        </button>
-                        <a href="loja.html?id=${id}" target="_blank" class="p-3 bg-slate-100 text-slate-600 rounded-xl">
-                            <i data-lucide="external-link" size="16"></i>
-                        </a>
+                    <div class="flex flex-wrap items-center gap-2 pt-2">
+                        <div class="flex items-center gap-2 w-full">
+                            <button onclick="activateStore('${id}', '${data.expiresAt}')" class="flex-1 py-3 bg-green-50 text-green-600 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
+                                <i data-lucide="calendar-plus" size="14"></i> Ativar
+                            </button>
+                            <button onclick="togglePlan('${id}', '${plan}')" class="flex-1 py-3 ${planColorClass} rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
+                                 <i data-lucide="${planIconAction}" size="14" class="${plan === 'free' ? '' : 'fill-current'}"></i> Plano
+                            </button>
+                            <button onclick="blockStore('${id}')" class="flex-1 py-3 bg-orange-50 text-orange-600 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
+                                <i data-lucide="lock" size="14"></i> Bloquear
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-2 w-full mt-1">
+                            <button onclick="deleteStore('${id}')" class="flex-1 py-3 bg-red-50 text-red-600 rounded-xl flex items-center justify-center active:scale-95 transition-all">
+                                <i data-lucide="trash-2" size="16"></i>
+                            </button>
+                            <button onclick="copyEditLink('${id}')" class="flex-1 py-3 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center active:scale-95 transition-all">
+                                <i data-lucide="copy" size="16"></i>
+                            </button>
+                            <a href="loja.html?id=${id}" target="_blank" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center active:scale-95 transition-all">
+                                <i data-lucide="external-link" size="16"></i>
+                            </a>
+                        </div>
                     </div>
                     <div class="text-[9px] text-slate-300 font-medium uppercase tracking-widest text-center">ID: ${id}</div>
                 `;

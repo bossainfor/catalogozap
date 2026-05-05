@@ -840,8 +840,8 @@
                             <p class="text-slate-400 dark:text-slate-500 text-[10px] sm:text-xs font-medium line-clamp-2 mb-4 italic">${p.description || 'Sabor irresistível preparado na hora.'}</p>
                             <div class="mt-auto flex items-end justify-between gap-2">
                                 <p class="font-black text-lg sm:text-xl dark:text-white tracking-tighter leading-none" style="color: ${storeData.primaryColor}">${formatCurrency(p.price)}</p>
-                                <button onclick="event.stopPropagation(); window.openProductModal('${p.id}')" class="w-10 h-10 sm:w-12 sm:h-12 bg-slate-900 dark:bg-slate-700 text-white rounded-2xl flex items-center justify-center shadow-lg active-scale transition-all">
-                                    <i data-lucide="plus" class="w-5 h-5 sm:w-6 h-6"></i>
+                                <button onclick="${buttonAction}" class="w-10 h-10 sm:w-12 sm:h-12 bg-slate-900 dark:bg-slate-700 text-white rounded-2xl flex items-center justify-center shadow-lg active-scale transition-all">
+                                    <i data-lucide="${buttonIcon}" class="w-5 h-5 sm:w-6 h-6"></i>
                                 </button>
                             </div>
                         </div>

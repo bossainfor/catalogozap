@@ -720,6 +720,7 @@
                 const niche = document.getElementById('niche').value;
                 const isService = ['servicos', 'portfolio'].includes(niche);
                 const isAffiliate = niche === 'afiliados';
+                const isFood = niche === 'cardapio';
 
                 // Ocultar seção de frete para afiliados
                 const shippingSection = document.getElementById('shipping-section');
@@ -826,7 +827,7 @@
                                 </div>
                             </div>
 
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 ${isService || isAffiliate ? 'hidden' : ''}">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 ${isService || isAffiliate || isFood ? 'hidden' : ''}">
                                 <div class="space-y-2">
                                     <label class="text-[10px] font-bold uppercase tracking-widest text-orange-400 ml-1">Preço Atacado (Opcional)</label>
                                     <input type="text" value="${wPriceEscaped}" ${isLocked ? 'readonly disabled' : ''} oninput="window.updateProduct('${p.id}', 'wholesalePrice', this.value)" placeholder="Ex: 35,00" class="w-full px-5 py-4 rounded-2xl bg-orange-50/30 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold ${isLocked ? 'opacity-60 cursor-not-allowed bg-slate-50' : ''}">

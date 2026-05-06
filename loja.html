@@ -320,10 +320,11 @@
             const addBtn = document.getElementById('modal-add-btn');
             addBtn.style.backgroundColor = storeData.primaryColor;
             
-            const isService = ['servicos', 'serviços', 'portfolio', 'orcamento'].includes(storeData.type);
+            const isService = ['servicos', 'serviços', 'portfolio', 'orcamento', 'clinica'].includes(storeData.type);
             const isAffiliate = storeData.type === 'afiliados';
-            const btnIcon = isAffiliate ? 'external-link' : (isService ? 'message-circle' : 'shopping-cart');
-            const btnText = isAffiliate ? 'Comprar Agora' : (isService ? 'Solicitar Orçamento' : 'Adicionar ao Carrinho');
+            const isClinica = storeData.type === 'clinica';
+            const btnIcon = isAffiliate ? 'external-link' : (isService ? (isClinica ? 'calendar' : 'message-circle') : 'shopping-cart');
+            const btnText = isAffiliate ? 'Comprar Agora' : (isService ? (isClinica ? 'Agendar Consulta' : 'Solicitar Orçamento') : 'Adicionar ao Carrinho');
             
             addBtn.innerHTML = `<i data-lucide="${btnIcon}" class="w-5 h-5"></i> <span>${btnText}</span>`;
             
@@ -776,8 +777,9 @@
             document.title = storeData.name;
 
             // Lógica de Botão por Nicho
-            const isService = ['servicos', 'serviços', 'portfolio', 'orcamento'].includes(storeData.type);
+            const isService = ['servicos', 'serviços', 'portfolio', 'orcamento', 'clinica'].includes(storeData.type);
             const isAffiliate = storeData.type === 'afiliados';
+            const isClinica = storeData.type === 'clinica';
             
             // Extrair Categorias Únicas
             const categories = ['Todos', ...new Set(storeData.products.filter(p => p.category && p.available !== false).map(p => p.category))];
@@ -821,8 +823,8 @@
                 const swiperId = `swiper-${p.id}`;
                 
                 const isAffiliate = storeData && storeData.type === 'afiliados';
-                const buttonIcon = isAffiliate ? 'external-link' : (isService ? 'message-circle' : 'eye');
-                const buttonText = isAffiliate ? 'Comprar Agora' : (isService ? 'Pedir Orçamento' : 'Ver Detalhes');
+                const buttonIcon = isAffiliate ? 'external-link' : (isService ? (isClinica ? 'calendar' : 'message-circle') : 'eye');
+                const buttonText = isAffiliate ? 'Comprar Agora' : (isService ? (isClinica ? 'Agendar Consulta' : 'Pedir Orçamento') : 'Ver Detalhes');
                 const buttonAction = isAffiliate ? `event.stopPropagation(); window.open('${p.affiliateLink}', '_blank')` : `window.openProductModal('${p.id}')`;
 
                 return `

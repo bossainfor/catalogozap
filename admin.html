@@ -8,25 +8,22 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, getDoc, setDoc, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getStorage, ref, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAJaxRdA6uzbN41JvAw8xO7F5mzJaDfMBc",
-            authDomain: "gen-lang-client-0664324166.firebaseapp.com",
-            projectId: "gen-lang-client-0664324166",
-            storageBucket: "gen-lang-client-0664324166.firebasestorage.app",
-            messagingSenderId: "1074933311707",
-            appId: "1:1074933311707:web:d841b61f84c05a40fc04fe"
-        };
+        import firebaseConfig from "./firebase-applet-config.json" assert { type: "json" };
 
         const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app, "ai-studio-2395f72f-4dac-4517-9681-c654cd1a03ca");
+        const db = getFirestore(app, firebaseConfig.firestoreDatabaseId);
+        const auth = getAuth(app);
         const storage = getStorage(app);
 
         window.db = db;
+        window.auth = auth;
         window.storage = storage;
-        window.fs = { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, getDoc };
+        window.fs = { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, getDoc, setDoc, where };
+        window.fa = { signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut };
         window.st = { ref, deleteObject };
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -48,6 +45,16 @@
             <div class="space-y-4">
                 <input type="password" id="admin-password" placeholder="Sua senha secreta" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-slate-900 outline-none transition-all font-bold text-center tracking-widest">
                 <button onclick="checkPassword()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black uppercase italic tracking-widest hover:bg-slate-800 transition-all">Entrar no Painel</button>
+                
+                <div class="relative py-4">
+                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-100"></div></div>
+                    <div class="relative flex justify-center text-xs uppercase font-bold text-slate-400 bg-white px-2">Ou</div>
+                </div>
+
+                <button onclick="loginWithGoogle()" class="w-full py-4 bg-white border-2 border-slate-100 text-slate-600 rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-slate-50 transition-all">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/action/google.svg" class="w-5 h-5">
+                    Área do Revendedor
+                </button>
             </div>
         </div>
     </div>
@@ -58,63 +65,97 @@
             <div class="max-w-6xl mx-auto h-20 flex items-center justify-between">
                 <div class="flex items-center gap-2">
                     <img src="https://i.postimg.cc/8cgHJgH8/catalogo.png" alt="CatálogoZap" class="h-14 w-auto" referrerpolicy="no-referrer">
-                    <span class="text-white/50 text-[10px] font-bold uppercase tracking-widest ml-2">Painel Admin</span>
+                    <span id="panel-title" class="text-white/50 text-[10px] font-bold uppercase tracking-widest ml-2">Painel Admin</span>
                 </div>
-                <button onclick="logout()" class="text-slate-400 hover:text-red-500 transition-colors">
-                    <i data-lucide="log-out"></i>
-                </button>
+                <div class="flex items-center gap-4">
+                    <div id="admin-tabs" class="hidden flex items-center gap-1 bg-slate-800 p-1 rounded-xl">
+                        <button onclick="switchTab('stores')" id="tab-stores" class="px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-900 text-white">Lojas</button>
+                        <button onclick="switchTab('resellers')" id="tab-resellers" class="px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white">Revendedores</button>
+                    </div>
+                    <button onclick="logout()" class="text-slate-400 hover:text-red-500 transition-colors">
+                        <i data-lucide="log-out"></i>
+                    </button>
+                </div>
             </div>
         </header>
 
         <main class="max-w-6xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 space-y-6">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div class="text-center md:text-left">
-                    <h2 class="text-3xl font-black uppercase italic tracking-tighter">Gerenciar Lojas</h2>
-                    <p class="text-slate-500 font-medium text-sm">Controle de assinaturas e status dos clientes</p>
-                </div>
-                <div class="flex flex-col sm:flex-row gap-3">
-                    <div class="relative flex-1">
-                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
-                        <input type="text" id="search-input" oninput="filterStores()" placeholder="Buscar loja ou cliente..." class="pl-10 pr-4 py-3 sm:py-2 bg-white border border-slate-200 rounded-2xl sm:rounded-xl text-sm focus:outline-none focus:border-slate-900 w-full sm:w-64 shadow-sm">
+            <div id="stores-section">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
+                    <div class="text-center md:text-left">
+                        <h2 class="text-3xl font-black uppercase italic tracking-tighter">Gerenciar Lojas</h2>
+                        <p class="text-slate-500 font-medium text-sm">Controle de assinaturas e status dos clientes</p>
                     </div>
-                    <button onclick="loadStores()" class="bg-white border border-slate-200 px-4 py-3 sm:py-2 rounded-2xl sm:rounded-xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-slate-50 shadow-sm active:scale-95 transition-all">
-                        <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar Lista
-                    </button>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <div class="relative flex-1">
+                            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
+                            <input type="text" id="search-input" oninput="filterStores()" placeholder="Buscar loja ou cliente..." class="pl-10 pr-4 py-3 sm:py-2 bg-white border border-slate-200 rounded-2xl sm:rounded-xl text-sm focus:outline-none focus:border-slate-900 w-full sm:w-64 shadow-sm">
+                        </div>
+                        <button onclick="loadStores()" class="bg-white border border-slate-200 px-4 py-3 sm:py-2 rounded-2xl sm:rounded-xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-slate-50 shadow-sm active:scale-95 transition-all">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar Lista
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-[2rem] sm:rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+                    <div class="hidden md:block overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-100">
+                                    <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Loja / Cliente</th>
+                                    <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">WhatsApp</th>
+                                    <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Status</th>
+                                    <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Plano</th>
+                                    <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Vendedores</th>
+                                    <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Expira em</th>
+                                    <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stores-table-body"></tbody>
+                        </table>
+                    </div>
+                    <div id="stores-mobile-list" class="md:hidden divide-y divide-slate-100"></div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-[2rem] sm:rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
-                <!-- Desktop Table View -->
-                <div class="hidden md:block overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-50 border-b border-slate-100">
-                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Loja / Cliente</th>
-                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">WhatsApp</th>
-                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Status</th>
-                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Plano</th>
-                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Vendedores</th>
-                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Expira em</th>
-                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="stores-table-body">
-                            <!-- Lojas serão carregadas aqui -->
-                        </tbody>
-                    </table>
+            <div id="resellers-section" class="hidden">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-6">
+                    <div class="text-center md:text-left">
+                        <h2 class="text-3xl font-black uppercase italic tracking-tighter">Revendedores</h2>
+                        <p class="text-slate-500 font-medium text-sm">Gerencie quem pode vender acessos ao sistema</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="openAddResellerModal()" class="bg-indigo-600 text-white px-4 py-3 sm:py-2 rounded-2xl sm:rounded-xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 shadow-sm active:scale-95 transition-all">
+                            <i data-lucide="plus" class="w-4 h-4"></i> Novo Revendedor
+                        </button>
+                        <button onclick="loadResellers()" class="bg-white border border-slate-200 px-4 py-3 sm:py-2 rounded-2xl sm:rounded-xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-slate-50 shadow-sm active:scale-95 transition-all">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        </button>
+                    </div>
                 </div>
 
-                <!-- Mobile Card View -->
-                <div id="stores-mobile-list" class="md:hidden divide-y divide-slate-100">
-                    <!-- Lojas mobile serão carregadas aqui -->
+                <div class="bg-white rounded-[2rem] sm:rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-100">
+                                    <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Nome / Email</th>
+                                    <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Status</th>
+                                    <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Data Início</th>
+                                    <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resellers-table-body"></tbody>
+                        </table>
+                    </div>
                 </div>
+            </div>
 
-                <div id="loading-indicator" class="p-12 text-center hidden">
-                    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-slate-900 mx-auto"></div>
-                </div>
-                <div id="empty-state" class="p-12 text-center hidden">
-                    <p class="text-slate-400 font-medium">Nenhuma loja encontrada no banco de dados.</p>
-                </div>
+            <div id="loading-indicator" class="p-12 text-center hidden">
+                <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-slate-900 mx-auto"></div>
+            </div>
+            <div id="empty-state" class="p-12 text-center hidden">
+                <p class="text-slate-400 font-medium">Nada encontrado aqui.</p>
             </div>
         </main>
 
@@ -127,28 +168,135 @@
 
     <script>
         const ADMIN_PASSWORD = "13259898Aa#@";
+        const MASTER_EMAIL = "webradiomessejana80@gmail.com";
         let allStores = [];
+        let allResellers = [];
+        let currentUser = null;
+        let isMaster = false;
+        let isReseller = false;
+
+        async function loginWithGoogle() {
+            try {
+                const provider = new window.fa.GoogleAuthProvider();
+                const result = await window.fa.signInWithPopup(window.auth, provider);
+                const user = result.user;
+                await handleAuth(user);
+            } catch (error) {
+                console.error("Erro no login:", error);
+                alert("Erro ao entrar com Google.");
+            }
+        }
+
+        async function handleAuth(user) {
+            if (!user) return;
+            currentUser = user;
+            
+            if (user.email === MASTER_EMAIL) {
+                isMaster = true;
+                localStorage.setItem('admin_logged', 'true');
+                showPanel();
+                return;
+            }
+
+            const resellerSnap = await window.fs.getDoc(window.fs.doc(window.db, "resellers", user.uid));
+            if (resellerSnap.exists()) {
+                const data = resellerSnap.data();
+                if (data.status === 'active') {
+                    isReseller = true;
+                    showPanel();
+                } else {
+                    alert("Sua conta de revendedor está bloqueada.");
+                    await window.fa.signOut(window.auth);
+                }
+            } else {
+                // Check if email is in whitelist (pending resellers)
+                const pendingQ = window.fs.query(window.fs.collection(window.db, "resellers"), window.fs.where("email", "==", user.email));
+                const pendingSnap = await window.fs.getDocs(pendingQ);
+                
+                if (!pendingSnap.empty) {
+                    const docId = pendingSnap.docs[0].id;
+                    const data = pendingSnap.docs[0].data();
+                    
+                    // If the doc ID is just a random one (like from master adding), we should move it to the actual UID
+                    if (docId !== user.uid) {
+                        await window.fs.setDoc(window.fs.doc(window.db, "resellers", user.uid), {
+                            ...data,
+                            uid: user.uid,
+                            createdAt: new Date().toISOString()
+                        });
+                        await window.fs.deleteDoc(window.fs.doc(window.db, "resellers", docId));
+                    }
+                    
+                    isReseller = true;
+                    showPanel();
+                } else {
+                    alert("Você não está cadastrado como revendedor.");
+                    await window.fa.signOut(window.auth);
+                }
+            }
+        }
+
+        window.fa.onAuthStateChanged(window.auth, (user) => {
+            if (user) {
+                handleAuth(user);
+            } else if (localStorage.getItem('admin_logged') === 'true') {
+                isMaster = true;
+                showPanel();
+            }
+        });
 
         function checkPassword() {
             const input = document.getElementById('admin-password').value;
             if (input === ADMIN_PASSWORD) {
                 localStorage.setItem('admin_logged', 'true');
+                isMaster = true;
                 showPanel();
             } else {
-                alert("Senha incorreta! Tente novamente.");
+                alert("Senha incorreta!");
             }
         }
 
-        function logout() {
+        async function logout() {
             localStorage.removeItem('admin_logged');
+            await window.fa.signOut(window.auth);
             location.reload();
         }
 
         function showPanel() {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('admin-panel').classList.remove('hidden');
+            
+            if (isMaster) {
+                document.getElementById('admin-tabs').classList.remove('hidden');
+                document.getElementById('panel-title').textContent = "Painel Master";
+            } else if (isReseller) {
+                document.getElementById('panel-title').textContent = "Painel Revendedor";
+                const inviteLink = `${window.location.origin}/criar.html?resellerId=${currentUser.uid}`;
+                const infoDiv = document.createElement('div');
+                infoDiv.className = "mb-6 p-4 bg-indigo-50 border border-indigo-100 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4";
+                infoDiv.innerHTML = `
+                    <div>
+                        <p class="text-indigo-800 font-bold text-sm">Seu Link de Indicação:</p>
+                        <p class="text-indigo-600 font-mono text-[10px] break-all">${inviteLink}</p>
+                    </div>
+                    <button onclick="navigator.clipboard.writeText('${inviteLink}'); alert('Link copiado!')" class="bg-indigo-600 text-white px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap active:scale-95 transition-all">Copiar Link</button>
+                `;
+                document.getElementById('stores-section').prepend(infoDiv);
+            }
+
             loadStores();
             lucide.createIcons();
+        }
+
+        function switchTab(tab) {
+            document.getElementById('tab-stores').className = tab === 'stores' ? "px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-900 text-white" : "px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white";
+            document.getElementById('tab-resellers').className = tab === 'resellers' ? "px-4 py-2 rounded-lg text-xs font-bold transition-all bg-slate-900 text-white" : "px-4 py-2 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white";
+            
+            document.getElementById('stores-section').classList.toggle('hidden', tab !== 'stores');
+            document.getElementById('resellers-section').classList.toggle('hidden', tab !== 'resellers');
+            
+            if (tab === 'stores') loadStores();
+            else loadResellers();
         }
 
         async function loadStores() {
@@ -163,9 +311,14 @@
             empty.classList.add('hidden');
 
             try {
-                const q = window.fs.query(window.fs.collection(window.db, "stores"), window.fs.orderBy("createdAt", "desc"));
+                let q;
+                if (isMaster) {
+                    q = window.fs.query(window.fs.collection(window.db, "stores"), window.fs.orderBy("createdAt", "desc"));
+                } else {
+                    q = window.fs.query(window.fs.collection(window.db, "stores"), window.fs.where("resellerId", "==", currentUser.uid), window.fs.orderBy("createdAt", "desc"));
+                }
+
                 const querySnapshot = await window.fs.getDocs(q);
-                
                 loader.classList.add('hidden');
 
                 if (querySnapshot.empty) {
@@ -181,7 +334,7 @@
                 renderStores(allStores);
             } catch (error) {
                 console.error("Erro ao carregar lojas:", error);
-                alert("Erro ao carregar dados do Firebase.");
+                loader.classList.add('hidden');
             }
         }
 
@@ -190,8 +343,7 @@
             const filtered = allStores.filter(s => 
                 (s.n && s.n.toLowerCase().includes(term)) || 
                 (s.cn && s.cn.toLowerCase().includes(term)) ||
-                (s.w && s.w.includes(term)) ||
-                (s.id && s.id.toLowerCase().includes(term))
+                (s.w && s.w.includes(term))
             );
             renderStores(filtered);
         }
@@ -199,328 +351,116 @@
         function renderStores(stores) {
             const tbody = document.getElementById('stores-table-body');
             const mobileList = document.getElementById('stores-mobile-list');
-            const empty = document.getElementById('empty-state');
-
             tbody.innerHTML = '';
             mobileList.innerHTML = '';
 
-            if (stores.length === 0) {
-                empty.classList.remove('hidden');
-                return;
-            } else {
-                empty.classList.add('hidden');
-            }
-
-            // Conta ocorrências de cada número para detectar duplicatas
-            const whatsappCounts = {};
-            stores.forEach(s => {
-                const w = s.w ? s.w.replace(/\D/g, '') : '';
-                if (w) whatsappCounts[w] = (whatsappCounts[w] || 0) + 1;
-            });
-
-            stores.forEach((data) => {
+            stores.forEach(data => {
                 const id = data.id;
-                const whatsappClean = data.w ? data.w.replace(/\D/g, '') : '';
-                const isDuplicate = whatsappCounts[whatsappClean] > 1;
                 const expiresAt = new Date(data.expiresAt || data.createdAt);
                 const isExpired = new Date() > expiresAt;
                 
-                let statusBadge = '';
-                let statusColor = '';
-                if (data.status === 'blocked') {
-                    statusColor = 'red';
-                    statusBadge = '<span class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Bloqueado</span>';
-                } else if (isExpired && data.status === 'trial') {
-                    statusColor = 'orange';
-                    statusBadge = '<span class="bg-orange-100 text-orange-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Teste Expirado</span>';
-                } else if (data.status === 'trial') {
-                    statusColor = 'blue';
-                    statusBadge = '<span class="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Em Teste</span>';
-                } else {
-                    statusColor = 'green';
-                    statusBadge = '<span class="bg-green-100 text-green-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Ativo</span>';
-                }
+                let statusBadge = data.status === 'blocked' ? 
+                    '<span class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Bloqueado</span>' : 
+                    (isExpired ? '<span class="bg-orange-100 text-orange-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Expirado</span>' : 
+                    '<span class="bg-green-100 text-green-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Ativo</span>');
 
-                const plan = data.plan || 'free';
-                let planBadge = '';
-                let planIconAction = 'award';
-                let planColorClass = 'text-slate-400 bg-slate-50';
-
-                if (plan === 'premium') {
-                    planBadge = '<span class="bg-indigo-100 text-indigo-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1"><i data-lucide="star" class="w-2.5 h-2.5 fill-current"></i> Premium</span>';
-                    planIconAction = 'star';
-                    planColorClass = 'text-indigo-600 bg-indigo-50';
-                } else if (plan === 'basic') {
-                    planBadge = '<span class="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1"><i data-lucide="zap" class="w-2.5 h-2.5 fill-current"></i> Básico</span>';
-                    planIconAction = 'zap';
-                    planColorClass = 'text-blue-600 bg-blue-50';
-                } else {
-                    planBadge = '<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Free</span>';
-                    planIconAction = 'award';
-                    planColorClass = 'text-slate-400 bg-slate-50';
-                }
-
-                const vendors = data.v || [];
-                const vendorCount = vendors.length;
-
-                // Desktop Row
                 const row = document.createElement('tr');
                 row.className = "border-b border-slate-50 hover:bg-slate-50/50 transition-colors";
                 row.innerHTML = `
                     <td class="px-6 py-4">
                         <div class="font-bold text-sm">${data.n || 'Sem Nome'}</div>
-                        <div class="text-[10px] text-slate-400 font-medium uppercase tracking-widest">${data.cn || 'Dono não informado'}</div>
+                        <div class="text-[10px] text-slate-400 font-medium uppercase tracking-widest">${data.cn || 'Dono'}</div>
                     </td>
-                    <td class="px-6 py-4">
-                        <a href="https://wa.me/55${data.w}" target="_blank" class="text-xs font-bold text-slate-600 hover:text-green-500 flex items-center gap-1">
-                            <i data-lucide="phone" size="12"></i> ${data.w || '-'}
-                        </a>
-                        ${isDuplicate ? '<div class="text-[8px] text-orange-500 font-black uppercase mt-1 flex items-center gap-1"><i data-lucide="alert-triangle" class="w-2 h-2"></i> Número Repetido</div>' : ''}
-                    </td>
+                    <td class="px-6 py-4 text-xs font-bold text-slate-600">${data.w || '-'}</td>
+                    <td class="px-6 py-4 text-center">${statusBadge}</td>
+                    <td class="px-6 py-4 text-center text-xs font-bold text-slate-500 uppercase">${data.plan || 'free'}</td>
                     <td class="px-6 py-4 text-center">
-                        ${statusBadge}
+                         <div class="text-xs font-bold text-slate-400">${(data.v || []).length}</div>
                     </td>
-                    <td class="px-6 py-4 text-center">
-                        ${planBadge}
-                    </td>
-                    <td class="px-6 py-4 text-center">
-                        <button onclick="showVendors('${id}')" class="text-xs font-bold ${vendorCount > 0 ? 'text-indigo-600' : 'text-slate-400'} hover:text-blue-600 flex items-center justify-center gap-1 mx-auto transition-all">
-                            <i data-lucide="users" size="14"></i> ${vendorCount} Vendedores
-                        </button>
-                    </td>
-                    <td class="px-6 py-4">
-                        <div class="text-xs font-bold ${isExpired ? 'text-red-500' : 'text-slate-600'}">
-                            ${expiresAt.toLocaleDateString('pt-BR')}
-                        </div>
-                        <div class="text-[9px] text-slate-400 font-medium uppercase tracking-widest">
-                            ID: ${id}
-                        </div>
-                    </td>
+                    <td class="px-6 py-4 text-xs font-bold">${expiresAt.toLocaleDateString('pt-BR')}</td>
                     <td class="px-6 py-4 text-right">
                         <div class="flex items-center justify-end gap-2">
-                            <button onclick="activateStore('${id}', '${data.expiresAt}')" title="Ativar +30 dias" class="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
-                                <i data-lucide="calendar-plus" size="16"></i>
-                            </button>
-                            <button onclick="togglePlan('${id}', '${plan}')" title="Ciclar Plano (Free > Basic > Premium)" class="p-2 ${planColorClass} rounded-lg hover:shadow-md transition-all">
-                                <i data-lucide="${planIconAction}" size="16" class="${plan === 'free' ? '' : 'fill-current'}"></i>
-                            </button>
-                            <button onclick="blockStore('${id}')" title="Bloquear" class="p-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors">
-                                <i data-lucide="lock" size="16"></i>
-                            </button>
-                            <button onclick="deleteStore('${id}')" title="Excluir" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
-                                <i data-lucide="trash-2" size="16"></i>
-                            </button>
-                            <button onclick="copyEditLink('${id}')" title="Copiar Link de Edição" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
-                                <i data-lucide="copy" size="16"></i>
-                            </button>
-                            <a href="loja.html?id=${id}" target="_blank" title="Ver Loja" class="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors">
-                                <i data-lucide="external-link" size="16"></i>
-                            </a>
+                            <button onclick="activateStore('${id}', '${data.expiresAt}')" class="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100"><i data-lucide="calendar-plus" size="14"></i></button>
+                            ${isMaster ? `<button onclick="blockStore('${id}')" class="p-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100"><i data-lucide="lock" size="14"></i></button>` : ''}
+                            <button onclick="copyEditLink('${id}')" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"><i data-lucide="copy" size="14"></i></button>
                         </div>
                     </td>
                 `;
                 tbody.appendChild(row);
 
-                // Mobile Card
+                // Simple mobile card
                 const card = document.createElement('div');
-                card.className = "p-6 space-y-4";
-                card.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <div class="font-bold text-base">${data.n || 'Sem Nome'}</div>
-                            <div class="text-[10px] text-slate-400 font-medium uppercase tracking-widest">${data.cn || 'Dono não informado'}</div>
-                        </div>
-                        <div class="flex flex-col items-end gap-1">
-                            ${statusBadge}
-                            ${planBadge}
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4 text-xs">
-                        <div>
-                            <div class="text-slate-400 uppercase font-bold text-[9px] tracking-widest mb-1">WhatsApp</div>
-                            <a href="https://wa.me/55${data.w}" target="_blank" class="font-bold text-slate-600 flex items-center gap-1">
-                                <i data-lucide="phone" size="10"></i> ${data.w || '-'}
-                            </a>
-                            ${isDuplicate ? '<div class="text-[8px] text-orange-500 font-black uppercase mt-1 flex items-center gap-1"><i data-lucide="alert-triangle" class="w-2 h-2"></i> Número Repetido</div>' : ''}
-                        </div>
-                        <div>
-                            <div class="text-slate-400 uppercase font-bold text-[9px] tracking-widest mb-1">Expira em</div>
-                            <div class="font-bold ${isExpired ? 'text-red-500' : 'text-slate-600'}">${expiresAt.toLocaleDateString('pt-BR')}</div>
-                        </div>
-                    </div>
-                    <div class="flex flex-wrap items-center gap-2 pt-2">
-                        <div class="flex items-center gap-2 w-full">
-                            <button onclick="activateStore('${id}', '${data.expiresAt}')" class="flex-1 py-3 bg-green-50 text-green-600 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
-                                <i data-lucide="calendar-plus" size="14"></i> Ativar
-                            </button>
-                            <button onclick="togglePlan('${id}', '${plan}')" class="flex-1 py-3 ${planColorClass} rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
-                                 <i data-lucide="${planIconAction}" size="14" class="${plan === 'free' ? '' : 'fill-current'}"></i> Plano
-                            </button>
-                            <button onclick="blockStore('${id}')" class="flex-1 py-3 bg-orange-50 text-orange-600 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
-                                <i data-lucide="lock" size="14"></i> Bloquear
-                            </button>
-                        </div>
-                        <div class="flex items-center gap-2 w-full mt-1">
-                            <button onclick="deleteStore('${id}')" class="flex-1 py-3 bg-red-50 text-red-600 rounded-xl flex items-center justify-center active:scale-95 transition-all">
-                                <i data-lucide="trash-2" size="16"></i>
-                            </button>
-                            <button onclick="copyEditLink('${id}')" class="flex-1 py-3 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center active:scale-95 transition-all">
-                                <i data-lucide="copy" size="16"></i>
-                            </button>
-                            <a href="loja.html?id=${id}" target="_blank" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center active:scale-95 transition-all">
-                                <i data-lucide="external-link" size="16"></i>
-                            </a>
-                        </div>
-                    </div>
-                    <div class="text-[9px] text-slate-300 font-medium uppercase tracking-widest text-center">ID: ${id}</div>
-                `;
+                card.className = "p-4 space-y-2";
+                card.innerHTML = `<div class="flex justify-between font-bold"><span>${data.n}</span>${statusBadge}</div>`;
                 mobileList.appendChild(card);
             });
             lucide.createIcons();
         }
 
         async function activateStore(id, currentExpires) {
-            if (!confirm("Deseja ativar/renovar esta loja por mais 30 dias?")) return;
-            
-            try {
-                const now = new Date();
-                const current = new Date(currentExpires || now);
-                const baseDate = current > now ? current : now;
-                const newExpires = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000);
-                
-                await window.fs.updateDoc(window.fs.doc(window.db, "stores", id), {
-                    status: "active",
-                    expiresAt: newExpires.toISOString()
-                });
-                
-                alert("Loja ativada com sucesso!");
-                loadStores();
-            } catch (error) {
-                alert("Erro ao atualizar status.");
-            }
+            if (!confirm("Ativar por +30 dias?")) return;
+            const now = new Date();
+            const current = new Date(currentExpires || now);
+            const baseDate = current > now ? current : now;
+            const newExpires = new Date(baseDate.getTime() + 30 * 24 * 60 * 60 * 1000);
+            await window.fs.updateDoc(window.fs.doc(window.db, "stores", id), { status: "active", expiresAt: newExpires.toISOString() });
+            loadStores();
         }
 
-        async function togglePlan(id, currentPlan) {
-            const plans = ['free', 'basic', 'premium'];
-            const currentIndex = plans.indexOf(currentPlan);
-            const nextPlan = plans[(currentIndex + 1) % plans.length];
-            
-            if (!confirm(`Deseja alterar o plano desta loja para ${nextPlan.toUpperCase()}?`)) return;
-            
-            try {
-                await window.fs.updateDoc(window.fs.doc(window.db, "stores", id), {
-                    plan: nextPlan
-                });
-                alert("Plano atualizado com sucesso!");
-                loadStores();
-            } catch (error) {
-                alert("Erro ao atualizar plano.");
-            }
-        }
-
-        function showVendors(storeId) {
-            const store = allStores.find(s => s.id === storeId);
-            if (!store) return;
-            
-            const vendors = store.v || [];
-            const modal = document.createElement('div');
-            modal.id = 'vendors-modal';
-            modal.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-6';
-            modal.innerHTML = `
-                <div class="bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[80vh]">
-                    <div class="p-6 bg-slate-900 text-white flex items-center justify-between">
-                        <div>
-                            <h3 class="font-black uppercase italic tracking-tighter text-xl">Vendedores</h3>
-                            <p class="text-xs text-white/50 font-bold uppercase tracking-widest">${store.n || 'Loja'}</p>
+        async function loadResellers() {
+            const tbody = document.getElementById('resellers-table-body');
+            tbody.innerHTML = '';
+            const q = window.fs.query(window.fs.collection(window.db, "resellers"), window.fs.orderBy("createdAt", "desc"));
+            const snap = await window.fs.getDocs(q);
+            snap.forEach(docSnap => {
+                const data = docSnap.data();
+                const row = document.createElement('tr');
+                row.className = "border-b border-slate-50 hover:bg-slate-50/50";
+                row.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-sm text-slate-800">${data.name}</div>
+                        <div class="text-[10px] text-slate-400 font-medium tracking-widest">${data.email}</div>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <span class="px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${data.status === 'active' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}">
+                            ${data.status === 'active' ? 'Ativo' : 'Bloqueado'}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-center text-xs font-bold text-slate-600">${new Date(data.createdAt).toLocaleDateString('pt-BR')}</td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            <button onclick="toggleResellerStatus('${docSnap.id}', '${data.status}')" class="p-2 bg-slate-100 rounded-lg"><i data-lucide="${data.status === 'active' ? 'lock' : 'unlock'}" size="14"></i></button>
                         </div>
-                        <button onclick="document.getElementById('vendors-modal').remove()" class="text-white/50 hover:text-white transition-colors">
-                            <i data-lucide="x"></i>
-                        </button>
-                    </div>
-                    <div class="p-6 overflow-y-auto space-y-4">
-                        ${vendors.length === 0 ? '<p class="text-center text-slate-400 py-8">Nenhum vendedor cadastrado.</p>' : vendors.map(v => `
-                            <div class="bg-slate-50 p-4 rounded-2xl flex items-center justify-between border border-slate-100">
-                                <div>
-                                    <div class="font-black text-slate-800 uppercase italic tracking-tighter">${v.name}</div>
-                                    <div class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">${v.code}</div>
-                                </div>
-                                <div class="bg-blue-600 text-white px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
-                                    ${v.clicks || 0} Cliques
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                    <div class="p-6 border-t border-slate-100">
-                         <button onclick="document.getElementById('vendors-modal').remove()" class="w-full py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-200 transition-all">Fechar</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
             lucide.createIcons();
         }
 
-        async function blockStore(id) {
-            if (!confirm("Deseja bloquear o acesso a esta loja?")) return;
-            
-            try {
-                await window.fs.updateDoc(window.fs.doc(window.db, "stores", id), {
-                    status: "blocked"
-                });
-                alert("Loja bloqueada!");
-                loadStores();
-            } catch (error) {
-                alert("Erro ao bloquear.");
-            }
+        async function toggleResellerStatus(id, currentStatus) {
+            await window.fs.updateDoc(window.fs.doc(window.db, "resellers", id), { status: currentStatus === 'active' ? 'blocked' : 'active' });
+            loadResellers();
         }
 
-        async function deleteStore(id) {
-            if (!confirm("TEM CERTEZA? Esta ação é irreversível e apagará todos os dados da loja e suas imagens!")) return;
-            
-            try {
-                const { doc, deleteDoc, getDoc } = window.fs;
-                const { ref, deleteObject } = window.st;
-                const storeRef = doc(window.db, "stores", id);
-                
-                // Buscar dados para apagar imagens
-                const snap = await getDoc(storeRef);
-                if (snap.exists()) {
-                    const data = snap.data();
-                    const slug = id;
-                    
-                    // Tentar apagar o banner
-                    if (data.bi && data.bi.includes('firebasestorage')) {
-                        try { await deleteObject(ref(window.storage, `stores/${slug}/banner`)); } catch(e){}
-                    }
-                    
-                    // Tentar apagar imagens de produtos (se tiverem IDs previsíveis)
-                    if (data.p && Array.isArray(data.p)) {
-                        for (let i = 0; i < data.p.length; i++) {
-                            // Nota: Como os IDs no Firestore podem ser aleatórios, 
-                            // a exclusão aqui é baseada no que o criar.html faz agora.
-                        }
-                    }
-                }
-
-                await deleteDoc(storeRef);
-                alert("Loja e dados excluídos permanentemente!");
-                loadStores();
-            } catch (error) {
-                console.error("Erro ao excluir:", error);
-                alert("Erro ao excluir.");
+        window.openAddResellerModal = function() {
+            const email = prompt("Email do Revendedor (Google Account):");
+            const name = prompt("Nome do Revendedor:");
+            if (email && name) {
+                window.fs.setDoc(window.fs.doc(window.db, "resellers", "pending_" + Date.now()), {
+                    email, name, status: 'active', createdAt: new Date().toISOString()
+                }).then(() => loadResellers());
             }
         }
 
         window.copyEditLink = function(id) {
-            const baseUrl = window.location.href.split('admin.html')[0];
-            const editUrl = `${baseUrl}criar.html?edit=${id}`;
+            const editUrl = `${window.location.origin}/criar.html?edit=${id}`;
             navigator.clipboard.writeText(editUrl);
-            alert("Link de edição copiado para a área de transferência!");
+            alert("Copiado!");
         }
 
         window.onload = () => {
-            if (localStorage.getItem('admin_logged') === 'true') {
-                showPanel();
-            }
+            if (localStorage.getItem('admin_logged') === 'true') showPanel();
             lucide.createIcons();
         };
     </script>

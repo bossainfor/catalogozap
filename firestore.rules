@@ -2,6 +2,26 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isMasterAdmin() {
+      return isSignedIn() && 
+             request.auth.token.email == 'webradiomessejana80@gmail.com' && 
+             request.auth.token.email_verified == true;
+    }
+
+    function getReseller() {
+      return get(/databases/$(database)/documents/resellers/$(request.auth.uid)).data;
+    }
+
+    function isReseller() {
+      return isSignedIn() && 
+             exists(/databases/$(database)/documents/resellers/$(request.auth.uid)) &&
+             getReseller().status == 'active';
+    }
+
     function isValidStore(data) {
       return data.n is string && data.n.size() > 0 && data.n.size() < 100 &&
              data.w is string && data.w.size() > 0 && data.w.size() < 20 &&
@@ -10,17 +30,26 @@ service cloud.firestore {
     }
 
     match /stores/{storeId} {
-      // Allow anyone to read a store by its ID
       allow read: if true;
       
-      // Allow anyone to create a store (since there's no login)
-      // We validate basic fields to prevent spam
+      // Anyone can create a store for now (preserving existing behavior)
+      // But if a reseller is logged in, they can associate it
       allow create: if isValidStore(request.resource.data);
       
-      // Allow updates and deletes
-      // Note: In a real app, you'd want to protect this with a password or auth
-      allow update: if isValidStore(request.resource.data);
-      allow delete: if true;
+      // Master Admin can update anything.
+      // Reseller can update if they own the store record.
+      allow update: if isMasterAdmin() || 
+                      (isReseller() && resource.data.resellerId == request.auth.uid) ||
+                      (!isSignedIn() && isValidStore(request.resource.data)); // Preserving legacy behavior
+      
+      allow delete: if isMasterAdmin() || 
+                      (isReseller() && resource.data.resellerId == request.auth.uid) ||
+                      !isSignedIn();
+    }
+
+    match /resellers/{resellerId} {
+      allow read: if isMasterAdmin() || (isSignedIn() && request.auth.uid == resellerId);
+      allow write: if isMasterAdmin();
     }
 
     match /trial_history/{whatsapp} {

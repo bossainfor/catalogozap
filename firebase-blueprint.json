@@ -37,19 +37,37 @@
               "n": { "type": "string", "description": "Product Name" },
               "p": { "type": "string", "description": "Product Price" },
               "i": { "type": "string", "description": "Product Image URL" },
-              "v": { "type": "string", "description": "Optional Product Video URL (Premium only)" }
+              "v": { "type": "string", "description": "Optional Product Video URL (Premium only)" },
+              "f": { "type": "boolean", "description": "Is product featured?" }
             }
           }
         },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "resellerId": { "type": "string", "description": "ID of the reseller who owns this store" }
       },
       "required": ["n", "w"]
+    },
+    "Reseller": {
+      "title": "Reseller",
+      "description": "System Reseller",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "blocked"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email"]
     }
   },
   "firestore": {
     "/stores/{storeId}": {
       "schema": "Store",
       "description": "Public store data"
+    },
+    "/resellers/{resellerId}": {
+      "schema": "Reseller",
+      "description": "Reseller account data"
     }
   }
 }

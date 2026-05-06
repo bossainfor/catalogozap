@@ -830,9 +830,9 @@
                 return `
                 <div onclick="${buttonAction}" class="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all flex flex-col group/card cursor-pointer active-scale md:active:scale-100 touch-manipulation" role="button" aria-label="Ver detalhes de ${p.name}">
                     <div class="relative overflow-hidden bg-white dark:bg-slate-900 w-full" style="aspect-ratio: ${storeData.imageFormat === 'quadrado' ? '1/1' : '9/16'} !important;">
-                        ${badge ? `<div class="absolute top-2 left-2 z-20 bg-orange-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-full shadow-lg">${badge}</div>` : ''}
+                        ${badge ? `<div class="absolute top-2 left-2 z-20 bg-orange-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-full shadow-lg pointer-events-none">${badge}</div>` : ''}
                         ${offerEndsAt ? `
-                            <div class="absolute top-2 right-2 z-20 bg-black/60 backdrop-blur-md text-white text-[9px] font-black px-2 py-1 rounded-lg border border-white/20 flex flex-col items-center">
+                            <div class="absolute top-2 right-2 z-20 bg-black/60 backdrop-blur-md text-white text-[9px] font-black px-2 py-1 rounded-lg border border-white/20 flex flex-col items-center pointer-events-none">
                                 <span class="text-[7px] text-white/60 mb-0.5">ACABA EM</span>
                                 <span data-countdown="${offerEndsAt.toISOString()}">00:00:00</span>
                             </div>
@@ -841,7 +841,7 @@
                             <div id="${swiperId}" onscroll="updateDots('${swiperId}')" class="media-swiper absolute inset-0 flex overflow-x-auto snap-x snap-mandatory scroll-smooth w-full h-full">
                                 <div class="snap-start flex-shrink-0 w-full h-full relative">
                                     <img src="${imageUrl}" class="absolute inset-0 w-full h-full object-contain" referrerpolicy="no-referrer">
-                                    <div class="absolute bottom-4 right-4 bg-black/40 backdrop-blur-md text-white/80 p-2 rounded-xl flex items-center gap-2 animate-pulse border border-white/20">
+                                    <div class="absolute bottom-4 right-4 bg-black/40 backdrop-blur-md text-white/80 p-2 rounded-xl flex items-center gap-2 animate-pulse border border-white/20 pointer-events-none">
                                         <i data-lucide="video" class="w-4 h-4"></i>
                                         <span class="text-[9px] font-black uppercase tracking-widest">Ver Vídeo</span>
                                     </div>
@@ -850,7 +850,7 @@
                                     <div class="video-wrapper">
                                         <iframe src="${videoUrl}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                                     </div>
-                                    <div class="absolute bottom-4 left-4 bg-black/40 backdrop-blur-md text-white/80 p-2 rounded-xl flex items-center gap-2 border border-white/20">
+                                    <div class="absolute bottom-4 left-4 bg-black/40 backdrop-blur-md text-white/80 p-2 rounded-xl flex items-center gap-2 border border-white/20 pointer-events-none">
                                         <i data-lucide="image" class="w-4 h-4"></i>
                                         <span class="text-[9px] font-black uppercase tracking-widest">Ver Foto</span>
                                     </div>
@@ -1042,7 +1042,7 @@
                     </div>
                     ` : ''}
 
-                    <main id="products-grid" class="max-w-6xl mx-auto px-3 sm:px-6 py-6 sm:py-10 pb-32 sm:pb-40 grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-8 flex-1 w-full">
+                    <main id="products-grid" class="max-w-6xl mx-auto px-2 sm:px-6 py-6 sm:py-10 pb-32 sm:pb-40 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-8 flex-1 w-full">
                         ${productsHTML}
                     </main>
 

@@ -173,7 +173,7 @@
             empty.classList.add('hidden');
 
             try {
-                const q = window.fs.query(window.fs.collection(window.db, "stores"), window.fs.orderBy("createdAt", "desc"));
+                const q = window.fs.query(window.fs.collection(window.db, "stores"));
                 const querySnapshot = await window.fs.getDocs(q);
                 
                 loader.classList.add('hidden');
@@ -186,6 +186,13 @@
                 allStores = [];
                 querySnapshot.forEach((docSnap) => {
                     allStores.push({ id: docSnap.id, ...docSnap.data() });
+                });
+
+                // Ordenação manual: mais recentes primeiro se houver createdAt
+                allStores.sort((a, b) => {
+                    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                    return dateB - dateA;
                 });
 
                 renderStores(allStores);

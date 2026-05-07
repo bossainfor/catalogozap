@@ -24,9 +24,22 @@
         const db = getFirestore(app, "ai-studio-2395f72f-4dac-4517-9681-c654cd1a03ca");
         const storage = getStorage(app);
 
+        // Configuração do Portal (Novo)
+        const portalConfig = {
+            apiKey: "AIzaSyAa7qewScjAFe1VfUC3IgUVM6ZnjXjCDSc",
+            authDomain: "ai-studio-applet-webapp-64ca5.firebaseapp.com",
+            projectId: "ai-studio-applet-webapp-64ca5",
+            storageBucket: "ai-studio-applet-webapp-64ca5.firebasestorage.app",
+            messagingSenderId: "65932276181",
+            appId: "1:65932276181:web:e9b287db2b6d39722e0d5c"
+        };
+        const portalApp = initializeApp(portalConfig, "portal");
+        const portalDb = getFirestore(portalApp, "ai-studio-bb8a2635-a11a-436b-84ba-81f3dff438e5");
+
         window.db = db;
         window.storage = storage;
-        window.fs = { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, getDoc };
+        window.portalDb = portalDb;
+        window.fs = { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, getDoc, arrayUnion };
         window.st = { ref, deleteObject };
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -313,6 +326,9 @@
                             <button onclick="copyEditLink('${id}')" title="Copiar Link de Edição" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
                                 <i data-lucide="copy" size="16"></i>
                             </button>
+                            <button onclick="openPortalModal('${id}')" title="Divulgar no Portal" class="p-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-all shadow-sm">
+                                <i data-lucide="megaphone" size="16"></i>
+                            </button>
                             <a href="loja.html?id=${id}" target="_blank" title="Ver Loja" class="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors">
                                 <i data-lucide="external-link" size="16"></i>
                             </a>
@@ -366,6 +382,9 @@
                             </button>
                             <button onclick="copyEditLink('${id}')" class="flex-1 py-3 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center active:scale-95 transition-all">
                                 <i data-lucide="copy" size="16"></i>
+                            </button>
+                            <button onclick="openPortalModal('${id}')" class="flex-1 py-3 bg-orange-500 text-white rounded-xl flex items-center justify-center active:scale-95 transition-all shadow-md">
+                                <i data-lucide="megaphone" size="16"></i>
                             </button>
                             <a href="loja.html?id=${id}" target="_blank" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center active:scale-95 transition-all">
                                 <i data-lucide="external-link" size="16"></i>
@@ -515,6 +534,143 @@
             const editUrl = `${baseUrl}criar.html?edit=${id}`;
             navigator.clipboard.writeText(editUrl);
             alert("Link de edição copiado para a área de transferência!");
+        }
+
+        window.openPortalModal = function(storeId) {
+            const store = allStores.find(s => s.id === storeId);
+            if (!store) return;
+
+            const modal = document.createElement('div');
+            modal.id = 'portal-modal';
+            modal.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-6';
+            modal.innerHTML = `
+                <div class="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl space-y-6 p-8">
+                    <div class="text-center space-y-2">
+                        <div class="bg-orange-500 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <i data-lucide="megaphone" class="text-white"></i>
+                        </div>
+                        <h3 class="text-2xl font-black uppercase italic tracking-tighter">Divulgar no Portal</h3>
+                        <p class="text-slate-500 text-sm font-medium">Envie os dados de <strong>${store.n}</strong> para o portal de divulgação.</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Cidade (Slug)</label>
+                            <input type="text" id="portal-city" placeholder="ex: fortaleza" class="w-full px-5 py-3 rounded-xl bg-slate-50 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold">
+                        </div>
+                        <div>
+                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Senha da Cidade (Se necessário)</label>
+                            <input type="password" id="portal-password" placeholder="Opcional se já autenticado" class="w-full px-5 py-3 rounded-xl bg-slate-50 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold">
+                        </div>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Categoria</label>
+                                <input type="text" id="portal-category" value="Publicidade" class="w-full px-5 py-3 rounded-xl bg-slate-50 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold">
+                            </div>
+                            <div>
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Destaque?</label>
+                                <select id="portal-featured" class="w-full px-5 py-3 rounded-xl bg-slate-50 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold">
+                                    <option value="true">Sim</option>
+                                    <option value="false" selected>Não</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3 pt-4">
+                        <button onclick="document.getElementById('portal-modal').remove()" class="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-200 transition-all">Cancelar</button>
+                        <button id="confirm-portal-btn" onclick="promoteToPortal('${storeId}')" class="flex-1 py-4 bg-orange-500 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-orange-600 transition-all shadow-lg active:scale-95">Divulgar Agora</button>
+                    </div>
+
+                    <div id="portal-status" class="hidden text-center text-xs font-bold uppercase tracking-widest animate-pulse"></div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            lucide.createIcons();
+        }
+
+        window.promoteToPortal = async function(storeId) {
+            const city = document.getElementById('portal-city').value.trim();
+            const password = document.getElementById('portal-password').value.trim();
+            const category = document.getElementById('portal-category').value.trim();
+            const featured = document.getElementById('portal-featured').value === 'true';
+            
+            if (!city) {
+                alert("Por favor, informe o slug da cidade (ex: fortaleza)");
+                return;
+            }
+
+            const store = allStores.find(s => s.id === storeId);
+            const btn = document.getElementById('confirm-portal-btn');
+            const status = document.getElementById('portal-status');
+
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+            status.classList.remove('hidden');
+            status.innerText = "Conectando ao Portal...";
+            status.className = "text-center text-xs font-bold uppercase tracking-widest animate-pulse text-orange-500";
+
+            try {
+                const cityRef = window.fs.doc(window.portalDb, "tenants", city.toLowerCase());
+                const citySnap = await window.fs.getDoc(cityRef);
+
+                if (!citySnap.exists()) {
+                    throw new Error("Cidade não encontrada no portal. Verifique o slug.");
+                }
+
+                const cityData = citySnap.data();
+                
+                // Verificar senha se houver
+                if (cityData.password && cityData.password !== password) {
+                    if (password) {
+                        throw new Error("Senha da cidade incorreta.");
+                    } else {
+                        status.innerText = "Atenção: Senha pode ser necessária...";
+                    }
+                }
+
+                status.innerText = "Preparando card...";
+
+                const baseUrl = window.location.href.split('admin.html')[0];
+                const storeLink = `${baseUrl}loja.html?id=${storeId}`;
+                
+                const newCompany = {
+                    id: Date.now(),
+                    name: store.n || 'Empresa Sem Nome',
+                    category: category || 'Geral',
+                    desc: store.sd || 'Conheça nosso catálogo online!',
+                    logo: store.logo || store.bi || 'https://i.postimg.cc/8cgHJgH8/catalogo.png',
+                    wa: store.w ? '55' + store.w.replace(/\D/g, '') : '',
+                    ig: store.ig ? (store.ig.startsWith('http') ? store.ig : 'https://instagram.com/' + store.ig) : '',
+                    website: storeLink,
+                    featured: featured
+                };
+
+                status.innerText = "Enviando para o Firestore do Portal...";
+
+                const currentData = cityData.data || { companies: [] };
+                const currentCompanies = currentData.companies || [];
+                const updatedCompanies = [...currentCompanies, newCompany];
+
+                await window.fs.updateDoc(cityRef, {
+                    "data.companies": updatedCompanies
+                });
+
+                status.innerText = "Sucesso! Divulgado com sucesso.";
+                status.className = "text-center text-xs font-bold uppercase tracking-widest text-green-500";
+                
+                setTimeout(() => {
+                    if(document.getElementById('portal-modal')) document.getElementById('portal-modal').remove();
+                    alert("Loja divulgada com sucesso no portal!");
+                }, 1500);
+
+            } catch (error) {
+                console.error("Erro na integração:", error);
+                status.innerText = "Erro: " + error.message;
+                status.className = "text-center text-xs font-bold uppercase tracking-widest text-red-500";
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
+            }
         }
 
         window.onload = () => {

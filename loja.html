@@ -45,7 +45,8 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; }
+        body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; -webkit-tap-highlight-color: transparent; }
+        html { scroll-behavior: smooth; }
         .dark body { background-color: #0f172a; color: #f8fafc; }
         .cart-drawer { transform: translateX(100%); transition: transform 0.3s ease-in-out; display: none; }
         .cart-drawer.open { transform: translateX(0); display: flex; }
@@ -55,6 +56,8 @@
         .category-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
         /* Media Swiper Styles */
         .media-swiper::-webkit-scrollbar { display: none; }
@@ -80,10 +83,6 @@
         .modal-content { transform: translateY(20px); transition: transform 0.3s; }
         .modal.open .modal-content { transform: translateY(0); }
         
-        /* Prevenção de brilho de toque */
-        button, a, .cursor-pointer { 
-            -webkit-tap-highlight-color: transparent; 
-        }
         .active-scale:active { transform: scale(0.96); }
         .active-scale { transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1); will-change: transform; }
     </style>
@@ -886,14 +885,16 @@
                             </div>
                         `))}
                     </div>
-                    <div class="p-3 sm:p-5 flex flex-col flex-1">
-                        <h3 class="font-bold text-sm sm:text-lg mb-1 line-clamp-2 leading-tight h-10 sm:h-auto dark:text-white">${p.name}</h3>
-                        ${p.description ? `<p class="hidden sm:block text-slate-500 dark:text-slate-400 text-xs mb-3 line-clamp-2">${p.description}</p>` : ''}
-                        <div class="mt-auto pt-4">
-                            <p class="font-black text-lg sm:text-2xl mb-4 dark:text-white tracking-tighter" style="color: ${storeData.primaryColor}">${formatCurrency(p.price)}</p>
-                            <div class="grid grid-cols-1 gap-2">
-                                <div class="w-full py-4 sm:py-5 text-white font-black rounded-2xl text-[10px] sm:text-xs uppercase tracking-[0.2em] italic flex items-center justify-center gap-3 shadow-[0_8px_16px_-4px_rgba(0,0,0,0.1)] transition-all select-none" style="background-color: ${storeData.primaryColor}">
-                                    <i data-lucide="${buttonIcon}" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                    <div class="p-3 sm:p-5 flex flex-col flex-1 justify-between gap-2">
+                        <div>
+                            <h3 class="font-bold text-slate-800 dark:text-white text-xs sm:text-lg mb-1 line-clamp-2 leading-tight min-h-[2.5rem] sm:min-h-0">${p.name}</h3>
+                            ${p.description ? `<p class="hidden sm:block text-slate-500 dark:text-slate-400 text-xs mb-3 line-clamp-2">${p.description}</p>` : ''}
+                        </div>
+                        <div class="pt-2">
+                            <p class="font-black text-lg sm:text-2xl mb-3 dark:text-white tracking-tighter" style="color: ${storeData.primaryColor}">${formatCurrency(p.price)}</p>
+                            <div class="grid grid-cols-1">
+                                <div class="w-full py-3 sm:py-4 text-white font-black rounded-[0.75rem] sm:rounded-2xl text-[9px] sm:text-xs uppercase tracking-widest italic flex items-center justify-center gap-2 shadow-lg active-scale transition-all select-none" style="background-color: ${storeData.primaryColor}">
+                                    <i data-lucide="${buttonIcon}" class="w-3.5 h-3.5 sm:w-5 sm:h-5"></i>
                                     <span>${buttonText}</span>
                                 </div>
                             </div>

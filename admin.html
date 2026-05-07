@@ -24,22 +24,9 @@
         const db = getFirestore(app, "ai-studio-2395f72f-4dac-4517-9681-c654cd1a03ca");
         const storage = getStorage(app);
 
-        // Configuração do Portal (Novo)
-        const portalConfig = {
-            apiKey: "AIzaSyAa7qewScjAFe1VfUC3IgUVM6ZnjXjCDSc",
-            authDomain: "ai-studio-applet-webapp-64ca5.firebaseapp.com",
-            projectId: "ai-studio-applet-webapp-64ca5",
-            storageBucket: "ai-studio-applet-webapp-64ca5.firebasestorage.app",
-            messagingSenderId: "65932276181",
-            appId: "1:65932276181:web:e9b287db2b6d39722e0d5c"
-        };
-        const portalApp = initializeApp(portalConfig, "portal");
-        const portalDb = getFirestore(portalApp, "ai-studio-bb8a2635-a11a-436b-84ba-81f3dff438e5");
-
         window.db = db;
         window.storage = storage;
-        window.portalDb = portalDb;
-        window.fs = { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, getDoc, arrayUnion };
+        window.fs = { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, getDoc };
         window.st = { ref, deleteObject };
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -73,25 +60,35 @@
                     <img src="https://i.postimg.cc/8cgHJgH8/catalogo.png" alt="CatálogoZap" class="h-14 w-auto" referrerpolicy="no-referrer">
                     <span class="text-white/50 text-[10px] font-bold uppercase tracking-widest ml-2">Painel Admin</span>
                 </div>
-                <button onclick="logout()" class="text-slate-400 hover:text-red-500 transition-colors">
-                    <i data-lucide="log-out"></i>
-                </button>
+                    <div class="flex items-center gap-3">
+                        <button onclick="logout()" class="p-2 sm:p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all flex items-center gap-2 font-black uppercase text-[10px] sm:text-xs tracking-widest shrink-0">
+                            <i data-lucide="log-out" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                            <span class="hidden sm:inline">Sair</span>
+                        </button>
+                    </div>
             </div>
         </header>
 
         <main class="max-w-6xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 space-y-6">
-            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div class="text-center md:text-left">
-                    <h2 class="text-3xl font-black uppercase italic tracking-tighter">Gerenciar Lojas</h2>
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div class="text-center lg:text-left">
+                    <h2 class="text-3xl sm:text-4xl font-black uppercase italic tracking-tighter">Gerenciar Lojas</h2>
                     <p class="text-slate-500 font-medium text-sm">Controle de assinaturas e status dos clientes</p>
                 </div>
-                <div class="flex flex-col sm:flex-row gap-3">
-                    <div class="relative flex-1">
+                <div class="flex flex-col md:flex-row gap-3 w-full lg:w-auto">
+                    <div class="relative flex-1 lg:w-64">
                         <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
-                        <input type="text" id="search-input" oninput="filterStores()" placeholder="Buscar loja ou cliente..." class="pl-10 pr-4 py-3 sm:py-2 bg-white border border-slate-200 rounded-2xl sm:rounded-xl text-sm focus:outline-none focus:border-slate-900 w-full sm:w-64 shadow-sm">
+                        <input type="text" id="search-input" oninput="filterStores()" placeholder="Buscar loja ou cliente..." class="w-full pl-10 pr-4 py-4 sm:py-3 bg-white border border-slate-200 rounded-2xl sm:rounded-xl text-sm focus:outline-none focus:border-slate-900 shadow-sm">
                     </div>
-                    <button onclick="loadStores()" class="bg-white border border-slate-200 px-4 py-3 sm:py-2 rounded-2xl sm:rounded-xl text-xs font-bold flex items-center justify-center gap-2 hover:bg-slate-50 shadow-sm active:scale-95 transition-all">
-                        <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar Lista
+                    
+                    <div class="flex bg-white p-1 rounded-2xl border border-slate-200 shadow-sm overflow-x-auto no-scrollbar shrink-0">
+                        <button onclick="renderStores(allStores)" class="px-4 py-2 sm:py-3 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all bg-slate-900 text-white shadow-lg whitespace-nowrap">Todas</button>
+                        <button onclick="filterByStatus('active')" class="px-4 py-2 sm:py-3 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all text-slate-400 hover:text-slate-600 whitespace-nowrap">Ativas</button>
+                        <button onclick="filterByStatus('expired')" class="px-4 py-2 sm:py-3 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all text-slate-400 hover:text-slate-600 whitespace-nowrap">Expiradas</button>
+                    </div>
+
+                    <button onclick="loadStores()" class="bg-white border border-slate-200 px-6 py-4 sm:py-3 rounded-2xl sm:rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-50 shadow-sm active:scale-95 transition-all shrink-0">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar
                     </button>
                 </div>
             </div>
@@ -206,6 +203,22 @@
                 (s.w && s.w.includes(term)) ||
                 (s.id && s.id.toLowerCase().includes(term))
             );
+            renderStores(filtered);
+        }
+
+        window.filterByStatus = function(status) {
+            let filtered = [];
+            if (status === 'active') {
+                filtered = allStores.filter(s => {
+                    const expiresAt = new Date(s.expiresAt || s.createdAt);
+                    return s.status !== 'blocked' && new Date() <= expiresAt;
+                });
+            } else if (status === 'expired') {
+                filtered = allStores.filter(s => {
+                    const expiresAt = new Date(s.expiresAt || s.createdAt);
+                    return s.status === 'blocked' || new Date() > expiresAt;
+                });
+            }
             renderStores(filtered);
         }
 
@@ -326,9 +339,6 @@
                             <button onclick="copyEditLink('${id}')" title="Copiar Link de Edição" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
                                 <i data-lucide="copy" size="16"></i>
                             </button>
-                            <button onclick="openPortalModal('${id}')" title="Divulgar no Portal" class="p-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-all shadow-sm">
-                                <i data-lucide="megaphone" size="16"></i>
-                            </button>
                             <a href="loja.html?id=${id}" target="_blank" title="Ver Loja" class="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors">
                                 <i data-lucide="external-link" size="16"></i>
                             </a>
@@ -364,31 +374,33 @@
                             <div class="font-bold ${isExpired ? 'text-red-500' : 'text-slate-600'}">${expiresAt.toLocaleDateString('pt-BR')}</div>
                         </div>
                     </div>
-                    <div class="flex flex-wrap items-center gap-2 pt-2">
+                    <div class="space-y-3 pt-2">
                         <div class="flex items-center gap-2 w-full">
-                            <button onclick="activateStore('${id}', '${data.expiresAt}')" class="flex-1 py-3 bg-green-50 text-green-600 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
+                            <button onclick="activateStore('${id}', '${data.expiresAt}')" class="flex-1 py-3 bg-green-50 text-green-600 rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all border border-green-100">
                                 <i data-lucide="calendar-plus" size="14"></i> Ativar
                             </button>
-                            <button onclick="togglePlan('${id}', '${plan}')" class="flex-1 py-3 ${planColorClass} rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
+                            <button onclick="togglePlan('${id}', '${plan}')" class="flex-1 py-3 ${planColorClass} rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all border border-transparent">
                                  <i data-lucide="${planIconAction}" size="14" class="${plan === 'free' ? '' : 'fill-current'}"></i> Plano
                             </button>
-                            <button onclick="blockStore('${id}')" class="flex-1 py-3 bg-orange-50 text-orange-600 rounded-xl font-bold text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
-                                <i data-lucide="lock" size="14"></i> Bloquear
+                        </div>
+                        <div class="flex items-center gap-2 w-full">
+                            <button onclick="showVendors('${id}')" class="flex-1 py-3 bg-indigo-50 text-indigo-600 rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all border border-indigo-100">
+                                <i data-lucide="users" size="14"></i> Vend
+                            </button>
+                            <button onclick="blockStore('${id}')" class="flex-1 py-3 bg-orange-50 text-orange-600 rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all border border-orange-100">
+                                <i data-lucide="lock" size="14"></i> Bloq
                             </button>
                         </div>
-                        <div class="flex items-center gap-2 w-full mt-1">
-                            <button onclick="deleteStore('${id}')" class="flex-1 py-3 bg-red-50 text-red-600 rounded-xl flex items-center justify-center active:scale-95 transition-all">
-                                <i data-lucide="trash-2" size="16"></i>
-                            </button>
-                            <button onclick="copyEditLink('${id}')" class="flex-1 py-3 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center active:scale-95 transition-all">
+                        <div class="flex items-center gap-2 w-full">
+                            <button onclick="copyEditLink('${id}')" class="flex-1 py-3 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center active:scale-95 transition-all border border-blue-100" title="Copiar Link">
                                 <i data-lucide="copy" size="16"></i>
                             </button>
-                            <button onclick="openPortalModal('${id}')" class="flex-1 py-3 bg-orange-500 text-white rounded-xl flex items-center justify-center active:scale-95 transition-all shadow-md">
-                                <i data-lucide="megaphone" size="16"></i>
-                            </button>
-                            <a href="loja.html?id=${id}" target="_blank" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center active:scale-95 transition-all">
+                            <a href="loja.html?id=${id}" target="_blank" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center active:scale-95 transition-all border border-slate-200" title="Ver Loja">
                                 <i data-lucide="external-link" size="16"></i>
                             </a>
+                            <button onclick="deleteStore('${id}')" class="flex-1 py-3 bg-red-50 text-red-600 rounded-xl flex items-center justify-center active:scale-95 transition-all border border-red-100" title="Excluir">
+                                <i data-lucide="trash-2" size="16"></i>
+                            </button>
                         </div>
                     </div>
                     <div class="text-[9px] text-slate-300 font-medium uppercase tracking-widest text-center">ID: ${id}</div>
@@ -534,143 +546,6 @@
             const editUrl = `${baseUrl}criar.html?edit=${id}`;
             navigator.clipboard.writeText(editUrl);
             alert("Link de edição copiado para a área de transferência!");
-        }
-
-        window.openPortalModal = function(storeId) {
-            const store = allStores.find(s => s.id === storeId);
-            if (!store) return;
-
-            const modal = document.createElement('div');
-            modal.id = 'portal-modal';
-            modal.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-6';
-            modal.innerHTML = `
-                <div class="bg-white w-full max-w-md rounded-3xl overflow-hidden shadow-2xl space-y-6 p-8">
-                    <div class="text-center space-y-2">
-                        <div class="bg-orange-500 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                            <i data-lucide="megaphone" class="text-white"></i>
-                        </div>
-                        <h3 class="text-2xl font-black uppercase italic tracking-tighter">Divulgar no Portal</h3>
-                        <p class="text-slate-500 text-sm font-medium">Envie os dados de <strong>${store.n}</strong> para o portal de divulgação.</p>
-                    </div>
-
-                    <div class="space-y-4">
-                        <div>
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Cidade (Slug)</label>
-                            <input type="text" id="portal-city" placeholder="ex: fortaleza" class="w-full px-5 py-3 rounded-xl bg-slate-50 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold">
-                        </div>
-                        <div>
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Senha da Cidade (Se necessário)</label>
-                            <input type="password" id="portal-password" placeholder="Opcional se já autenticado" class="w-full px-5 py-3 rounded-xl bg-slate-50 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold">
-                        </div>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Categoria</label>
-                                <input type="text" id="portal-category" value="Publicidade" class="w-full px-5 py-3 rounded-xl bg-slate-50 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold">
-                            </div>
-                            <div>
-                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1 block">Destaque?</label>
-                                <select id="portal-featured" class="w-full px-5 py-3 rounded-xl bg-slate-50 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold">
-                                    <option value="true">Sim</option>
-                                    <option value="false" selected>Não</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="flex gap-3 pt-4">
-                        <button onclick="document.getElementById('portal-modal').remove()" class="flex-1 py-4 bg-slate-100 text-slate-600 rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-slate-200 transition-all">Cancelar</button>
-                        <button id="confirm-portal-btn" onclick="promoteToPortal('${storeId}')" class="flex-1 py-4 bg-orange-500 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-orange-600 transition-all shadow-lg active:scale-95">Divulgar Agora</button>
-                    </div>
-
-                    <div id="portal-status" class="hidden text-center text-xs font-bold uppercase tracking-widest animate-pulse"></div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-            lucide.createIcons();
-        }
-
-        window.promoteToPortal = async function(storeId) {
-            const city = document.getElementById('portal-city').value.trim();
-            const password = document.getElementById('portal-password').value.trim();
-            const category = document.getElementById('portal-category').value.trim();
-            const featured = document.getElementById('portal-featured').value === 'true';
-            
-            if (!city) {
-                alert("Por favor, informe o slug da cidade (ex: fortaleza)");
-                return;
-            }
-
-            const store = allStores.find(s => s.id === storeId);
-            const btn = document.getElementById('confirm-portal-btn');
-            const status = document.getElementById('portal-status');
-
-            btn.disabled = true;
-            btn.classList.add('opacity-50');
-            status.classList.remove('hidden');
-            status.innerText = "Conectando ao Portal...";
-            status.className = "text-center text-xs font-bold uppercase tracking-widest animate-pulse text-orange-500";
-
-            try {
-                const cityRef = window.fs.doc(window.portalDb, "tenants", city.toLowerCase());
-                const citySnap = await window.fs.getDoc(cityRef);
-
-                if (!citySnap.exists()) {
-                    throw new Error("Cidade não encontrada no portal. Verifique o slug.");
-                }
-
-                const cityData = citySnap.data();
-                
-                // Verificar senha se houver
-                if (cityData.password && cityData.password !== password) {
-                    if (password) {
-                        throw new Error("Senha da cidade incorreta.");
-                    } else {
-                        status.innerText = "Atenção: Senha pode ser necessária...";
-                    }
-                }
-
-                status.innerText = "Preparando card...";
-
-                const baseUrl = window.location.href.split('admin.html')[0];
-                const storeLink = `${baseUrl}loja.html?id=${storeId}`;
-                
-                const newCompany = {
-                    id: Date.now(),
-                    name: store.n || 'Empresa Sem Nome',
-                    category: category || 'Geral',
-                    desc: store.sd || 'Conheça nosso catálogo online!',
-                    logo: store.logo || store.bi || 'https://i.postimg.cc/8cgHJgH8/catalogo.png',
-                    wa: store.w ? '55' + store.w.replace(/\D/g, '') : '',
-                    ig: store.ig ? (store.ig.startsWith('http') ? store.ig : 'https://instagram.com/' + store.ig) : '',
-                    website: storeLink,
-                    featured: featured
-                };
-
-                status.innerText = "Enviando para o Firestore do Portal...";
-
-                const currentData = cityData.data || { companies: [] };
-                const currentCompanies = currentData.companies || [];
-                const updatedCompanies = [...currentCompanies, newCompany];
-
-                await window.fs.updateDoc(cityRef, {
-                    "data.companies": updatedCompanies
-                });
-
-                status.innerText = "Sucesso! Divulgado com sucesso.";
-                status.className = "text-center text-xs font-bold uppercase tracking-widest text-green-500";
-                
-                setTimeout(() => {
-                    if(document.getElementById('portal-modal')) document.getElementById('portal-modal').remove();
-                    alert("Loja divulgada com sucesso no portal!");
-                }, 1500);
-
-            } catch (error) {
-                console.error("Erro na integração:", error);
-                status.innerText = "Erro: " + error.message;
-                status.className = "text-center text-xs font-bold uppercase tracking-widest text-red-500";
-                btn.disabled = false;
-                btn.classList.remove('opacity-50');
-            }
         }
 
         window.onload = () => {

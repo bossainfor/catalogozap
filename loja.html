@@ -319,11 +319,13 @@
             const addBtn = document.getElementById('modal-add-btn');
             addBtn.style.backgroundColor = storeData.primaryColor;
             
-            const isService = ['servicos', 'serviços', 'portfolio', 'orcamento', 'clinica'].includes(storeData.type);
+            const isService = ['servicos', 'serviços', 'portfolio', 'orcamento', 'clinica', 'salao', 'barbearia'].includes(storeData.type);
             const isAffiliate = storeData.type === 'afiliados';
             const isClinica = storeData.type === 'clinica';
-            const btnIcon = isAffiliate ? 'external-link' : (isService ? (isClinica ? 'calendar' : 'message-circle') : 'shopping-cart');
-            const btnText = isAffiliate ? 'Comprar Agora' : (isService ? (isClinica ? 'Agendar Consulta' : 'Solicitar Orçamento') : 'Adicionar ao Carrinho');
+            const isBeauty = ['salao', 'barbearia'].includes(storeData.type);
+            const isAcougue = storeData.type === 'acougue';
+            const btnIcon = isAffiliate ? 'external-link' : (isService ? (isClinica || isBeauty ? 'calendar' : 'message-circle') : (isAcougue ? 'shopping-cart' : 'shopping-cart'));
+            const btnText = isAffiliate ? 'Comprar Agora' : (isService ? (isClinica || isBeauty ? 'Agendar Agora' : 'Solicitar Orçamento') : (isAcougue ? 'Adicionar ao Carrinho' : 'Adicionar ao Carrinho'));
             
             addBtn.innerHTML = `<i data-lucide="${btnIcon}" class="w-5 h-5"></i> <span>${btnText}</span>`;
             
@@ -713,7 +715,15 @@
 
         function requestQuote(productId, variations = '') {
             const product = storeData.products.find(p => p.id === productId);
-            const message = `*Pedido de Orçamento - ${storeData.name}*\n\nOlá! Gostaria de solicitar um orçamento para:\n*${product.name}*\n${variations ? `*Opções:* ${variations}\n` : ''}\nAguardo seu retorno!`;
+            const isBeauty = ['salao', 'barbearia'].includes(storeData.type);
+            const isClinica = storeData.type === 'clinica';
+            
+            let message = '';
+            if (isBeauty || isClinica) {
+                message = `*Agendamento - ${storeData.name}*\n\nOlá! Gostaria de agendar um horário para:\n*${product.name}*\n${variations ? `*Opções:* ${variations}\n` : ''}\nQuais são os horários disponíveis?`;
+            } else {
+                message = `*Pedido de Orçamento - ${storeData.name}*\n\nOlá! Gostaria de solicitar um orçamento para:\n*${product.name}*\n${variations ? `*Opções:* ${variations}\n` : ''}\nAguardo seu retorno!`;
+            }
             window.open(`https://wa.me/55${storeData.whatsapp}?text=${encodeURIComponent(message)}`, '_blank');
         }
 
@@ -776,9 +786,11 @@
             document.title = storeData.name;
 
             // Lógica de Botão por Nicho
-            const isService = ['servicos', 'serviços', 'portfolio', 'orcamento', 'clinica'].includes(storeData.type);
+            const isService = ['servicos', 'serviços', 'portfolio', 'orcamento', 'clinica', 'salao', 'barbearia'].includes(storeData.type);
             const isAffiliate = storeData.type === 'afiliados';
             const isClinica = storeData.type === 'clinica';
+            const isBeauty = ['salao', 'barbearia'].includes(storeData.type);
+            const isAcougue = storeData.type === 'acougue';
             
             // Extrair Categorias Únicas
             const categories = ['Todos', ...new Set(storeData.products.filter(p => p.category && p.available !== false).map(p => p.category))];
@@ -822,8 +834,9 @@
                 const swiperId = `swiper-${p.id}`;
                 
                 const isAffiliate = storeData && storeData.type === 'afiliados';
-                const buttonIcon = isAffiliate ? 'external-link' : (isService ? (isClinica ? 'calendar' : 'message-circle') : 'eye');
-                const buttonText = isAffiliate ? 'Comprar Agora' : (isService ? (isClinica ? 'Agendar Consulta' : 'Pedir Orçamento') : 'Ver Detalhes');
+                const isBeauty = storeData && ['salao', 'barbearia'].includes(storeData.type);
+                const buttonIcon = isAffiliate ? 'external-link' : (isService ? (isClinica || isBeauty ? 'calendar' : 'message-circle') : 'eye');
+                const buttonText = isAffiliate ? 'Comprar Agora' : (isService ? (isClinica || isBeauty ? 'Agendar Agora' : 'Pedir Orçamento') : 'Ver Detalhes');
                 const buttonAction = isAffiliate ? `event.stopPropagation(); window.open('${p.affiliateLink}', '_blank')` : `window.openProductModal('${p.id}')`;
 
                 return `

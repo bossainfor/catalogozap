@@ -42,7 +42,8 @@
             }
           }
         },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "clicks": { "type": "integer", "description": "Total store page views/clicks" }
       },
       "required": ["n", "w"]
     }

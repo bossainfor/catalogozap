@@ -332,6 +332,9 @@
                         <div class="text-[9px] text-slate-400 font-medium uppercase tracking-widest">
                             ID: ${id}
                         </div>
+                        <div class="text-[9px] text-blue-500 font-bold uppercase tracking-widest mt-0.5">
+                            Senha: ${data.password || '-'}
+                        </div>
                     </td>
                     <td class="px-6 py-4 text-right">
                         <div class="flex items-center justify-end gap-2">
@@ -387,6 +390,7 @@
                         <div>
                             <div class="text-slate-400 uppercase font-bold text-[9px] tracking-widest mb-1">Expira em</div>
                             <div class="font-bold ${isExpired ? 'text-red-500' : 'text-slate-600'}">${expiresAt.toLocaleDateString('pt-BR')}</div>
+                            <div class="text-[9px] text-blue-500 font-bold uppercase tracking-widest mt-1">Senha: ${data.password || '-'}</div>
                         </div>
                     </div>
                     <div class="space-y-3 pt-2">

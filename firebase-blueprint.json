@@ -43,9 +43,10 @@
           }
         },
         "createdAt": { "type": "string", "format": "date-time" },
-        "clicks": { "type": "integer", "description": "Total store page views/clicks" }
+        "clicks": { "type": "integer", "description": "Total store page views/clicks" },
+        "password": { "type": "string", "description": "Editing password chosen by the owner" }
       },
-      "required": ["n", "w"]
+      "required": ["n", "w", "password"]
     }
   },
   "firestore": {

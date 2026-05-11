@@ -104,6 +104,7 @@
                                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Status</th>
                                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Plano</th>
                                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Vendedores</th>
+                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Visitas</th>
                                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Expira em</th>
                                 <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Ações</th>
                             </tr>
@@ -321,6 +322,9 @@
                             <i data-lucide="users" size="14"></i> ${vendorCount} Vendedores
                         </button>
                     </td>
+                    <td class="px-6 py-4 text-center text-xs font-black text-slate-900">
+                        ${data.clicks || 0}
+                    </td>
                     <td class="px-6 py-4">
                         <div class="text-xs font-bold ${isExpired ? 'text-red-500' : 'text-slate-600'}">
                             ${expiresAt.toLocaleDateString('pt-BR')}
@@ -375,6 +379,10 @@
                                 <i data-lucide="phone" size="10"></i> ${data.w || '-'}
                             </a>
                             ${isDuplicate ? '<div class="text-[8px] text-orange-500 font-black uppercase mt-1 flex items-center gap-1"><i data-lucide="alert-triangle" class="w-2 h-2"></i> Número Repetido</div>' : ''}
+                        </div>
+                        <div>
+                            <div class="text-slate-400 uppercase font-bold text-[9px] tracking-widest mb-1">Visitas</div>
+                            <div class="font-bold text-slate-900">${data.clicks || 0}</div>
                         </div>
                         <div>
                             <div class="text-slate-400 uppercase font-bold text-[9px] tracking-widest mb-1">Expira em</div>

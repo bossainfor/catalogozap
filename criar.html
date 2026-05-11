@@ -1129,6 +1129,22 @@
                     const historyData = historySnap.data();
                     window.existingStoreId = historyData.storeId;
                     
+                    // Verifica se a loja já tem senha
+                    const { getDoc, doc } = window.firebaseUtils;
+                    const storeSnap = await getDoc(doc(window.db, "stores", window.existingStoreId));
+                    const hasPassword = storeSnap.exists() && storeSnap.data().password;
+                    
+                    const passInput = document.getElementById('login-password');
+                    const passHint = document.querySelector('#whatsapp-match-msg p.text-[8px]');
+                    
+                    if (!hasPassword) {
+                        passInput.placeholder = "Crie sua Senha (min. 4)";
+                        if (passHint) passHint.innerText = "Este é seu primeiro acesso com senha. Digite uma senha para salvar.";
+                    } else {
+                        passInput.placeholder = "Sua Senha";
+                        if (passHint) passHint.innerText = "Esqueceu a senha? Chame o suporte no botão flutuante.";
+                    }
+
                     // Mostra mensagem de loja encontrada
                     matchMsg.classList.remove('hidden');
 
@@ -1171,8 +1187,9 @@
             }
 
             try {
-                const { doc, getDoc } = window.firebaseUtils;
-                const storeSnap = await getDoc(doc(window.db, "stores", window.existingStoreId));
+                const { doc, getDoc, updateDoc } = window.firebaseUtils;
+                const storeRef = doc(window.db, "stores", window.existingStoreId);
+                const storeSnap = await getDoc(storeRef);
                 
                 if (!storeSnap.exists()) {
                     alert("Erro ao encontrar dados da loja.");
@@ -1183,17 +1200,25 @@
                 
                 // Caso para lojas antigas que ainda não tem senha
                 if (!storeData.password) {
-                    alert("Esta loja ainda não possui senha definida. Por favor, entre em contato com o suporte para configurar seu primeiro acesso.");
-                    return;
+                    if (password.length < 4) {
+                        alert("Sua primeira senha deve ter pelo menos 4 dígitos.");
+                        return;
+                    }
+                    if (confirm("Você ainda não tinha uma senha. Esta será sua nova senha de acesso. Confirmar?")) {
+                        await updateDoc(storeRef, { password: password });
+                    } else {
+                        return;
+                    }
+                } else {
+                    if (storeData.password !== password) {
+                        alert("Senha incorreta! Tente novamente ou chame o suporte.");
+                        return;
+                    }
                 }
 
-                if (storeData.password === password) {
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('edit', window.existingStoreId);
-                    window.location.href = url.toString();
-                } else {
-                    alert("Senha incorreta! Tente novamente ou chame o suporte.");
-                }
+                const url = new URL(window.location.href);
+                url.searchParams.set('edit', window.existingStoreId);
+                window.location.href = url.toString();
             } catch (e) {
                 console.error("Erro no login:", e);
                 alert("Erro ao validar senha.");

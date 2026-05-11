@@ -55,60 +55,67 @@
     <!-- Painel Principal -->
     <div id="admin-panel" class="hidden min-h-screen flex flex-col">
         <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-10 px-4">
-            <div class="max-w-6xl mx-auto h-20 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <img src="https://i.postimg.cc/8cgHJgH8/catalogo.png" alt="CatálogoZap" class="h-14 w-auto" referrerpolicy="no-referrer">
-                    <span class="text-white/50 text-[10px] font-bold uppercase tracking-widest ml-2">Painel Admin</span>
+            <div class="max-w-7xl mx-auto h-20 flex items-center justify-between">
+                <div class="flex items-center gap-2 overflow-hidden">
+                    <img src="https://i.postimg.cc/8cgHJgH8/catalogo.png" alt="CatálogoZap" class="h-10 sm:h-14 w-auto flex-shrink-0" referrerpolicy="no-referrer">
+                    <span class="text-white/50 text-[8px] sm:text-[10px] font-bold uppercase tracking-widest ml-1 sm:ml-2 truncate">Painel Admin</span>
                 </div>
-                    <div class="flex items-center gap-3">
-                        <button onclick="logout()" class="p-2 sm:p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all flex items-center gap-2 font-black uppercase text-[10px] sm:text-xs tracking-widest shrink-0">
-                            <i data-lucide="log-out" class="w-4 h-4 sm:w-5 sm:h-5"></i>
-                            <span class="hidden sm:inline">Sair</span>
-                        </button>
-                    </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="logout()" class="p-2 sm:p-3 bg-red-500/10 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all flex items-center gap-2 font-black uppercase text-[10px] sm:text-xs tracking-widest shrink-0">
+                        <i data-lucide="log-out" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                        <span class="hidden sm:inline">Sair</span>
+                    </button>
+                </div>
             </div>
         </header>
 
-        <main class="max-w-6xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 space-y-6">
-            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <main class="max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+            <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
                 <div class="text-center lg:text-left">
                     <h2 class="text-3xl sm:text-4xl font-black uppercase italic tracking-tighter">Gerenciar Lojas</h2>
                     <p class="text-slate-500 font-medium text-sm">Controle de assinaturas e status dos clientes</p>
                 </div>
                 <div class="flex flex-col md:flex-row gap-3 w-full lg:w-auto">
-                    <div class="relative flex-1 lg:w-64">
-                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
-                        <input type="text" id="search-input" oninput="filterStores()" placeholder="Buscar loja ou cliente..." class="w-full pl-10 pr-4 py-4 sm:py-3 bg-white border border-slate-200 rounded-2xl sm:rounded-xl text-sm focus:outline-none focus:border-slate-900 shadow-sm">
+                    <div class="relative flex-1 lg:w-72">
+                        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
+                        <input type="text" id="search-input" oninput="filterStores()" placeholder="Buscar loja, cliente ou zap..." class="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-2xl sm:rounded-xl text-sm focus:outline-none focus:border-slate-900 shadow-sm font-bold">
                     </div>
                     
                     <div class="flex bg-white p-1 rounded-2xl border border-slate-200 shadow-sm overflow-x-auto no-scrollbar shrink-0">
-                        <button onclick="renderStores(allStores)" class="px-4 py-2 sm:py-3 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all bg-slate-900 text-white shadow-lg whitespace-nowrap">Todas</button>
-                        <button onclick="filterByStatus('active')" class="px-4 py-2 sm:py-3 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all text-slate-400 hover:text-slate-600 whitespace-nowrap">Ativas</button>
-                        <button onclick="filterByStatus('expired')" class="px-4 py-2 sm:py-3 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all text-slate-400 hover:text-slate-600 whitespace-nowrap">Expiradas</button>
+                        <button onclick="renderStores(allStores)" class="px-5 py-3 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all bg-slate-900 text-white shadow-lg whitespace-nowrap">Todas</button>
+                        <button onclick="filterByStatus('active')" class="px-5 py-3 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all text-slate-400 hover:text-slate-600 whitespace-nowrap">Ativas</button>
+                        <button onclick="filterByStatus('expired')" class="px-5 py-3 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all text-slate-400 hover:text-slate-600 whitespace-nowrap">Expiradas</button>
                     </div>
 
-                    <button onclick="loadStores()" class="bg-white border border-slate-200 px-6 py-4 sm:py-3 rounded-2xl sm:rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-50 shadow-sm active:scale-95 transition-all shrink-0">
-                        <i data-lucide="refresh-cw" class="w-4 h-4"></i> Atualizar
+                    <button onclick="loadStores()" class="bg-white border border-slate-200 px-6 py-4 rounded-2xl sm:rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-50 shadow-sm active:scale-95 transition-all shrink-0">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i> <span class="hidden sm:inline">Atualizar</span>
                     </button>
                 </div>
             </div>
 
             <div class="bg-white rounded-[2rem] sm:rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
-                <!-- Desktop Table View -->
+                <!-- Desktop Table View (Scroll horizontal for tablets/small laptops) -->
                 <div class="hidden md:block overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-50 border-b border-slate-100">
-                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Loja / Cliente</th>
-                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">WhatsApp</th>
-                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Status</th>
-                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Plano</th>
-                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Vendedores</th>
-                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-center">Visitas</th>
-                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Expira em</th>
-                                <th class="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Ações</th>
-                            </tr>
-                        </thead>
+                    <div class="min-w-[1000px]">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-100 uppercase tracking-tighter">
+                                    <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400">Loja / Cliente</th>
+                                    <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400">WhatsApp</th>
+                                    <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400 text-center">Status</th>
+                                    <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400 text-center">Plano</th>
+                                    <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400 text-center">Vendedores</th>
+                                    <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400 text-center">Visitas</th>
+                                    <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400">Expiração / Senha</th>
+                                    <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400 text-right">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="stores-table-body">
+                                <!-- Lojas serão carregadas aqui -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
                         <tbody id="stores-table-body">
                             <!-- Lojas serão carregadas aqui -->
                         </tbody>
@@ -301,42 +308,40 @@
                 const row = document.createElement('tr');
                 row.className = "border-b border-slate-50 hover:bg-slate-50/50 transition-colors";
                 row.innerHTML = `
-                    <td class="px-6 py-4">
-                        <div class="font-bold text-sm">${data.n || 'Sem Nome'}</div>
-                        <div class="text-[10px] text-slate-400 font-medium uppercase tracking-widest">${data.cn || 'Dono não informado'}</div>
+                    <td class="px-6 py-5">
+                        <div class="font-black text-sm text-slate-900 uppercase italic tracking-tighter">${data.n || 'Sem Nome'}</div>
+                        <div class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">${data.cn || 'Dono não informado'}</div>
                     </td>
-                    <td class="px-6 py-4">
-                        <a href="https://wa.me/55${data.w}" target="_blank" class="text-xs font-bold text-slate-600 hover:text-green-500 flex items-center gap-1">
-                            <i data-lucide="phone" size="12"></i> ${data.w || '-'}
+                    <td class="px-6 py-5">
+                        <a href="https://wa.me/55${data.w}" target="_blank" class="text-xs font-black text-slate-600 hover:text-green-500 flex items-center gap-1 transition-colors">
+                            <i data-lucide="phone" class="w-3 h-3 text-green-500"></i> ${data.w || '-'}
                         </a>
-                        ${isDuplicate ? '<div class="text-[8px] text-orange-500 font-black uppercase mt-1 flex items-center gap-1"><i data-lucide="alert-triangle" class="w-2 h-2"></i> Número Repetido</div>' : ''}
+                        ${isDuplicate ? '<div class="text-[8px] text-orange-500 font-black uppercase mt-1 flex items-center gap-1"><i data-lucide="alert-triangle" class="w-2 h-2"></i> Repetido</div>' : ''}
                     </td>
-                    <td class="px-6 py-4 text-center">
+                    <td class="px-6 py-5 text-center">
                         ${statusBadge}
                     </td>
-                    <td class="px-6 py-4 text-center">
+                    <td class="px-6 py-5 text-center">
                         ${planBadge}
                     </td>
-                    <td class="px-6 py-4 text-center">
-                        <button onclick="showVendors('${id}')" class="text-xs font-bold ${vendorCount > 0 ? 'text-indigo-600' : 'text-slate-400'} hover:text-blue-600 flex items-center justify-center gap-1 mx-auto transition-all">
-                            <i data-lucide="users" size="14"></i> ${vendorCount} Vendedores
+                    <td class="px-6 py-5 text-center">
+                        <button onclick="showVendors('${id}')" class="text-xs font-black ${vendorCount > 0 ? 'text-indigo-600' : 'text-slate-400'} hover:text-blue-600 flex items-center justify-center gap-1 mx-auto transition-all">
+                            <i data-lucide="users" class="w-3.5 h-3.5"></i> ${vendorCount} Vendedores
                         </button>
                     </td>
-                    <td class="px-6 py-4 text-center text-xs font-black text-slate-900">
+                    <td class="px-6 py-5 text-center text-xs font-black text-slate-900">
                         ${data.clicks || 0}
                     </td>
-                    <td class="px-6 py-4">
+                    <td class="px-6 py-5">
                         <div class="text-xs font-bold ${isExpired ? 'text-red-500' : 'text-slate-600'}">
                             ${expiresAt.toLocaleDateString('pt-BR')}
                         </div>
-                        <div class="text-[9px] text-slate-400 font-medium uppercase tracking-widest">
-                            ID: ${id}
+                        <div class="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-50 border border-blue-100 rounded-lg text-[9px] text-blue-600 font-black uppercase tracking-widest mt-1">
+                            <i data-lucide="key" class="w-2.5 h-2.5"></i> ${data.password || 'SEM SENHA'}
                         </div>
-                        <div class="text-[9px] text-blue-500 font-bold uppercase tracking-widest mt-0.5">
-                            Senha: ${data.password || '-'}
-                        </div>
+                        <div class="text-[8px] text-slate-400 font-medium uppercase tracking-widest block mt-0.5">ID: ${id}</div>
                     </td>
-                    <td class="px-6 py-4 text-right">
+                    <td class="px-6 py-5 text-right">
                         <div class="flex items-center justify-end gap-2">
                             <button onclick="activateStore('${id}', '${data.expiresAt}')" title="Ativar +30 dias" class="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
                                 <i data-lucide="calendar-plus" size="16"></i>
@@ -363,66 +368,75 @@
 
                 // Mobile Card
                 const card = document.createElement('div');
-                card.className = "p-6 space-y-4";
+                card.className = "p-5 sm:p-6 space-y-5";
                 card.innerHTML = `
                     <div class="flex justify-between items-start">
                         <div>
-                            <div class="font-bold text-base">${data.n || 'Sem Nome'}</div>
-                            <div class="text-[10px] text-slate-400 font-medium uppercase tracking-widest">${data.cn || 'Dono não informado'}</div>
+                            <div class="font-black text-base text-slate-900 uppercase italic tracking-tighter">${data.n || 'Sem Nome'}</div>
+                            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">${data.cn || 'Dono não informado'}</div>
                         </div>
-                        <div class="flex flex-col items-end gap-1">
+                        <div class="flex flex-col items-end gap-1.5">
                             ${statusBadge}
                             ${planBadge}
                         </div>
                     </div>
+                    
                     <div class="grid grid-cols-2 gap-4 text-xs">
-                        <div>
-                            <div class="text-slate-400 uppercase font-bold text-[9px] tracking-widest mb-1">WhatsApp</div>
-                            <a href="https://wa.me/55${data.w}" target="_blank" class="font-bold text-slate-600 flex items-center gap-1">
-                                <i data-lucide="phone" size="10"></i> ${data.w || '-'}
+                        <div class="bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+                            <div class="text-slate-400 uppercase font-black text-[9px] tracking-widest mb-1.5">WhatsApp</div>
+                            <a href="https://wa.me/55${data.w}" target="_blank" class="font-black text-slate-800 flex items-center gap-1 hover:text-green-500 transition-colors">
+                                <i data-lucide="phone" class="w-3 h-3 text-green-500"></i> ${data.w || '-'}
                             </a>
-                            ${isDuplicate ? '<div class="text-[8px] text-orange-500 font-black uppercase mt-1 flex items-center gap-1"><i data-lucide="alert-triangle" class="w-2 h-2"></i> Número Repetido</div>' : ''}
+                            ${isDuplicate ? '<div class="text-[8px] text-orange-500 font-black uppercase mt-1 flex items-center gap-1"><i data-lucide="alert-triangle" class="w-2 h-2"></i> Repetido</div>' : ''}
                         </div>
-                        <div>
-                            <div class="text-slate-400 uppercase font-bold text-[9px] tracking-widest mb-1">Visitas</div>
-                            <div class="font-bold text-slate-900">${data.clicks || 0}</div>
+                        <div class="bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+                            <div class="text-slate-400 uppercase font-black text-[9px] tracking-widest mb-1.5">Métricas</div>
+                            <div class="font-black text-slate-900 flex items-center gap-1">
+                                <i data-lucide="eye" class="w-3 h-3 text-slate-400"></i> ${data.clicks || 0} Visitas
+                            </div>
                         </div>
-                        <div>
-                            <div class="text-slate-400 uppercase font-bold text-[9px] tracking-widest mb-1">Expira em</div>
-                            <div class="font-bold ${isExpired ? 'text-red-500' : 'text-slate-600'}">${expiresAt.toLocaleDateString('pt-BR')}</div>
-                            <div class="text-[9px] text-blue-500 font-bold uppercase tracking-widest mt-1">Senha: ${data.password || '-'}</div>
+                        <div class="bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
+                            <div class="text-slate-400 uppercase font-black text-[9px] tracking-widest mb-1.5">Expiração</div>
+                            <div class="font-black ${isExpired ? 'text-red-500' : 'text-slate-800'}">${expiresAt.toLocaleDateString('pt-BR')}</div>
+                        </div>
+                        <div class="bg-blue-50/50 p-3 rounded-2xl border border-blue-100 shadow-sm">
+                            <div class="text-blue-400 uppercase font-black text-[9px] tracking-widest mb-1.5">Senha de Acesso</div>
+                            <div class="font-black text-blue-600 flex items-center gap-1">
+                                <i data-lucide="key" class="w-3 h-3"></i> ${data.password || '---'}
+                            </div>
                         </div>
                     </div>
+
                     <div class="space-y-3 pt-2">
                         <div class="flex items-center gap-2 w-full">
-                            <button onclick="activateStore('${id}', '${data.expiresAt}')" class="flex-1 py-3 bg-green-50 text-green-600 rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all border border-green-100">
-                                <i data-lucide="calendar-plus" size="14"></i> Ativar
+                            <button onclick="activateStore('${id}', '${data.expiresAt}')" class="flex-1 py-3 bg-green-500 text-white rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md shadow-green-100/50">
+                                <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i> Ativar
                             </button>
-                            <button onclick="togglePlan('${id}', '${plan}')" class="flex-1 py-3 ${planColorClass} rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all border border-transparent">
-                                 <i data-lucide="${planIconAction}" size="14" class="${plan === 'free' ? '' : 'fill-current'}"></i> Plano
+                            <button onclick="togglePlan('${id}', '${plan}')" class="flex-1 py-3 bg-slate-900 text-white rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
+                                 <i data-lucide="${planIconAction}" class="w-3.5 h-3.5 ${plan === 'free' ? '' : 'fill-current'}"></i> Plano
                             </button>
                         </div>
                         <div class="flex items-center gap-2 w-full">
-                            <button onclick="showVendors('${id}')" class="flex-1 py-3 bg-indigo-50 text-indigo-600 rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all border border-indigo-100">
-                                <i data-lucide="users" size="14"></i> Vend
+                            <button onclick="showVendors('${id}')" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md shadow-indigo-100/50">
+                                <i data-lucide="users" class="w-3.5 h-3.5"></i> Vend. (${vendorCount})
                             </button>
                             <button onclick="blockStore('${id}')" class="flex-1 py-3 bg-orange-50 text-orange-600 rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all border border-orange-100">
-                                <i data-lucide="lock" size="14"></i> Bloq
+                                <i data-lucide="lock" class="w-3.5 h-3.5"></i> Bloq
                             </button>
                         </div>
-                        <div class="flex items-center gap-2 w-full">
+                        <div class="flex items-center gap-2 w-full pt-1">
                             <button onclick="copyEditLink('${id}')" class="flex-1 py-3 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center active:scale-95 transition-all border border-blue-100" title="Copiar Link">
-                                <i data-lucide="copy" size="16"></i>
+                                <i data-lucide="copy" class="w-4 h-4"></i>
                             </button>
                             <a href="loja.html?id=${id}" target="_blank" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center active:scale-95 transition-all border border-slate-200" title="Ver Loja">
-                                <i data-lucide="external-link" size="16"></i>
+                                <i data-lucide="external-link" class="w-4 h-4"></i>
                             </a>
                             <button onclick="deleteStore('${id}')" class="flex-1 py-3 bg-red-50 text-red-600 rounded-xl flex items-center justify-center active:scale-95 transition-all border border-red-100" title="Excluir">
-                                <i data-lucide="trash-2" size="16"></i>
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
                             </button>
                         </div>
                     </div>
-                    <div class="text-[9px] text-slate-300 font-medium uppercase tracking-widest text-center">ID: ${id}</div>
+                    <div class="text-[8px] text-slate-400 font-bold uppercase tracking-widest text-center">ID: ${id}</div>
                 `;
                 mobileList.appendChild(card);
             });

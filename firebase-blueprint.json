@@ -42,32 +42,15 @@
             }
           }
         },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "resellerId": { "type": "string", "description": "ID of the reseller who owns this store" }
-      },
-      "required": ["n", "w"]
-    },
-    "Reseller": {
-      "title": "Reseller",
-      "description": "System Reseller",
-      "type": "object",
-      "properties": {
-        "name": { "type": "string" },
-        "email": { "type": "string" },
-        "status": { "type": "string", "enum": ["active", "blocked"] },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["name", "email"]
+      "required": ["n", "w"]
     }
   },
   "firestore": {
     "/stores/{storeId}": {
       "schema": "Store",
       "description": "Public store data"
-    },
-    "/resellers/{resellerId}": {
-      "schema": "Reseller",
-      "description": "Reseller account data"
     }
   }
 }

@@ -86,7 +86,45 @@
             </div>
 
             <div class="p-8 space-y-10">
+                <!-- SEÇÃO DE LOGIN/ACESSO RÁPIDO -->
+                <section class="bg-blue-50/50 p-6 sm:p-8 rounded-[2rem] border border-blue-100">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                        <div class="space-y-1">
+                            <h3 class="text-blue-900 font-black uppercase italic tracking-tighter text-xl">Já sou cadastrado</h3>
+                            <p class="text-[10px] text-blue-500 font-bold uppercase tracking-widest">Acesse sua loja para editar produtos</p>
+                        </div>
+                        <div class="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg shadow-blue-200">
+                            <i data-lucide="user-check" class="w-5 h-5"></i>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div class="space-y-1.5">
+                            <label class="text-[9px] font-black uppercase tracking-widest text-blue-400 ml-1">Número do WhatsApp</label>
+                            <input type="text" id="login-whatsapp" placeholder="DDD + Número" class="w-full px-5 py-4 rounded-2xl bg-white border border-blue-100 outline-none font-bold text-sm focus:border-blue-500 transition-all">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[9px] font-black uppercase tracking-widest text-blue-400 ml-1">Sua Senha</label>
+                            <input type="password" id="login-pass" placeholder="****" class="w-full px-5 py-4 rounded-2xl bg-white border border-blue-100 outline-none font-bold text-sm focus:border-blue-500 transition-all">
+                        </div>
+                        <div class="sm:col-span-2 lg:col-span-1 flex items-end">
+                            <button onclick="window.directLogin()" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase italic tracking-widest text-xs hover:bg-blue-700 transition-all active-scale shadow-lg shadow-blue-100 flex items-center justify-center gap-2">
+                                <i data-lucide="log-in" class="w-4 h-4"></i> Entrar no Painel
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- SEÇÃO DE CRIAÇÃO -->
                 <section class="space-y-6">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="bg-orange-100 text-orange-600 w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm">
+                            <i data-lucide="plus-circle" class="w-6 h-6"></i>
+                        </div>
+                        <div class="space-y-0.5">
+                            <h3 class="text-slate-900 font-black uppercase italic tracking-tighter text-2xl">Novo Cadastro</h3>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Crie sua loja em menos de 1 minuto</p>
+                        </div>
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div class="space-y-2">
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Seu Nome (Responsável)</label>
@@ -98,23 +136,17 @@
                         </div>
                         <div class="space-y-2">
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">WhatsApp (DDD + Número)</label>
-                            <input type="text" id="whatsapp" oninput="window.saveDraft(); window.checkWhatsApp(this.value)" placeholder="Ex: 11999999999" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
-                            <div id="whatsapp-match-msg" class="hidden mt-2 p-4 bg-blue-50 rounded-[1.5rem] border border-blue-100 space-y-3">
-                                <div class="flex items-center justify-between">
-                                    <p class="text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2">
-                                        <i data-lucide="check-circle" class="w-3 h-3"></i> Loja encontrada!
-                                    </p>
-                                </div>
-                                <div class="flex gap-2">
-                                    <input type="password" id="login-password" placeholder="Sua Senha" class="flex-1 px-4 py-3 rounded-xl bg-white border border-blue-200 outline-none text-xs font-bold">
-                                    <button onclick="window.loadFoundStoreWithAuth()" class="bg-blue-600 text-white px-4 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all">Entrar</button>
-                                </div>
-                                <p class="text-[8px] text-blue-400 font-medium tracking-tight">Esqueceu a senha? Chame o suporte no botão flutuante.</p>
+                            <input type="text" id="whatsapp" oninput="window.saveDraft(); window.checkWhatsApp(this.value)" placeholder="Ex: 85999999999" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                            <div id="whatsapp-match-msg" class="hidden mt-2 p-4 bg-orange-50 rounded-[1.5rem] border border-orange-100">
+                                <p class="text-[10px] font-black text-orange-600 uppercase tracking-widest flex items-center gap-2">
+                                    <i data-lucide="info" class="w-3.5 h-3.5"></i> Este número já possui uma loja! 
+                                </p>
+                                <p class="text-[8px] text-orange-500 mt-1 font-medium italic">Use a seção "Já sou cadastrado" acima para acessar.</p>
                             </div>
                         </div>
                         <div class="space-y-2">
-                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Sua Senha de Edição (Mín. 4 dígitos)</label>
-                            <input type="password" id="password" oninput="window.saveDraft()" placeholder="Escolha uma senha" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Crie uma Senha (Mín. 4 dígitos)</label>
+                            <input type="password" id="password" oninput="window.saveDraft()" placeholder="Senha para editar depois" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
                         </div>
                         <div class="space-y-2 md:col-span-2">
                             <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Endereço da Loja</label>
@@ -1129,38 +1161,17 @@
                     const historyData = historySnap.data();
                     window.existingStoreId = historyData.storeId;
                     
-                    // Verifica se a loja já tem senha
-                    const { getDoc, doc } = window.firebaseUtils;
-                    const storeSnap = await getDoc(doc(window.db, "stores", window.existingStoreId));
-                    const hasPassword = storeSnap.exists() && storeSnap.data().password;
-                    
-                    const passInput = document.getElementById('login-password');
-                    const passHint = document.querySelector('#whatsapp-match-msg p.text-[8px]');
-                    
-                    if (!hasPassword) {
-                        passInput.placeholder = "Crie sua Senha (min. 4)";
-                        if (passHint) passHint.innerText = "Este é seu primeiro acesso com senha. Digite uma senha para salvar.";
-                    } else {
-                        passInput.placeholder = "Sua Senha";
-                        if (passHint) passHint.innerText = "Esqueceu a senha? Chame o suporte no botão flutuante.";
-                    }
-
-                    // Mostra mensagem de loja encontrada
+                    // Mostra mensagem de loja encontrada avisando para logar acima
                     matchMsg.classList.remove('hidden');
 
-                    // Muda para modo ATUALIZAR
+                    // Muda para modo ATUALIZAR (ainda permite tentar atualizar se a pessoa preencher tudo, mas o login é o ideal)
                     btn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
                     btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
                     if (btnText) btnText.innerText = "Atualizar Meu Catálogo";
                     if (btnIcon) btnIcon.setAttribute('data-lucide', 'refresh-cw');
 
-                    // Oferece carregar os dados se o formulário estiver vazio
-                    const storeName = document.getElementById('store-name').value;
-                    if (!storeName || storeName === '') {
-                        if (confirm(`Encontramos sua loja "${historyData.storeId}". Deseja carregar os dados dela para continuar editando?`)) {
-                            window.loadFoundStore();
-                        }
-                    }
+                    // Preenche o campo de login para facilitar
+                    document.getElementById('login-whatsapp').value = whatsappClean;
                 } else {
                     window.existingStoreId = null;
                     matchMsg.classList.add('hidden');
@@ -1176,52 +1187,58 @@
             }
         }
 
-        window.loadFoundStoreWithAuth = async function() {
-            if (!window.existingStoreId) return;
-            const passInput = document.getElementById('login-password');
-            const password = passInput.value.trim();
-            
-            if (!password) {
-                alert("Digite sua senha para entrar.");
+        window.directLogin = async function() {
+            const whatsapp = document.getElementById('login-whatsapp').value.replace(/\D/g, '');
+            const password = document.getElementById('login-pass').value.trim();
+
+            if (!whatsapp || !password) {
+                alert("Preencha WhatsApp e Senha para entrar.");
                 return;
             }
 
             try {
-                const { doc, getDoc, updateDoc } = window.firebaseUtils;
-                const storeRef = doc(window.db, "stores", window.existingStoreId);
-                const storeSnap = await getDoc(storeRef);
+                // Aguarda o Firebase inicializar
+                let attempts = 0;
+                while ((!window.db || !window.firebaseUtils) && attempts < 50) {
+                    await new Promise(r => setTimeout(r, 100));
+                    attempts++;
+                }
+
+                const { doc, getDoc } = window.firebaseUtils;
+                const historySnap = await getDoc(doc(window.db, "trial_history", whatsapp));
+                
+                if (!historySnap.exists()) {
+                    alert("Loja não encontrada para este número. Crie uma nova abaixo!");
+                    return;
+                }
+
+                const storeId = historySnap.data().storeId;
+                const storeSnap = await getDoc(doc(window.db, "stores", storeId));
                 
                 if (!storeSnap.exists()) {
-                    alert("Erro ao encontrar dados da loja.");
+                    alert("Dados da loja não encontrados.");
                     return;
                 }
 
                 const storeData = storeSnap.data();
-                
-                // Caso para lojas antigas que ainda não tem senha
+
+                // Lógica de senha para lojas antigas ou novas
                 if (!storeData.password) {
-                    if (password.length < 4) {
-                        alert("Sua primeira senha deve ter pelo menos 4 dígitos.");
-                        return;
-                    }
-                    if (confirm("Você ainda não tinha uma senha. Esta será sua nova senha de acesso. Confirmar?")) {
-                        await updateDoc(storeRef, { password: password });
+                    if (confirm("Você ainda não tinha uma senha. Esta senha digitada será salva como sua nova senha. Confirmar?")) {
+                        const { updateDoc } = window.firebaseUtils;
+                        await updateDoc(doc(window.db, "stores", storeId), { password: password });
                     } else {
                         return;
                     }
-                } else {
-                    if (storeData.password !== password) {
-                        alert("Senha incorreta! Tente novamente ou chame o suporte.");
-                        return;
-                    }
+                } else if (storeData.password !== password) {
+                    alert("Senha incorreta!");
+                    return;
                 }
 
-                const url = new URL(window.location.href);
-                url.searchParams.set('edit', window.existingStoreId);
-                window.location.href = url.toString();
+                window.location.href = `criar.html?edit=${storeId}`;
             } catch (e) {
                 console.error("Erro no login:", e);
-                alert("Erro ao validar senha.");
+                alert("Erro ao validar acesso.");
             }
         }
 

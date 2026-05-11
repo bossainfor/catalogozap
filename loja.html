@@ -721,7 +721,10 @@
             }
 
             message += `\n\n*Total: ${formatCurrency(total)}*`;
-            window.open(`https://wa.me/55${storeData.whatsapp}?text=${encodeURIComponent(message)}`, '_blank');
+            
+            let whatsapp = storeData.whatsapp.replace(/\D/g, '');
+            if (whatsapp.length <= 11) whatsapp = '55' + whatsapp;
+            window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`, '_blank');
         }
 
         function requestQuote(productId, variations = '') {
@@ -735,7 +738,10 @@
             } else {
                 message = `*Pedido de Orçamento - ${storeData.name}*\n\nOlá! Gostaria de solicitar um orçamento para:\n*${product.name}*\n${variations ? `*Opções:* ${variations}\n` : ''}\nAguardo seu retorno!`;
             }
-            window.open(`https://wa.me/55${storeData.whatsapp}?text=${encodeURIComponent(message)}`, '_blank');
+            
+            let whatsapp = storeData.whatsapp.replace(/\D/g, '');
+            if (whatsapp.length <= 11) whatsapp = '55' + whatsapp;
+            window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`, '_blank');
         }
 
         window.filterByCategory = function(cat) {

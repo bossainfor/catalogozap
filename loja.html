@@ -21,7 +21,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -41,7 +41,7 @@
         signInAnonymously(auth).catch(err => console.error("Erro no login anônimo:", err));
 
         window.db = db;
-        window.firebaseUtils = { doc, getDoc, updateDoc };
+        window.firebaseUtils = { doc, getDoc, updateDoc, increment };
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
@@ -453,6 +453,16 @@
                 const docSnap = await getDoc(doc(window.db, "stores", storeId));
 
                 if (!docSnap.exists()) return null;
+
+                // Click Tracker Global
+                try {
+                    const { updateDoc, increment, doc } = window.firebaseUtils;
+                    await updateDoc(doc(window.db, "stores", storeId), {
+                        clicks: increment(1)
+                    });
+                } catch (e) {
+                    console.error("Erro ao registrar acesso:", e);
+                }
 
                 const data = docSnap.data();
                 console.log("Dados do Catálogo:", data);

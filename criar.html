@@ -1477,13 +1477,11 @@
                     window.vendors = data.v || [];
                     window.shippingZones = data.sh || [];
                     
-                    if (data.clicks !== undefined) {
-                        const statsCont = document.getElementById('stats-container');
-                        const clicksEl = document.getElementById('total-clicks');
-                        if (statsCont && clicksEl) {
-                            statsCont.classList.remove('hidden');
-                            clicksEl.innerText = data.clicks;
-                        }
+                    const statsCont = document.getElementById('stats-container');
+                    const clicksEl = document.getElementById('total-clicks');
+                    if (statsCont && clicksEl) {
+                        statsCont.classList.remove('hidden');
+                        clicksEl.innerText = data.clicks || 0;
                     }
                     
                     if (data.lg) document.getElementById('store-logo').value = data.lg;

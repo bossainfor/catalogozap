@@ -8,6 +8,25 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAJaxRdA6uzbN41JvAw8xO7F5mzJaDfMBc",
+            authDomain: "gen-lang-client-0664324166.firebaseapp.com",
+            projectId: "gen-lang-client-0664324166",
+            storageBucket: "gen-lang-client-0664324166.firebasestorage.app",
+            messagingSenderId: "1074933311707",
+            appId: "1:1074933311707:web:d841b61f84c05a40fe04fe"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app, "ai-studio-2395f72f-4dac-4517-9681-c654cd1a03ca");
+
+        window.db = db;
+        window.firebaseUtils = { doc, getDoc, setDoc, updateDoc };
+    </script>
     <style>
         body { font-family: 'Inter', sans-serif; }
         .img-container { 
@@ -21,6 +40,7 @@
         }
         .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; }
         .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 2rem; }
+        .active-scale:active { transform: scale(0.95); transition: transform 0.1s; }
     </style>
 </head>
 <body class="bg-slate-900 text-white">
@@ -47,10 +67,43 @@
                 </div>
             </div>
 
-            <div class="pt-16 pb-12">
+            <div class="pt-12 pb-6 flex flex-col items-center gap-10">
                 <a href="criar.html" class="inline-flex items-center gap-3 px-12 py-6 bg-[#25D366] text-slate-900 rounded-3xl font-black uppercase italic tracking-widest text-xl hover:bg-[#128C7E] hover:text-white transition-all shadow-[0_20px_50px_rgba(37,211,102,0.3)] hover:scale-105 active:scale-95">
                     <i data-lucide="zap"></i> Criar Agora
                 </a>
+
+                <div id="login-container" class="w-full max-w-sm bg-white/5 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 space-y-4">
+                    <div class="text-center">
+                        <h4 class="font-black uppercase italic tracking-tighter text-base">Já tem um catálogo?</h4>
+                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Entre para editar seus produtos</p>
+                    </div>
+                    
+                    <div class="space-y-3" id="login-inputs">
+                        <div class="relative text-left">
+                            <i data-lucide="phone" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4"></i>
+                            <input type="text" id="login-whatsapp" placeholder="WhatsApp (DDD + Número)" class="w-full pl-11 pr-5 py-4 bg-white/10 border border-white/10 rounded-2xl outline-none focus:border-[#25D366] transition-all font-bold text-xs">
+                        </div>
+                        <div class="relative text-left" id="pass-field-container">
+                            <i data-lucide="lock" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4"></i>
+                            <input type="password" id="login-password" placeholder="Sua Senha" class="w-full pl-11 pr-5 py-4 bg-white/10 border border-white/10 rounded-2xl outline-none focus:border-[#25D366] transition-all font-bold text-xs">
+                        </div>
+                        <button onclick="handleLogin()" id="login-btn" class="w-full py-4 bg-white text-slate-900 rounded-2xl font-black uppercase italic tracking-widest text-xs hover:bg-[#25D366] hover:text-white transition-all active-scale shadow-lg">
+                            Entrar no Meu Painel
+                        </button>
+                    </div>
+
+                    <div id="first-access-msg" class="hidden p-5 bg-blue-500/20 rounded-2xl border border-blue-500/30 text-center space-y-4">
+                        <div>
+                            <p class="text-[10px] font-black uppercase text-blue-400 mb-1">Primeiro Acesso!</p>
+                            <p class="text-[9px] text-blue-200">Defina uma senha de 4 dígitos para proteger sua página.</p>
+                        </div>
+                        <input type="password" id="new-password" placeholder="Escolha uma senha" class="w-full px-5 py-4 bg-white border-2 border-transparent focus:border-blue-500 rounded-2xl outline-none font-bold text-xs text-slate-900">
+                        <button onclick="saveFirstPassword()" class="w-full py-4 bg-blue-500 text-white rounded-2xl font-black uppercase italic tracking-widest text-xs shadow-lg active-scale">
+                           Salvar e Entrar
+                        </button>
+                        <button onclick="cancelFirstAccess()" class="text-[8px] text-blue-300 uppercase font-bold tracking-widest underline">Voltar</button>
+                    </div>
+                </div>
             </div>
 
             <!-- EXEMPLOS REAIS -->
@@ -211,6 +264,101 @@
         &copy; 2026 Desenvolvido por Bossa Infor - Vitrine Digital Profissional
     </footer>
 
-    <script>lucide.createIcons();</script>
+    <script>
+        lucide.createIcons();
+
+        let currentStoreId = null;
+
+        window.handleLogin = async function() {
+            const whatsapp = document.getElementById('login-whatsapp').value.replace(/\D/g, '');
+            const password = document.getElementById('login-password').value.trim();
+            const btn = document.getElementById('login-btn');
+
+            if (!whatsapp) {
+                alert("Digite seu WhatsApp.");
+                return;
+            }
+
+            btn.innerText = "Verificando...";
+            btn.disabled = true;
+
+            try {
+                const { doc, getDoc } = window.firebaseUtils;
+                
+                // Procurar loja pelo ID no formato slug (o whatsapp é a base do ID em muitos casos, ou o ID é gerado)
+                // Mas no sistema atual, o WhatsApp é um campo 'w' nas stores.
+                // Vou precisar fazer uma query. Mas como não tenho query importada no index, vou usar o ID direto se possível
+                // ou atualizar as regras. 
+                // Ah, o criar.html usa `stores` com IDs aleatórios agora? 
+                // Melhor usar query por whatsapp.
+                
+                // Importar query e collection se necessário
+                const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+                
+                const q = query(collection(window.db, "stores"), where("w", "==", whatsapp));
+                const querySnap = await getDocs(q);
+
+                if (querySnap.empty) {
+                    alert("WhatsApp não encontrado. Clique em 'Criar Agora'.");
+                    btn.innerText = "Entrar no Meu Painel";
+                    btn.disabled = false;
+                    return;
+                }
+
+                const storeDoc = querySnap.docs[0];
+                const storeData = storeDoc.data();
+                currentStoreId = storeDoc.id;
+
+                // Verificação de senha
+                if (!storeData.password) {
+                    // Primeiro acesso
+                    document.getElementById('login-inputs').classList.add('hidden');
+                    document.getElementById('first-access-msg').classList.remove('hidden');
+                } else {
+                    if (!password) {
+                        alert("Digite sua senha.");
+                        btn.innerText = "Entrar no Meu Painel";
+                        btn.disabled = false;
+                        return;
+                    }
+
+                    if (storeData.password === password) {
+                        window.location.href = `criar.html?edit=${currentStoreId}`;
+                    } else {
+                        alert("Senha incorreta!");
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao entrar. Tente novamente.");
+            } finally {
+                btn.innerText = "Entrar no Meu Painel";
+                btn.disabled = false;
+            }
+        }
+
+        window.saveFirstPassword = async function() {
+            const newPass = document.getElementById('new-password').value.trim();
+            if (newPass.length < 4) {
+                alert("A senha deve ter pelo menos 4 dígitos.");
+                return;
+            }
+
+            try {
+                const { doc, updateDoc } = window.firebaseUtils;
+                await updateDoc(doc(window.db, "stores", currentStoreId), {
+                    password: newPass
+                });
+                window.location.href = `criar.html?edit=${currentStoreId}`;
+            } catch (e) {
+                alert("Erro ao salvar senha.");
+            }
+        }
+
+        window.cancelFirstAccess = function() {
+            document.getElementById('login-inputs').classList.remove('hidden');
+            document.getElementById('first-access-msg').classList.add('hidden');
+        }
+    </script>
 </body>
 </html>

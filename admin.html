@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getStorage, ref, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
         const firebaseConfig = {
@@ -26,7 +26,7 @@
 
         window.db = db;
         window.storage = storage;
-        window.fs = { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, getDoc };
+        window.fs = { collection, getDocs, doc, updateDoc, deleteDoc, query, orderBy, getDoc, setDoc };
         window.st = { ref, deleteObject };
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -348,6 +348,12 @@
                     </td>
                     <td class="px-6 py-5 text-right">
                         <div class="flex items-center justify-end gap-2">
+                            <button onclick="editStoreInfo('${id}')" title="Editar Info Básica" class="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                                <i data-lucide="settings" size="16"></i>
+                            </button>
+                            <button onclick="cloneStore('${id}')" title="Clonar Loja" class="p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors">
+                                <i data-lucide="copy" size="16"></i>
+                            </button>
                             <button onclick="activateStore('${id}', '${data.expiresAt}')" title="Ativar +30 dias" class="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
                                 <i data-lucide="calendar-plus" size="16"></i>
                             </button>
@@ -361,10 +367,10 @@
                                 <i data-lucide="trash-2" size="16"></i>
                             </button>
                             <button onclick="copyEditLink('${id}')" title="Copiar Link de Edição" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
-                                <i data-lucide="copy" size="16"></i>
+                                <i data-lucide="link-2" size="16"></i>
                             </button>
                             <a href="loja.html?id=${id}" target="_blank" title="Ver Loja" class="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200 transition-colors">
-                                <i data-lucide="external-link" size="16"></i>
+                                <i data-lucide="eye" size="16"></i>
                             </a>
                         </div>
                     </td>
@@ -430,11 +436,17 @@
                             </button>
                         </div>
                         <div class="flex items-center gap-2 w-full pt-1">
-                            <button onclick="copyEditLink('${id}')" class="flex-1 py-3 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center active:scale-95 transition-all border border-blue-100" title="Copiar Link">
+                            <button onclick="editStoreInfo('${id}')" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center active:scale-95 transition-all border border-slate-200" title="Editar Info">
+                                <i data-lucide="settings" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="cloneStore('${id}')" class="flex-1 py-3 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center active:scale-95 transition-all border border-indigo-100" title="Clonar">
                                 <i data-lucide="copy" class="w-4 h-4"></i>
                             </button>
+                            <button onclick="copyEditLink('${id}')" class="flex-1 py-3 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center active:scale-95 transition-all border border-blue-100" title="Copiar Link">
+                                <i data-lucide="link-2" class="w-4 h-4"></i>
+                            </button>
                             <a href="loja.html?id=${id}" target="_blank" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center active:scale-95 transition-all border border-slate-200" title="Ver Loja">
-                                <i data-lucide="external-link" class="w-4 h-4"></i>
+                                <i data-lucide="eye" class="w-4 h-4"></i>
                             </a>
                             <button onclick="deleteStore('${id}')" class="flex-1 py-3 bg-red-50 text-red-600 rounded-xl flex items-center justify-center active:scale-95 transition-all border border-red-100" title="Excluir">
                                 <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -550,23 +562,17 @@
                 const { ref, deleteObject } = window.st;
                 const storeRef = doc(window.db, "stores", id);
                 
-                // Buscar dados para apagar imagens
+                // Buscar dados para apagar histórico de trial
                 const snap = await getDoc(storeRef);
                 if (snap.exists()) {
                     const data = snap.data();
-                    const slug = id;
+                    if (data.w) {
+                        try { await deleteDoc(doc(window.db, "trial_history", data.w.replace(/\D/g, ''))); } catch(e){}
+                    }
                     
                     // Tentar apagar o banner
                     if (data.bi && data.bi.includes('firebasestorage')) {
-                        try { await deleteObject(ref(window.storage, `stores/${slug}/banner`)); } catch(e){}
-                    }
-                    
-                    // Tentar apagar imagens de produtos (se tiverem IDs previsíveis)
-                    if (data.p && Array.isArray(data.p)) {
-                        for (let i = 0; i < data.p.length; i++) {
-                            // Nota: Como os IDs no Firestore podem ser aleatórios, 
-                            // a exclusão aqui é baseada no que o criar.html faz agora.
-                        }
+                        try { await deleteObject(ref(window.storage, `stores/${id}/banner`)); } catch(e){}
                     }
                 }
 
@@ -576,6 +582,95 @@
             } catch (error) {
                 console.error("Erro ao excluir:", error);
                 alert("Erro ao excluir.");
+            }
+        }
+
+        async function editStoreInfo(id) {
+            const store = allStores.find(s => s.id === id);
+            if (!store) return;
+
+            const newName = prompt("Novo Nome da Loja:", store.n || "");
+            if (newName === null) return;
+
+            const newOwner = prompt("Nome do Responsável:", store.cn || "");
+            if (newOwner === null) return;
+
+            const newWhatsApp = prompt("Novo WhatsApp (apenas números com DDD):", store.w || "");
+            if (newWhatsApp === null) return;
+
+            const whatsappClean = newWhatsApp.replace(/\D/g, '');
+            if (whatsappClean.length < 10) {
+                alert("WhatsApp inválido.");
+                return;
+            }
+
+            try {
+                const { doc, updateDoc, setDoc, deleteDoc } = window.fs;
+                
+                // 1. Atualizar a loja
+                await updateDoc(doc(window.db, "stores", id), {
+                    n: newName,
+                    cn: newOwner,
+                    w: whatsappClean
+                });
+
+                // 2. Migrar histórico de trial (login)
+                if (store.w !== whatsappClean) {
+                    // Remove o antigo
+                    try { await deleteDoc(doc(window.db, "trial_history", store.w.replace(/\D/g, ''))); } catch(e){}
+                    // Cria o novo
+                    await setDoc(doc(window.db, "trial_history", whatsappClean), {
+                        storeId: id,
+                        createdAt: store.createdAt || new Date().toISOString()
+                    });
+                }
+
+                alert("Informações atualizadas com sucesso!");
+                loadStores();
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao atualizar informações.");
+            }
+        }
+
+        async function cloneStore(id) {
+            const source = allStores.find(s => s.id === id);
+            if (!source) return;
+
+            if (!confirm(`Deseja clonar a loja "${source.n}"? Uma nova loja será criada com os mesmos produtos e configurações.`)) return;
+
+            const newSlug = prompt("Digite o ID (SLUG) da nova loja (ex: petshop-centro):", "");
+            if (!newSlug) return;
+            const slugClean = newSlug.toLowerCase().trim().replace(/[^a-z0-9-]/g, '');
+
+            try {
+                const { doc, getDoc, setDoc } = window.fs;
+                
+                // Verificar se o ID já existe
+                const check = await getDoc(doc(window.db, "stores", slugClean));
+                if (check.exists()) {
+                    alert("Este ID (SLUG) já está em uso. Escolha outro.");
+                    return;
+                }
+
+                const cloneData = {
+                    ...source,
+                    n: source.n + " (CLONE)",
+                    clicks: 0,
+                    createdAt: new Date().toISOString(),
+                    expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 dias de teste
+                    status: 'trial',
+                    v: [] // Limpa vendedores
+                };
+                delete cloneData.id; // Remove o ID do objeto de dados
+
+                await setDoc(doc(window.db, "stores", slugClean), cloneData);
+                
+                alert(`Loja clonada com sucesso! Novo ID: ${slugClean}\nLembre-se de configurar o WhatsApp da nova loja.`);
+                loadStores();
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao clonar loja.");
             }
         }
 

@@ -1328,14 +1328,10 @@
                 });
             }
 
-            // Preserva o plano e vendedores (com seus cliques)
+            // Preserva o plano e vendedores
             data.plan = window.storePlan;
             if (window.vendors.length > 0) {
-                data.v = window.vendors.map(v => ({ 
-                    name: v.name, 
-                    code: v.code, 
-                    clicks: v.clicks || 0 
-                }));
+                data.v = window.vendors.map(v => ({ name: v.name, code: v.code }));
             }
             if (window.shippingZones.length > 0) {
                 data.sh = window.shippingZones;
@@ -1387,7 +1383,7 @@
                     }
                 }
                 
-                // Se estiver editando, mantém o status, expiração e CLIQUES originais
+                // Se estiver editando, mantém o status e expiração originais
                 if (existingId) {
                     const docSnap = await getDoc(doc(window.db, "stores", existingId));
                     if (docSnap.exists()) {
@@ -1395,16 +1391,6 @@
                         data.status = oldData.status || "trial";
                         data.expiresAt = oldData.expiresAt || data.expiresAt;
                         data.createdAt = oldData.createdAt || data.createdAt;
-                        data.clicks = oldData.clicks || 0;
-                        data.lr = oldData.lr || "";
-                        
-                        // Se não mudou os vendedores radicalmente, tenta preservar cliques dos vendedores
-                        if (data.v && oldData.v) {
-                            data.v = data.v.map(v => {
-                                const oldV = oldData.v.find(ov => ov.code === v.code);
-                                return oldV ? { ...v, clicks: oldV.clicks || 0 } : v;
-                            });
-                        }
                     }
                 }
 

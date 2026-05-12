@@ -449,42 +449,65 @@
                 const storeId = urlParams.get('id');
                 if (!storeId) return null;
 
-                const { doc, getDoc } = window.firebaseUtils;
+                const { doc, getDoc, updateDoc } = window.firebaseUtils;
                 const docSnap = await getDoc(doc(window.db, "stores", storeId));
 
                 if (!docSnap.exists()) return null;
 
-                // Click Tracker Global
+                const data = docSnap.data();
+                const now = new Date();
+                const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                const lastReset = data.lr || "";
+
+                let updatedData = {};
+                let resetHappened = false;
+
+                // Lógica de reset mensal de cliques
+                if (lastReset !== currentMonth) {
+                    console.log(`Reset mensal de cliques: ${lastReset} -> ${currentMonth}`);
+                    updatedData.clicks = 1;
+                    updatedData.lr = currentMonth;
+                    
+                    if (data.v && data.v.length > 0) {
+                        updatedData.v = data.v.map(v => ({ ...v, clicks: 0 }));
+                    }
+                    resetHappened = true;
+                } else {
+                    // Incremento normal
+                    const { increment } = window.firebaseUtils;
+                    updatedData.clicks = increment(1);
+                }
+
+                // Salva o incremento/reset global
                 try {
-                    const { updateDoc, increment, doc } = window.firebaseUtils;
-                    await updateDoc(doc(window.db, "stores", storeId), {
-                        clicks: increment(1)
-                    });
+                    await updateDoc(doc(window.db, "stores", storeId), updatedData);
                 } catch (e) {
                     console.error("Erro ao registrar acesso:", e);
                 }
 
-                const data = docSnap.data();
-                console.log("Dados do Catálogo:", data);
+                // Re-carrega os dados se houve reset para garantir consistência
+                const finalData = resetHappened ? (await getDoc(doc(window.db, "stores", storeId))).data() : { ...data, ...updatedData };
+                
+                console.log("Dados do Catálogo:", finalData);
                 const result = {
-                    name: data.n,
-                    whatsapp: data.w,
-                    address: data.a,
-                    instagram: data.ig,
-                    facebook: data.fb,
-                    website: data.ws,
-                    primaryColor: data.c.startsWith('#') ? data.c : '#' + data.c,
-                    secondaryColor: data.b.startsWith('#') ? data.b : '#' + data.b,
-                    bannerImage: data.bi,
-                    type: data.t || 'loja',
-                    imageFormat: data.imf || 'vertical',
-                    status: data.status || 'active',
-                    expiresAt: data.expiresAt || data.createdAt,
-                    vendors: data.v || [],
-                    shippingZones: data.sh || [],
-                    logo: data.lg || '',
-                    pixKey: data.px || '',
-                    products: (data.p || []).map(p => {
+                    name: finalData.n,
+                    whatsapp: finalData.w,
+                    address: finalData.a,
+                    instagram: finalData.ig,
+                    facebook: finalData.fb,
+                    website: finalData.ws,
+                    primaryColor: finalData.c.startsWith('#') ? finalData.c : '#' + finalData.c,
+                    secondaryColor: finalData.b.startsWith('#') ? finalData.b : '#' + finalData.b,
+                    bannerImage: finalData.bi,
+                    type: finalData.t || 'loja',
+                    imageFormat: finalData.imf || 'vertical',
+                    status: finalData.status || 'active',
+                    expiresAt: finalData.expiresAt || finalData.createdAt,
+                    vendors: finalData.v || [],
+                    shippingZones: finalData.sh || [],
+                    logo: finalData.lg || '',
+                    pixKey: finalData.px || '',
+                    products: (finalData.p || []).map(p => {
                         console.log(`Produto: ${p.n}, Imagem URL: ${p.i}`);
                         return {
                             id: p.id || Math.random().toString(36).substr(2, 9),
@@ -504,22 +527,21 @@
                     })
                 };
 
-                // Lógica de Traqueamento de Cliques do Vendedor
+                // Lógica de Traqueamento de Cliques do Vendedor (considerando se houve reset já ajustado acima)
                 const vendorCode = urlParams.get('v');
-                if (vendorCode && data.v && data.v.length > 0) {
-                    const vendorIndex = data.v.findIndex(v => v.code === vendorCode);
+                if (vendorCode && result.vendors && result.vendors.length > 0) {
+                    const vendorIndex = result.vendors.findIndex(v => v.code === vendorCode);
                     if (vendorIndex !== -1) {
                         try {
-                            const newVendors = [...data.v];
+                            const newVendors = [...result.vendors];
                             newVendors[vendorIndex].clicks = (newVendors[vendorIndex].clicks || 0) + 1;
                             
                             const { updateDoc } = window.firebaseUtils;
                             const storeRef = doc(window.db, "stores", storeId);
                             await updateDoc(storeRef, { v: newVendors });
                             console.log(`Clique registrado para vendedor: ${vendorCode}`);
-                            result.vendors = newVendors;
                         } catch (e) {
-                            console.error("Erro ao registrar clique:", e);
+                            console.error("Erro ao registrar clique do vendedor:", e);
                         }
                     }
                 }
@@ -723,8 +745,14 @@
             message += `\n\n*Total: ${formatCurrency(total)}*`;
             
             let whatsapp = storeData.whatsapp.replace(/\D/g, '');
+            if (!whatsapp) {
+                alert("Erro: O WhatsApp da loja não está configurado corretamente.");
+                return;
+            }
             if (whatsapp.length <= 11) whatsapp = '55' + whatsapp;
-            window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`, '_blank');
+            
+            const waUrl = `https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(message)}`;
+            window.open(waUrl, '_blank');
         }
 
         function requestQuote(productId, variations = '') {
@@ -740,8 +768,14 @@
             }
             
             let whatsapp = storeData.whatsapp.replace(/\D/g, '');
+            if (!whatsapp) {
+                alert("Erro: O WhatsApp da loja não está configurado corretamente.");
+                return;
+            }
             if (whatsapp.length <= 11) whatsapp = '55' + whatsapp;
-            window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent(message)}`, '_blank');
+
+            const waUrl = `https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(message)}`;
+            window.open(waUrl, '_blank');
         }
 
         window.filterByCategory = function(cat) {

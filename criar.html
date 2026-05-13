@@ -835,6 +835,14 @@
                                 </div>
                             </div>
                             <div class="flex items-center gap-3">
+                                <div class="flex items-center gap-1">
+                                    <button type="button" onclick="event.stopPropagation(); window.moveProduct('${p.id}', -1)" class="p-2 bg-white text-slate-400 hover:text-blue-600 rounded-xl border border-slate-100 shadow-sm transition-all active:scale-90 ${index === 0 ? 'invisible' : ''}" title="Subir">
+                                        <i data-lucide="chevron-up" class="w-4 h-4"></i>
+                                    </button>
+                                    <button type="button" onclick="event.stopPropagation(); window.moveProduct('${p.id}', 1)" class="p-2 bg-white text-slate-400 hover:text-blue-600 rounded-xl border border-slate-100 shadow-sm transition-all active:scale-90 ${index === window.products.length - 1 ? 'invisible' : ''}" title="Descer">
+                                        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
                                 ${isLocked ? `<span class="bg-red-50 text-red-500 px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest flex items-center gap-1 shadow-sm border border-red-100"><i data-lucide="lock" class="w-2.5 h-2.5"></i> Bloqueado (Limite FREE)</span>` : (index >= limit ? `<span class="bg-blue-50 text-blue-500 px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest flex items-center gap-1"><i data-lucide="lock" class="w-2.5 h-2.5"></i> Excedente</span>` : '')}
                                 <div id="chevron-${p.id}" class="text-slate-400 transition-transform duration-300" style="${isOpen ? 'transform: rotate(180deg)' : ''}">
                                     <i data-lucide="chevron-down" class="w-6 h-6"></i>
@@ -845,12 +853,6 @@
                         <!-- CONTEÚDO DE EDIÇÃO -->
                         <div id="content-${p.id}" class="collapsible-content px-4 sm:px-8 ${isOpen ? 'open' : ''}">
                             <div class="flex justify-end gap-2 mb-6">
-                                <button type="button" onclick="event.stopPropagation(); window.moveProduct('${p.id}', -1)" class="p-2.5 bg-white text-slate-400 hover:text-slate-600 rounded-xl border border-slate-100 shadow-sm transition-all ${index === 0 ? 'invisible' : ''}" title="Mover para cima">
-                                    <i data-lucide="chevron-up" class="w-4 h-4"></i>
-                                </button>
-                                <button type="button" onclick="event.stopPropagation(); window.moveProduct('${p.id}', 1)" class="p-2.5 bg-white text-slate-400 hover:text-slate-600 rounded-xl border border-slate-100 shadow-sm transition-all ${index === window.products.length - 1 ? 'invisible' : ''}" title="Mover para baixo">
-                                    <i data-lucide="chevron-down" class="w-4 h-4"></i>
-                                </button>
                                 <button type="button" onclick="event.stopPropagation(); window.removeProduct('${p.id}')" class="p-2.5 bg-red-50 text-red-400 hover:text-red-600 rounded-xl border border-red-100 shadow-sm transition-all" title="Remover item">
                                     <i data-lucide="trash-2" class="w-4 h-4"></i>
                                 </button>

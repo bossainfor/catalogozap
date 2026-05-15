@@ -231,6 +231,8 @@
             if (product.i2) mediaItems.push({ type: 'image', url: proxyImg(product.i2) });
             if (product.i3) mediaItems.push({ type: 'image', url: proxyImg(product.i3) });
             if (product.i4) mediaItems.push({ type: 'image', url: proxyImg(product.i4) });
+            if (product.i5) mediaItems.push({ type: 'image', url: proxyImg(product.i5) });
+            if (product.i6) mediaItems.push({ type: 'image', url: proxyImg(product.i6) });
             if (product.videoUrl) mediaItems.push({ type: 'video', url: getEmbedUrl(product.videoUrl) });
 
             let mediaHTML = `<button onclick="closeModal()" class="md:hidden absolute top-4 right-4 z-[1020] bg-black/40 text-white p-3 rounded-full backdrop-blur-md active-scale transition-all touch-manipulation"><i data-lucide="x" class="w-6 h-6"></i></button>`;
@@ -556,6 +558,8 @@
                             i2: p.i2 || '',
                             i3: p.i3 || '',
                             i4: p.i4 || '',
+                            i5: p.i5 || '',
+                            i6: p.i6 || '',
                             videoUrl: p.v || '',
                             category: p.cat || '',
                             description: p.d || '',
@@ -894,6 +898,8 @@
                 if (p.i2) cardMedia.push({ type: 'image', url: proxyImg(p.i2) });
                 if (p.i3) cardMedia.push({ type: 'image', url: proxyImg(p.i3) });
                 if (p.i4) cardMedia.push({ type: 'image', url: proxyImg(p.i4) });
+                if (p.i5) cardMedia.push({ type: 'image', url: proxyImg(p.i5) });
+                if (p.i6) cardMedia.push({ type: 'image', url: proxyImg(p.i6) });
                 if (p.videoUrl) cardMedia.push({ type: 'video', url: getEmbedUrl(p.videoUrl) });
 
                 const hasCardSwipe = cardMedia.length > 1;

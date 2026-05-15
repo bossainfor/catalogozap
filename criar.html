@@ -468,6 +468,8 @@
                     i2: p.i2 || '',
                     i3: p.i3 || '',
                     i4: p.i4 || '',
+                    i5: p.i5 || '',
+                    i6: p.i6 || '',
                     videoUrl: p.videoUrl || ''
                 })),
                 lastUpdated: Date.now()
@@ -543,6 +545,8 @@
                         i2: p.i2 || '',
                         i3: p.i3 || '',
                         i4: p.i4 || '',
+                        i5: p.i5 || '',
+                        i6: p.i6 || '',
                         videoUrl: p.videoUrl || ''
                     }));
                 }
@@ -580,6 +584,8 @@
                     i2: '',
                     i3: '',
                     i4: '',
+                    i5: '',
+                    i6: '',
                     videoUrl: '', 
                     category: '', 
                     description: '' 
@@ -733,7 +739,7 @@
                     if (el) el.innerText = value ? 'R$ ' + value : 'Sem preço';
                 }
 
-                if (field === 'image' || field === 'i2' || field === 'i3' || field === 'i4') {
+                if (field === 'image' || field === 'i2' || field === 'i3' || field === 'i4' || field === 'i5' || field === 'i6') {
                     const img = document.getElementById(`preview-${id}-${field}`);
                     const icon = document.getElementById(`icon-${id}-${field}`);
                     const isMain = field === 'image';
@@ -828,6 +834,8 @@
                     const img2Escaped = String(p.i2 || '').replace(/"/g, '&quot;');
                     const img3Escaped = String(p.i3 || '').replace(/"/g, '&quot;');
                     const img4Escaped = String(p.i4 || '').replace(/"/g, '&quot;');
+                    const img5Escaped = String(p.i5 || '').replace(/"/g, '&quot;');
+                    const img6Escaped = String(p.i6 || '').replace(/"/g, '&quot;');
                     const videoEscaped = String(p.videoUrl || '').replace(/"/g, '&quot;');
                     
                     return `
@@ -933,14 +941,16 @@
                                 <textarea ${isLocked ? 'readonly disabled' : ''} oninput="window.updateProduct('${p.id}', 'description', this.value)" placeholder="${isClinica || isBeauty ? 'Descreva o procedimento, horários disponíveis, etc...' : (isAcougue ? 'Descreva a origem da carne, maturação, etc...' : 'Detalhes do produto, tamanhos, cores...')}" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-orange-500 text-sm h-28 resize-none outline-none transition-all font-medium ${isLocked ? 'opacity-60 cursor-not-allowed bg-slate-50' : ''}">${p.description || ''}</textarea>
                             </div>
                             
-                            <div class="space-y-4 mt-6">
-                                <label class="text-[10px] font-black uppercase tracking-widest text-orange-500 ml-1">Fotos do Produto (Até 4)</label>
+                             <div class="space-y-4 mt-6">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-orange-500 ml-1">Fotos do Produto (Até 6)</label>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     ${[
                                         { id: 'image', label: 'Foto Principal', value: imgEscaped },
                                         { id: 'i2', label: 'Foto 2', value: img2Escaped },
                                         { id: 'i3', label: 'Foto 3', value: img3Escaped },
-                                        { id: 'i4', label: 'Foto 4', value: img4Escaped }
+                                        { id: 'i4', label: 'Foto 4', value: img4Escaped },
+                                        { id: 'i5', label: 'Foto 5', value: img5Escaped },
+                                        { id: 'i6', label: 'Foto 6', value: img6Escaped }
                                     ].map(img => `
                                         <div class="bg-white p-4 rounded-2xl border border-slate-100 flex flex-col gap-3">
                                             <label class="text-[9px] font-black uppercase tracking-widest text-slate-400">${img.label}</label>
@@ -1333,6 +1343,8 @@
                     if (p.i2) item.i2 = p.i2;
                     if (p.i3) item.i3 = p.i3;
                     if (p.i4) item.i4 = p.i4;
+                    if (p.i5) item.i5 = p.i5;
+                    if (p.i6) item.i6 = p.i6;
                     if (p.videoUrl) item.v = p.videoUrl;
                     if (p.description) item.d = p.description;
                     if (p.category) item.cat = p.category;
@@ -1644,6 +1656,8 @@
                             i2: p.i2 || '',
                             i3: p.i3 || '',
                             i4: p.i4 || '',
+                            i5: p.i5 || '',
+                            i6: p.i6 || '',
                             videoUrl: p.v || '',
                             category: p.cat || '',
                             description: p.d || '',

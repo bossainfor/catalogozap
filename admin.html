@@ -178,13 +178,13 @@
             try {
                 // Aguarda o Firebase/fs estar disponível
                 let attempts = 0;
-                while ((!window.db || !window.fs) && attempts < 50) {
+                while ((!window.db || !window.fs) && attempts < 150) {
                     await new Promise(r => setTimeout(r, 100));
                     attempts++;
                 }
 
                 if (!window.db || !window.fs) {
-                    throw new Error("Serviços do Firebase não inicializados.");
+                    throw new Error("Serviços do Firebase não inicializados (Rede lenta).");
                 }
 
                 console.log("Iniciando busca de lojas no Firestore...");

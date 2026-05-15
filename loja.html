@@ -224,40 +224,52 @@
             const overlay = document.getElementById('overlay');
             
             const mediaCont = document.getElementById('modal-media-container');
-            const imageUrl = proxyImg(product.image);
-            const videoUrl = product.videoUrl ? getEmbedUrl(product.videoUrl) : null;
-            const hasMediaSwipe = imageUrl && videoUrl;
+            
+            // Coletar todas as mídias disponíveis
+            const mediaItems = [];
+            if (product.image) mediaItems.push({ type: 'image', url: proxyImg(product.image) });
+            if (product.i2) mediaItems.push({ type: 'image', url: proxyImg(product.i2) });
+            if (product.i3) mediaItems.push({ type: 'image', url: proxyImg(product.i3) });
+            if (product.i4) mediaItems.push({ type: 'image', url: proxyImg(product.i4) });
+            if (product.videoUrl) mediaItems.push({ type: 'video', url: getEmbedUrl(product.videoUrl) });
 
             let mediaHTML = `<button onclick="closeModal()" class="md:hidden absolute top-4 right-4 z-[1020] bg-black/40 text-white p-3 rounded-full backdrop-blur-md active-scale transition-all touch-manipulation"><i data-lucide="x" class="w-6 h-6"></i></button>`;
             
-            if (hasMediaSwipe) {
+            if (mediaItems.length > 1) {
                 const swiperId = `modal-swiper-${product.id}`;
                 mediaHTML += `
                     <div id="${swiperId}" onscroll="updateDots('${swiperId}')" class="media-swiper absolute inset-0 flex overflow-x-auto snap-x snap-mandatory scroll-smooth w-full h-full bg-slate-950">
-                        <div class="snap-start flex-shrink-0 w-full h-full relative flex items-center justify-center bg-slate-950">
-                            <img src="${imageUrl}" class="w-full h-full object-contain">
-                        </div>
-                        <div class="snap-start flex-shrink-0 w-full h-full relative bg-slate-950 flex items-center justify-center">
-                            <div class="video-wrapper">
-                                <iframe src="${videoUrl}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        ${mediaItems.map(item => `
+                            <div class="snap-start flex-shrink-0 w-full h-full relative flex items-center justify-center bg-slate-950">
+                                ${item.type === 'image' ? `
+                                    <img src="${item.url}" class="w-full h-full object-contain">
+                                ` : `
+                                    <div class="video-wrapper">
+                                        <iframe src="${item.url}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                    </div>
+                                `}
                             </div>
-                        </div>
+                        `).join('')}
                     </div>
                     <div class="absolute inset-y-0 left-0 flex items-center pl-4 z-30">
-                        <button onclick="document.getElementById('${swiperId}').scrollBy({left: -document.getElementById('${swiperId}').offsetWidth, behavior: 'smooth'})" class="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white border border-white/10 active-scale"><i data-lucide="chevron-left"></i></button>
+                        <button onclick="document.getElementById('${swiperId}').scrollBy({left: -document.getElementById('${swiperId}').offsetWidth, behavior: 'smooth'})" class="p-2.5 bg-white/20 hover:bg-white/40 backdrop-blur-md rounded-full text-white border border-white/20 active-scale"><i data-lucide="chevron-left" class="w-5 h-5"></i></button>
                     </div>
                     <div class="absolute inset-y-0 right-0 flex items-center pr-4 z-30">
-                        <button onclick="document.getElementById('${swiperId}').scrollBy({left: document.getElementById('${swiperId}').offsetWidth, behavior: 'smooth'})" class="p-3 bg-white/10 hover:bg-white/20 backdrop-blur-md rounded-full text-white border border-white/10 active-scale"><i data-lucide="chevron-right"></i></button>
+                        <button onclick="document.getElementById('${swiperId}').scrollBy({left: document.getElementById('${swiperId}').offsetWidth, behavior: 'smooth'})" class="p-2.5 bg-white/20 hover:bg-white/40 backdrop-blur-md rounded-full text-white border border-white/20 active-scale"><i data-lucide="chevron-right" class="w-5 h-5"></i></button>
                     </div>
-                    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-2.5" id="dots-${swiperId}">
-                        <div class="w-2.5 h-2.5 rounded-full bg-white shadow-xl border border-white/20 transition-all"></div>
-                        <div class="w-2.5 h-2.5 rounded-full bg-white/30 shadow-sm transition-all border border-transparent"></div>
+                    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-2" id="dots-${swiperId}">
+                        ${mediaItems.map((_, i) => `<div class="w-2 h-2 rounded-full ${i === 0 ? 'bg-white' : 'bg-white/40'} shadow-sm transition-all border border-transparent"></div>`).join('')}
                     </div>
                 `;
-            } else if (videoUrl) {
-                mediaHTML += `<div class="video-wrapper"><iframe src="${videoUrl}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+            } else if (mediaItems.length === 1) {
+                const item = mediaItems[0];
+                if (item.type === 'video') {
+                    mediaHTML += `<div class="video-wrapper"><iframe src="${item.url}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+                } else {
+                    mediaHTML += `<div class="w-full h-full flex items-center justify-center bg-slate-950 px-4 md:px-0"><img src="${item.url}" class="w-full h-full object-contain selection:bg-none"></div>`;
+                }
             } else {
-                mediaHTML += `<div class="w-full h-full flex items-center justify-center bg-slate-950 px-4 md:px-0"><img src="${imageUrl}" class="w-full h-full object-contain selection:bg-none"></div>`;
+                mediaHTML += `<div class="w-full h-full flex items-center justify-center bg-slate-950 text-slate-500"><i data-lucide="image" class="w-12 h-12"></i></div>`;
             }
             mediaCont.innerHTML = mediaHTML;
 
@@ -370,11 +382,11 @@
             const dots = dotsCont.querySelectorAll('div');
             dots.forEach((dot, i) => {
                 if (i === index) {
-                    dot.classList.remove('bg-white/40', 'border-transparent');
-                    dot.classList.add('bg-white', 'border-black/10', 'w-3');
+                    dot.classList.remove('bg-white/40');
+                    dot.classList.add('bg-white');
                 } else {
-                    dot.classList.remove('bg-white', 'border-black/10', 'w-3');
-                    dot.classList.add('bg-white/40', 'border-transparent');
+                    dot.classList.remove('bg-white');
+                    dot.classList.add('bg-white/40');
                 }
             });
         }
@@ -493,6 +505,9 @@
                             wholesalePrice: p.wp || '',
                             wholesaleMinQty: p.wq || '',
                             image: p.i,
+                            i2: p.i2 || '',
+                            i3: p.i3 || '',
+                            i4: p.i4 || '',
                             videoUrl: p.v || '',
                             category: p.cat || '',
                             description: p.d || '',
@@ -773,9 +788,6 @@
 
             // Verificação de Expiração
             const now = new Date();
-            const expiresAt = new Date(storeData.expiresAt || storeData.createdAt);
-            const isExpired = now > expiresAt;
-            const isBlocked = storeData.status === 'blocked';
 
             if (isExpired || isBlocked) {
                 app.innerHTML = `
@@ -838,7 +850,16 @@
             const productsHTML = filteredProducts.length > 0 ? filteredProducts.map(p => {
                 const imageUrl = proxyImg(p.image);
                 const videoUrl = p.videoUrl ? getEmbedUrl(p.videoUrl) : null;
-                const hasMediaSwipe = imageUrl && videoUrl;
+                
+                // Coletar todas as mídias para o card
+                const cardMedia = [];
+                if (p.image) cardMedia.push({ type: 'image', url: proxyImg(p.image) });
+                if (p.i2) cardMedia.push({ type: 'image', url: proxyImg(p.i2) });
+                if (p.i3) cardMedia.push({ type: 'image', url: proxyImg(p.i3) });
+                if (p.i4) cardMedia.push({ type: 'image', url: proxyImg(p.i4) });
+                if (p.videoUrl) cardMedia.push({ type: 'video', url: getEmbedUrl(p.videoUrl) });
+
+                const hasCardSwipe = cardMedia.length > 1;
 
                 let badge = '';
                 if (p.description && p.description.includes('[') && p.description.includes(']')) {
@@ -866,46 +887,34 @@
                                 <span data-countdown="${offerEndsAt.toISOString()}">00:00:00</span>
                             </div>
                         ` : ''}
-                        ${hasMediaSwipe ? `
+                        ${hasCardSwipe ? `
                             <div id="${swiperId}" onscroll="updateDots('${swiperId}')" class="media-swiper absolute inset-0 flex overflow-x-auto snap-x snap-mandatory scroll-smooth w-full h-full">
-                                <div class="snap-start flex-shrink-0 w-full h-full relative">
-                                    <img src="${imageUrl}" class="absolute inset-0 w-full h-full object-contain" referrerpolicy="no-referrer">
-                                    <div class="absolute bottom-4 right-4 bg-black/40 backdrop-blur-md text-white/80 p-2 rounded-xl flex items-center gap-2 animate-pulse border border-white/20 pointer-events-none">
-                                        <i data-lucide="video" class="w-4 h-4"></i>
-                                        <span class="text-[9px] font-black uppercase tracking-widest">Ver Vídeo</span>
+                                ${cardMedia.map((item, idx) => `
+                                    <div class="snap-start flex-shrink-0 w-full h-full relative">
+                                        ${item.type === 'image' ? `
+                                            <img src="${item.url}" class="absolute inset-0 w-full h-full object-contain" referrerpolicy="no-referrer">
+                                        ` : `
+                                            <div class="video-wrapper">
+                                                <iframe src="${item.url}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                            </div>
+                                        `}
                                     </div>
-                                </div>
-                                <div class="snap-start flex-shrink-0 w-full h-full relative bg-black">
-                                    <div class="video-wrapper">
-                                        <iframe src="${videoUrl}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                                    </div>
-                                    <div class="absolute bottom-4 left-4 bg-black/40 backdrop-blur-md text-white/80 p-2 rounded-xl flex items-center gap-2 border border-white/20 pointer-events-none">
-                                        <i data-lucide="image" class="w-4 h-4"></i>
-                                        <span class="text-[9px] font-black uppercase tracking-widest">Ver Foto</span>
-                                    </div>
-                                </div>
+                                `).join('')}
                             </div>
                             <!-- Controles do Swiper -->
-                            <div class="absolute inset-y-0 left-0 flex items-center pl-2 z-30">
-                                <button onclick="event.stopPropagation(); const s = document.getElementById('${swiperId}'); s.scrollTo({left: 0, behavior: 'smooth'})" class="p-2 bg-white/90 dark:bg-slate-800 shadow-xl rounded-full text-slate-800 dark:text-white active-scale transition-transform border border-slate-100 dark:border-slate-700">
-                                    <i data-lucide="chevron-left" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                            <div class="absolute inset-y-0 left-0 flex items-center pl-2 z-30 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                                <button onclick="event.stopPropagation(); const s = document.getElementById('${swiperId}'); s.scrollBy({left: -s.offsetWidth, behavior: 'smooth'})" class="p-2 bg-white/90 dark:bg-slate-800 shadow-xl rounded-full text-slate-800 dark:text-white active-scale transition-transform border border-slate-100 dark:border-slate-700">
+                                    <i data-lucide="chevron-left" class="w-4 h-4"></i>
                                 </button>
                             </div>
-                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 z-30">
-                                <button onclick="event.stopPropagation(); const s = document.getElementById('${swiperId}'); s.scrollTo({left: s.offsetWidth, behavior: 'smooth'})" class="p-2 bg-white/90 dark:bg-slate-800 shadow-xl rounded-full text-slate-800 dark:text-white active-scale transition-transform border border-slate-100 dark:border-slate-700">
-                                    <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                            <div class="absolute inset-y-0 right-0 flex items-center pr-2 z-30 opacity-0 group-hover/card:opacity-100 transition-opacity">
+                                <button onclick="event.stopPropagation(); const s = document.getElementById('${swiperId}'); s.scrollBy({left: s.offsetWidth, behavior: 'smooth'})" class="p-2 bg-white/90 dark:bg-slate-800 shadow-xl rounded-full text-slate-800 dark:text-white active-scale transition-transform border border-slate-100 dark:border-slate-700">
+                                    <i data-lucide="chevron-right" class="w-4 h-4"></i>
                                 </button>
                             </div>
                             <!-- Indicadores -->
                             <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex gap-1.5" id="dots-${swiperId}">
-                                <div class="w-2 h-2 rounded-full bg-white shadow-md border border-black/10 transition-all"></div>
-                                <div class="w-2 h-2 rounded-full bg-white/40 shadow-sm transition-all border border-transparent"></div>
-                            </div>
-                        ` : (videoUrl ? `
-                            <div class="absolute inset-0 bg-black">
-                                <div class="video-wrapper">
-                                    <iframe src="${videoUrl}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                                </div>
+                                ${cardMedia.map((_, i) => `<div class="w-1.5 h-1.5 rounded-full ${i === 0 ? 'bg-white' : 'bg-white/40'} shadow-md border border-black/10 transition-all"></div>`).join('')}
                             </div>
                         ` : (imageUrl ? `
                             <img src="${imageUrl}" class="absolute inset-0 w-full h-full object-contain hover:scale-105 transition-transform duration-500" style="image-rendering: -webkit-optimize-contrast;" referrerpolicy="no-referrer">
@@ -913,7 +922,7 @@
                             <div class="absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-300">
                                 <i data-lucide="image" class="w-12 h-12"></i>
                             </div>
-                        `))}
+                        `)}
                     </div>
                     <div class="p-3 sm:p-5 flex flex-col flex-1 justify-between gap-2">
                         <div>
@@ -1006,6 +1015,7 @@
             ` : '';
 
             app.innerHTML = `
+                ${mesaBanner}
                 <div class="min-h-screen bg-white dark:bg-slate-900 flex flex-col">
                     <div class="relative pt-20 pb-12 sm:pt-28 sm:pb-20 px-6 text-center" style="background-color: ${storeData.secondaryColor}; color: #ffffff">
                         <button onclick="toggleTheme()" class="absolute top-4 left-4 z-50 bg-white/20 p-3 rounded-full backdrop-blur-md hover:bg-white/30 transition-all active-scale">
@@ -1139,7 +1149,9 @@
             }
             
             storeData = await decodeData();
-            if (storeData) window.fullCatalog = storeData.products;
+            if (storeData) {
+                window.fullCatalog = storeData.products;
+            }
             renderStore();
         };
     </script>

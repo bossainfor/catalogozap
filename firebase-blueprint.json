@@ -10,10 +10,18 @@
         "a": { "type": "string", "description": "Address" },
         "ig": { "type": "string", "description": "Instagram Username" },
         "fb": { "type": "string", "description": "Facebook URL" },
+        "ws": { "type": "string", "description": "Website URL" },
         "c": { "type": "string", "description": "Primary Color (Hex without #)" },
         "b": { "type": "string", "description": "Secondary Color (Hex without #)" },
         "bi": { "type": "string", "description": "Banner Image URL" },
         "t": { "type": "string", "description": "Niche/Type" },
+        "imf": { "type": "string", "enum": ["vertical", "quadrado"], "description": "Product Image Format" },
+        "lg": { "type": "string", "description": "Store Logo URL" },
+        "px": { "type": "string", "description": "PIX Key" },
+        "cn": { "type": "string", "description": "Owner Contact Name" },
+        "bm": { "type": "boolean", "description": "Bar Mode Enabled" },
+        "tr": { "type": "integer", "description": "Table Range (Max number of tables)" },
+        "ts": { "type": "object", "description": "Table Statuses (tableId: status)" },
         "plan": { "type": "string", "enum": ["free", "basic", "premium"], "description": "Subscription plan" },
         "v": {
           "type": "array",
@@ -23,6 +31,17 @@
               "name": { "type": "string", "description": "Vendor Name" },
               "code": { "type": "string", "description": "Unique vendor referral code" },
               "clicks": { "type": "integer", "description": "Number of clicks on the vendor link" }
+            }
+          }
+        },
+        "sh": {
+          "type": "array",
+          "description": "Shipping/Delivery Zones",
+          "items": {
+            "type": "object",
+            "properties": {
+              "neighborhood": { "type": "string" },
+              "price": { "type": "string" }
             }
           }
         },
@@ -36,9 +55,19 @@
               "id": { "type": "string", "description": "Product Unique ID" },
               "n": { "type": "string", "description": "Product Name" },
               "p": { "type": "string", "description": "Product Price" },
+              "wp": { "type": "string", "description": "Wholesale Price" },
+              "wq": { "type": "string", "description": "Wholesale Min Quantity" },
               "i": { "type": "string", "description": "Product Image URL" },
-              "v": { "type": "string", "description": "Optional Product Video URL (Premium only)" },
-              "f": { "type": "boolean", "description": "Is product featured?" }
+              "i2": { "type": "string", "description": "Additional Image URL 2" },
+              "i3": { "type": "string", "description": "Additional Image URL 3" },
+              "i4": { "type": "string", "description": "Additional Image URL 4" },
+              "v": { "type": "string", "description": "Optional Product Video URL" },
+              "cat": { "type": "string", "description": "Category" },
+              "d": { "type": "string", "description": "Description" },
+              "av": { "type": "boolean", "description": "Is product available?" },
+              "vars": { "type": "string", "description": "Variations (comma separated)" },
+              "f": { "type": "boolean", "description": "Is product featured?" },
+              "al": { "type": "string", "description": "Affiliate link" }
             }
           }
         },

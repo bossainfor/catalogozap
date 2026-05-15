@@ -1641,6 +1641,9 @@
                             wholesalePrice: p.wp || '',
                             wholesaleMinQty: p.wq || '',
                             image: p.i,
+                            i2: p.i2 || '',
+                            i3: p.i3 || '',
+                            i4: p.i4 || '',
                             videoUrl: p.v || '',
                             category: p.cat || '',
                             description: p.d || '',
@@ -1678,6 +1681,7 @@
             window.renderProducts();
             window.renderVendors();
             window.renderShippingZones();
+            if (window.lucide) lucide.createIcons();
         };
 
         window.addShippingZone = function() {
@@ -1709,6 +1713,18 @@
             if (!list) return;
 
             list.innerHTML = window.shippingZones.map((z, index) => `
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
+                    <div class="flex flex-col">
+                        <span class="font-bold text-slate-800 text-sm">${z.neighborhood}</span>
+                        <span class="text-[10px] font-black text-orange-500 uppercase tracking-widest">Frete: R$ ${z.price}</span>
+                    </div>
+                    <button onclick="window.removeShippingZone(${index})" class="text-red-400 hover:text-red-600 p-2 bg-red-50 rounded-lg active-scale">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            `).join('');
+            if (window.lucide) lucide.createIcons();
+        }
     </script>
 </body>
 </html>

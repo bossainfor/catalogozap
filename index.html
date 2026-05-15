@@ -359,6 +359,10 @@
             document.getElementById('login-inputs').classList.remove('hidden');
             document.getElementById('first-access-msg').classList.add('hidden');
         }
+
+        window.onload = () => {
+            if (window.lucide) lucide.createIcons();
+        };
     </script>
 </body>
 </html>

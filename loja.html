@@ -477,6 +477,55 @@
                 }
 
                 const data = docSnap.data();
+                
+                // Lógica de Cliques e Reset Mensal
+                try {
+                    const { updateDoc, increment, doc } = window.firebaseUtils;
+                    const now = new Date();
+                    const currentMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+                    const lastReset = data.lastResetMonth || '';
+                    
+                    const updateObj = {};
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const vendorCode = urlParams.get('v');
+
+                    if (lastReset !== currentMonth) {
+                        // NOVO MÊS: Reset Geral
+                        console.log("Novo mês detectado. Zerando estatísticas...");
+                        updateObj.clicks = 1;
+                        updateObj.lastResetMonth = currentMonth;
+                        
+                        // Zera cliques de todos os vendedores e inicia o do vendedor atual em 1 (se houver)
+                        if (data.v && data.v.length > 0) {
+                            updateObj.v = data.v.map(v => ({
+                                ...v,
+                                clicks: (v.code === vendorCode) ? 1 : 0
+                            }));
+                        }
+                    } else {
+                        // MESMO MÊS: Incremento Normal
+                        updateObj.clicks = increment(1);
+                        
+                        if (vendorCode && data.v && data.v.length > 0) {
+                            const vendorIndex = data.v.findIndex(v => v.code === vendorCode);
+                            if (vendorIndex !== -1) {
+                                const newVendors = [...data.v];
+                                newVendors[vendorIndex].clicks = (newVendors[vendorIndex].clicks || 0) + 1;
+                                updateObj.v = newVendors;
+                            }
+                        }
+                    }
+                    
+                    const { doc: storeDoc } = window.firebaseUtils;
+                    await updateDoc(doc(window.db, "stores", storeId), updateObj);
+                    
+                    // Atualiza os dados locais para refletir a mudança imediata (opcional, estatística é vista no painel)
+                    if (updateObj.clicks) data.clicks = (lastReset !== currentMonth) ? 1 : (data.clicks || 0) + 1;
+                    if (updateObj.v) data.v = updateObj.v;
+                } catch (e) {
+                    console.error("Erro no controle de cliques:", e);
+                }
+
                 console.log("Dados do Catálogo:", data);
                 const result = {
                     name: data.n,
@@ -497,7 +546,6 @@
                     logo: data.lg || '',
                     pixKey: data.px || '',
                     products: (data.p || []).map(p => {
-                        console.log(`Produto: ${p.n}, Imagem URL: ${p.i}`);
                         return {
                             id: p.id || Math.random().toString(36).substr(2, 9),
                             name: p.n,
@@ -518,26 +566,6 @@
                         };
                     })
                 };
-
-                // Lógica de Traqueamento de Cliques do Vendedor
-                const vendorCode = urlParams.get('v');
-                if (vendorCode && data.v && data.v.length > 0) {
-                    const vendorIndex = data.v.findIndex(v => v.code === vendorCode);
-                    if (vendorIndex !== -1) {
-                        try {
-                            const newVendors = [...data.v];
-                            newVendors[vendorIndex].clicks = (newVendors[vendorIndex].clicks || 0) + 1;
-                            
-                            const { updateDoc } = window.firebaseUtils;
-                            const storeRef = doc(window.db, "stores", storeId);
-                            await updateDoc(storeRef, { v: newVendors });
-                            console.log(`Clique registrado para vendedor: ${vendorCode}`);
-                            result.vendors = newVendors;
-                        } catch (e) {
-                            console.error("Erro ao registrar clique:", e);
-                        }
-                    }
-                }
 
                 return result;
             } catch (e) { 

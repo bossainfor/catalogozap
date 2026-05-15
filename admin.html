@@ -116,11 +116,6 @@
                         </table>
                     </div>
                 </div>
-                        <tbody id="stores-table-body">
-                            <!-- Lojas serão carregadas aqui -->
-                        </tbody>
-                    </table>
-                </div>
 
                 <!-- Mobile Card View -->
                 <div id="stores-mobile-list" class="md:hidden divide-y divide-slate-100">
@@ -181,20 +176,36 @@
             empty.classList.add('hidden');
 
             try {
+                // Aguarda o Firebase/fs estar disponível
+                let attempts = 0;
+                while ((!window.db || !window.fs) && attempts < 50) {
+                    await new Promise(r => setTimeout(r, 100));
+                    attempts++;
+                }
+
+                if (!window.db || !window.fs) {
+                    throw new Error("Serviços do Firebase não inicializados.");
+                }
+
+                console.log("Iniciando busca de lojas no Firestore...");
                 const q = window.fs.query(window.fs.collection(window.db, "stores"));
                 const querySnapshot = await window.fs.getDocs(q);
                 
+                console.log(`Lojas carregadas com sucesso: ${querySnapshot.size}`);
                 loader.classList.add('hidden');
 
                 if (querySnapshot.empty) {
+                    console.warn("Nenhuma loja encontrada na coleção 'stores'.");
                     empty.classList.remove('hidden');
                     return;
                 }
 
                 allStores = [];
                 querySnapshot.forEach((docSnap) => {
-                    allStores.push({ id: docSnap.id, ...docSnap.data() });
+                    const data = docSnap.data();
+                    allStores.push({ id: docSnap.id, ...data });
                 });
+                console.log("Total de lojas processadas:", allStores.length);
 
                 // Ordenação manual: mais recentes primeiro se houver createdAt
                 allStores.sort((a, b) => {

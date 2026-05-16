@@ -359,6 +359,9 @@
                     </td>
                     <td class="px-6 py-5 text-right">
                         <div class="flex items-center justify-end gap-2">
+                            <button onclick="changeStoreId('${id}')" title="Mudar ID (Link)" class="p-2 bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition-colors">
+                                <i data-lucide="tag" size="16"></i>
+                            </button>
                             <button onclick="editStoreInfo('${id}')" title="Editar Info Básica" class="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors">
                                 <i data-lucide="settings" size="16"></i>
                             </button>
@@ -447,6 +450,9 @@
                             </button>
                         </div>
                         <div class="flex items-center gap-2 w-full pt-1">
+                            <button onclick="changeStoreId('${id}')" class="flex-1 py-3 bg-yellow-50 text-yellow-600 rounded-xl flex items-center justify-center active:scale-95 transition-all border border-yellow-100" title="Mudar ID (Link)">
+                                <i data-lucide="tag" class="w-4 h-4"></i>
+                            </button>
                             <button onclick="editStoreInfo('${id}')" class="flex-1 py-3 bg-slate-100 text-slate-600 rounded-xl flex items-center justify-center active:scale-95 transition-all border border-slate-200" title="Editar Info">
                                 <i data-lucide="settings" class="w-4 h-4"></i>
                             </button>
@@ -641,6 +647,57 @@
             } catch (e) {
                 console.error(e);
                 alert("Erro ao atualizar informações.");
+            }
+        }
+
+        async function changeStoreId(oldId) {
+            const store = allStores.find(s => s.id === oldId);
+            if (!store) return;
+
+            const newId = prompt(`MUDAR LINK (SLUG)\nID atual: ${oldId}\nDigite o novo ID desejado (ex: revenda-carros):`, oldId);
+            if (!newId || newId === oldId) return;
+
+            const slugClean = newId.toLowerCase().trim().replace(/[^a-z0-9-]/g, '');
+            if (!slugClean) {
+                alert("ID inválido! Use apenas letras, números e traços.");
+                return;
+            }
+
+            if (!confirm(`TEM CERTEZA?\nIsso vai mudar o link da loja de:\n/loja.html?id=${oldId}\nPara:\n/loja.html?id=${slugClean}\n\nO link antigo deixará de funcionar!`)) return;
+
+            try {
+                const { doc, getDoc, setDoc, deleteDoc } = window.fs;
+                
+                // 1. Verificar se novo ID já existe
+                const check = await getDoc(doc(window.db, "stores", slugClean));
+                if (check.exists()) {
+                    alert("Este ID (LINK) já está em uso por outra loja. Escolha outro.");
+                    return;
+                }
+
+                // 2. Criar novo documento com mesmíssimas informações
+                const data = { ...store };
+                delete data.id; // Remove o ID do objeto de dados
+                await setDoc(doc(window.db, "stores", slugClean), data);
+
+                // 3. Atualizar trial_history (login via whatsapp) se existir
+                if (store.w) {
+                    const whatsappClean = store.w.replace(/\D/g, '');
+                    const historyRef = doc(window.db, "trial_history", whatsappClean);
+                    const historySnap = await getDoc(historyRef);
+                    if (historySnap.exists() && historySnap.data().storeId === oldId) {
+                        await window.fs.updateDoc(historyRef, { storeId: slugClean });
+                    }
+                }
+
+                // 4. Apagar ID antigo
+                await deleteDoc(doc(window.db, "stores", oldId));
+
+                alert("ID (Link) alterado com sucesso!");
+                loadStores();
+            } catch (e) {
+                console.error("Erro ao mudar ID:", e);
+                alert("Erro ao processar mudança de ID.");
             }
         }
 

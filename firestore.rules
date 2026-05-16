@@ -2,26 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // Helper functions
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isMasterAdmin() {
-      return isSignedIn() && 
-             request.auth.token.email == 'webradiomessejana80@gmail.com' && 
-             request.auth.token.email_verified == true;
-    }
-
-    function getReseller() {
-      return get(/databases/$(database)/documents/resellers/$(request.auth.uid)).data;
-    }
-
-    function isReseller() {
-      return isSignedIn() && 
-             exists(/databases/$(database)/documents/resellers/$(request.auth.uid)) &&
-             getReseller().status == 'active';
-    }
-
     function isValidStore(data) {
       return data.n is string && data.n.size() > 0 && data.n.size() < 100 &&
              data.w is string && data.w.size() > 0 && data.w.size() < 20 &&
@@ -30,36 +10,18 @@ service cloud.firestore {
     }
 
     match /stores/{storeId} {
+      // Allow anyone to read a store by its ID
       allow read: if true;
       
-      // Anyone can create a store for now (preserving existing behavior)
-      // But if a reseller is logged in, they can associate it
-      allow create: if isValidStore(request.resource.data);
-      
-      // Master Admin can update anything.
-      // Reseller can update if they own the store record.
-      allow update: if isMasterAdmin() || 
-                      (isReseller() && resource.data.resellerId == request.auth.uid) ||
-                      (!isSignedIn() && isValidStore(request.resource.data)); // Preserving legacy behavior
-      
-      allow delete: if isMasterAdmin() || 
-                      (isReseller() && resource.data.resellerId == request.auth.uid) ||
-                      !isSignedIn();
-    }
-
-    match /resellers/{resellerId} {
-      allow read: if isMasterAdmin() || (isSignedIn() && request.auth.uid == resellerId);
-      allow write: if isMasterAdmin();
+      // Allow anyone to create, update and delete
+      // In a real app, these would be protected by Firebase Auth + Rules
+      allow create, update: if true;
+      allow delete: if true;
     }
 
     match /trial_history/{whatsapp} {
-      // Allow reading to check if a trial has already been used
-      allow read: if true;
-      
-      // Allow creating a new trial record
-      allow create: if request.resource.data.whatsapp is string && 
-                      request.resource.data.whatsapp.size() > 0 &&
-                      request.resource.data.whatsapp.size() < 20;
+      // Allow all operations on trial history
+      allow read, write: if true;
     }
   }
 }

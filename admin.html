@@ -666,7 +666,7 @@
             if (!confirm(`TEM CERTEZA?\nIsso vai mudar o link da loja de:\n/loja.html?id=${oldId}\nPara:\n/loja.html?id=${slugClean}\n\nO link antigo deixará de funcionar!`)) return;
 
             try {
-                const { doc, getDoc, setDoc, deleteDoc } = window.fs;
+                const { doc, getDoc, setDoc, deleteDoc, updateDoc } = window.fs;
                 
                 // 1. Verificar se novo ID já existe
                 const check = await getDoc(doc(window.db, "stores", slugClean));
@@ -678,15 +678,36 @@
                 // 2. Criar novo documento com mesmíssimas informações
                 const data = { ...store };
                 delete data.id; // Remove o ID do objeto de dados
+
+                // Sanitização para cumprir as regras atuais do Firestore (isValidStore)
+                if (typeof data.n !== 'string') data.n = String(data.n || 'Loja sem nome');
+                if (typeof data.w !== 'string') data.w = String(data.w || '85999999999');
+                if (!['trial', 'active', 'blocked'].includes(data.status)) data.status = 'active';
+                if (typeof data.expiresAt !== 'string') {
+                    // Garantir que expiresAt seja uma string ISO
+                    if (data.expiresAt && data.expiresAt.toDate) {
+                        data.expiresAt = data.expiresAt.toDate().toISOString();
+                    } else if (data.expiresAt instanceof Date) {
+                        data.expiresAt = data.expiresAt.toISOString();
+                    } else {
+                        data.expiresAt = new Date().toISOString();
+                    }
+                }
+                
+                console.log("Tentando criar nova loja com ID:", slugClean, data);
                 await setDoc(doc(window.db, "stores", slugClean), data);
 
-                // 3. Atualizar trial_history (login via whatsapp) se existir
+                // 3. Atualizar trial_history (login via whatsapp) se existir - OPCIONAL
                 if (store.w) {
-                    const whatsappClean = store.w.replace(/\D/g, '');
-                    const historyRef = doc(window.db, "trial_history", whatsappClean);
-                    const historySnap = await getDoc(historyRef);
-                    if (historySnap.exists() && historySnap.data().storeId === oldId) {
-                        await window.fs.updateDoc(historyRef, { storeId: slugClean });
+                    try {
+                        const whatsappClean = store.w.replace(/\D/g, '');
+                        const historyRef = doc(window.db, "trial_history", whatsappClean);
+                        const historySnap = await getDoc(historyRef);
+                        if (historySnap.exists() && historySnap.data().storeId === oldId) {
+                            await updateDoc(historyRef, { storeId: slugClean });
+                        }
+                    } catch (eHistory) {
+                        console.warn("Aviso: Falha ao atualizar histórico de trial, mas a loja foi movida:", eHistory);
                     }
                 }
 
@@ -697,7 +718,7 @@
                 loadStores();
             } catch (e) {
                 console.error("Erro ao mudar ID:", e);
-                alert("Erro ao processar mudança de ID.");
+                alert("Erro ao processar mudança de ID: " + (e.message || e));
             }
         }
 

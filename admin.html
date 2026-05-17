@@ -374,8 +374,8 @@
                             <button onclick="togglePlan('${id}', '${plan}')" title="Ciclar Plano (Free > Basic > Premium)" class="p-2 ${planColorClass} rounded-lg hover:shadow-md transition-all">
                                 <i data-lucide="${planIconAction}" size="16" class="${plan === 'free' ? '' : 'fill-current'}"></i>
                             </button>
-                            <button onclick="blockStore('${id}')" title="Bloquear" class="p-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition-colors">
-                                <i data-lucide="lock" size="16"></i>
+                            <button onclick="blockStore('${id}')" title="${data.status === 'blocked' ? 'Desbloquear' : 'Bloquear'}" class="p-2 ${data.status === 'blocked' ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-orange-50 text-orange-600 hover:bg-orange-100'} rounded-lg transition-colors">
+                                <i data-lucide="${data.status === 'blocked' ? 'unlock' : 'lock'}" size="16"></i>
                             </button>
                             <button onclick="deleteStore('${id}')" title="Excluir" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
                                 <i data-lucide="trash-2" size="16"></i>
@@ -445,8 +445,8 @@
                             <button onclick="showVendors('${id}')" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md shadow-indigo-100/50">
                                 <i data-lucide="users" class="w-3.5 h-3.5"></i> Vend. (${vendorCount})
                             </button>
-                            <button onclick="blockStore('${id}')" class="flex-1 py-3 bg-orange-50 text-orange-600 rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all border border-orange-100">
-                                <i data-lucide="lock" class="w-3.5 h-3.5"></i> Bloq
+                            <button onclick="blockStore('${id}')" class="flex-1 py-3 ${data.status === 'blocked' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-orange-50 text-orange-600 border-orange-100'} rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all border shadow-sm">
+                                <i data-lucide="${data.status === 'blocked' ? 'unlock' : 'lock'}" class="w-3.5 h-3.5"></i> ${data.status === 'blocked' ? 'Desbl' : 'Bloq'}
                             </button>
                         </div>
                         <div class="flex items-center gap-2 w-full pt-1">
@@ -558,16 +558,23 @@
         }
 
         async function blockStore(id) {
-            if (!confirm("Deseja bloquear o acesso a esta loja?")) return;
+            const store = allStores.find(s => s.id === id);
+            if (!store) return;
+            
+            const isBlocked = store.status === 'blocked';
+            const actionLabel = isBlocked ? "desbloquear" : "bloquear";
+            const newStatus = isBlocked ? "active" : "blocked";
+            
+            if (!confirm(`Deseja ${actionLabel} o acesso a esta loja?`)) return;
             
             try {
                 await window.fs.updateDoc(window.fs.doc(window.db, "stores", id), {
-                    status: "blocked"
+                    status: newStatus
                 });
-                alert("Loja bloqueada!");
+                alert(`Loja ${isBlocked ? 'desbloqueada' : 'bloqueada'}!`);
                 loadStores();
             } catch (error) {
-                alert("Erro ao bloquear.");
+                alert(`Erro ao ${actionLabel}.`);
             }
         }
 

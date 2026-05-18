@@ -235,7 +235,7 @@
             if (product.i6) mediaItems.push({ type: 'image', url: proxyImg(product.i6) });
             if (product.videoUrl) {
                 const embedInfo = getEmbedUrl(product.videoUrl);
-                mediaItems.push({ type: 'video', url: embedInfo.url, isDirect: embedInfo.isDirect, original: embedInfo.original });
+                mediaItems.push({ type: 'video', url: embedInfo.url, isDirect: embedInfo.isDirect, original: embedInfo.original, isExternalPage: embedInfo.isExternalPage });
             }
 
             let mediaHTML = `<button onclick="closeModal()" class="md:hidden absolute top-4 right-4 z-[1020] bg-black/40 text-white p-3 rounded-full backdrop-blur-md active-scale transition-all touch-manipulation"><i data-lucide="x" class="w-6 h-6"></i></button>`;
@@ -255,6 +255,12 @@
                                         ` : `
                                             <iframe src="${item.url}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                                         `}
+                                        ${item.isExternalPage ? `
+                                            <div class="absolute top-4 left-4 right-4 bg-orange-500/90 text-white p-3 rounded-xl backdrop-blur-md border border-orange-400/50 shadow-2xl z-50">
+                                                <p class="text-[10px] font-black uppercase tracking-widest mb-1 italic">⚠️ Link incorreto detectado</p>
+                                                <p class="text-[9px] font-bold opacity-90 leading-tight">Você colou o link da página. Para mostrar apenas o vídeo, use o botão "Copy link" (ou Direct Link) no site de hospedagem para obter o link que termina em .mp4</p>
+                                            </div>
+                                        ` : ''}
                                         <a href="${item.original}" target="_blank" class="absolute bottom-4 right-4 bg-black/60 text-white px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest backdrop-blur-md flex items-center gap-2 hover:bg-black/80 transition-all">
                                             <i data-lucide="external-link" class="w-3 h-3"></i> Ver no Navegador
                                         </a>
@@ -283,6 +289,15 @@
                             ` : `
                                 <iframe src="${item.url}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                             `}
+                            ${item.isExternalPage ? `
+                                <div class="absolute top-4 left-4 right-4 bg-orange-500/90 text-white p-3 rounded-xl backdrop-blur-md border border-orange-400/50 shadow-2xl z-50">
+                                    <p class="text-[10px] font-black uppercase tracking-widest mb-1 italic">⚠️ Link incorreto detectado</p>
+                                    <p class="text-[9px] font-bold opacity-90 leading-tight">Para mostrar apenas o vídeo, use o link direto (que termina em .mp4) fornecido pelo site de hospedagem.</p>
+                                </div>
+                            ` : ''}
+                            <a href="${item.original}" target="_blank" class="absolute bottom-4 right-4 bg-black/60 text-white px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest backdrop-blur-md flex items-center gap-2 hover:bg-black/80 transition-all">
+                                <i data-lucide="external-link" class="w-3 h-3"></i> Ver no Navegador
+                            </a>
                         </div>`;
                 } else {
                     mediaHTML += `<div class="w-full h-full flex items-center justify-center bg-slate-950 px-4 md:px-0"><img src="${item.url}" class="w-full h-full object-contain selection:bg-none"></div>`;
@@ -442,53 +457,43 @@
         }
 
         function getEmbedUrl(url) {
-            if (!url) return { url: '', isDirect: false };
+            if (!url) return { url: '', isDirect: false, original: '' };
             let u = url.trim();
+            const original = u;
             
             // YouTube
             if (u.includes('youtube.com/watch?v=') || u.includes('youtu.be/')) {
                 const id = u.includes('watch?v=') ? u.split('v=')[1].split('&')[0] : u.split('youtu.be/')[1].split('?')[0];
-                return { url: `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=0`, isDirect: false };
+                return { url: `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=0`, isDirect: false, original };
             }
             if (u.includes('youtube.com/shorts/')) {
                 const id = u.split('shorts/')[1].split('?')[0];
-                return { url: `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=0`, isDirect: false };
+                return { url: `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=0`, isDirect: false, original };
             }
             
             // Instagram
             if (u.includes('instagram.com/')) {
                 let cleanUrl = u.split('?')[0];
                 if (!cleanUrl.endsWith('/')) cleanUrl += '/';
-                return { url: `${cleanUrl}embed/captioned/`, isDirect: false };
+                return { url: `${cleanUrl}embed/captioned/`, isDirect: false, original };
             }
             
             // TikTok
             if (u.includes('tiktok.com/')) {
                 if (u.includes('/video/')) {
                     const id = u.split('/video/')[1].split('?')[0];
-                    return { url: `https://www.tiktok.com/embed/v2/${id}`, isDirect: false };
+                    return { url: `https://www.tiktok.com/embed/v2/${id}`, isDirect: false, original };
                 }
             }
 
-            // Direct Video Extensions
-            const isDirectVideo = u.toLowerCase().endsWith('.mp4') || 
-                                 u.toLowerCase().endsWith('.webm') || 
-                                 u.toLowerCase().endsWith('.mov') || 
-                                 u.toLowerCase().endsWith('.m4v');
-
-            if (isDirectVideo) {
-                return { url: u, isDirect: true };
-            }
-
-            // QuickUploads / Others
-            if (u.includes('quickuploads.co')) {
-                // Se o link termina em extensão de vídeo, é direto
-                if (isDirectVideo) return { url: u, isDirect: true };
-                // Caso contrário, tenta como iframe (página do player)
-                return { url: u, isDirect: false };
+            // Direct Video Extensions (Directly compatible with native <video> tag)
+            const isDirectFile = u.match(/\.(mp4|webm|ogg|mov|m4v|m3u8)$/i);
+            if (isDirectFile) {
+                return { url: u, isDirect: true, original };
             }
             
-            return { url: u, isDirect: false };
+            // Se for QuickUploads sem extension, retorna como iframe mas com flag de alerta
+            return { url: u, isDirect: false, original, isExternalPage: u.includes('quickuploads.co') };
         }
 
         async function decodeData() {
@@ -968,15 +973,15 @@
                         ${hasCardSwipe ? `
                             <div id="${swiperId}" onscroll="updateDots('${swiperId}')" class="media-swiper absolute inset-0 flex overflow-x-auto snap-x snap-mandatory scroll-smooth w-full h-full">
                                 ${cardMedia.map((item, idx) => `
-                                    <div class="snap-start flex-shrink-0 w-full h-full relative">
+                                    <div class="snap-start flex-shrink-0 w-full h-full relative pointer-events-none">
                                         ${item.type === 'image' ? `
                                             <img src="${item.url}" class="absolute inset-0 w-full h-full object-contain" referrerpolicy="no-referrer">
                                         ` : `
                                             <div class="video-wrapper">
                                                 ${item.isDirect ? `
-                                                    <video src="${item.url}" controls class="absolute inset-0 w-full h-full object-contain" playsinline></video>
+                                                    <video src="${item.url}" muted loop playsinline class="absolute inset-0 w-full h-full object-contain"></video>
                                                 ` : `
-                                                    <iframe src="${item.url}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                                    <iframe src="${item.url}" frameborder="0" class="w-full h-full"></iframe>
                                                 `}
                                                 <div class="absolute bottom-2 right-2 bg-black/40 text-white px-2 py-1 rounded text-[8px] font-bold uppercase tracking-widest backdrop-blur-sm pointer-events-none">Vídeo</div>
                                             </div>
@@ -999,10 +1004,23 @@
                             <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex gap-1.5" id="dots-${swiperId}">
                                 ${cardMedia.map((_, i) => `<div class="w-1.5 h-1.5 rounded-full ${i === 0 ? 'bg-white' : 'bg-white/40'} shadow-md border border-black/10 transition-all"></div>`).join('')}
                             </div>
-                        ` : (imageUrl ? `
-                            <img src="${imageUrl}" class="absolute inset-0 w-full h-full object-contain hover:scale-105 transition-transform duration-500" style="image-rendering: -webkit-optimize-contrast;" referrerpolicy="no-referrer">
+                        ` : (cardMedia.length === 1 ? `
+                            <div class="absolute inset-0 pointer-events-none">
+                                ${cardMedia[0].type === 'image' ? `
+                                    <img src="${cardMedia[0].url}" class="absolute inset-0 w-full h-full object-contain hover:scale-105 transition-transform duration-500" style="image-rendering: -webkit-optimize-contrast;" referrerpolicy="no-referrer">
+                                ` : `
+                                    <div class="video-wrapper h-full">
+                                        ${cardMedia[0].isDirect ? `
+                                            <video src="${cardMedia[0].url}" muted loop playsinline class="absolute inset-0 w-full h-full object-contain"></video>
+                                        ` : `
+                                            <iframe src="${cardMedia[0].url}" frameborder="0" class="w-full h-full"></iframe>
+                                        `}
+                                        <div class="absolute bottom-2 right-2 bg-black/40 text-white px-2 py-1 rounded text-[8px] font-bold uppercase tracking-widest backdrop-blur-sm">Vídeo</div>
+                                    </div>
+                                `}
+                            </div>
                         ` : `
-                            <div class="absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-300">
+                            <div class="absolute inset-0 flex items-center justify-center bg-slate-100 dark:bg-slate-800 text-slate-300 pointer-events-none">
                                 <i data-lucide="image" class="w-12 h-12"></i>
                             </div>
                         `)}

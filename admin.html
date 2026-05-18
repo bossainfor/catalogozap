@@ -359,6 +359,9 @@
                     </td>
                     <td class="px-6 py-5 text-right">
                         <div class="flex items-center justify-end gap-2">
+                            <button onclick="setAppLink('${id}')" title="Link do Aplicativo" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
+                                <i data-lucide="smartphone" size="16"></i>
+                            </button>
                             <button onclick="changeStoreId('${id}')" title="Mudar ID (Link)" class="p-2 bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition-colors">
                                 <i data-lucide="tag" size="16"></i>
                             </button>
@@ -450,6 +453,9 @@
                             </button>
                         </div>
                         <div class="flex items-center gap-2 w-full pt-1">
+                            <button onclick="setAppLink('${id}')" class="flex-1 py-3 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center active:scale-95 transition-all border border-blue-100" title="Link do App">
+                                <i data-lucide="smartphone" class="w-4 h-4"></i>
+                            </button>
                             <button onclick="changeStoreId('${id}')" class="flex-1 py-3 bg-yellow-50 text-yellow-600 rounded-xl flex items-center justify-center active:scale-95 transition-all border border-yellow-100" title="Mudar ID (Link)">
                                 <i data-lucide="tag" class="w-4 h-4"></i>
                             </button>
@@ -654,6 +660,27 @@
             } catch (e) {
                 console.error(e);
                 alert("Erro ao atualizar informações.");
+            }
+        }
+
+        async function setAppLink(id) {
+            const store = allStores.find(s => s.id === id);
+            if (!store) return;
+
+            const currentLink = store.al || "";
+            const newLink = prompt(`LINK DO APLICATIVO (Kodular/APK/Store)\nLoja: ${store.n}\nDigite o link para download do app:`, currentLink);
+            
+            if (newLink === null) return; // Cancelou
+
+            try {
+                await window.fs.updateDoc(window.fs.doc(window.db, "stores", id), {
+                    al: newLink.trim()
+                });
+                alert("Link do aplicativo atualizado!");
+                loadStores();
+            } catch (e) {
+                console.error("Erro ao salvar link do app:", e);
+                alert("Erro ao salvar link.");
             }
         }
 

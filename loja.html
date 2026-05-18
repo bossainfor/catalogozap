@@ -235,7 +235,7 @@
             if (product.i6) mediaItems.push({ type: 'image', url: proxyImg(product.i6) });
             if (product.videoUrl) {
                 const embedInfo = getEmbedUrl(product.videoUrl);
-                mediaItems.push({ type: 'video', url: embedInfo.url, isDirect: embedInfo.isDirect, original: embedInfo.original, isExternalPage: embedInfo.isExternalPage });
+                mediaItems.push({ type: 'video', url: embedInfo.url, isDirect: embedInfo.isDirect, original: embedInfo.original });
             }
 
             let mediaHTML = `<button onclick="closeModal()" class="md:hidden absolute top-4 right-4 z-[1020] bg-black/40 text-white p-3 rounded-full backdrop-blur-md active-scale transition-all touch-manipulation"><i data-lucide="x" class="w-6 h-6"></i></button>`;
@@ -255,12 +255,6 @@
                                         ` : `
                                             <iframe src="${item.url}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                                         `}
-                                        ${item.isExternalPage ? `
-                                            <div class="absolute top-4 left-4 right-4 bg-orange-500/90 text-white p-3 rounded-xl backdrop-blur-md border border-orange-400/50 shadow-2xl z-50">
-                                                <p class="text-[10px] font-black uppercase tracking-widest mb-1 italic">⚠️ Link incorreto detectado</p>
-                                                <p class="text-[9px] font-bold opacity-90 leading-tight">Você colou o link da página. Para mostrar apenas o vídeo, use o botão "Copy link" (ou Direct Link) no site de hospedagem para obter o link que termina em .mp4</p>
-                                            </div>
-                                        ` : ''}
                                         <a href="${item.original}" target="_blank" class="absolute bottom-4 right-4 bg-black/60 text-white px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest backdrop-blur-md flex items-center gap-2 hover:bg-black/80 transition-all">
                                             <i data-lucide="external-link" class="w-3 h-3"></i> Ver no Navegador
                                         </a>
@@ -289,12 +283,6 @@
                             ` : `
                                 <iframe src="${item.url}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                             `}
-                            ${item.isExternalPage ? `
-                                <div class="absolute top-4 left-4 right-4 bg-orange-500/90 text-white p-3 rounded-xl backdrop-blur-md border border-orange-400/50 shadow-2xl z-50">
-                                    <p class="text-[10px] font-black uppercase tracking-widest mb-1 italic">⚠️ Link incorreto detectado</p>
-                                    <p class="text-[9px] font-bold opacity-90 leading-tight">Para mostrar apenas o vídeo, use o link direto (que termina em .mp4) fornecido pelo site de hospedagem.</p>
-                                </div>
-                            ` : ''}
                             <a href="${item.original}" target="_blank" class="absolute bottom-4 right-4 bg-black/60 text-white px-3 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-widest backdrop-blur-md flex items-center gap-2 hover:bg-black/80 transition-all">
                                 <i data-lucide="external-link" class="w-3 h-3"></i> Ver no Navegador
                             </a>
@@ -492,8 +480,7 @@
                 return { url: u, isDirect: true, original };
             }
             
-            // Se for QuickUploads sem extension, retorna como iframe mas com flag de alerta
-            return { url: u, isDirect: false, original, isExternalPage: u.includes('quickuploads.co') };
+            return { url: u, isDirect: false, original };
         }
 
         async function decodeData() {

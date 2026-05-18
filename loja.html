@@ -233,7 +233,10 @@
             if (product.i4) mediaItems.push({ type: 'image', url: proxyImg(product.i4) });
             if (product.i5) mediaItems.push({ type: 'image', url: proxyImg(product.i5) });
             if (product.i6) mediaItems.push({ type: 'image', url: proxyImg(product.i6) });
-            if (product.videoUrl) mediaItems.push({ type: 'video', url: getEmbedUrl(product.videoUrl) });
+            if (product.videoUrl) {
+                const embedInfo = getEmbedUrl(product.videoUrl);
+                mediaItems.push({ type: 'video', url: embedInfo.url, isDirect: embedInfo.isDirect });
+            }
 
             let mediaHTML = `<button onclick="closeModal()" class="md:hidden absolute top-4 right-4 z-[1020] bg-black/40 text-white p-3 rounded-full backdrop-blur-md active-scale transition-all touch-manipulation"><i data-lucide="x" class="w-6 h-6"></i></button>`;
             
@@ -247,7 +250,11 @@
                                     <img src="${item.url}" class="w-full h-full object-contain">
                                 ` : `
                                     <div class="video-wrapper">
-                                        <iframe src="${item.url}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                        ${item.isDirect ? `
+                                            <video src="${item.url}" controls class="w-full h-full object-contain" playsinline></video>
+                                        ` : `
+                                            <iframe src="${item.url}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                        `}
                                     </div>
                                 `}
                             </div>
@@ -266,7 +273,14 @@
             } else if (mediaItems.length === 1) {
                 const item = mediaItems[0];
                 if (item.type === 'video') {
-                    mediaHTML += `<div class="video-wrapper"><iframe src="${item.url}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>`;
+                    mediaHTML += `
+                        <div class="video-wrapper">
+                            ${item.isDirect ? `
+                                <video src="${item.url}" controls class="w-full h-full object-contain" playsinline></video>
+                            ` : `
+                                <iframe src="${item.url}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            `}
+                        </div>`;
                 } else {
                     mediaHTML += `<div class="w-full h-full flex items-center justify-center bg-slate-950 px-4 md:px-0"><img src="${item.url}" class="w-full h-full object-contain selection:bg-none"></div>`;
                 }
@@ -425,36 +439,40 @@
         }
 
         function getEmbedUrl(url) {
-            if (!url) return '';
+            if (!url) return { url: '', isDirect: false };
             let u = url.trim();
             
             // YouTube
             if (u.includes('youtube.com/watch?v=') || u.includes('youtu.be/')) {
                 const id = u.includes('watch?v=') ? u.split('v=')[1].split('&')[0] : u.split('youtu.be/')[1].split('?')[0];
-                return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=0`;
+                return { url: `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=0`, isDirect: false };
             }
             if (u.includes('youtube.com/shorts/')) {
                 const id = u.split('shorts/')[1].split('?')[0];
-                return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=0`;
+                return { url: `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=0`, isDirect: false };
             }
             
             // Instagram
             if (u.includes('instagram.com/')) {
-                // Remove query strings e adiciona o sufixo de embed
                 let cleanUrl = u.split('?')[0];
                 if (!cleanUrl.endsWith('/')) cleanUrl += '/';
-                return `${cleanUrl}embed/captioned/`;
+                return { url: `${cleanUrl}embed/captioned/`, isDirect: false };
             }
             
             // TikTok
             if (u.includes('tiktok.com/')) {
-                // TikTok embed é mais complexo com iframes diretos, variamos pelo ID
-                const parts = u.split('/');
-                const id = parts[parts.length - 1].split('?')[0];
-                return `https://www.tiktok.com/embed/v2/${id}`;
+                if (u.includes('/video/')) {
+                    const id = u.split('/video/')[1].split('?')[0];
+                    return { url: `https://www.tiktok.com/embed/v2/${id}`, isDirect: false };
+                }
             }
 
-            return u;
+            // QuickUploads / Direct MP4 or other video files
+            if (u.includes('quickuploads.co') || u.endsWith('.mp4') || u.endsWith('.webm') || u.endsWith('.mov')) {
+                return { url: u, isDirect: true };
+            }
+            
+            return { url: u, isDirect: false };
         }
 
         async function decodeData() {
@@ -891,7 +909,7 @@
 
             const productsHTML = filteredProducts.length > 0 ? filteredProducts.map(p => {
                 const imageUrl = proxyImg(p.image);
-                const videoUrl = p.videoUrl ? getEmbedUrl(p.videoUrl) : null;
+                const videoInfo = p.videoUrl ? getEmbedUrl(p.videoUrl) : null;
                 
                 // Coletar todas as mídias para o card
                 const cardMedia = [];
@@ -901,7 +919,7 @@
                 if (p.i4) cardMedia.push({ type: 'image', url: proxyImg(p.i4) });
                 if (p.i5) cardMedia.push({ type: 'image', url: proxyImg(p.i5) });
                 if (p.i6) cardMedia.push({ type: 'image', url: proxyImg(p.i6) });
-                if (p.videoUrl) cardMedia.push({ type: 'video', url: getEmbedUrl(p.videoUrl) });
+                if (p.videoUrl) cardMedia.push({ type: 'video', url: videoInfo.url, isDirect: videoInfo.isDirect });
 
                 const hasCardSwipe = cardMedia.length > 1;
 
@@ -939,7 +957,11 @@
                                             <img src="${item.url}" class="absolute inset-0 w-full h-full object-contain" referrerpolicy="no-referrer">
                                         ` : `
                                             <div class="video-wrapper">
-                                                <iframe src="${item.url}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                                ${item.isDirect ? `
+                                                    <video src="${item.url}" controls class="absolute inset-0 w-full h-full object-contain" playsinline></video>
+                                                ` : `
+                                                    <iframe src="${item.url}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                                                `}
                                             </div>
                                         `}
                                     </div>

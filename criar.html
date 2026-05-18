@@ -999,16 +999,24 @@
                                             return `<input type="text" value="${videoEscaped}" 
                                                    ${isVideoLocked ? 'readonly disabled' : ''} 
                                                    oninput="window.updateProduct('${p.id}', 'videoUrl', this.value)" 
-                                                   placeholder="${window.storePlan === 'premium' ? 'Cole o link do vídeo' : (window.storePlan === 'basic' ? (canAddMore ? 'Link do vídeo (Máximo 3)' : 'Limite de 3 vídeos atingido!') : 'Apenas no Plano Premium')}" 
+                                                   placeholder="${window.storePlan === 'premium' ? 'LINK DIRETO (.mp4)' : (window.storePlan === 'basic' ? (canAddMore ? 'LINK DIRETO (.mp4)' : 'Limite atingido!') : 'Apenas Premium')}" 
                                                    class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-indigo-500 outline-none transition-all font-bold text-xs ${isVideoLocked ? 'opacity-50 cursor-not-allowed bg-slate-50' : ''}">`;
                                         })()}
                                     </div>
                                     <button type="button" onclick="window.open('https://files.quickuploads.co/', '_blank')" class="bg-indigo-600 text-white px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 active-scale shadow-lg shadow-indigo-100" title="Hospedar Vídeo">
                                         <i data-lucide="clapperboard" class="w-5 h-5"></i>
-                                        <span>Subir Vídeo</span>
+                                        <span>Hospedar Vídeo</span>
                                     </button>
                                 </div>
-                                <p class="text-[9px] text-slate-400 font-medium px-2 italic">Dica: Use o site acima para hospedar seu vídeo. No final, cole o link que termina em ".mp4" aqui para funcionar perfeitamente.</p>
+                                <div class="bg-indigo-50 p-3 rounded-xl border border-indigo-100">
+                                    <p class="text-[9px] text-indigo-700 font-black uppercase tracking-widest mb-1 mb-1">Atenção para funcionar:</p>
+                                    <p class="text-[9px] text-indigo-600 font-medium leading-relaxed">
+                                        1. Clique em "Hospedar Vídeo" e suba seu arquivo.<br>
+                                        2. Após subir, NÃO copie o link da página. <br>
+                                        3. Clique no botão <span class="bg-indigo-100 px-1 rounded">Copy Link</span> ou procure por <span class="bg-indigo-100 px-1 rounded">Direct Link</span>.<br>
+                                        4. O link deve terminar obrigatoriamente com <span class="font-bold">.mp4</span>
+                                    </p>
+                                </div>
                             </div>
                             
                             <div class="pt-6 flex justify-center">
@@ -1527,40 +1535,42 @@
         }
 
         function getEmbedUrl(url) {
-            if (!url) return '';
+            if (!url) return { url: '', isDirect: false, original: '' };
             let u = url.trim();
+            const original = u;
             
             // YouTube
             if (u.includes('youtube.com/watch?v=') || u.includes('youtu.be/')) {
                 const id = u.includes('watch?v=') ? u.split('v=')[1].split('&')[0] : u.split('youtu.be/')[1].split('?')[0];
-                return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=0`;
+                return { url: `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=0`, isDirect: false, original };
             }
             if (u.includes('youtube.com/shorts/')) {
                 const id = u.split('shorts/')[1].split('?')[0];
-                return `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=0`;
+                return { url: `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=0`, isDirect: false, original };
             }
             
             // Instagram
             if (u.includes('instagram.com/')) {
                 let cleanUrl = u.split('?')[0];
                 if (!cleanUrl.endsWith('/')) cleanUrl += '/';
-                return `${cleanUrl}embed/captioned/`;
+                return { url: `${cleanUrl}embed/captioned/`, isDirect: false, original };
             }
             
             // TikTok
             if (u.includes('tiktok.com/')) {
                 if (u.includes('/video/')) {
                     const id = u.split('/video/')[1].split('?')[0];
-                    return `https://www.tiktok.com/embed/v2/${id}`;
+                    return { url: `https://www.tiktok.com/embed/v2/${id}`, isDirect: false, original };
                 }
             }
 
-            // QuickUploads / Direct MP4 or other video files
-            if (u.includes('quickuploads.co') || u.endsWith('.mp4') || u.endsWith('.webm') || u.endsWith('.mov')) {
-                return u; // We'll handle this in a video tag or similar if needed, or just keep as is
+            // Direct Video Extensions (Stricter)
+            const isDirectFile = u.match(/\.(mp4|webm|ogg|mov|m4v)$/i);
+            if (isDirectFile) {
+                return { url: u, isDirect: true, original };
             }
             
-            return u;
+            return { url: u, isDirect: false, original };
         }
 
         window.openTutorial = function(videoId) {

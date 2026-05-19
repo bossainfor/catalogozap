@@ -739,10 +739,15 @@
                 const shippingPrice = selectedShippingZone ? parseFloat(selectedShippingZone.price.replace(',', '.')) : 0;
                 const grandTotal = total + shippingPrice;
 
-                // Cálculo da taxa do cartão
+                // Cálculo da taxa do cartão progressive
                 const cardFeePercentage = storeData.cf ? parseFloat(storeData.cf) : 0;
-                const totalWithCardFee = cardFeePercentage > 0 ? (grandTotal * (1 + cardFeePercentage / 100)) : grandTotal;
-                const totalToDisplay = selectedPaymentMethod === 'card' ? totalWithCardFee : grandTotal;
+                let activeFeePercentage = 0;
+                if (selectedPaymentMethod === 'card') {
+                    if (selectedInstallment >= 4) {
+                        activeFeePercentage = cardFeePercentage + (selectedInstallment - 4) * 1.5;
+                    }
+                }
+                const totalToDisplay = activeFeePercentage > 0 ? (grandTotal * (1 + activeFeePercentage / 100)) : grandTotal;
 
                 let paymentMethodHTML = `
                     <div class="space-y-2 mb-4 text-left">
@@ -761,8 +766,13 @@
                 if (selectedPaymentMethod === 'card') {
                     let installmentOptions = '';
                     for (let i = 1; i <= 10; i++) {
-                        const valPerInstallment = totalWithCardFee / i;
-                        installmentOptions += `<option value="${i}" ${selectedInstallment === i ? 'selected' : ''}>${i}x de ${formatCurrency(valPerInstallment)} ${cardFeePercentage > 0 ? `(+${cardFeePercentage}% juros)` : '(Sem juros)'}</option>`;
+                        let feeForThisOption = 0;
+                        if (i >= 4) {
+                            feeForThisOption = cardFeePercentage + (i - 4) * 1.5;
+                        }
+                        const totalForThisOption = feeForThisOption > 0 ? (grandTotal * (1 + feeForThisOption / 100)) : grandTotal;
+                        const valPerInstallment = totalForThisOption / i;
+                        installmentOptions += `<option value="${i}" ${selectedInstallment === i ? 'selected' : ''}>${i}x de ${formatCurrency(valPerInstallment)} ${feeForThisOption > 0 ? `(+${feeForThisOption.toFixed(1)}% juros)` : '(Sem juros)'}</option>`;
                     }
 
                     paymentMethodHTML += `
@@ -796,10 +806,16 @@
                                 <span class="dark:text-white">${formatCurrency(shippingPrice)}</span>
                             </div>
                         ` : ''}
-                        ${selectedPaymentMethod === 'card' && cardFeePercentage > 0 ? `
-                            <div class="flex justify-between text-xs font-bold">
-                                <span class="text-slate-400">Acréscimo do Cartão (${cardFeePercentage}%)</span>
-                                <span class="text-orange-500 font-bold">+ ${formatCurrency(totalWithCardFee - grandTotal)}</span>
+                        ${selectedPaymentMethod === 'card' && activeFeePercentage > 0 ? `
+                            <div class="flex justify-between text-xs font-bold animate-fade-in">
+                                <span class="text-slate-400">Acréscimo do Cartão (${activeFeePercentage.toFixed(1)}%)</span>
+                                <span class="text-orange-500 font-bold">+ ${formatCurrency(totalToDisplay - grandTotal)}</span>
+                            </div>
+                        ` : ''}
+                        ${selectedPaymentMethod === 'card' && selectedInstallment <= 3 ? `
+                            <div class="flex justify-between text-xs font-bold text-emerald-500 animate-fade-in">
+                                <span class="text-emerald-500 font-bold">Promoção Parcelamento</span>
+                                <span class="font-bold">1x a 3x Sem Juros! ⭐</span>
                             </div>
                         ` : ''}
                         <div class="flex justify-between font-bold pt-2 border-t border-slate-100 dark:border-slate-700">
@@ -857,7 +873,13 @@
             }
 
             const cardFeePercentage = storeData.cf ? parseFloat(storeData.cf) : 0;
-            const finalTotal = (selectedPaymentMethod === 'card' && cardFeePercentage > 0) ? (total * (1 + cardFeePercentage / 100)) : total;
+            let activeFee = 0;
+            if (selectedPaymentMethod === 'card') {
+                if (selectedInstallment >= 4) {
+                    activeFee = cardFeePercentage + (selectedInstallment - 4) * 1.5;
+                }
+            }
+            const finalTotal = activeFee > 0 ? (total * (1 + activeFee / 100)) : total;
 
             if (selectedPaymentMethod === 'pix') {
                 message += `\n\n*Forma de Pagamento:* PIX ⚡`;
@@ -868,12 +890,14 @@
             } else {
                 const installmentValue = finalTotal / selectedInstallment;
                 message += `\n\n*Forma de Pagamento:* Cartão de Crédito 💳`;
-                message += `\n*Opção Selecionada:* ${selectedInstallment}x de ${formatCurrency(installmentValue)}`;
-                if (cardFeePercentage > 0) {
-                    message += `\n*Taxa Adicional:* ${cardFeePercentage}% inclusa`;
+                if (selectedInstallment <= 3) {
+                    message += `\n*Opção Selecionada:* ${selectedInstallment}x de ${formatCurrency(installmentValue)} *[Sem Juros]*`;
+                } else {
+                    message += `\n*Opção Selecionada:* ${selectedInstallment}x de ${formatCurrency(installmentValue)}`;
+                    message += `\n*Taxa Aplicada:* ${activeFee.toFixed(1)}% de acréscimo`;
                 }
                 message += `\n\n*Total no Cartão: ${formatCurrency(finalTotal)}*`;
-                message += `\n\n_(Favor enviar o link de pagamento no cartão)_`;
+                message += `\n\n_(Favor enviar o link de pagamento no valor exato)_`;
             }
             
             let whatsapp = storeData.whatsapp.replace(/\D/g, '');

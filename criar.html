@@ -224,9 +224,24 @@
                             </div>
                         </div>
 
-                        <div class="space-y-2">
-                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Chave PIX (Para pedidos)</label>
-                            <input type="text" id="pix-key" oninput="window.saveDraft()" placeholder="E-mail, Celular ou CPF" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold shadow-sm">
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Chave PIX (Para pedidos)</label>
+                                    <input type="text" id="pix-key" oninput="window.saveDraft()" placeholder="E-mail, Celular ou CPF" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold shadow-sm">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Acréscimo Cartão de Crédito % (Opcional)</label>
+                                    <input type="number" id="card-fee" oninput="window.saveDraft()" min="0" max="100" step="0.1" placeholder="Ex: 5 para somar 5% no cartão" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold shadow-sm">
+                                </div>
+                            </div>
+                            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                <div class="space-y-0.5">
+                                    <h4 class="text-xs font-black uppercase text-slate-700">Parcelamento no Cartão de Crédito</h4>
+                                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wide">O cliente calcula de 1x a 10x com a taxa configurada inclusa!</p>
+                                </div>
+                                <img src="https://i0.wp.com/imprensa24h.com.br/wp-content/uploads/2023/03/bandeiras-de-cartoes-de-credito-png-e-vetor.png?fit=1920%2C1080&ssl=1" alt="Bandeiras de Cartão" class="h-8 w-auto object-contain bg-white px-2 py-1 rounded-lg border border-slate-100 shadow-sm" referrerpolicy="no-referrer">
+                            </div>
                         </div>
                     </div>
                     <div class="space-y-2">
@@ -462,6 +477,7 @@
                 bannerImage: document.getElementById('banner-image').value,
                 storeLogo: document.getElementById('store-logo').value,
                 pixKey: document.getElementById('pix-key').value,
+                cardFee: document.getElementById('card-fee').value,
                 shippingZones: window.shippingZones,
                 products: window.products.map(p => ({
                     ...p,
@@ -536,6 +552,7 @@
                 document.getElementById('banner-image').value = draft.bannerImage || '';
                 document.getElementById('store-logo').value = draft.storeLogo || '';
                 document.getElementById('pix-key').value = draft.pixKey || '';
+                document.getElementById('card-fee').value = draft.cardFee || '';
                 window.shippingZones = draft.shippingZones || [];
                 window.updateBannerPreview(draft.bannerImage);
                 window.updateLogoPreview(draft.storeLogo);
@@ -1348,11 +1365,13 @@
             if (website) data.ws = website;
             if (bannerImage) data.bi = bannerImage;
             
-            // Novos campos: Logo e PIX
+            // Novos campos: Logo, PIX e Taxa do Cartão
             const logoVal = document.getElementById('store-logo').value;
             const pixVal = document.getElementById('pix-key').value;
+            const cardFeeVal = document.getElementById('card-fee').value;
             if (logoVal) data.lg = logoVal;
             if (pixVal) data.px = pixVal;
+            if (cardFeeVal) data.cf = parseFloat(cardFeeVal);
             
             data.c = document.getElementById('primary-color').value.replace('#', '');
             data.b = document.getElementById('secondary-color').value.replace('#', '');
@@ -1673,6 +1692,7 @@
                     
                     if (data.lg) document.getElementById('store-logo').value = data.lg;
                     if (data.px) document.getElementById('pix-key').value = data.px;
+                    if (data.cf) document.getElementById('card-fee').value = data.cf;
                     
                     // Verifica se o rascunho local é mais recente que o dado do servidor
                     if (!forcedId) {

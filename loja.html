@@ -165,6 +165,18 @@
         let searchQuery = '';
         let currentVariations = {};
         let selectedShippingZone = null;
+        let selectedPaymentMethod = 'pix';
+        let selectedInstallment = 1;
+
+        window.setPaymentMethod = function(method) {
+            selectedPaymentMethod = method;
+            updateCartUI();
+        }
+
+        window.setInstallment = function(inst) {
+            selectedInstallment = parseInt(inst);
+            updateCartUI();
+        }
 
         function toggleTheme() {
             document.documentElement.classList.toggle('dark');
@@ -577,6 +589,7 @@
                     logo: data.lg || '',
                     pixKey: data.px || '',
                     appLink: data.al || '',
+                    cf: data.cf || 0,
                     products: (data.p || []).map(p => {
                         return {
                             id: p.id || Math.random().toString(36).substr(2, 9),
@@ -726,9 +739,53 @@
                 const shippingPrice = selectedShippingZone ? parseFloat(selectedShippingZone.price.replace(',', '.')) : 0;
                 const grandTotal = total + shippingPrice;
 
+                // Cálculo da taxa do cartão
+                const cardFeePercentage = storeData.cf ? parseFloat(storeData.cf) : 0;
+                const totalWithCardFee = cardFeePercentage > 0 ? (grandTotal * (1 + cardFeePercentage / 100)) : grandTotal;
+                const totalToDisplay = selectedPaymentMethod === 'card' ? totalWithCardFee : grandTotal;
+
+                let paymentMethodHTML = `
+                    <div class="space-y-2 mb-4 text-left">
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Forma de Pagamento</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="window.setPaymentMethod('pix')" class="py-3 px-3 rounded-xl border-2 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all ${selectedPaymentMethod === 'pix' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white' : 'bg-slate-50 text-slate-700 border-slate-100 hover:border-slate-200 dark:bg-slate-700 dark:border-slate-600 dark:text-white'}" id="pay-btn-pix">
+                                <i data-lucide="qr-code" class="w-4 h-4"></i> PIX
+                            </button>
+                            <button onclick="window.setPaymentMethod('card')" class="py-3 px-3 rounded-xl border-2 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all ${selectedPaymentMethod === 'card' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white' : 'bg-slate-50 text-slate-700 border-slate-100 hover:border-slate-200 dark:bg-slate-700 dark:border-slate-600 dark:text-white'}" id="pay-btn-card">
+                                <i data-lucide="credit-card" class="w-4 h-4"></i> Cartão
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                if (selectedPaymentMethod === 'card') {
+                    let installmentOptions = '';
+                    for (let i = 1; i <= 10; i++) {
+                        const valPerInstallment = totalWithCardFee / i;
+                        installmentOptions += `<option value="${i}" ${selectedInstallment === i ? 'selected' : ''}>${i}x de ${formatCurrency(valPerInstallment)} ${cardFeePercentage > 0 ? `(+${cardFeePercentage}% juros)` : '(Sem juros)'}</option>`;
+                    }
+
+                    paymentMethodHTML += `
+                        <div class="space-y-2 mb-4 animate-fade-in text-left">
+                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Selecione as Parcelas</label>
+                            <select onchange="window.setInstallment(this.value)" class="w-full px-4 py-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 font-bold text-sm outline-none dark:text-white">
+                                ${installmentOptions}
+                            </select>
+                            <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-700/60 flex flex-col md:flex-row items-center justify-between gap-3">
+                                <div class="space-y-0.5 text-left">
+                                    <h5 class="text-[10px] font-black uppercase text-slate-700 dark:text-white">Pagamento por Link de Cartão</h5>
+                                    <p class="text-[8px] text-slate-400 font-bold uppercase tracking-wide leading-none">Cobre de forma simples parcelado!</p>
+                                </div>
+                                <img src="https://i0.wp.com/imprensa24h.com.br/wp-content/uploads/2023/03/bandeiras-de-cartoes-de-credito-png-e-vetor.png?fit=1920%2C1080&ssl=1" alt="Bandeiras de Cartão" class="h-6 w-auto object-contain bg-white px-2 py-0.5 rounded border border-slate-100 shadow-sm" referrerpolicy="no-referrer">
+                            </div>
+                        </div>
+                    `;
+                }
+
                 footerContainer.innerHTML = `
                     ${shippingHTML}
-                    <div class="space-y-1 mb-4">
+                    ${paymentMethodHTML}
+                    <div class="space-y-1 mb-4 text-left">
                         <div class="flex justify-between text-xs font-bold">
                             <span class="text-slate-400">Subtotal</span>
                             <span class="dark:text-white">${formatCurrency(total)}</span>
@@ -739,9 +796,15 @@
                                 <span class="dark:text-white">${formatCurrency(shippingPrice)}</span>
                             </div>
                         ` : ''}
+                        ${selectedPaymentMethod === 'card' && cardFeePercentage > 0 ? `
+                            <div class="flex justify-between text-xs font-bold">
+                                <span class="text-slate-400">Acréscimo do Cartão (${cardFeePercentage}%)</span>
+                                <span class="text-orange-500 font-bold">+ ${formatCurrency(totalWithCardFee - grandTotal)}</span>
+                            </div>
+                        ` : ''}
                         <div class="flex justify-between font-bold pt-2 border-t border-slate-100 dark:border-slate-700">
                             <span class="text-slate-400 uppercase text-[10px] tracking-widest">Total</span>
-                            <span class="text-xl font-black tracking-tighter dark:text-white">${formatCurrency(grandTotal)}</span>
+                            <span class="text-xl font-black tracking-tighter dark:text-white">${formatCurrency(totalToDisplay)}</span>
                         </div>
                     </div>
                     <button onclick="checkout()" class="w-full py-4 text-white font-black uppercase italic tracking-widest text-sm rounded-2xl shadow-lg transition-all active:scale-95" style="background-color: ${storeData.primaryColor}">Finalizar no WhatsApp</button>
@@ -793,11 +856,25 @@
                 total += shippingPrice;
             }
 
-            if (storeData.pixKey) {
-                message += `\n\n*Pagamento PIX:* ${storeData.pixKey}`;
-            }
+            const cardFeePercentage = storeData.cf ? parseFloat(storeData.cf) : 0;
+            const finalTotal = (selectedPaymentMethod === 'card' && cardFeePercentage > 0) ? (total * (1 + cardFeePercentage / 100)) : total;
 
-            message += `\n\n*Total: ${formatCurrency(total)}*`;
+            if (selectedPaymentMethod === 'pix') {
+                message += `\n\n*Forma de Pagamento:* PIX ⚡`;
+                if (storeData.pixKey) {
+                    message += `\n*Chave PIX:* ${storeData.pixKey}`;
+                }
+                message += `\n\n*Total: ${formatCurrency(finalTotal)}*`;
+            } else {
+                const installmentValue = finalTotal / selectedInstallment;
+                message += `\n\n*Forma de Pagamento:* Cartão de Crédito 💳`;
+                message += `\n*Opção Selecionada:* ${selectedInstallment}x de ${formatCurrency(installmentValue)}`;
+                if (cardFeePercentage > 0) {
+                    message += `\n*Taxa Adicional:* ${cardFeePercentage}% inclusa`;
+                }
+                message += `\n\n*Total no Cartão: ${formatCurrency(finalTotal)}*`;
+                message += `\n\n_(Favor enviar o link de pagamento no cartão)_`;
+            }
             
             let whatsapp = storeData.whatsapp.replace(/\D/g, '');
             if (whatsapp.length <= 11) whatsapp = '55' + whatsapp;

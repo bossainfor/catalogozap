@@ -585,33 +585,72 @@
         }
 
         async function deleteStore(id) {
-            if (!confirm("TEM CERTEZA? Esta ação é irreversível e apagará todos os dados da loja e suas imagens!")) return;
+            if (!confirm("TEM CERTEZA ABSOLUTA? Esta ação é irreversível e apagará DEFINITIVAMENTE todos os dados da loja, contatos, banners, logos, histórico de trial e qualquer vínculo com o WhatsApp!")) return;
             
             try {
-                const { doc, deleteDoc, getDoc } = window.fs;
+                const { doc, deleteDoc, getDoc, collection, getDocs } = window.fs;
                 const { ref, deleteObject } = window.st;
                 const storeRef = doc(window.db, "stores", id);
                 
-                // Buscar dados para apagar histórico de trial
+                let phoneFromStore = null;
                 const snap = await getDoc(storeRef);
                 if (snap.exists()) {
                     const data = snap.data();
                     if (data.w) {
-                        try { await deleteDoc(doc(window.db, "trial_history", data.w.replace(/\D/g, ''))); } catch(e){}
+                        phoneFromStore = data.w.replace(/\D/g, '');
                     }
                     
-                    // Tentar apagar o banner
+                    // Tentar apagar o banner do Storage se houver
                     if (data.bi && data.bi.includes('firebasestorage')) {
                         try { await deleteObject(ref(window.storage, `stores/${id}/banner`)); } catch(e){}
                     }
+                    // Tentar apagar o logo do Storage se houver
+                    if (data.lg && data.lg.includes('firebasestorage')) {
+                        try { await deleteObject(ref(window.storage, `stores/${id}/logo`)); } catch(e){}
+                    }
                 }
 
+                // 1. Apagar TODOS os registros na coleção "trial_history" que possuam esse storeId
+                try {
+                    const allHistSnap = await getDocs(collection(window.db, "trial_history"));
+                    allHistSnap.forEach(async (hDoc) => {
+                        const hData = hDoc.data();
+                        if (hData.storeId === id) {
+                            try {
+                                await deleteDoc(doc(window.db, "trial_history", hDoc.id));
+                                console.log("Histórico de trial removido via associação de storeId:", hDoc.id);
+                            } catch(errH){}
+                        }
+                    });
+                } catch(eQuery) {
+                    console.error("Erro ao varrer trial_history:", eQuery);
+                }
+
+                // 2. Apagar diretamente pelo telefone cadastrado na loja (como garantia adicional)
+                if (phoneFromStore) {
+                    try {
+                        await deleteDoc(doc(window.db, "trial_history", phoneFromStore));
+                        console.log("Histórico de trial removido diretamente via telefone:", phoneFromStore);
+                    } catch(e){}
+                    
+                    // Tenta com e sem código de país '55' para abranger todos os cadastros legados
+                    let altPhone = phoneFromStore;
+                    if (phoneFromStore.startsWith('55') && phoneFromStore.length > 10) {
+                        altPhone = phoneFromStore.substring(2);
+                    } else {
+                        altPhone = '55' + phoneFromStore;
+                    }
+                    try { await deleteDoc(doc(window.db, "trial_history", altPhone)); } catch(e){}
+                }
+
+                // 3. Remover o documento da loja principal
                 await deleteDoc(storeRef);
-                alert("Loja e dados excluídos permanentemente!");
+                
+                alert("Sucesso! Loja, contatos, mídias e histórico de trial excluídos de forma definitiva de todo o sistema.");
                 loadStores();
             } catch (error) {
                 console.error("Erro ao excluir:", error);
-                alert("Erro ao excluir.");
+                alert("Erro ao excluir: " + (error.message || error));
             }
         }
 

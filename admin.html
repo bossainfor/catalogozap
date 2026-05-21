@@ -658,12 +658,24 @@
             const store = allStores.find(s => s.id === id);
             if (!store) return;
 
+            // 1. Perguntar novo ID (Link / Slug)
+            const newId = prompt("Novo Link da Loja (ID/Slug - ex: pet-shop):\n(Mantenha idêntico se não quiser alterar o link público do site)", store.id);
+            if (newId === null) return;
+            const slugClean = newId.toLowerCase().trim().replace(/[^a-z0-9-]/g, '');
+            if (!slugClean) {
+                alert("ID (Link) inválido! Use apenas letras, números e traços do teclado.");
+                return;
+            }
+
+            // 2. Novo nome da loja
             const newName = prompt("Novo Nome da Loja:", store.n || "");
             if (newName === null) return;
 
+            // 3. Novo responsável
             const newOwner = prompt("Nome do Responsável:", store.cn || "");
             if (newOwner === null) return;
 
+            // 4. Novo WhatsApp
             const newWhatsApp = prompt("Novo WhatsApp (apenas números com DDD):", store.w || "");
             if (newWhatsApp === null) return;
 
@@ -674,31 +686,82 @@
             }
 
             try {
-                const { doc, updateDoc, setDoc, deleteDoc } = window.fs;
-                
-                // 1. Atualizar a loja
-                await updateDoc(doc(window.db, "stores", id), {
-                    n: newName,
-                    cn: newOwner,
-                    w: whatsappClean
-                });
+                const { doc, getDoc, updateDoc, setDoc, deleteDoc } = window.fs;
+                const oldWhatsAppClean = store.w ? store.w.replace(/\D/g, '') : '';
 
-                // 2. Migrar histórico de trial (login)
-                if (store.w !== whatsappClean) {
-                    // Remove o antigo
-                    try { await deleteDoc(doc(window.db, "trial_history", store.w.replace(/\D/g, ''))); } catch(e){}
-                    // Cria o novo
+                // Se mudou o ID (Link)
+                if (slugClean !== id) {
+                    // Verificar se o novo ID já existe
+                    const check = await getDoc(doc(window.db, "stores", slugClean));
+                    if (check.exists()) {
+                        alert(`Erro: O ID de URL "${slugClean}" já está em uso por outra loja! Escolha outro.`);
+                        return;
+                    }
+
+                    // Copiar dados da loja antiga
+                    const data = { ...store };
+                    delete data.id; // Remove o ID do objeto de dados
+
+                    // Atualizar com os campos informados
+                    data.n = newName;
+                    data.cn = newOwner;
+                    data.w = whatsappClean;
+                    data.updatedAt = new Date().toISOString();
+
+                    // Garantir que expiresAt seja uma string ISO compatível
+                    if (typeof data.expiresAt !== 'string') {
+                        if (data.expiresAt && data.expiresAt.toDate) {
+                            data.expiresAt = data.expiresAt.toDate().toISOString();
+                        } else if (data.expiresAt instanceof Date) {
+                            data.expiresAt = data.expiresAt.toISOString();
+                        } else {
+                            data.expiresAt = new Date().toISOString();
+                        }
+                    }
+
+                    // Gravar a nova loja no slug novo
+                    await setDoc(doc(window.db, "stores", slugClean), data);
+
+                    // Migrar histórico de trial (login) do WhatsApp
+                    if (oldWhatsAppClean) {
+                        try { await deleteDoc(doc(window.db, "trial_history", oldWhatsAppClean)); } catch(e){}
+                    }
                     await setDoc(doc(window.db, "trial_history", whatsappClean), {
-                        storeId: id,
+                        storeId: slugClean,
+                        whatsapp: whatsappClean,
                         createdAt: store.createdAt || new Date().toISOString()
                     });
+
+                    // Apagar a loja antiga
+                    await deleteDoc(doc(window.db, "stores", id));
+
+                } else {
+                    // Se NÃO mudou o ID (apenas informações normais)
+                    await updateDoc(doc(window.db, "stores", id), {
+                        n: newName,
+                        cn: newOwner,
+                        w: whatsappClean,
+                        updatedAt: new Date().toISOString()
+                    });
+
+                    // Se mudou o WhatsApp mas não mudou o ID, migra histórico
+                    if (oldWhatsAppClean !== whatsappClean) {
+                        if (oldWhatsAppClean) {
+                            try { await deleteDoc(doc(window.db, "trial_history", oldWhatsAppClean)); } catch(e){}
+                        }
+                        await setDoc(doc(window.db, "trial_history", whatsappClean), {
+                            storeId: id,
+                            whatsapp: whatsappClean,
+                            createdAt: store.createdAt || new Date().toISOString()
+                        });
+                    }
                 }
 
-                alert("Informações atualizadas com sucesso!");
+                alert("Informações e link público atualizados com sucesso!");
                 loadStores();
             } catch (e) {
                 console.error(e);
-                alert("Erro ao atualizar informações.");
+                alert("Erro ao salvar alterações: " + (e.message || e));
             }
         }
 

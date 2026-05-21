@@ -289,18 +289,28 @@
 
                 // 1º TENTATIVA: Buscar diretamente no trial_history pelo WhatsApp (método mais rápido e 100% confiável)
                 try {
-                    const historySnap = await getDoc(doc(window.db, "trial_history", whatsapp));
-                    if (historySnap.exists()) {
-                        storeId = historySnap.data().storeId;
-                        const storeSnap = await getDoc(doc(window.db, "stores", storeId));
-                        if (storeSnap.exists()) {
-                            storeData = storeSnap.data();
-                        } else {
-                            // Registro órfão de trial_history detectado (loja removida), vamos apagar para não dar falso positivo
-                            try {
-                                const { deleteDoc } = window.firebaseUtils;
-                                await deleteDoc(doc(window.db, "trial_history", whatsapp));
-                            } catch(eDel){}
+                    let phoneVariants = [whatsapp];
+                    let prefix55 = '55' + whatsapp;
+                    let suffixNo55 = whatsapp.startsWith('55') ? whatsapp.substring(2) : whatsapp;
+                    if (!phoneVariants.includes(prefix55)) phoneVariants.push(prefix55);
+                    if (!phoneVariants.includes(suffixNo55)) phoneVariants.push(suffixNo55);
+
+                    for (const phoneItem of phoneVariants) {
+                        const historySnap = await getDoc(doc(window.db, "trial_history", phoneItem));
+                        if (historySnap.exists()) {
+                            const hData = historySnap.data();
+                            storeId = hData.storeId;
+                            const storeSnap = await getDoc(doc(window.db, "stores", storeId));
+                            if (storeSnap.exists()) {
+                                storeData = storeSnap.data();
+                                break;
+                            } else {
+                                // Registro órfão de trial_history detectado (loja removida), vamos apagar para não dar falso positivo
+                                try {
+                                    const { deleteDoc } = window.firebaseUtils;
+                                    await deleteDoc(doc(window.db, "trial_history", phoneItem));
+                                } catch(eDel){}
+                            }
                         }
                     }
                 } catch (err) {

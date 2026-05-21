@@ -295,6 +295,12 @@
                         const storeSnap = await getDoc(doc(window.db, "stores", storeId));
                         if (storeSnap.exists()) {
                             storeData = storeSnap.data();
+                        } else {
+                            // Registro órfão de trial_history detectado (loja removida), vamos apagar para não dar falso positivo
+                            try {
+                                const { deleteDoc } = window.firebaseUtils;
+                                await deleteDoc(doc(window.db, "trial_history", whatsapp));
+                            } catch(eDel){}
                         }
                     }
                 } catch (err) {

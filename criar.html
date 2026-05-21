@@ -1216,7 +1216,7 @@
                     attempts++;
                 }
 
-                const { doc, getDoc } = window.firebaseUtils;
+                const { doc, getDoc, deleteDoc } = window.firebaseUtils;
                 const historySnap = await getDoc(doc(window.db, "trial_history", whatsappClean));
                 
                 const btn = document.getElementById('main-action-btn');
@@ -1224,10 +1224,25 @@
                 const btnIcon = btn.querySelector('i');
                 const matchMsg = document.getElementById('whatsapp-match-msg');
 
+                let hasValidStore = false;
                 if (historySnap.exists()) {
                     const historyData = historySnap.data();
-                    window.existingStoreId = historyData.storeId;
+                    const targetStoreId = historyData.storeId;
                     
+                    // Verifica se de fato a loja existe na coleção stores
+                    const storeSnap = await getDoc(doc(window.db, "stores", targetStoreId));
+                    if (storeSnap.exists()) {
+                        hasValidStore = true;
+                        window.existingStoreId = targetStoreId;
+                    } else {
+                        // Loja foi removida, limpa trial_history órfão para liberar número
+                        try {
+                            await deleteDoc(doc(window.db, "trial_history", whatsappClean));
+                        } catch(eDel){}
+                    }
+                }
+
+                if (hasValidStore) {
                     // Mostra mensagem de loja encontrada avisando para logar acima
                     matchMsg.classList.remove('hidden');
 
@@ -1271,7 +1286,7 @@
                     attempts++;
                 }
 
-                const { doc, getDoc } = window.firebaseUtils;
+                const { doc, getDoc, deleteDoc } = window.firebaseUtils;
                 const historySnap = await getDoc(doc(window.db, "trial_history", whatsapp));
                 
                 if (!historySnap.exists()) {
@@ -1283,7 +1298,10 @@
                 const storeSnap = await getDoc(doc(window.db, "stores", storeId));
                 
                 if (!storeSnap.exists()) {
-                    alert("Dados da loja não encontrados.");
+                    try {
+                        await deleteDoc(doc(window.db, "trial_history", whatsapp));
+                    } catch(eDel){}
+                    alert("A loja anteriormente criada para este número já foi excluída do sistema. Você já pode criar uma nova com este mesmo telefone abaixo!");
                     return;
                 }
 
@@ -1426,7 +1444,22 @@
                 // TRAVA DE WHATSAPP REFORÇADA: Verifica se o número já possui uma loja
                 const historySnap = await getDoc(doc(window.db, "trial_history", whatsappClean));
                 
+                let hasValidStoreOnSubmit = false;
                 if (historySnap.exists()) {
+                    const historyData = historySnap.data();
+                    const storeSnap = await getDoc(doc(window.db, "stores", historyData.storeId));
+                    if (storeSnap.exists()) {
+                        hasValidStoreOnSubmit = true;
+                    } else {
+                        // É órfão, apaga o histórico de trial e continua normalmente
+                        try {
+                            const { deleteDoc } = window.firebaseUtils;
+                            await deleteDoc(doc(window.db, "trial_history", whatsappClean));
+                        } catch(eDel){}
+                    }
+                }
+
+                if (hasValidStoreOnSubmit) {
                     const historyData = historySnap.data();
                     // Se for uma criação nova OU se estiver editando mas o ID for diferente do registrado para esse número
                     if (!existingId || (existingId !== historyData.storeId)) {

@@ -1217,28 +1217,32 @@
                 }
 
                 const { doc, getDoc, deleteDoc } = window.firebaseUtils;
-                const historySnap = await getDoc(doc(window.db, "trial_history", whatsappClean));
                 
-                const btn = document.getElementById('main-action-btn');
-                const btnText = document.getElementById('btn-text');
-                const btnIcon = btn.querySelector('i');
-                const matchMsg = document.getElementById('whatsapp-match-msg');
-
                 let hasValidStore = false;
-                if (historySnap.exists()) {
-                    const historyData = historySnap.data();
-                    const targetStoreId = historyData.storeId;
-                    
-                    // Verifica se de fato a loja existe na coleção stores
-                    const storeSnap = await getDoc(doc(window.db, "stores", targetStoreId));
-                    if (storeSnap.exists()) {
-                        hasValidStore = true;
-                        window.existingStoreId = targetStoreId;
-                    } else {
-                        // Loja foi removida, limpa trial_history órfão para liberar número
-                        try {
-                            await deleteDoc(doc(window.db, "trial_history", whatsappClean));
-                        } catch(eDel){}
+                let phoneVariants = [whatsappClean];
+                let prefix55 = '55' + whatsappClean;
+                let suffixNo55 = whatsappClean.startsWith('55') ? whatsappClean.substring(2) : whatsappClean;
+                if (!phoneVariants.includes(prefix55)) phoneVariants.push(prefix55);
+                if (!phoneVariants.includes(suffixNo55)) phoneVariants.push(suffixNo55);
+
+                for (const phoneItem of phoneVariants) {
+                    const historySnap = await getDoc(doc(window.db, "trial_history", phoneItem));
+                    if (historySnap.exists()) {
+                        const historyData = historySnap.data();
+                        const targetStoreId = historyData.storeId;
+                        
+                        // Verifica se de fato a loja existe na coleção stores
+                        const storeSnap = await getDoc(doc(window.db, "stores", targetStoreId));
+                        if (storeSnap.exists()) {
+                            hasValidStore = true;
+                            window.existingStoreId = targetStoreId;
+                            break;
+                        } else {
+                            // Loja foi removida, limpa trial_history órfão para liberar número
+                            try {
+                                await deleteDoc(doc(window.db, "trial_history", phoneItem));
+                            } catch(eDel){}
+                        }
                     }
                 }
 
@@ -1287,19 +1291,36 @@
                 }
 
                 const { doc, getDoc, deleteDoc } = window.firebaseUtils;
-                const historySnap = await getDoc(doc(window.db, "trial_history", whatsapp));
                 
-                if (!historySnap.exists()) {
+                let foundHistoryData = null;
+                let matchedPhoneKey = null;
+                
+                let phoneVariants = [whatsapp];
+                let prefix55 = '55' + whatsapp;
+                let suffixNo55 = whatsapp.startsWith('55') ? whatsapp.substring(2) : whatsapp;
+                if (!phoneVariants.includes(prefix55)) phoneVariants.push(prefix55);
+                if (!phoneVariants.includes(suffixNo55)) phoneVariants.push(suffixNo55);
+
+                for (const phoneItem of phoneVariants) {
+                    const hSnap = await getDoc(doc(window.db, "trial_history", phoneItem));
+                    if (hSnap.exists()) {
+                        foundHistoryData = hSnap.data();
+                        matchedPhoneKey = phoneItem;
+                        break;
+                    }
+                }
+                
+                if (!foundHistoryData) {
                     alert("Loja não encontrada para este número. Crie uma nova abaixo!");
                     return;
                 }
 
-                const storeId = historySnap.data().storeId;
+                const storeId = foundHistoryData.storeId;
                 const storeSnap = await getDoc(doc(window.db, "stores", storeId));
                 
                 if (!storeSnap.exists()) {
                     try {
-                        await deleteDoc(doc(window.db, "trial_history", whatsapp));
+                        await deleteDoc(doc(window.db, "trial_history", matchedPhoneKey));
                     } catch(eDel){}
                     alert("A loja anteriormente criada para este número já foi excluída do sistema. Você já pode criar uma nova com este mesmo telefone abaixo!");
                     return;
@@ -1442,30 +1463,40 @@
                 }
 
                 // TRAVA DE WHATSAPP REFORÇADA: Verifica se o número já possui uma loja
-                const historySnap = await getDoc(doc(window.db, "trial_history", whatsappClean));
-                
                 let hasValidStoreOnSubmit = false;
-                if (historySnap.exists()) {
-                    const historyData = historySnap.data();
-                    const storeSnap = await getDoc(doc(window.db, "stores", historyData.storeId));
-                    if (storeSnap.exists()) {
-                        hasValidStoreOnSubmit = true;
-                    } else {
-                        // É órfão, apaga o histórico de trial e continua normalmente
-                        try {
-                            const { deleteDoc } = window.firebaseUtils;
-                            await deleteDoc(doc(window.db, "trial_history", whatsappClean));
-                        } catch(eDel){}
+                let matchedStoreIdOnSubmit = null;
+                
+                let phoneVariants = [whatsappClean];
+                let prefix55 = '55' + whatsappClean;
+                let suffixNo55 = whatsappClean.startsWith('55') ? whatsappClean.substring(2) : whatsappClean;
+                if (!phoneVariants.includes(prefix55)) phoneVariants.push(prefix55);
+                if (!phoneVariants.includes(suffixNo55)) phoneVariants.push(suffixNo55);
+
+                for (const phoneItem of phoneVariants) {
+                    const hSnap = await getDoc(doc(window.db, "trial_history", phoneItem));
+                    if (hSnap.exists()) {
+                        const hData = hSnap.data();
+                        const storeSnap = await getDoc(doc(window.db, "stores", hData.storeId));
+                        if (storeSnap.exists()) {
+                            hasValidStoreOnSubmit = true;
+                            matchedStoreIdOnSubmit = hData.storeId;
+                            break;
+                        } else {
+                            // É órfão, apaga o histórico de trial e continua normalmente
+                            try {
+                                const { deleteDoc } = window.firebaseUtils;
+                                await deleteDoc(doc(window.db, "trial_history", phoneItem));
+                            } catch(eDel){}
+                        }
                     }
                 }
 
                 if (hasValidStoreOnSubmit) {
-                    const historyData = historySnap.data();
                     // Se for uma criação nova OU se estiver editando mas o ID for diferente do registrado para esse número
-                    if (!existingId || (existingId !== historyData.storeId)) {
-                        const confirmEdit = confirm(`AVISO: O número ${whatsappClean} já está vinculado à loja "${historyData.storeId}".\n\nVocê deseja editar a loja existente em vez de criar uma nova?`);
+                    if (!existingId || (existingId !== matchedStoreIdOnSubmit)) {
+                        const confirmEdit = confirm(`AVISO: O número ${whatsappClean} já está vinculado à loja "${matchedStoreIdOnSubmit}".\n\nVocê deseja editar a loja existente em vez de criar uma nova?`);
                         if (confirmEdit) {
-                            window.location.href = `criar.html?edit=${historyData.storeId}`;
+                            window.location.href = `criar.html?edit=${matchedStoreIdOnSubmit}`;
                             return;
                         } else {
                             alert("Não é permitido criar múltiplas lojas com o mesmo número de WhatsApp.");
@@ -1668,7 +1699,30 @@
             if (!confirm("TEM CERTEZA? Isso vai apagar sua página para sempre e o link deixará de funcionar!")) return;
             
             try {
-                const { doc, deleteDoc } = window.firebaseUtils;
+                const { doc, getDoc, deleteDoc } = window.firebaseUtils;
+                
+                // Buscar dados para apagar histórico de trial completo também nos formatos com e sem 55
+                const storeSnap = await getDoc(doc(window.db, "stores", id));
+                if (storeSnap.exists()) {
+                    const data = storeSnap.data();
+                    if (data.w) {
+                        const phone = data.w.replace(/\D/g, '');
+                        try {
+                            await deleteDoc(doc(window.db, "trial_history", phone));
+                        } catch(e){}
+                        
+                        let altPhone = phone;
+                        if (phone.startsWith('55') && phone.length > 10) {
+                            altPhone = phone.substring(2);
+                        } else {
+                            altPhone = '55' + phone;
+                        }
+                        try {
+                            await deleteDoc(doc(window.db, "trial_history", altPhone));
+                        } catch(e){}
+                    }
+                }
+
                 await deleteDoc(doc(window.db, "stores", id));
                 
                 // Limpa a memória se for a última loja

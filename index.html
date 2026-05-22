@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="referrer" content="no-referrer-when-downgrade">
-    <title>CatálogoZap - Vitrine Digital</title>
+    <title>CatálogoZap - Soluções Premium de Vitrines Digitais</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -28,244 +28,662 @@
         window.firebaseUtils = { doc, getDoc, setDoc, updateDoc };
     </script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .img-container { 
-            width: 100%; 
-            max-width: 800px; 
-            background: #f8fafc;
-            border-radius: 32px;
-            overflow: hidden;
-            box-shadow: 0 30px 60px -12px rgba(0,0,0,0.2);
-            border: 6px solid white;
+        body { 
+            font-family: 'Inter', sans-serif; 
+            scroll-behavior: smooth;
         }
-        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; }
-        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 2rem; }
-        .active-scale:active { transform: scale(0.95); transition: transform 0.1s; }
+        .font-outfit {
+            font-family: 'Outfit', sans-serif;
+        }
+        .active-scale:active { 
+            transform: scale(0.97); 
+            transition: transform 0.1s; 
+        }
+        .glow-green {
+            box-shadow: 0 0 50px -10px rgba(37, 211, 102, 0.25);
+        }
+        .text-glow {
+            text-shadow: 0 0 30px rgba(37, 211, 102, 0.2);
+        }
     </style>
 </head>
-<body class="bg-slate-900 text-white">
-    <main class="min-h-screen flex flex-col items-center justify-center px-4 py-12 text-center">
-        <div class="max-w-4xl w-full space-y-8">
-            <div class="flex justify-center mb-8">
-                <img src="https://i.postimg.cc/8cgHJgH8/catalogo.png" alt="CatálogoZap" class="h-40 sm:h-48 w-auto" referrerpolicy="no-referrer">
+<body class="bg-black text-slate-100 min-h-screen overflow-x-hidden selection:bg-[#25D366] selection:text-black">
+
+    <!-- TOP ANNOUNCEMENT BAR -->
+    <div class="w-full bg-[#25D366]/10 border-b border-[#25D366]/20 py-2.5 text-center px-4 relative z-50">
+        <p class="text-xs font-semibold tracking-wider font-outfit text-emerald-400 uppercase flex items-center justify-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-[#25D366] animate-pulse"></span>
+            PROJETO CHAVE NA MÃO: NÓS CRIAMOS, DECORAMOS E CONFIGURAMOS TUDO EM ATÉ 24H
+        </p>
+    </div>
+
+    <!-- HEADER / NAVIGATION -->
+    <header class="w-full border-b border-white/5 bg-black/90 backdrop-blur-md sticky top-0 z-50 transition-all">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <img src="https://i.postimg.cc/8cgHJgH8/catalogo.png" alt="CatálogoZap" class="h-10 sm:h-11 w-auto object-contain" referrerpolicy="no-referrer">
+                <span class="text-[10px] font-bold px-2.5 py-1 bg-[#25D366]/10 border border-[#25D366]/20 rounded-full tracking-wider text-[#25D366] font-outfit uppercase">CONCEPÇÃO PREMIUM</span>
             </div>
-            <h1 class="text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter uppercase italic leading-[0.85]">
-                Venda mais pelo <br><span class="text-[#25D366]">WhatsApp</span>
-            </h1>
             
-            <p class="text-lg sm:text-xl md:text-2xl text-slate-300 font-medium max-w-2xl mx-auto leading-relaxed">
-                Receba pedidos prontos no WhatsApp automaticamente e venda mais todos os dias.
-            </p>
+            <nav class="hidden lg:flex items-center gap-8 text-sm font-medium text-slate-400">
+                <a href="#solucoes" class="hover:text-white transition-colors">O que fazemos</a>
+                <a href="#segmentos" class="hover:text-white transition-colors">Nossos Nichos</a>
+                <a href="#clientes" class="hover:text-white transition-colors">Casos de Sucesso</a>
+                <a href="#valores" class="hover:text-white transition-colors">Valores</a>
+                <a href="#contato" class="hover:text-[#25D366] transition-colors flex items-center gap-1.5 font-bold">Solicitar WhatsApp <span class="w-1.5 h-1.5 rounded-full bg-[#25D366] animate-pulse"></span></a>
+            </nav>
 
-            <!-- TUTORIAL -->
-            <div class="max-w-2xl mx-auto pt-10 space-y-4">
-                <h3 class="font-black uppercase italic tracking-tighter text-xl text-white">Comece a vender no automático agora</h3>
-                <div class="p-1 bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden">
-                    <div class="video-container">
-                        <iframe src="https://www.youtube.com/embed/BOaKZ3VCqik?autoplay=0" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
-                    </div>
-                </div>
-            </div>
-
-            <div class="pt-12 pb-6 flex flex-col items-center gap-10">
-                <a href="criar.html" class="inline-flex items-center gap-3 px-12 py-6 bg-[#25D366] text-slate-900 rounded-3xl font-black uppercase italic tracking-widest text-xl hover:bg-[#128C7E] hover:text-white transition-all shadow-[0_20px_50px_rgba(37,211,102,0.3)] hover:scale-105 active:scale-95">
-                    <i data-lucide="zap"></i> Criar Agora
+            <div class="flex items-center gap-4">
+                <!-- DISCRET CLIENT PORTAL LINK -->
+                <button onclick="openLoginModal()" class="text-xs sm:text-sm font-semibold px-4.5 py-2.5 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 text-white transition-all active-scale">
+                    Acessar Meu Painel
+                </button>
+                <a href="https://wa.me/5585992862177?text=Olá! Gostaria de falar com um especialista sobre a criação da minha loja online profissional pronta de 24h." target="_blank" class="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 bg-[#25D366] text-black font-extrabold text-sm rounded-xl hover:bg-[#128C7E] hover:text-white transition-all active-scale shadow-lg shadow-[#25D366]/10">
+                    <i data-lucide="message-circle" class="w-4 h-4"></i> Consultar Especialista
                 </a>
+            </div>
+        </div>
+    </header>
 
-                <div id="login-container" class="w-full max-w-sm bg-white/5 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/10 space-y-4">
-                    <div class="text-center">
-                        <h4 class="font-black uppercase italic tracking-tighter text-base">Já tem um catálogo?</h4>
-                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Entre para editar seus produtos</p>
-                    </div>
-                    
-                    <div class="space-y-3" id="login-inputs">
-                        <div class="relative text-left">
-                            <i data-lucide="phone" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4"></i>
-                            <input type="text" id="login-whatsapp" placeholder="WhatsApp (DDD + Número)" class="w-full pl-11 pr-5 py-4 bg-white/10 border border-white/10 rounded-2xl outline-none focus:border-[#25D366] transition-all font-bold text-xs">
-                        </div>
-                        <div class="relative text-left" id="pass-field-container">
-                            <i data-lucide="lock" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4"></i>
-                            <input type="password" id="login-password" placeholder="Sua Senha" class="w-full pl-11 pr-5 py-4 bg-white/10 border border-white/10 rounded-2xl outline-none focus:border-[#25D366] transition-all font-bold text-xs">
-                        </div>
-                        <button onclick="handleLogin()" id="login-btn" class="w-full py-4 bg-white text-slate-900 rounded-2xl font-black uppercase italic tracking-widest text-xs hover:bg-[#25D366] hover:text-white transition-all active-scale shadow-lg">
-                            Entrar no Meu Painel
-                        </button>
-                    </div>
+    <!-- HERO SECTION PREMIUM -->
+    <section class="relative pt-16 pb-28 md:py-36 overflow-hidden border-b border-white/5">
+        <!-- Ambient lighting elements -->
+        <div class="absolute top-0 right-0 w-[400px] h-[400px] bg-[#25D366]/5 rounded-full blur-[100px] pointer-events-none"></div>
+        <div class="absolute bottom-0 left-10 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none"></div>
+        
+        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-16 items-center relative z-10">
+            <!-- Left Headline Block -->
+            <div class="lg:col-span-7 space-y-8 text-left">
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 bg-gradient-to-r from-emerald-950 to-zinc-950 border border-emerald-500/20 rounded-full text-xs font-semibold text-emerald-400 tracking-wider uppercase font-outfit">
+                    <span class="w-2 h-2 rounded-full bg-[#25D366] animate-ping"></span> ESTÚDIO DE ARQUITETURA DIGITAL
+                </div>
 
-                    <div id="first-access-msg" class="hidden p-5 bg-blue-500/20 rounded-2xl border border-blue-500/30 text-center space-y-4">
-                        <div>
-                            <p class="text-[10px] font-black uppercase text-blue-400 mb-1">Primeiro Acesso!</p>
-                            <p class="text-[9px] text-blue-200">Defina uma senha de 4 dígitos para proteger sua página.</p>
-                        </div>
-                        <input type="password" id="new-password" placeholder="Escolha uma senha" class="w-full px-5 py-4 bg-white border-2 border-transparent focus:border-blue-500 rounded-2xl outline-none font-bold text-xs text-slate-900">
-                        <button onclick="saveFirstPassword()" class="w-full py-4 bg-blue-500 text-white rounded-2xl font-black uppercase italic tracking-widest text-xs shadow-lg active-scale">
-                           Salvar e Entrar
-                        </button>
-                        <button onclick="cancelFirstAccess()" class="text-[8px] text-blue-300 uppercase font-bold tracking-widest underline">Voltar</button>
+                <h1 class="text-4xl sm:text-6xl md:text-7xl font-black font-outfit tracking-tight leading-none text-white max-w-4xl">
+                    Transformamos seu negócio em uma <span class="bg-gradient-to-r from-emerald-400 via-[#25D366] to-green-300 bg-clip-text text-transparent text-glow">loja online profissional</span>
+                </h1>
+                
+                <p class="text-lg sm:text-xl text-slate-300 font-medium max-w-2xl leading-relaxed">
+                    Receba pedidos organizados no seu WhatsApp com uma loja online moderna, ultra veloz e sob medida. <span class="text-white font-bold">Nós criamos tudo:</span> configuramos suas cores, cadastramos seus produtos e entregamos sua vitrine pronta para vender em apenas 24h.
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-4 pt-4">
+                    <a href="https://wa.me/5585992862177?text=Olá! Quero solicitar a criação da minha loja personalizada pronta no WhatsApp. Como podemos começar?" target="_blank" class="inline-flex items-center justify-center gap-3 px-8 py-5 bg-[#25D366] text-black rounded-2xl font-black uppercase tracking-wider text-sm hover:bg-emerald-400 transition-all hover:shadow-[0_0_30px_rgba(37,211,102,0.3)] hover:scale-[1.02] active-scale">
+                        <i data-lucide="arrow-right-circle" class="w-5 h-5"></i> QUERO SOLICITAR MINHA LOJA PRONTA
+                    </a>
+                    <a href="#clientes" class="inline-flex items-center justify-center gap-2 px-8 py-5 bg-white/5 border border-white/10 rounded-2xl font-bold uppercase tracking-wider text-xs hover:bg-white/10 text-white transition-all active-scale">
+                        <i data-lucide="eye" class="w-4 h-4"></i> VER CLIENTES REAIS
+                    </a>
+                </div>
+
+                <!-- Trust Metrics / Strategic Indicators -->
+                <div class="pt-10 border-t border-white/5 grid grid-cols-3 gap-6 text-slate-400 font-outfit">
+                    <div>
+                        <p class="text-2xl sm:text-3xl font-black text-white">+1.2M</p>
+                        <p class="text-[10px] uppercase tracking-widest font-bold text-slate-500">Vendas Processadas</p>
+                    </div>
+                    <div>
+                        <p class="text-2xl sm:text-3xl font-black text-white">24 Horas</p>
+                        <p class="text-[10px] uppercase tracking-widest font-bold text-slate-500">Prazo Médio de Entrega</p>
+                    </div>
+                    <div>
+                        <p class="text-2xl sm:text-3xl font-black text-white">Suporte VIP</p>
+                        <p class="text-[10px] uppercase tracking-widest font-bold text-slate-500">Acompanhamento Direto</p>
                     </div>
                 </div>
             </div>
 
-            <!-- EXEMPLOS REAIS -->
-            <div class="max-w-4xl mx-auto pt-20 space-y-8">
-                <div class="text-center space-y-2">
-                    <h3 class="font-black uppercase italic tracking-tighter text-3xl sm:text-4xl text-white">Veja quem já está vendendo</h3>
-                    <p class="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Exemplos reais criados em nossa plataforma</p>
+            <!-- Right Visual Phone Mockup Stack -->
+            <div class="lg:col-span-5 flex justify-center">
+                <div class="relative w-full max-w-sm md:max-w-md group">
+                    <!-- Elegant Backlight Ring -->
+                    <div class="absolute -inset-4 bg-gradient-to-tr from-[#25D366] to-emerald-500 rounded-[3rem] blur-2xl opacity-20 group-hover:opacity-35 transition-opacity duration-1000"></div>
+                    
+                    <!-- Phone Container Design -->
+                    <div class="p-2.5 bg-zinc-950 border border-white/10 rounded-[3rem] shadow-2xl relative">
+                        <img src="/src/assets/images/premium_mockup_hero_1779484877017.png" 
+                             alt="Loja Online no Smartphone Mockup" 
+                             class="w-full h-auto rounded-[2.6rem] object-cover block shadow-2xl transition-transform duration-700 hover:scale-[1.01]"
+                             referrerpolicy="no-referrer">
+
+                        <!-- Floating Micro Interactive Widgets to Increase Auth Value -->
+                        <div class="absolute -left-6 bottom-16 bg-black/90 backdrop-blur-md border border-[#25D366]/30 p-3.5 rounded-2xl flex items-center gap-3 shadow-2xl animate-bounce" style="animation-duration: 3.5s;">
+                            <div class="w-9 h-9 rounded-full bg-[#25D366]/20 flex items-center justify-center border border-[#25D366]/30">
+                                <i data-lucide="check" class="text-[#25D366] w-5 h-5"></i>
+                            </div>
+                            <div class="text-left">
+                                <p class="text-[11px] font-bold text-white">Novo Pedido Recebido!</p>
+                                <p class="text-[9px] font-semibold text-emerald-400">R$ 218,90 via WhatsApp</p>
+                            </div>
+                        </div>
+
+                        <div class="absolute -right-6 top-12 bg-black/90 backdrop-blur-md border border-white/10 p-3 rounded-xl flex items-center gap-2 shadow-2xl">
+                            <span class="w-2 h-2 rounded-full bg-[#25D366] animate-pulse"></span>
+                            <span class="text-[9px] font-black uppercase tracking-wider text-slate-300">Loja Ativa 99.9%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- STRATEGIC BENEFITS SECTION - Premium styling (No SaaS self-service) -->
+    <section id="solucoes" class="py-24 bg-zinc-950 border-b border-white/5 relative">
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(60,60,60,0.1),transparent_50%)] pointer-events-none"></div>
+        
+        <div class="max-w-7xl mx-auto px-6 relative z-10">
+            <!-- Strategic Narrative Intro -->
+            <div class="text-center max-w-3xl mx-auto space-y-4 mb-20">
+                <span class="text-xs font-bold px-3 py-1.5 bg-[#25D366]/10 border border-[#25D366]/25 rounded-full tracking-wider text-[#25D366] font-outfit uppercase">SOLUÇÃO CHAVE NA MÃO</span>
+                <h2 class="text-3xl sm:text-5xl font-black font-outfit tracking-tight text-white leading-tight">
+                    Nós construímos sua presença digital, você colhe os pedidos
+                </h2>
+                <p class="text-slate-400 text-base sm:text-lg">
+                    Diferente de sistemas que te entregam uma tela vazia para você se virar, nós desenvolvemos, polimos, criamos a comunicação visual e entregamos seu catálogo totalmente pronto para o uso.
+                </p>
+            </div>
+
+            <!-- Grid of bespoke highlights -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Highlight 1 -->
+                <div class="bg-black border border-white/5 rounded-3xl p-8 hover:border-[#25D366]/40 transition-all group hover:-translate-y-1 hover:shadow-[0_10px_35px_rgba(37,211,102,0.05)]">
+                    <div class="w-14 h-14 rounded-2xl bg-[#25D366]/10 flex items-center justify-center mb-6 border border-[#25D366]/20 group-hover:-rotate-3 transition-transform">
+                        <i data-lucide="message-circle" class="text-[#25D366] w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-3">Pedidos Fechados no WhatsApp</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        Seus clientes transitam pelo cardápio ou catálogo de forma veloz, escolhem variações, opcionais, preenchem o endereço ou método de entrega e finalizam o pedido direto no seu WhatsApp de forma organizada e profissional.
+                    </p>
+                </div>
+
+                <!-- Highlight 2 -->
+                <div class="bg-black border border-white/5 rounded-3xl p-8 hover:border-[#25D366]/40 transition-all group hover:-translate-y-1 hover:shadow-[0_10px_35px_rgba(37,211,102,0.05)]">
+                    <div class="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center mb-6 border border-white/5 group-hover:-rotate-3 transition-transform">
+                        <i data-lucide="palette" class="text-emerald-400 w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-3">Identidade Visual Própria</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        Nossa equipe técnica faz todo o refinamento gráfico da sua loja. Adequamos o banner de topo de acordo com a sua logo, definimos paletas elegantes e estruturamos seções limpas que facilitam a leitura rápida.
+                    </p>
+                </div>
+
+                <!-- Highlight 3 -->
+                <div class="bg-black border border-white/5 rounded-3xl p-8 hover:border-[#25D366]/40 transition-all group hover:-translate-y-1 hover:shadow-[0_10px_35px_rgba(37,211,102,0.05)]">
+                    <div class="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center mb-6 border border-white/5 group-hover:-rotate-3 transition-transform">
+                        <i data-lucide="zap" class="text-amber-400 w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-3">Carregamento Instantâneo</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        Seus clientes não desistem da compra por causa de telas lentas. O catálogo utiliza tecnologia moderna otimizada para telefones móveis que renderiza imagens e categorias em milissegundos, reduzindo a taxa de abandono do site.
+                    </p>
+                </div>
+
+                <!-- Highlight 4 -->
+                <div class="bg-black border border-white/5 rounded-3xl p-8 hover:border-[#25D366]/40 transition-all group hover:-translate-y-1 hover:shadow-[0_10px_35px_rgba(37,211,102,0.05)]">
+                    <div class="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center mb-6 border border-white/5 group-hover:-rotate-3 transition-transform">
+                        <i data-lucide="clapperboard" class="text-red-400 w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-3">Apresentação com Vídeos</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        Dê vida aos seus produtos gastronômicos ou físicos! Nossa plataforma aceita pequenos vídeos demonstrativos de cada item para o cliente ver em movimento a textura, caimento ou detalhes especiais antes de pedir.
+                    </p>
+                </div>
+
+                <!-- Highlight 5 -->
+                <div class="bg-black border border-white/5 rounded-3xl p-8 hover:border-[#25D366]/40 transition-all group hover:-translate-y-1 hover:shadow-[0_10px_35px_rgba(37,211,102,0.05)]">
+                    <div class="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center mb-6 border border-white/5 group-hover:-rotate-3 transition-transform">
+                        <i data-lucide="clock-4" class="text-blue-400 w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-3">Integração de Agendamentos</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        Além de comercializar produtos tradicionais, você pode disponibilizar vitrines de serviços com seleção de dias de atendimento e suporte a horários programados para clínicas, barbearias ou prestadores de serviços locais.
+                    </p>
+                </div>
+
+                <!-- Highlight 6 -->
+                <div class="bg-black border border-white/5 rounded-3xl p-8 hover:border-[#25D366]/40 transition-all group hover:-translate-y-1 hover:shadow-[0_10px_35px_rgba(37,211,102,0.05)]">
+                    <div class="w-14 h-14 rounded-2xl bg-[#25D366]/10 flex items-center justify-center mb-6 border border-[#25D366]/20 group-hover:-rotate-3 transition-transform">
+                        <i data-lucide="shield-check" class="text-[#25D366] w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-3">Painel Administrativo VIP</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed">
+                        Após receber sua loja pronta, nosso painel de controle protegido por senha permite alterar preços, atualizar estoques ou adicionar novos pratos em segundos via celular, sem depender de agência para atualizações simples.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- NICHES OF SPECIALTY -->
+    <section id="segmentos" class="py-24 bg-black border-b border-white/5">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center max-w-2xl mx-auto space-y-4 mb-20">
+                <span class="text-xs font-bold px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/25 rounded-full tracking-wider text-emerald-400 font-outfit uppercase">SOLUÇÃO PARA CADA NEGÓCIO</span>
+                <h2 class="text-3xl sm:text-4xl font-extrabold font-outfit tracking-tight text-white">Segmentos de Especialidade</h2>
+                <p class="text-slate-400 text-sm sm:text-base">
+                    Nossa equipe modela a exibição, os termos de agendamento e o fluxo de fechamento de acordo com o padrão do seu nicho de atuação:
+                </p>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <!-- Segment Cards -->
+                <div class="bg-zinc-950 border border-white/5 rounded-3xl p-6 text-center hover:bg-zinc-900 hover:border-[#25D366]/30 transition-all cursor-default">
+                    <div class="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="utensils" class="text-orange-400 w-5 h-5"></i>
+                    </div>
+                    <h4 class="font-bold text-white text-base">Restaurantes & Delivery</h4>
                 </div>
                 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- Loja 1 -->
-                    <a href="https://acheaqui.net.br/loja.html?id=bossa-infor-produtora" target="_blank" class="group relative bg-slate-900/50 rounded-[2.5rem] p-4 border border-white/10 hover:border-emerald-500/50 transition-all hover:scale-[1.02] active:scale-95">
-                        <div class="aspect-video rounded-[2.2rem] overflow-hidden bg-slate-800 mb-4 relative flex items-center justify-center">
-                            <img src="https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=500" alt="Bossa Infor" class="w-full h-full object-cover opacity-20 transition-opacity group-hover:opacity-40">
-                            <div class="absolute inset-0 flex items-center justify-center">
-                                <div class="w-28 h-28 rounded-full border-4 border-emerald-500/30 bg-white flex items-center justify-center overflow-hidden shadow-2xl group-hover:scale-110 transition-transform">
-                                    <img src="https://i.postimg.cc/Gpykbbz5/nova-logo-bossa-infor-png.png" class="w-full h-full object-cover" alt="Bossa Infor Logo">
-                                </div>
-                            </div>
-                            <div class="absolute top-4 right-4 bg-white/10 backdrop-blur-md p-2 rounded-full border border-white/20">
-                                <i data-lucide="external-link" class="text-white w-4 h-4"></i>
-                            </div>
-                        </div>
-                        <div class="px-2 pb-2 text-center">
-                            <h4 class="text-white font-black uppercase italic tracking-tighter text-xl">Bossa Infor</h4>
-                            <p class="text-slate-500 text-xs font-bold uppercase tracking-widest">Produtora Digital</p>
-                        </div>
-                    </a>
+                <div class="bg-zinc-950 border border-white/5 rounded-3xl p-6 text-center hover:bg-zinc-900 hover:border-[#25D366]/30 transition-all cursor-default">
+                    <div class="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="scissors" class="text-blue-400 w-5 h-5"></i>
+                    </div>
+                    <h4 class="font-bold text-white text-base">Barbearias & Beleza</h4>
+                </div>
 
-                    <!-- Loja 2 -->
-                    <a href="https://acheaqui.net.br/loja.html?id=paes-barreto" target="_blank" class="group relative bg-slate-900/50 rounded-[2.5rem] p-4 border border-white/10 hover:border-emerald-500/50 transition-all hover:scale-[1.02] active:scale-95">
-                        <div class="aspect-video rounded-[2.2rem] overflow-hidden bg-slate-800 mb-4 relative flex items-center justify-center">
-                            <img src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&q=80&w=500" alt="PAES BARRETO" class="w-full h-full object-cover opacity-20 transition-opacity group-hover:opacity-40">
-                            <div class="absolute inset-0 flex items-center justify-center">
-                                <div class="w-28 h-28 rounded-full border-4 border-amber-500/30 bg-black flex items-center justify-center overflow-hidden shadow-2xl group-hover:scale-110 transition-transform">
-                                    <img src="https://i.postimg.cc/02F8M4RS/Whats-App-Image-2026-04-29-at-19-40-20.jpg" class="w-full h-full object-cover" alt="PAES BARRETO Logo">
-                                </div>
-                            </div>
-                            <div class="absolute top-4 right-4 bg-white/10 backdrop-blur-md p-2 rounded-full border border-white/20">
-                                <i data-lucide="external-link" class="text-white w-4 h-4"></i>
-                            </div>
-                        </div>
-                        <div class="px-2 pb-2 text-center">
-                            <h4 class="text-white font-black uppercase italic tracking-tighter text-xl leading-none">PAES BARRETO</h4>
-                            <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest mt-2">PRODUTOS IMPORTADOS</p>
-                        </div>
-                    </a>
+                <div class="bg-zinc-950 border border-white/5 rounded-3xl p-6 text-center hover:bg-zinc-900 hover:border-[#25D366]/30 transition-all cursor-default">
+                    <div class="w-12 h-12 rounded-2xl bg-green-500/10 flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="shopping-bag" class="text-green-400 w-5 h-5"></i>
+                    </div>
+                    <h4 class="font-bold text-white text-base">Marmitarias & Alimentação</h4>
+                </div>
 
-                    <!-- Loja 3 -->
-                    <a href="https://acheaqui.net.br/loja.html?id=roseno-souza" target="_blank" class="group relative bg-slate-900/50 rounded-[2.5rem] p-4 border border-white/10 hover:border-emerald-500/50 transition-all hover:scale-[1.02] active:scale-95">
-                        <div class="aspect-video rounded-[2.2rem] overflow-hidden bg-slate-800 mb-4 relative flex items-center justify-center">
-                            <img src="https://images.unsplash.com/photo-1526733169351-84074421272b?auto=format&fit=crop&q=80&w=500" alt="ROSENO & SOUZA" class="w-full h-full object-cover opacity-20 transition-opacity group-hover:opacity-40">
-                            <div class="absolute inset-0 flex items-center justify-center">
-                                <div class="w-28 h-28 rounded-full border-4 border-slate-500/30 bg-white flex items-center justify-center overflow-hidden shadow-2xl group-hover:scale-110 transition-transform">
-                                    <img src="https://i.postimg.cc/KcMfggyb/ROSENO-E-SOUZA.png" class="w-full h-full object-cover" alt="ROSENO & SOUZA Logo">
-                                </div>
-                            </div>
-                            <div class="absolute top-4 right-4 bg-white/10 backdrop-blur-md p-2 rounded-full border border-white/20">
-                                <i data-lucide="external-link" class="text-white w-4 h-4"></i>
-                            </div>
-                        </div>
-                        <div class="px-2 pb-2 text-center">
-                            <h4 class="text-white font-black uppercase italic tracking-tighter text-xl">ROSENO & SOUZA</h4>
-                            <p class="text-slate-500 text-xs font-bold uppercase tracking-widest">Eletrônicos & Utilidades</p>
-                        </div>
-                    </a>
+                <div class="bg-zinc-950 border border-white/5 rounded-3xl p-6 text-center hover:bg-zinc-900 hover:border-[#25D366]/30 transition-all cursor-default">
+                    <div class="w-12 h-12 rounded-2xl bg-pink-500/10 flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="shirt" class="text-pink-400 w-5 h-5"></i>
+                    </div>
+                    <h4 class="font-bold text-white text-base">Lojas de Moda & Roupas</h4>
+                </div>
+
+                <div class="bg-zinc-950 border border-white/5 rounded-3xl p-6 text-center hover:bg-zinc-900 hover:border-[#25D366]/30 transition-all cursor-default">
+                    <div class="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="gem" class="text-amber-400 w-5 h-5"></i>
+                    </div>
+                    <h4 class="font-bold text-white text-base">Joias & Acessórios</h4>
+                </div>
+
+                <div class="bg-zinc-950 border border-white/5 rounded-3xl p-6 text-center hover:bg-zinc-900 hover:border-[#25D366]/30 transition-all cursor-default">
+                    <div class="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="heart-pulse" class="text-red-400 w-5 h-5"></i>
+                    </div>
+                    <h4 class="font-bold text-white text-base">Clínicas & Agendamentos</h4>
+                </div>
+
+                <div class="bg-zinc-950 border border-white/5 rounded-3xl p-6 text-center hover:bg-zinc-900 hover:border-[#25D366]/30 transition-all cursor-default">
+                    <div class="w-12 h-12 rounded-2xl bg-sky-500/10 flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="smartphone" class="text-sky-400 w-5 h-5"></i>
+                    </div>
+                    <h4 class="font-bold text-white text-base">Eletrônicos & Afiliados</h4>
+                </div>
+
+                <div class="bg-zinc-950 border border-white/5 rounded-3xl p-6 text-center hover:bg-zinc-900 hover:border-[#25D366]/30 transition-all cursor-default">
+                    <div class="w-12 h-12 rounded-2xl bg-[#25D366]/10 flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="store" class="text-[#25D366] w-5 h-5"></i>
+                    </div>
+                    <h4 class="font-bold text-white text-base">Mercados & Açougues</h4>
                 </div>
             </div>
+        </div>
+    </section>
 
-            <!-- SEÇÃO DE PLANOS (FUNDO BRANCO PARA DESTAQUE) -->
-            <div class="mt-24 -mx-4 px-4 py-20 bg-white text-slate-900 rounded-[3rem] sm:rounded-[5rem]">
-                <div class="max-w-6xl mx-auto">
-                    <h2 class="text-4xl sm:text-6xl font-black tracking-tighter uppercase italic mb-4 text-slate-900">Planos & Preços</h2>
-                    <p class="text-slate-500 font-bold uppercase tracking-widest text-xs mb-16">O melhor custo-benefício para o seu negócio</p>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <!-- PLANO FREE -->
-                        <div class="bg-white border-2 border-slate-100 p-10 rounded-[3rem] flex flex-col items-center text-center hover:border-slate-300 transition-all shadow-xl shadow-slate-200/50">
-                            <div class="bg-slate-100 p-5 rounded-3xl mb-8">
-                                <i data-lucide="gift" class="w-10 h-10 text-slate-400"></i>
+    <!-- REAL PORTFOLIO CUSTOMERS SECTION (PRESENTED AS PREMIUM DEPLOYED SITES) -->
+    <section id="clientes" class="py-24 bg-zinc-950 border-b border-white/5">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center max-w-3xl mx-auto space-y-4 mb-20">
+                <span class="text-xs font-bold px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/25 rounded-full tracking-wider text-[#25D366] font-outfit uppercase">PROVA SOCIAL E RESPEITO</span>
+                <h2 class="text-3xl sm:text-5xl font-black font-outfit tracking-tight text-white">Negócios que já estão vendendo online</h2>
+                <p class="text-slate-400 text-sm sm:text-base">
+                    Estes são alguns dos nossos clientes reais com catálogos configurados, ativos e gerando centenas de faturamentos diretamente via WhatsApp todos os dias. Clique e experimente o fluxo real:
+                </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Client Store 1 -->
+                <div class="bg-black rounded-[2.5rem] p-6.5 border border-white/5 flex flex-col justify-between hover:border-[#25D366]/50 hover:shadow-[0_15px_40px_rgba(37,211,102,0.06)] transition-all transform hover:-translate-y-0.5 duration-300">
+                    <div class="space-y-6">
+                        <div class="aspect-video rounded-[2rem] overflow-hidden bg-zinc-900 relative flex items-center justify-center border border-white/5 shadow-inner">
+                            <img src="https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=500" alt="Bossa Infor" class="w-full h-full object-cover opacity-10" referrerpolicy="no-referrer">
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="w-24 h-24 rounded-full border-4 border-emerald-500/30 bg-zinc-900 flex items-center justify-center overflow-hidden shadow-2xl">
+                                    <img src="https://i.postimg.cc/Gpykbbz5/nova-logo-bossa-infor-png.png" class="w-full h-full object-cover" alt="Bossa Infor Logo" referrerpolicy="no-referrer">
+                                </div>
                             </div>
-                            <h3 class="text-3xl font-black uppercase italic tracking-tighter mb-4">Free</h3>
-                            <div class="flex items-baseline gap-1 mb-8 text-slate-900">
-                                <span class="text-xl font-bold">R$</span>
-                                <span class="text-6xl font-black">0</span>
-                                <span class="text-xl font-bold">,00</span>
-                            </div>
-                            <ul class="space-y-4 text-slate-600 font-bold text-left w-full mb-10 flex-grow">
-                                <li class="flex items-center gap-3"><i data-lucide="check-circle-2" class="w-5 h-5 text-green-500"></i> Até 5 Fotos</li>
-                                <li class="flex items-center gap-3 text-slate-300"><i data-lucide="x-circle" class="w-5 h-5"></i> Sem Vídeos</li>
-                                <li class="flex items-center gap-3 text-slate-300"><i data-lucide="x-circle" class="w-5 h-5"></i> Links Simples</li>
-                            </ul>
                         </div>
+                        <div class="text-left space-y-2">
+                            <span class="text-[9px] uppercase font-bold tracking-widest text-emerald-400 font-outfit bg-white/5 px-2.5 py-1 rounded-full border border-white/10">LOJA DE INFOPRODUTOS E AUDIOPRODUTORAS</span>
+                            <h3 class="text-2xl font-extrabold text-white tracking-tight pt-1">Bossa Infor</h3>
+                            <p class="text-xs text-slate-400 font-medium">Design requintado para seleção de pacotes, edições especializadas, consultorias e materiais digitais premium.</p>
+                            <!-- Elegant Quote -->
+                            <div class="pt-3 border-t border-white/5">
+                                <p class="text-xs italic text-slate-400">"Uma ferramenta robusta que agilizou todo nosso processo de pré-vendas semanais."</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pt-6">
+                        <a href="loja.html?id=bossa-infor-produtora" target="_blank" class="w-full py-4 bg-zinc-900 hover:bg-[#25D366] hover:text-black hover:border-transparent transition-all border border-white/10 text-white rounded-xl font-black uppercase text-xs flex items-center justify-center gap-2 tracking-wider active-scale">
+                            Visualizar Loja Real com Vídeos <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                        </a>
+                    </div>
+                </div>
 
-                        <!-- PLANO BÁSICO -->
-                        <div class="bg-white border-4 border-orange-500 p-10 rounded-[3rem] flex flex-col items-center text-center relative shadow-2xl shadow-orange-200/50 md:scale-110 z-10">
-                            <div class="absolute -top-6 left-1/2 -translate-x-1/2 bg-orange-500 text-white px-6 py-2 rounded-full font-black uppercase italic tracking-widest text-xs ring-8 ring-white">Mais Popular</div>
-                            <div class="bg-orange-50 p-5 rounded-3xl mb-8">
-                                <i data-lucide="star" class="w-10 h-10 text-orange-500"></i>
+                <!-- Client Store 2 -->
+                <div class="bg-black rounded-[2.5rem] p-6.5 border border-white/5 flex flex-col justify-between hover:border-[#25D366]/50 hover:shadow-[0_15px_40px_rgba(37,211,102,0.06)] transition-all transform hover:-translate-y-0.5 duration-300">
+                    <div class="space-y-6">
+                        <div class="aspect-video rounded-[2rem] overflow-hidden bg-zinc-900 relative flex items-center justify-center border border-white/5 shadow-inner">
+                            <img src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&q=80&w=500" alt="PAES BARRETO" class="w-full h-full object-cover opacity-10" referrerpolicy="no-referrer">
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="w-24 h-24 rounded-full border-4 border-amber-500/30 bg-black flex items-center justify-center overflow-hidden shadow-2xl">
+                                    <img src="https://i.postimg.cc/02F8M4RS/Whats-App-Image-2026-04-29-at-19-40-20.jpg" class="w-full h-full object-cover" alt="PAES BARRETO Logo" referrerpolicy="no-referrer">
+                                </div>
                             </div>
-                            <h3 class="text-3xl font-black uppercase italic tracking-tighter mb-4">Básico</h3>
-                            <div class="flex items-baseline gap-1 mb-8 text-slate-900">
-                                <span class="text-xl font-bold">R$</span>
-                                <span class="text-6xl font-black">49</span>
-                                <span class="text-xl font-bold">,90</span>
-                            </div>
-                            <ul class="space-y-4 text-slate-700 font-bold text-left w-full mb-10 flex-grow">
-                                <li class="flex items-center gap-3"><i data-lucide="check-circle-2" class="w-5 h-5 text-green-500"></i> Até 15 Fotos</li>
-                                <li class="flex items-center gap-3"><i data-lucide="check-circle-2" class="w-5 h-5 text-green-500"></i> Catálogo Profissional</li>
-                                <li class="flex items-center gap-3"><i data-lucide="check-circle-2" class="w-5 h-5 text-green-500"></i> Até 3 Vídeos</li>
-                            </ul>
                         </div>
+                        <div class="text-left space-y-2">
+                            <span class="text-[9px] uppercase font-bold tracking-widest text-[#25D366] font-outfit bg-white/5 px-2.5 py-1 rounded-full border border-white/10">PERFUMARIA E COSMÉTICOS PREMIUM</span>
+                            <h3 class="text-2xl font-extrabold text-white tracking-tight pt-1">PAES BARRETO</h3>
+                            <p class="text-xs text-slate-400 font-medium">Layout adaptado para produtos de alto padrão e perfumes icônicos importados de marcas renomadas de destaque.</p>
+                            <!-- Elegant Quote -->
+                            <div class="pt-3 border-t border-white/5">
+                                <p class="text-xs italic text-slate-400">"Nossos clientes amam a rapidez do carrinho de compras integrado no telefone."</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pt-6">
+                        <a href="loja.html?id=paes-barreto" target="_blank" class="w-full py-4 bg-zinc-900 hover:bg-[#25D366] hover:text-black hover:border-transparent transition-all border border-white/10 text-white rounded-xl font-black uppercase text-xs flex items-center justify-center gap-2 tracking-wider active-scale">
+                            Visualizar Loja Real com Carrinho <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                        </a>
+                    </div>
+                </div>
 
-                        <!-- PLANO PREMIUM -->
-                        <div class="bg-slate-900 border-2 border-slate-800 p-10 rounded-[3rem] flex flex-col items-center text-center text-white shadow-xl shadow-slate-900/40">
-                            <div class="bg-white/10 p-5 rounded-3xl mb-8">
-                                <i data-lucide="crown" class="w-10 h-10 text-[#25D366]"></i>
+                <!-- Client Store 3 -->
+                <div class="bg-black rounded-[2.5rem] p-6.5 border border-white/5 flex flex-col justify-between hover:border-[#25D366]/50 hover:shadow-[0_15px_40px_rgba(37,211,102,0.06)] transition-all transform hover:-translate-y-0.5 duration-300">
+                    <div class="space-y-6">
+                        <div class="aspect-video rounded-[2rem] overflow-hidden bg-zinc-900 relative flex items-center justify-center border border-white/5 shadow-inner">
+                            <img src="https://images.unsplash.com/photo-1526733169351-84074421272b?auto=format&fit=crop&q=80&w=500" alt="ROSENO & SOUZA" class="w-full h-full object-cover opacity-10" referrerpolicy="no-referrer">
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="w-24 h-24 rounded-full border-4 border-zinc-700/30 bg-zinc-900 flex items-center justify-center overflow-hidden shadow-2xl">
+                                    <img src="https://i.postimg.cc/KcMfggyb/ROSENO-E-SOUZA.png" class="w-full h-full object-cover" alt="ROSENO & SOUZA Logo" referrerpolicy="no-referrer">
+                                </div>
                             </div>
-                            <h3 class="text-3xl font-black uppercase italic tracking-tighter mb-4 text-white">Premium</h3>
-                            <div class="flex items-baseline gap-1 mb-8">
-                                <span class="text-xl font-bold">R$</span>
-                                <span class="text-6xl font-black text-[#25D366]">100</span>
-                                <span class="text-xl font-bold text-[#25D366]">,00</span>
-                            </div>
-                            <ul class="space-y-4 text-slate-300 font-bold text-left w-full mb-10 flex-grow">
-                                <li class="flex items-center gap-3"><i data-lucide="check-circle-2" class="w-5 h-5 text-[#25D366]"></i> Fotos Ilimitadas</li>
-                                <li class="flex items-center gap-3"><i data-lucide="check-circle-2" class="w-5 h-5 text-[#25D366]"></i> Suporte Total a Vídeos</li>
-                                <li class="flex items-center gap-3"><i data-lucide="check-circle-2" class="w-5 h-5 text-[#25D366]"></i> Links P/ Vendedores</li>
-                                <li class="flex items-center gap-3"><i data-lucide="check-circle-2" class="w-5 h-5 text-[#25D366]"></i> Links P/ Divulgadores</li>
-                                <li class="flex items-center gap-3"><i data-lucide="check-circle-2" class="w-5 h-5 text-[#25D366]"></i> Atendente Inteligente (IA Local)</li>
-                            </ul>
                         </div>
+                        <div class="text-left space-y-2">
+                            <span class="text-[9px] uppercase font-bold tracking-widest text-[#25D366] font-outfit bg-white/5 px-2.5 py-1 rounded-full border border-white/10">ELETRÔNICOS E UTENSÍLIOS DE ALTO PADRÃO</span>
+                            <h3 class="text-2xl font-extrabold text-white tracking-tight pt-1">ROSENO & SOUZA</h3>
+                            <p class="text-xs text-slate-400 font-medium">Apresentação para varejo de eletrônicos, celulares e periféricos, focada na conversão instantânea de ofertas limitadas.</p>
+                            <!-- Elegant Quote -->
+                            <div class="pt-3 border-t border-white/5">
+                                <p class="text-xs italic text-slate-400">"Simplesmente perfeito. Facilitou o envio dos pedidos formatados sem mensagens confusas."</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pt-6">
+                        <a href="loja.html?id=roseno-souza" target="_blank" class="w-full py-4 bg-zinc-900 hover:bg-[#25D366] hover:text-black hover:border-transparent transition-all border border-white/10 text-white rounded-xl font-black uppercase text-xs flex items-center justify-center gap-2 tracking-wider active-scale">
+                            Visualizar Loja Real de Eletrônicos <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+                        </a>
                     </div>
                 </div>
             </div>
+        </div>
+    </section>
 
-            <!-- DOWNLOAD APP -->
-            <div class="mt-12 py-10 flex flex-col items-center">
-                <a href="https://drive.google.com/file/d/1uhixwkcjiIqLvFUdElGbc4XYZNmv4OEF/view?usp=sharing" target="_blank" class="inline-flex items-center gap-4 px-10 py-6 bg-slate-800 text-white rounded-3xl font-black uppercase italic tracking-widest text-lg hover:bg-slate-700 transition-all shadow-xl hover:scale-105 active:scale-95 border border-white/10">
-                    <i data-lucide="download"></i> BAIXE O APP
+    <!-- PREMIUM REVENUE PLANS SECTION - Refactored for Premium Positioning (No Cheap SaaS Vibe) -->
+    <section id="valores" class="py-24 bg-black border-b border-white/5">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="text-center max-w-3xl mx-auto space-y-4 mb-20 flex flex-col items-center">
+                <span class="text-xs font-bold px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/25 rounded-full tracking-wider text-[#25D366] font-outfit uppercase">INVESTIMENTO COM CRIAÇÃO INCLUSA</span>
+                <h2 class="text-3xl sm:text-5xl font-black font-outfit tracking-tight text-white leading-tight">
+                    Investimento Premium Personalizado
+                </h2>
+                <p class="text-slate-400 text-sm sm:text-base max-w-2xl">
+                    Sem surpresas ocultas ou taxas percentuais abusivas sobre seus produtos ou vendas. Tarifação transparente baseada na complexidade de criação do seu projeto digital:
+                </p>
+                <div class="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-slate-400">
+                    <i data-lucide="info" class="w-3.5 h-3.5 text-emerald-400"></i> Setup, configuração estética e tratamento de logo 100% integrados
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                
+                <!-- CARD 1: CATALOGO DIGITAL -->
+                <div class="bg-zinc-950 border border-zinc-800/60 p-6 sm:p-8 rounded-[2.5rem] flex flex-col justify-between hover:border-[#25D366]/30 hover:shadow-[0_10px_30px_rgba(37,211,102,0.05)] transition-all relative group duration-300">
+                    <div class="space-y-6">
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-white/5 rounded-full text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            Plano 1
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-black font-outfit text-white mb-2">CATÁLOGO DIGITAL</h3>
+                            <p class="text-slate-400 text-xs font-semibold leading-relaxed">Ideal para pequenos negócios que querem começar a vender online.</p>
+                        </div>
+                        <div class="pt-4 border-t border-white/5 space-y-2">
+                            <div>
+                                <span class="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">A partir de</span>
+                                <div class="flex items-baseline gap-1 text-[#25D366] mt-0.5">
+                                    <span class="text-lg font-bold">R$</span>
+                                    <span class="text-5xl font-black font-outfit text-white">49</span>
+                                    <span class="text-lg font-bold text-white">,90</span>
+                                    <span class="text-slate-500 text-xs font-semibold ml-1">/mês</span>
+                                </div>
+                            </div>
+                            <div class="pt-1.5 border-t border-white/5">
+                                <span class="text-slate-500 text-[9px] font-bold uppercase tracking-wider block">Implantação inicial:</span>
+                                <span class="text-slate-300 text-xs font-bold">R$100 pagamento único</span>
+                            </div>
+                        </div>
+
+                        <ul class="space-y-4 text-slate-300 text-sm text-left font-medium pt-2">
+                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Até 15 produtos cadastrados</li>
+                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Loja pronta em até 24h</li>
+                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Pedidos direto no WhatsApp</li>
+                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Painel simples pelo celular</li>
+                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Visual profissional personalizado</li>
+                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Suporte para atualizações</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="pt-8">
+                        <a href="https://wa.me/5585992862177?text=Olá! Quero solicitar a criação do meu CATÁLOGO DIGITAL prático por R$49,90/mês. Como podemos dar início?" target="_blank" class="w-full py-4.5 bg-zinc-900 hover:bg-[#25D366] hover:text-black block text-center transition-all border border-white/10 hover:border-transparent rounded-2xl font-black uppercase tracking-wider text-xs active-scale">
+                            QUERO MEU CATÁLOGO
+                        </a>
+                    </div>
+                </div>
+
+                <!-- CARD 2: LOJA ONLINE PROFISSIONAL (THE STAR HIGHLIGHT CARD) -->
+                <div class="bg-gradient-to-b from-zinc-950 to-zinc-900 border-2 border-[#25D366]/60 p-6 sm:p-8.5 rounded-[2.5rem] flex flex-col justify-between hover:border-[#25D366] hover:shadow-[0_0_40px_rgba(37,211,102,0.15)] transition-all relative transform hover:-translate-y-1 duration-300">
+                    <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#25D366] text-black px-4.5 py-1.5 rounded-full font-black uppercase tracking-widest text-[9px] ring-4 ring-black shadow-lg">Mais Solicitado</div>
+                    
+                    <div class="space-y-6">
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-[#25D366]/10 rounded-full text-[10px] font-bold text-[#25D366] uppercase tracking-widest border border-[#25D366]/20">
+                            Plano 2
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-black font-outfit text-white mb-2">LOJA ONLINE PROFISSIONAL</h3>
+                            <p class="text-slate-300 text-xs font-semibold leading-relaxed">Perfeito para lojas, deliverys e negócios que querem vender mais online.</p>
+                        </div>
+                        <div class="pt-4 border-t border-white/5 space-y-2">
+                            <div>
+                                <span class="text-slate-400 text-[10px] font-bold uppercase tracking-wider block">A partir de</span>
+                                <div class="flex items-baseline gap-1 text-[#25D366] mt-0.5">
+                                    <span class="text-lg font-bold">R$</span>
+                                    <span class="text-5xl font-black font-outfit text-[#25D366]">79</span>
+                                    <span class="text-lg font-bold text-[#25D366]">,90</span>
+                                    <span class="text-slate-400 text-xs font-semibold ml-1">/mês</span>
+                                </div>
+                            </div>
+                            <div class="pt-1.5 border-t border-white/5">
+                                <span class="text-slate-400 text-[9px] font-bold uppercase tracking-wider block">Implantação inicial:</span>
+                                <span class="text-emerald-400 text-xs font-bold">R$150 pagamento único</span>
+                            </div>
+                        </div>
+
+                        <ul class="space-y-4 text-slate-200 text-sm text-left font-medium pt-2">
+                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Produtos ilimitados</li>
+                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Banners personalizados</li>
+                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Categorias organizadas</li>
+                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Carrinho de compras</li>
+                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Layout profissional da sua marca</li>
+                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Entrega rápida e pronta para divulgar</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="pt-8">
+                        <a href="https://wa.me/5585992862177?text=Olá! Quero solicitar a LOJA ONLINE PROFISSIONAL completa do plano de R$79,90/mês. Podem falar comigo sobre como cadastrar os produtos de primeira rodada?" target="_blank" class="w-full py-4.5 bg-[#25D366] text-black hover:bg-emerald-400 block text-center transition-all rounded-2xl font-extrabold uppercase tracking-wider text-xs shadow-lg shadow-[#25D366]/20 active-scale">
+                            SOLICITAR MINHA LOJA
+                        </a>
+                    </div>
+                </div>
+
+                <!-- CARD 3: DELIVERY & AGENDAMENTOS -->
+                <div class="bg-zinc-950 border border-zinc-800/60 p-6 sm:p-8 rounded-[2.5rem] flex flex-col justify-between hover:border-[#25D366]/30 hover:shadow-[0_10px_30px_rgba(37,211,102,0.05)] transition-all relative group duration-300">
+                    <div class="space-y-6">
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-white/5 rounded-full text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            Plano 3
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-black font-outfit text-white mb-2">DELIVERY & AGENDAMENTOS</h3>
+                            <p class="text-slate-400 text-xs font-semibold leading-relaxed">Ideal para restaurantes, barbearias, clínicas e negócios com atendimento.</p>
+                        </div>
+                        <div class="pt-4 border-t border-white/5 space-y-2">
+                            <div>
+                                <span class="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">A partir de</span>
+                                <div class="flex items-baseline gap-1 text-[#25D366] mt-0.5">
+                                    <span class="text-lg font-bold">R$</span>
+                                    <span class="text-5xl font-black font-outfit text-white">119</span>
+                                    <span class="text-lg font-bold text-white">,90</span>
+                                    <span class="text-slate-500 text-xs font-semibold ml-1">/mês</span>
+                                </div>
+                            </div>
+                            <div class="pt-1.5 border-t border-white/5">
+                                <span class="text-slate-500 text-[9px] font-bold uppercase tracking-wider block">Implantação inicial:</span>
+                                <span class="text-slate-300 text-xs font-bold">R$200 pagamento único</span>
+                            </div>
+                        </div>
+
+                        <ul class="space-y-4 text-slate-300 text-sm text-left font-medium pt-2">
+                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Pedidos online no WhatsApp</li>
+                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Agendamento automático</li>
+                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Cardápio digital profissional</li>
+                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Fotos e vídeos dos produtos</li>
+                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Layout personalizado</li>
+                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Suporte prioritário</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="pt-8">
+                        <a href="https://wa.me/5585992862177?text=Olá! Desejo saber mais sobre o plano DELIVERY & AGENDAMENTOS de R$119,90/mês. Como inserimos o agendamento de horários?" target="_blank" class="w-full py-4.5 bg-zinc-900 hover:bg-[#25D366] hover:text-black block text-center transition-all border border-white/10 hover:border-transparent rounded-2xl font-black uppercase tracking-wider text-xs active-scale">
+                            FALAR NO WHATSAPP
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- NEW CTA SECTION (EXTRA BOLD AND PREMIUM) -->
+    <section id="contato" class="py-24 bg-gradient-to-b from-zinc-950 to-black text-center relative overflow-hidden">
+        <!-- Background glows -->
+        <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(37,211,102,0.06),transparent_60%)]"></div>
+        <div class="max-w-4xl mx-auto px-6 relative z-10 space-y-10">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-[#25D366]/10 border border-[#25D366]/20 rounded-full text-xs font-bold text-[#25D366] tracking-wider uppercase font-outfit">
+                ⚡ PRODUTO FINAL ENTREGUE PRONTO EM 24H
+            </div>
+            
+            <h2 class="text-4xl sm:text-6xl font-black font-outfit tracking-tight text-white max-w-3xl mx-auto leading-none">
+                Receba sua loja online pronta e tracionando vendas em até 24h
+            </h2>
+            
+            <p class="text-base sm:text-lg text-slate-300 font-medium max-w-2xl mx-auto leading-relaxed">
+                Esqueça editores complicados ou gastar milhares de reais com agências que demoram meses. Você só nos envia as fotos de seus produtos ou cardápio existente, e nós cuidamos de toda a implementação.
+            </p>
+
+            <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
+                <a href="https://wa.me/5585992862177?text=Olá! Gostaria de falar com um especialista sobre a criação da minha loja online profissional pronta de 24h." target="_blank" class="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-10 py-5.5 bg-[#25D366] text-black rounded-2xl font-black uppercase tracking-wider text-base hover:bg-emerald-400 hover:shadow-[0_20px_50px_rgba(37,211,102,0.3)] transition-all active-scale">
+                    <i data-lucide="message-square" class="w-5 h-5"></i> FALAR COM UM ESPECIALISTA NO WHATSAPP
                 </a>
-                <p class="mt-4 text-slate-500 font-bold uppercase tracking-widest text-[9px]">Instale em seu dispositivo para melhor experiência</p>
             </div>
-        </div>
 
-        <!-- Imagem de Preview (Direta e Estável) -->
-        <div class="mt-16 w-full flex justify-center px-4">
-            <div class="img-container">
-                <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=800&q=80" 
-                     alt="Preview" 
-                     class="w-full h-auto block"
-                     referrerpolicy="no-referrer">
-            </div>
+            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
+                Sem burocracia • Sem cadastros intermináveis • Nós criamos e te entregamos pronta
+            </p>
         </div>
-    </main>
+    </section>
 
-    <footer class="py-10 text-center text-slate-500 text-[10px] font-bold uppercase tracking-widest">
-        &copy; 2026 Desenvolvido por Bossa Infor - Vitrine Digital Profissional
+    <!-- FOOTER -->
+    <footer class="py-12 text-center text-slate-600 text-[11px] font-bold uppercase tracking-widest border-t border-white/5 bg-black">
+        &copy; 2026 Desenvolvido por Bossa Infor - Vitrine Digital Profissional. Todos os direitos reservados.
     </footer>
 
+    <!-- MODAL DE LOGIN (DISCRETA E ELEGANTE) -->
+    <div id="login-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[100] hidden items-center justify-center p-4">
+        <!-- Close overlay background -->
+        <div class="absolute inset-0" onclick="closeLoginModal()"></div>
+        
+        <div class="w-full max-w-md bg-zinc-950 rounded-[3rem] border border-white/10 p-10 relative z-10 space-y-6 shadow-2xl">
+            <!-- Close Button -->
+            <button onclick="closeLoginModal()" class="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+
+            <div class="text-center space-y-2">
+                <div class="w-12 h-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center mx-auto mb-2">
+                    <i data-lucide="lock" class="text-[#25D366] w-5 h-5"></i>
+                </div>
+                <h3 class="text-2xl font-bold font-outfit text-white">Painel do Parceiro</h3>
+                <p class="text-[10px] text-slate-400 uppercase font-black tracking-wider">Acesse para gerenciar seus produtos e dados</p>
+            </div>
+
+            <!-- Login Inputs Wrapper (MUST BE THE SAME ID AS PREVIOUS FOR JS TO BIND SUCCESSFULLY) -->
+            <div class="space-y-4" id="login-inputs">
+                <div class="relative text-left space-y-1">
+                    <label class="text-[9px] uppercase tracking-wider font-bold text-slate-400 ml-1">Telefone WhatsApp</label>
+                    <div class="relative">
+                        <i data-lucide="phone" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4"></i>
+                        <input type="text" id="login-whatsapp" placeholder="Ex: 85992862177" class="w-full pl-11 pr-5 py-4 bg-white/5 border border-white/5 hover:border-white/10 focus:border-[#25D366] rounded-2xl outline-none transition-all font-bold text-sm text-white">
+                    </div>
+                </div>
+
+                <div class="relative text-left space-y-1" id="pass-field-container">
+                    <label class="text-[9px] uppercase tracking-wider font-bold text-slate-400 ml-1">Senha de Acesso</label>
+                    <div class="relative">
+                        <i data-lucide="lock" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4"></i>
+                        <input type="password" id="login-password" placeholder="Digite sua senha" class="w-full pl-11 pr-5 py-4 bg-white/5 border border-white/5 hover:border-white/10 focus:border-[#25D366] rounded-2xl outline-none transition-all font-bold text-sm text-white">
+                    </div>
+                </div>
+
+                <button onclick="handleLogin()" id="login-btn" class="w-full py-4.5 bg-white text-slate-950 hover:bg-[#25D366] hover:text-black transition-all rounded-2xl font-black uppercase tracking-widest text-xs active-scale shadow-lg">
+                    Entrar no Painel
+                </button>
+            </div>
+
+            <!-- First Access Mode Box -->
+            <div id="first-access-msg" class="hidden p-6 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 text-center space-y-4">
+                <div>
+                    <h4 class="text-xs font-black uppercase text-[#25D366] mb-1">Primeiro Acesso Detectado!</h4>
+                    <p class="text-[10px] text-slate-300">Crie uma senha de 4 dígitos para proteger sua loja.</p>
+                </div>
+                <input type="password" id="new-password" placeholder="Defina sua senha" class="w-full px-5 py-3.5 bg-white rounded-xl outline-none font-bold text-sm text-slate-900 border-2 border-transparent focus:border-emerald-500">
+                <button onclick="saveFirstPassword()" class="w-full py-4 bg-[#25D366] text-black font-black uppercase tracking-widest text-xs rounded-xl shadow-lg active-scale">
+                    Salvar Senha e Entrar
+                </button>
+                <button onclick="cancelFirstAccess()" class="text-[9px] text-slate-400 hover:text-white uppercase font-bold tracking-widest underline">Voltar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN AND MODAL LOGIN CONTROLLER -->
     <script>
         lucide.createIcons();
+
+        // Modal handler Functions
+        window.openLoginModal = function() {
+            document.getElementById('login-modal').classList.remove('hidden');
+            document.getElementById('login-modal').classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        };
+
+        window.closeLoginModal = function() {
+            document.getElementById('login-modal').classList.remove('flex');
+            document.getElementById('login-modal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        };
 
         let currentStoreId = null;
 
@@ -275,7 +693,7 @@
             const btn = document.getElementById('login-btn');
 
             if (!whatsapp) {
-                alert("Digite seu WhatsApp.");
+                alert("Por favor, digite seu telefone WhatsApp cadastrado.");
                 return;
             }
 
@@ -287,7 +705,7 @@
                 let storeId = null;
                 let storeData = null;
 
-                // 1º TENTATIVA: Buscar diretamente no trial_history pelo WhatsApp (método mais rápido e 100% confiável)
+                // 1º TENTATIVA: Buscar diretamente no trial_history pelo WhatsApp
                 try {
                     let phoneVariants = [whatsapp];
                     let prefix55 = '55' + whatsapp;
@@ -331,8 +749,8 @@
                 }
 
                 if (!storeData) {
-                    alert("WhatsApp não encontrado. Clique em 'Criar Agora' para criar uma nova loja!");
-                    btn.innerText = "Entrar no Meu Painel";
+                    alert("WhatsApp não encontrado no banco de dados. Caso deseje contratar, entre em contato com nosso atendimento pelo botão do WhatsApp!");
+                    btn.innerText = "Entrar no Painel";
                     btn.disabled = false;
                     return;
                 }
@@ -346,8 +764,8 @@
                     document.getElementById('first-access-msg').classList.remove('hidden');
                 } else {
                     if (!password) {
-                        alert("Digite sua senha.");
-                        btn.innerText = "Entrar no Meu Painel";
+                        alert("Digite sua senha de acesso.");
+                        btn.innerText = "Entrar no Painel";
                         btn.disabled = false;
                         return;
                     }
@@ -360,9 +778,9 @@
                 }
             } catch (e) {
                 console.error(e);
-                alert("Erro ao entrar. Tente novamente.");
+                alert("Erro ao entrar no Painel. Recarregue e tente novamente.");
             } finally {
-                btn.innerText = "Entrar no Meu Painel";
+                btn.innerText = "Entrar no Painel";
                 btn.disabled = false;
             }
         }
@@ -370,7 +788,7 @@
         window.saveFirstPassword = async function() {
             const newPass = document.getElementById('new-password').value.trim();
             if (newPass.length < 4) {
-                alert("A senha deve ter pelo menos 4 dígitos.");
+                alert("A sua nova senha deve ter pelo menos 4 dígitos para segurança.");
                 return;
             }
 
@@ -381,7 +799,7 @@
                 });
                 window.location.href = `criar.html?edit=${currentStoreId}`;
             } catch (e) {
-                alert("Erro ao salvar senha.");
+                alert("Erro ao salvar senha de acesso.");
             }
         }
 

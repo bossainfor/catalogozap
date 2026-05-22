@@ -321,7 +321,7 @@
                 
                 let waClean = data.w ? data.w.replace(/\D/g, '') : '';
                 if (waClean.length <= 11 && waClean.length > 0) waClean = '55' + waClean;
-                const waLink = `https://wa.me/${waClean}`;
+                const waLink = `https://api.whatsapp.com/send?phone=${waClean}`;
 
                 row.innerHTML = `
                     <td class="px-6 py-5">

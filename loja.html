@@ -21,7 +21,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, updateDoc, increment, collection, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -41,7 +41,7 @@
         signInAnonymously(auth).catch(err => console.error("Erro no login anônimo:", err));
 
         window.db = db;
-        window.firebaseUtils = { doc, getDoc, updateDoc, increment };
+        window.firebaseUtils = { doc, getDoc, updateDoc, increment, collection, setDoc };
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
@@ -94,7 +94,64 @@
         </div>
     </div>
 
-    <div id="overlay" class="overlay fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[1000]" onclick="toggleCart(false); closeModal()"></div>
+    <div id="overlay" class="overlay fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[1000]" onclick="toggleCart(false); closeModal(); closeBookingModal()"></div>
+    
+    <!-- Modal de Agendamento Dinâmico -->
+    <div id="booking-modal" class="modal fixed inset-0 z-[1010] flex items-center justify-center p-3 sm:p-6 lg:p-8 hidden">
+        <div class="modal-content bg-white dark:bg-slate-850 w-full max-w-lg rounded-2xl sm:rounded-[2rem] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] overflow-hidden flex flex-col max-h-[90vh] border border-slate-100 dark:border-slate-700">
+            <div class="p-6 bg-slate-900 text-white flex items-center justify-between">
+                <div>
+                    <h3 class="font-black uppercase italic tracking-tighter text-xl">Agendar Horário</h3>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Preencha seus dados para reservar</p>
+                </div>
+                <button onclick="closeBookingModal()" class="text-white/50 hover:text-white transition-colors p-2.5 rounded-full hover:bg-slate-800">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form id="booking-form" onsubmit="submitBooking(event)" class="p-6 overflow-y-auto space-y-4 flex-1 custom-scrollbar">
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-widest block">Nome completo</label>
+                    <input type="text" id="booking-name" required placeholder="Digite seu nome completo" class="w-full px-5 py-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-sm dark:text-white">
+                </div>
+                
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-widest block">Telefone / WhatsApp</label>
+                    <input type="text" id="booking-phone" required placeholder="Ex: (85) 99999-9999" class="w-full px-5 py-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-sm dark:text-white">
+                </div>
+                
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-widest block">E-mail (Opcional)</label>
+                    <input type="email" id="booking-email" placeholder="seu@email.com" class="w-full px-5 py-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-sm dark:text-white">
+                </div>
+                
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-slate-400 uppercase tracking-widest block">Serviço desejado</label>
+                    <select id="booking-service" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-sm dark:text-white">
+                        <!-- Carregado via JS -->
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-widest block">Data</label>
+                        <input type="date" id="booking-date" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-sm dark:text-white">
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-400 uppercase tracking-widest block">Horário</label>
+                        <input type="time" id="booking-time" required class="w-full px-5 py-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-sm dark:text-white">
+                    </div>
+                </div>
+
+                <div class="pt-4 pb-2">
+                    <button type="submit" id="booking-submit-btn" class="w-full py-5 text-white bg-green-500 font-black uppercase italic tracking-widest rounded-2xl transition-all active-scale flex items-center justify-center gap-3 text-sm sm:text-base">
+                        <i data-lucide="check-circle" class="w-5 h-5"></i>
+                        <span>Confirmar Agendamento</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
     
     <!-- Modal de Detalhes do Produto -->
     <div id="product-modal" class="modal fixed inset-0 z-[1010] flex items-center justify-center p-3 sm:p-6 lg:p-8">
@@ -158,6 +215,14 @@
         </div>
     </button>
 
+    <!-- Botão de Agendamento Flutuante -->
+    <button id="booking-fab" onclick="openBookingModal()" class="hidden fixed bottom-6 right-6 sm:bottom-8 sm:right-8 text-white p-4 sm:p-5 rounded-2xl shadow-2xl z-[60] flex items-center justify-center active-scale transition-all border-4 border-white dark:border-slate-800 hover:scale-105">
+        <div class="flex items-center gap-2 font-black uppercase tracking-widest text-xs px-2">
+            <i data-lucide="calendar" class="w-5 h-5"></i>
+            <span>Agendar meu Horário</span>
+        </div>
+    </button>
+
     <script>
         let storeData = null;
         let cart = [];
@@ -217,6 +282,98 @@
             btn.style.borderColor = storeData.primaryColor;
         }
 
+        window.toggleBeforeAfter = function(productId, state) {
+            const indicator = document.getElementById(`beauty-indicator-${productId}`);
+            const btnBefore = document.getElementById(`btn-before-${productId}`);
+            const btnAfter = document.getElementById(`btn-after-${productId}`);
+            const imgBefore = document.getElementById(`img-before-${productId}`);
+            const imgAfter = document.getElementById(`img-after-${productId}`);
+            
+            if (state === 'before') {
+                if (indicator) indicator.style.transform = 'translateX(0px)';
+                if (btnBefore) {
+                    btnBefore.classList.remove('text-white/70');
+                    btnBefore.classList.add('text-slate-950', 'font-black');
+                }
+                if (btnAfter) {
+                    btnAfter.classList.remove('text-slate-950', 'font-black');
+                    btnAfter.classList.add('text-white/70');
+                }
+                if (imgBefore) {
+                    imgBefore.classList.remove('opacity-0', 'scale-95');
+                    imgBefore.classList.add('opacity-100', 'scale-100');
+                }
+                if (imgAfter) {
+                    imgAfter.classList.remove('opacity-100', 'scale-100');
+                    imgAfter.classList.add('opacity-0', 'scale-95');
+                }
+            } else {
+                if (indicator) indicator.style.transform = 'translateX(76px)';
+                if (btnBefore) {
+                    btnBefore.classList.remove('text-slate-950', 'font-black');
+                    btnBefore.classList.add('text-white/70');
+                }
+                if (btnAfter) {
+                    btnAfter.classList.remove('text-white/70');
+                    btnAfter.classList.add('text-slate-950', 'font-black');
+                }
+                if (imgBefore) {
+                    imgBefore.classList.remove('opacity-100', 'scale-100');
+                    imgBefore.classList.add('opacity-0', 'scale-95');
+                }
+                if (imgAfter) {
+                    imgAfter.classList.remove('opacity-0', 'scale-95');
+                    imgAfter.classList.add('opacity-100', 'scale-100');
+                }
+            }
+        };
+
+        window.toggleModalBeforeAfter = function(productId, state) {
+            const indicator = document.getElementById(`modal-beauty-indicator-${productId}`);
+            const btnBefore = document.getElementById(`modal-btn-before-${productId}`);
+            const btnAfter = document.getElementById(`modal-btn-after-${productId}`);
+            const imgBefore = document.getElementById(`modal-img-before-${productId}`);
+            const imgAfter = document.getElementById(`modal-img-after-${productId}`);
+            
+            if (state === 'before') {
+                if (indicator) indicator.style.transform = 'translateX(0px)';
+                if (btnBefore) {
+                    btnBefore.classList.remove('text-white/70');
+                    btnBefore.classList.add('text-slate-950', 'font-black');
+                }
+                if (btnAfter) {
+                    btnAfter.classList.remove('text-slate-950', 'font-black');
+                    btnAfter.classList.add('text-white/70');
+                }
+                if (imgBefore) {
+                    imgBefore.classList.remove('opacity-0', 'scale-95');
+                    imgBefore.classList.add('opacity-100', 'scale-100');
+                }
+                if (imgAfter) {
+                    imgAfter.classList.remove('opacity-100', 'scale-100');
+                    imgAfter.classList.add('opacity-0', 'scale-95');
+                }
+            } else {
+                if (indicator) indicator.style.transform = 'translateX(84px)';
+                if (btnBefore) {
+                    btnBefore.classList.remove('text-slate-950', 'font-black');
+                    btnBefore.classList.add('text-white/70');
+                }
+                if (btnAfter) {
+                    btnAfter.classList.remove('text-white/70');
+                    btnAfter.classList.add('text-slate-950', 'font-black');
+                }
+                if (imgBefore) {
+                    imgBefore.classList.remove('opacity-100', 'scale-100');
+                    imgBefore.classList.add('opacity-0', 'scale-95');
+                }
+                if (imgAfter) {
+                    imgAfter.classList.remove('opacity-0', 'scale-95');
+                    imgAfter.classList.add('opacity-100', 'scale-100');
+                }
+            }
+        };
+
         window.openProductModal = function(productId) {
             if (window._isOpeningModal) return;
             window._isOpeningModal = true;
@@ -252,7 +409,26 @@
 
             let mediaHTML = `<button onclick="closeModal()" class="md:hidden absolute top-4 right-4 z-[1020] bg-black/40 text-white p-3 rounded-full backdrop-blur-md active-scale transition-all touch-manipulation"><i data-lucide="x" class="w-6 h-6"></i></button>`;
             
-            if (mediaItems.length > 1) {
+            const isBeauty = storeData && ['salao', 'barbearia'].includes(storeData.type);
+            const hasAntesDepois = isBeauty && product.image && product.i2;
+
+            if (hasAntesDepois) {
+                mediaHTML += `
+                    <div id="modal-beauty-container-${product.id}" class="absolute inset-0 select-none bg-slate-950 flex items-center justify-center">
+                        <img id="modal-img-after-${product.id}" src="${proxyImg(product.image)}" class="absolute inset-0 w-full h-full object-contain transition-all duration-500 scale-100 opacity-100" referrerpolicy="no-referrer">
+                        <img id="modal-img-before-${product.id}" src="${proxyImg(product.i2)}" class="absolute inset-0 w-full h-full object-contain transition-all duration-500 scale-95 opacity-0" referrerpolicy="no-referrer">
+                        
+                        <!-- Seletor Antes / Depois Deslizante para o Modal (Maior e profissional) -->
+                        <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 bg-black/80 backdrop-blur-md p-1 rounded-full flex relative w-44 shadow-2xl border border-white/10" onclick="event.stopPropagation();">
+                            <!-- Back indicador deslizante -->
+                            <div id="modal-beauty-indicator-${product.id}" class="absolute top-1 bottom-1 left-1 w-[84px] bg-white rounded-full transition-all duration-300 ease-out shadow-md pointer-events-none" style="transform: translateX(84px);"></div>
+                            
+                            <button id="modal-btn-before-${product.id}" type="button" onclick="event.stopPropagation(); window.toggleModalBeforeAfter('${product.id}', 'before')" class="relative z-10 w-1/2 py-2.5 text-[11px] font-black uppercase tracking-widest text-white/70 transition-colors duration-300">Antes</button>
+                            <button id="modal-btn-after-${product.id}" type="button" onclick="event.stopPropagation(); window.toggleModalBeforeAfter('${product.id}', 'after')" class="relative z-10 w-1/2 py-2.5 text-[11px] font-black uppercase tracking-widest text-slate-900 font-bold transition-colors duration-300">Depois</button>
+                        </div>
+                    </div>
+                `;
+            } else if (mediaItems.length > 1) {
                 const swiperId = `modal-swiper-${product.id}`;
                 mediaHTML += `
                     <div id="${swiperId}" onscroll="updateDots('${swiperId}')" class="media-swiper absolute inset-0 flex overflow-x-auto snap-x snap-mandatory scroll-smooth w-full h-full bg-slate-950">
@@ -382,7 +558,12 @@
                 if (isAffiliate) {
                     window.open(product.affiliateLink, '_blank');
                 } else if (isService) {
-                    requestQuote(productId, varsStr);
+                    if (isClinica || isBeauty) {
+                        closeModal();
+                        openBookingModal(productId);
+                    } else {
+                        requestQuote(productId, varsStr);
+                    }
                 } else {
                     addToCart(productId, currentVariations);
                     closeModal();
@@ -1061,7 +1242,20 @@
                                 <span data-countdown="${offerEndsAt.toISOString()}">00:00:00</span>
                             </div>
                         ` : ''}
-                        ${hasCardSwipe ? `
+                        ${isBeauty && p.image && p.i2 ? `
+                            <div id="beauty-container-${p.id}" class="absolute inset-0 select-none">
+                                <img id="img-after-${p.id}" src="${proxyImg(p.image)}" class="absolute inset-0 w-full h-full object-contain transition-all duration-500 scale-100 opacity-100" referrerpolicy="no-referrer">
+                                <img id="img-before-${p.id}" src="${proxyImg(p.i2)}" class="absolute inset-0 w-full h-full object-contain transition-all duration-500 scale-95 opacity-0" referrerpolicy="no-referrer">
+                                
+                                <!-- Seletor Antes / Depois Deslizante com micro-movimento -->
+                                <div class="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 bg-black/75 backdrop-blur-md p-1 rounded-full flex relative w-40 shadow-lg border border-white/10" onclick="event.stopPropagation();">
+                                    <div id="beauty-indicator-${p.id}" class="absolute top-1 bottom-1 left-1 w-[76px] bg-white rounded-full transition-all duration-300 ease-out shadow-md pointer-events-none" style="transform: translateX(76px);"></div>
+                                    
+                                    <button id="btn-before-${p.id}" type="button" onclick="event.stopPropagation(); window.toggleBeforeAfter('${p.id}', 'before')" class="relative z-10 w-1/2 py-1.5 text-[10px] font-black uppercase tracking-widest text-white/70 transition-colors duration-300">Antes</button>
+                                    <button id="btn-after-${p.id}" type="button" onclick="event.stopPropagation(); window.toggleBeforeAfter('${p.id}', 'after')" class="relative z-10 w-1/2 py-1.5 text-[10px] font-black uppercase tracking-widest text-slate-900 font-bold transition-colors duration-300">Depois</button>
+                                </div>
+                            </div>
+                        ` : (hasCardSwipe ? `
                             <div id="${swiperId}" onscroll="updateDots('${swiperId}')" class="media-swiper absolute inset-0 flex overflow-x-auto snap-x snap-mandatory scroll-smooth w-full h-full">
                                 ${cardMedia.map((item, idx) => `
                                     <div class="snap-start flex-shrink-0 w-full h-full relative pointer-events-none">
@@ -1332,6 +1526,139 @@
                 if (isAffiliate || isService) cartFab.classList.add('hidden');
                 else if (filteredProducts.length > 0) cartFab.classList.remove('hidden');
                 else cartFab.classList.add('hidden');
+            }
+
+            // Toggle do Agendamento flutuante (específico para salão, barbearia e clínica)
+            const bookingFab = document.getElementById('booking-fab');
+            if (bookingFab) {
+                if (isClinica || isBeauty) {
+                    bookingFab.classList.remove('hidden');
+                    bookingFab.style.backgroundColor = storeData.primaryColor || '#10B981';
+                } else {
+                    bookingFab.classList.add('hidden');
+                }
+            }
+        }
+
+        window.openBookingModal = function(preselectedServiceId = null) {
+            const today = new Date().toISOString().split('T')[0];
+            const dateInput = document.getElementById('booking-date');
+            if (dateInput) {
+                dateInput.setAttribute('min', today);
+                dateInput.value = today;
+            }
+            
+            const select = document.getElementById('booking-service');
+            if (select && storeData && storeData.products) {
+                const products = storeData.products.filter(p => p.name && p.available !== false);
+                select.innerHTML = products.map(p => {
+                    const priceStr = p.price ? ` - R$ ${p.price}` : '';
+                    return `<option value="${p.id}" ${p.id === preselectedServiceId ? 'selected' : ''}>${p.name}${priceStr}</option>`;
+                }).join('');
+                
+                if (products.length === 0) {
+                     select.innerHTML = `<option value="">Solicitar Atendimento Geral</option>`;
+                }
+            }
+
+            const modal = document.getElementById('booking-modal');
+            const overlay = document.getElementById('overlay');
+            if (modal) modal.classList.remove('hidden');
+            setTimeout(() => {
+                if (modal) modal.classList.add('open');
+                if (overlay) overlay.classList.add('open');
+            }, 10);
+            
+            document.body.style.overflow = 'hidden';
+            if (window.lucide) lucide.createIcons();
+        }
+
+        window.closeBookingModal = function() {
+            const modal = document.getElementById('booking-modal');
+            const overlay = document.getElementById('overlay');
+            if (modal) modal.classList.remove('open');
+            setTimeout(() => {
+                if (modal) modal.classList.add('hidden');
+                const prodModal = document.getElementById('product-modal');
+                if (overlay && (!prodModal || !prodModal.classList.contains('open'))) {
+                    overlay.classList.remove('open');
+                }
+            }, 300);
+            document.body.style.overflow = '';
+        }
+
+        window.submitBooking = async function(event) {
+            event.preventDefault();
+            
+            const name = document.getElementById('booking-name').value.trim();
+            const phone = document.getElementById('booking-phone').value.trim();
+            const email = document.getElementById('booking-email').value.trim();
+            const serviceId = document.getElementById('booking-service').value;
+            
+            const product = (storeData && storeData.products) ? storeData.products.find(p => p.id === serviceId) : null;
+            const serviceName = product ? product.name : 'Serviço Geral';
+            const date = document.getElementById('booking-date').value;
+            const time = document.getElementById('booking-time').value;
+            
+            if (!name || !phone || !date || !time) {
+                alert("Por favor, preencha todos os campos obrigatórios.");
+                return;
+            }
+
+            const dateParts = date.split('-');
+            const formattedDate = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : date;
+            
+            const bookingId = 'B-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+            
+            const btn = document.getElementById('booking-submit-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="animate-spin inline-block mr-2" data-lucide="loader-2"></i> Salvando...';
+            btn.disabled = true;
+            if (window.lucide) lucide.createIcons();
+
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const currentStoreId = storeData.id || urlParams.get('id') || 'desconhecido';
+                
+                if (window.firebaseUtils && window.firebaseUtils.setDoc) {
+                    const { doc, setDoc } = window.firebaseUtils;
+                    await setDoc(doc(window.db, "bookings", bookingId), {
+                        id: bookingId,
+                        storeId: currentStoreId,
+                        storeName: storeData.name || '',
+                        name: name,
+                        phone: phone,
+                        email: email,
+                        serviceId: serviceId || '',
+                        serviceName: serviceName,
+                        date: date,
+                        time: time,
+                        status: 'pending',
+                        createdAt: new Date().toISOString()
+                    });
+                }
+                
+                window.closeBookingModal();
+                alert("Agendamento registrado com sucesso! Confirmando seu horário no WhatsApp...");
+                
+                const message = `*Novo Agendamento - ${storeData.name}*\n\nOlá! Gostaria de confirmar um horário:\n\n👤 *Nome:* ${name}\n📞 *WhatsApp:* ${phone}\n📧 *E-mail:* ${email || 'Não informado'}\n💇 *Serviço:* ${serviceName}\n📅 *Data:* ${formattedDate}\n🕒 *Horário:* ${time}\n\nCódigo: *${bookingId}*\n\nAguardo a confirmação do horário!`;
+                
+                let whatsapp = storeData.whatsapp.replace(/\D/g, '');
+                if (whatsapp.length <= 11) whatsapp = '55' + whatsapp;
+                
+                window.open(`https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(message)}`, '_blank');
+            } catch (error) {
+                console.error("Erro ao salvar agendamento:", error);
+                alert("Erro ao registrar agendamento no sistema. Redirecionando mesmo assim...");
+                
+                const message = `*Novo Agendamento (Offline) - ${storeData.name}*\n\nGostaria de agendar um horário:\n👤 *Nome:* ${name}\n📞 *WhatsApp:* ${phone}\n💇 *Serviço:* ${serviceName}\n📅 *Data:* ${formattedDate}\n🕒 *Horário:* ${time}`;
+                let whatsapp = storeData.whatsapp.replace(/\D/g, '');
+                if (whatsapp.length <= 11) whatsapp = '55' + whatsapp;
+                window.open(`https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(message)}`, '_blank');
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                if (window.lucide) lucide.createIcons();
             }
         }
 

@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="referrer" content="no-referrer-when-downgrade">
-    <title>CatálogoZap - Soluções Premium de Vitrines Digitais</title>
+    <title>Criar meu CatálogoZap</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAJaxRdA6uzbN41JvAw8xO7F5mzJaDfMBc",
@@ -18,799 +18,1902 @@
             projectId: "gen-lang-client-0664324166",
             storageBucket: "gen-lang-client-0664324166.firebasestorage.app",
             messagingSenderId: "1074933311707",
-            appId: "1:1074933311707:web:d841b61f84c05a40fe04fe"
+            appId: "1:1074933311707:web:d841b61f84c05a40fc04fe"
         };
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app, "ai-studio-2395f72f-4dac-4517-9681-c654cd1a03ca");
+        const storage = getStorage(app);
+        const auth = getAuth(app);
+
+        // Login anônimo para permitir upload se as regras exigirem
+        signInAnonymously(auth).catch(err => console.error("Erro no login anônimo:", err));
 
         window.db = db;
-        window.firebaseUtils = { doc, getDoc, setDoc, updateDoc };
+        window.storage = storage;
+        window.auth = auth;
+        window.firebaseUtils = { doc, setDoc, getDoc, deleteDoc, ref, uploadBytesResumable, getDownloadURL, deleteObject };
+
     </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
-        body { 
-            font-family: 'Inter', sans-serif; 
-            scroll-behavior: smooth;
+        body { font-family: 'Inter', sans-serif; }
+        .video-container { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; }
+        .video-container iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 1.5rem; }
+        .collapsible-content { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); max-height: 0; overflow: hidden; opacity: 0; }
+        .collapsible-content.open { max-height: 3000px; opacity: 1; padding-top: 1.5rem; padding-bottom: 2.5rem; }
+        /* Prevenção de seleção acidental e brilho de toque */
+        button, a, .cursor-pointer { 
+            -webkit-tap-highlight-color: transparent; 
+            user-select: none; 
+            touch-action: manipulation;
         }
-        .font-outfit {
-            font-family: 'Outfit', sans-serif;
-        }
-        .active-scale:active { 
-            transform: scale(0.97); 
-            transition: transform 0.1s; 
-        }
-        .glow-green {
-            box-shadow: 0 0 50px -10px rgba(37, 211, 102, 0.25);
-        }
-        .text-glow {
-            text-shadow: 0 0 30px rgba(37, 211, 102, 0.2);
-        }
+        .active-scale:active { transform: scale(0.95); transition: transform 0.1s; }
     </style>
 </head>
-<body class="bg-black text-slate-100 min-h-screen overflow-x-hidden selection:bg-[#25D366] selection:text-black">
-
-    <!-- TOP ANNOUNCEMENT BAR -->
-    <div class="w-full bg-[#25D366]/10 border-b border-[#25D366]/20 py-2.5 text-center px-4 relative z-50">
-        <p class="text-xs font-semibold tracking-wider font-outfit text-emerald-400 uppercase flex items-center justify-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-[#25D366] animate-pulse"></span>
-            NÓS CRIAMOS, DECORAMOS E CONFIGURAMOS TUDO EM ATÉ 24H
-        </p>
-    </div>
-
-    <!-- HEADER / NAVIGATION -->
-    <header class="w-full border-b border-white/5 bg-black/90 backdrop-blur-md sticky top-0 z-50 transition-all">
-        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <img src="https://i.postimg.cc/8cgHJgH8/catalogo.png" alt="CatálogoZap" class="h-10 sm:h-11 w-auto object-contain" referrerpolicy="no-referrer">
-                <span class="text-[10px] font-bold px-2.5 py-1 bg-[#25D366]/10 border border-[#25D366]/20 rounded-full tracking-wider text-[#25D366] font-outfit uppercase">CONCEPÇÃO PREMIUM</span>
+<body class="bg-slate-50 text-slate-900">
+    <!-- MODAL DE VÍDEO -->
+    <div id="video-modal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[100] hidden items-center justify-center p-4" onclick="closeTutorial()">
+        <div class="bg-slate-800 w-full max-w-4xl rounded-[2.5rem] overflow-hidden shadow-2xl relative border border-white/10" onclick="event.stopPropagation()">
+            <button onclick="closeTutorial()" class="absolute top-6 right-6 bg-white/10 hover:bg-white/20 text-white p-3 rounded-full z-20 backdrop-blur-xl transition-all">
+                <i data-lucide="x"></i>
+            </button>
+            <div class="video-container">
+                <iframe id="tutorial-iframe" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
             </div>
-            
-            <nav class="hidden lg:flex items-center gap-8 text-sm font-medium text-slate-400">
-                <a href="#solucoes" class="hover:text-white transition-colors">O que fazemos</a>
-                <a href="#segmentos" class="hover:text-white transition-colors">Nossos Nichos</a>
-                <a href="#clientes" class="hover:text-white transition-colors">Casos de Sucesso</a>
-                <a href="#valores" class="hover:text-white transition-colors">Valores</a>
-                <a href="#contato" class="hover:text-[#25D366] transition-colors flex items-center gap-1.5 font-bold">Solicitar WhatsApp <span class="w-1.5 h-1.5 rounded-full bg-[#25D366] animate-pulse"></span></a>
-            </nav>
-
-            <div class="flex items-center gap-4">
-                <!-- DISCRET CLIENT PORTAL LINK -->
-                <button onclick="openLoginModal()" class="text-xs sm:text-sm font-semibold px-4.5 py-2.5 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 text-white transition-all active-scale">
-                    Acessar Meu Painel
-                </button>
-                <a href="https://api.whatsapp.com/send?phone=5585992862177&text=Olá! Gostaria de falar com um especialista sobre a criação da minha loja online profissional pronta de 24h." target="_blank" class="hidden sm:inline-flex items-center gap-2 px-5 py-2.5 bg-[#25D366] text-black font-extrabold text-sm rounded-xl hover:bg-[#128C7E] hover:text-white transition-all active-scale shadow-lg shadow-[#25D366]/10">
-                    <i data-lucide="message-circle" class="w-4 h-4"></i> Consultar Especialista
+        </div>
+    </div>
+    <header class="bg-slate-900 border-b border-slate-800 sticky top-0 z-10 px-4">
+        <div class="max-w-4xl mx-auto h-20 flex items-center justify-between gap-4">
+            <div class="flex items-center gap-2 flex-shrink-0">
+                <a href="index.html">
+                    <img src="https://i.postimg.cc/8cgHJgH8/catalogo.png" alt="CatálogoZap" class="h-14 w-auto animate-pulse" referrerpolicy="no-referrer">
                 </a>
+            </div>
+            <div class="flex gap-2 items-center flex-wrap sm:flex-nowrap">
+                <!-- Sempre visível: Voltar para Home -->
+                <a href="index.html" class="bg-slate-800 border border-slate-700 text-slate-300 hover:text-white px-3 sm:px-4 py-2 rounded-xl text-[10px] sm:text-xs font-black uppercase italic tracking-widest hover:bg-slate-700 flex items-center gap-2 transition-all active:scale-95" title="Voltar para a Home">
+                    <i data-lucide="home" class="w-4 h-4"></i> <span class="hidden sm:inline">Início</span>
+                </a>
+
+                <!-- Visível apenas quando logado / em edição -->
+                <div id="logged-actions" class="hidden gap-2">
+                    <a id="btn-view-store" href="#" target="_blank" class="bg-emerald-600 text-white px-3 sm:px-4 py-2 rounded-xl text-[10px] sm:text-xs font-black uppercase italic tracking-widest hover:bg-emerald-700 flex items-center gap-2 shadow-lg transition-all active:scale-95">
+                        <i data-lucide="external-link" class="w-4 h-4"></i> <span>Ver Loja</span>
+                    </a>
+                    <button onclick="window.sairPainel()" class="bg-red-600 border border-red-700 text-white px-3 sm:px-4 py-2 rounded-xl text-[10px] sm:text-xs font-black uppercase italic tracking-widest hover:bg-red-700 flex items-center gap-2 shadow-lg transition-all active:scale-95">
+                        <i data-lucide="log-out" class="w-4 h-4"></i> <span>Sair</span>
+                    </button>
+                </div>
+
+                <div id="last-store-container" class="hidden">
+                    <button onclick="window.editLastStore()" class="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-xl text-[10px] sm:text-xs font-black uppercase italic tracking-widest hover:bg-blue-700 flex items-center gap-2 shadow-lg transition-all active:scale-95">
+                        <i data-lucide="history" class="w-4 h-4"></i> <span>Voltar a Editar</span>
+                    </button>
+                </div>
             </div>
         </div>
     </header>
 
-    <!-- HERO SECTION PREMIUM -->
-    <section class="relative pt-16 pb-28 md:py-36 overflow-hidden border-b border-white/5">
-        <!-- Ambient lighting elements -->
-        <div class="absolute top-0 right-0 w-[400px] h-[400px] bg-[#25D366]/5 rounded-full blur-[100px] pointer-events-none"></div>
-        <div class="absolute bottom-0 left-10 w-[500px] h-[500px] bg-emerald-500/5 rounded-full blur-[120px] pointer-events-none"></div>
-        
-        <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-16 items-center relative z-10">
-            <!-- Left Headline Block -->
-            <div class="lg:col-span-7 space-y-8 text-left">
-                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 bg-gradient-to-r from-emerald-950 to-zinc-950 border border-emerald-500/20 rounded-full text-xs font-semibold text-emerald-400 tracking-wider uppercase font-outfit">
-                    <span class="w-2 h-2 rounded-full bg-[#25D366] animate-ping"></span> ESTÚDIO DE ARQUITETURA DIGITAL
-                </div>
-
-                <h1 class="text-4xl sm:text-6xl md:text-7xl font-black font-outfit tracking-tight leading-none text-white max-w-4xl">
-                    Transformamos seu negócio em uma <span class="bg-gradient-to-r from-emerald-400 via-[#25D366] to-green-300 bg-clip-text text-transparent text-glow">loja online profissional</span>
-                </h1>
-                
-                <p class="text-lg sm:text-xl text-slate-300 font-medium max-w-2xl leading-relaxed">
-                    Receba pedidos organizados no seu WhatsApp com uma loja online moderna, ultra veloz e sob medida. <span class="text-white font-bold">Nós criamos tudo:</span> configuramos suas cores, cadastramos seus produtos e entregamos sua vitrine pronta para vender em apenas 24h.
-                </p>
-
-                <div class="flex flex-col sm:flex-row gap-4 pt-4">
-                    <a href="https://api.whatsapp.com/send?phone=5585992862177&text=Olá! Quero solicitar a criação da minha loja personalizada pronta no WhatsApp. Como podemos começar?" target="_blank" class="inline-flex items-center justify-center gap-3 px-8 py-5 bg-[#25D366] text-black rounded-2xl font-black uppercase tracking-wider text-sm hover:bg-emerald-400 transition-all hover:shadow-[0_0_30px_rgba(37,211,102,0.3)] hover:scale-[1.02] active-scale">
-                        <i data-lucide="arrow-right-circle" class="w-5 h-5"></i> QUERO SOLICITAR MINHA LOJA PRONTA
-                    </a>
-                    <a href="#clientes" class="inline-flex items-center justify-center gap-2 px-8 py-5 bg-white/5 border border-white/10 rounded-2xl font-bold uppercase tracking-wider text-xs hover:bg-white/10 text-white transition-all active-scale">
-                        <i data-lucide="eye" class="w-4 h-4"></i> VER CLIENTES REAIS
-                    </a>
-                </div>
-
-                <!-- Trust Metrics / Strategic Indicators -->
-                <div class="pt-10 border-t border-white/5 grid grid-cols-3 gap-6 text-slate-400 font-outfit">
-                    <div>
-                        <p class="text-2xl sm:text-3xl font-black text-white">+1.2M</p>
-                        <p class="text-[10px] uppercase tracking-widest font-bold text-slate-500">Vendas Processadas</p>
-                    </div>
-                    <div>
-                        <p class="text-2xl sm:text-3xl font-black text-white">24 Horas</p>
-                        <p class="text-[10px] uppercase tracking-widest font-bold text-slate-500">Prazo Médio de Entrega</p>
-                    </div>
-                    <div>
-                        <p class="text-2xl sm:text-3xl font-black text-white">Suporte VIP</p>
-                        <p class="text-[10px] uppercase tracking-widest font-bold text-slate-500">Acompanhamento Direto</p>
-                    </div>
-                </div>
+    <main class="max-w-4xl mx-auto px-4 py-8 pb-32">
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+            <div class="bg-orange-500 p-8 text-white">
+                <h2 class="text-3xl font-black italic uppercase tracking-tighter mb-2">Crie sua vitrine hoje</h2>
+                <p class="text-orange-100 font-medium">Preencha os dados e gere seu link instantâneo.</p>
             </div>
 
-            <!-- Right Visual Phone Mockup Stack -->
-            <div class="lg:col-span-5 flex justify-center">
-                <div class="relative w-full max-w-sm md:max-w-md group">
-                    <!-- Elegant Backlight Ring -->
-                    <div class="absolute -inset-4 bg-gradient-to-tr from-[#25D366] to-emerald-500 rounded-[3rem] blur-2xl opacity-20 group-hover:opacity-35 transition-opacity duration-1000"></div>
-                    
-                    <!-- Phone Container Design -->
-                    <div class="p-2.5 bg-zinc-950 border border-white/10 rounded-[3rem] shadow-2xl relative">
-                        <img src="https://conheca.meucatalogovirtual.com/wp-content/themes/meucatalogovirtual/img/mockup.png" 
-                             alt="Loja Online no Smartphone Mockup" 
-                             class="w-full h-auto rounded-[2.6rem] object-cover block shadow-2xl transition-transform duration-700 hover:scale-[1.01]"
-                             referrerpolicy="no-referrer">
-
-                        <!-- Floating Micro Interactive Widgets to Increase Auth Value -->
-                        <div class="absolute -left-6 bottom-16 bg-black/90 backdrop-blur-md border border-[#25D366]/30 p-3.5 rounded-2xl flex items-center gap-3 shadow-2xl animate-bounce" style="animation-duration: 3.5s;">
-                            <div class="w-9 h-9 rounded-full bg-[#25D366]/20 flex items-center justify-center border border-[#25D366]/30">
-                                <i data-lucide="check" class="text-[#25D366] w-5 h-5"></i>
-                            </div>
-                            <div class="text-left">
-                                <p class="text-[11px] font-bold text-white">Novo Pedido Recebido!</p>
-                                <p class="text-[9px] font-semibold text-emerald-400">R$ 218,90 via WhatsApp</p>
-                            </div>
+            <div class="p-8 space-y-10">
+                <!-- SEÇÃO DE CRIAÇÃO -->
+                <section class="space-y-6">
+                    <div class="flex items-center gap-4 mb-6">
+                        <div class="bg-orange-100 text-orange-600 w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm">
+                            <i data-lucide="plus-circle" class="w-6 h-6"></i>
                         </div>
-
-                        <div class="absolute -right-6 top-12 bg-black/90 backdrop-blur-md border border-white/10 p-3 rounded-xl flex items-center gap-2 shadow-2xl">
-                            <span class="w-2 h-2 rounded-full bg-[#25D366] animate-pulse"></span>
-                            <span class="text-[9px] font-black uppercase tracking-wider text-slate-300">Loja Ativa 99.9%</span>
+                        <div class="space-y-0.5">
+                            <h3 class="text-slate-900 font-black uppercase italic tracking-tighter text-2xl">Novo Cadastro</h3>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Crie sua loja em menos de 1 minuto</p>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- STRATEGIC BENEFITS SECTION - Premium styling (No SaaS self-service) -->
-    <section id="solucoes" class="py-24 bg-zinc-950 border-b border-white/5 relative">
-        <div class="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(60,60,60,0.1),transparent_50%)] pointer-events-none"></div>
-        
-        <div class="max-w-7xl mx-auto px-6 relative z-10">
-            <!-- Strategic Narrative Intro -->
-            <div class="text-center max-w-3xl mx-auto space-y-4 mb-20">
-                <span class="text-xs font-bold px-3 py-1.5 bg-[#25D366]/10 border border-[#25D366]/25 rounded-full tracking-wider text-[#25D366] font-outfit uppercase">SOLUÇÃO CHAVE NA MÃO</span>
-                <h2 class="text-3xl sm:text-5xl font-black font-outfit tracking-tight text-white leading-tight">
-                    Nós construímos sua presença digital, você colhe os pedidos
-                </h2>
-                <p class="text-slate-400 text-base sm:text-lg">
-                    Diferente de sistemas que te entregam uma tela vazia para você se virar, nós desenvolvemos, polimos, criamos a comunicação visual e entregamos seu catálogo totalmente pronto para o uso.
-                </p>
-            </div>
-
-            <!-- Grid of bespoke highlights -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                <!-- Highlight 1 -->
-                <div class="bg-black border border-white/5 rounded-3xl p-8 hover:border-[#25D366]/40 transition-all group hover:-translate-y-1 hover:shadow-[0_10px_35px_rgba(37,211,102,0.05)]">
-                    <div class="w-14 h-14 rounded-2xl bg-[#25D366]/10 flex items-center justify-center mb-6 border border-[#25D366]/20 group-hover:-rotate-3 transition-transform">
-                        <i data-lucide="message-circle" class="text-[#25D366] w-6 h-6"></i>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Seu Nome (Responsável)</label>
+                            <input type="text" id="owner-name" oninput="window.saveDraft()" placeholder="Ex: João Silva" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Nome da Loja</label>
+                            <input type="text" id="store-name" oninput="window.saveDraft()" placeholder="Ex: Hamburgueria do Jhow" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">WhatsApp (DDD + Número)</label>
+                            <input type="text" id="whatsapp" oninput="window.saveDraft(); window.checkWhatsApp(this.value)" placeholder="Ex: 85999999999" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                            <div id="whatsapp-match-msg" class="hidden mt-2 p-4 bg-orange-50 rounded-[1.5rem] border border-orange-100">
+                                <p class="text-[10px] font-black text-orange-600 uppercase tracking-widest flex items-center gap-2">
+                                    <i data-lucide="info" class="w-3.5 h-3.5"></i> Este número já possui uma loja! 
+                                </p>
+                                <p class="text-[8px] text-orange-500 mt-1 font-medium italic">Use o botão "Acessar Meu Painel" na página inicial para fazer login no seu painel.</p>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Crie uma Senha (Mín. 4 dígitos)</label>
+                            <input type="password" id="password" oninput="window.saveDraft()" placeholder="Senha para editar depois" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                        </div>
+                        <div class="space-y-2 md:col-span-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Endereço da Loja</label>
+                            <input type="text" id="address" oninput="window.saveDraft()" placeholder="Ex: Rua das Flores, 123 - São Paulo" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Website ou Link de Loja (Opcional)</label>
+                            <input type="url" id="website" oninput="window.saveDraft()" placeholder="Ex: https://www.seusite.com.br" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Instagram (Opcional)</label>
+                            <input type="text" id="instagram" oninput="window.saveDraft()" placeholder="Ex: @minhaloja" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Facebook (Opcional)</label>
+                            <input type="text" id="facebook" oninput="window.saveDraft()" placeholder="Ex: facebook.com/minhaloja" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                        </div>
                     </div>
-                    <h3 class="text-lg font-bold text-white mb-3">Pedidos Fechados no WhatsApp</h3>
-                    <p class="text-sm text-slate-400 leading-relaxed">
-                        Seus clientes transitam pelo cardápio ou catálogo de forma veloz, escolhem variações, opcionais, preenchem o endereço ou método de entrega e finalizam o pedido direto no seu WhatsApp de forma organizada e profissional.
-                    </p>
-                </div>
+                </section>
 
-                <!-- Highlight 2 -->
-                <div class="bg-black border border-white/5 rounded-3xl p-8 hover:border-[#25D366]/40 transition-all group hover:-translate-y-1 hover:shadow-[0_10px_35px_rgba(37,211,102,0.05)]">
-                    <div class="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center mb-6 border border-white/5 group-hover:-rotate-3 transition-transform">
-                        <i data-lucide="palette" class="text-emerald-400 w-6 h-6"></i>
+                <section class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Nicho</label>
+                            <select id="niche" onchange="window.saveDraft(); window.renderProducts()" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold text-sm">
+                                <option value="loja">Loja Geral</option>
+                                <option value="cardapio">Restaurante / Delivery</option>
+                                <option value="salao">Salão de Beleza</option>
+                                <option value="barbearia">Barbearia</option>
+                                <option value="acougue">Açougue</option>
+                                <option value="clinica">Clínica / Saúde</option>
+                                <option value="servicos">Serviços Gerais</option>
+                                <option value="portfolio">Portfólio / Catálogo Pleno</option>
+                                <option value="afiliados">Afiliados / Promoções</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Formato das Fotos</label>
+                            <select id="image-format" onchange="window.saveDraft()" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold">
+                                <option value="vertical">Vertical (9:16)</option>
+                                <option value="quadrado">Quadrado (1:1)</option>
+                            </select>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Cor Principal</label>
+                            <input type="color" id="primary-color" oninput="window.saveDraft()" value="#f97316" class="w-full h-14 rounded-2xl cursor-pointer">
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Cor do Banner</label>
+                            <input type="color" id="secondary-color" oninput="window.saveDraft()" value="#0f172a" class="w-full h-14 rounded-2xl cursor-pointer">
+                        </div>
                     </div>
-                    <h3 class="text-lg font-bold text-white mb-3">Identidade Visual Própria</h3>
-                    <p class="text-sm text-slate-400 leading-relaxed">
-                        Nossa equipe técnica faz todo o refinamento gráfico da sua loja. Adequamos o banner de topo de acordo com a sua logo, definimos paletas elegantes e estruturamos seções limpas que facilitam a leitura rápida.
-                    </p>
-                </div>
-
-                <!-- Highlight 3 -->
-                <div class="bg-black border border-white/5 rounded-3xl p-8 hover:border-[#25D366]/40 transition-all group hover:-translate-y-1 hover:shadow-[0_10px_35px_rgba(37,211,102,0.05)]">
-                    <div class="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center mb-6 border border-white/5 group-hover:-rotate-3 transition-transform">
-                        <i data-lucide="zap" class="text-amber-400 w-6 h-6"></i>
-                    </div>
-                    <h3 class="text-lg font-bold text-white mb-3">Carregamento Instantâneo</h3>
-                    <p class="text-sm text-slate-400 leading-relaxed">
-                        Seus clientes não desistem da compra por causa de telas lentas. O catálogo utiliza tecnologia moderna otimizada para telefones móveis que renderiza imagens e categorias em milissegundos, reduzindo a taxa de abandono do site.
-                    </p>
-                </div>
-
-                <!-- Highlight 4 -->
-                <div class="bg-black border border-white/5 rounded-3xl p-8 hover:border-[#25D366]/40 transition-all group hover:-translate-y-1 hover:shadow-[0_10px_35px_rgba(37,211,102,0.05)]">
-                    <div class="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center mb-6 border border-white/5 group-hover:-rotate-3 transition-transform">
-                        <i data-lucide="clapperboard" class="text-red-400 w-6 h-6"></i>
-                    </div>
-                    <h3 class="text-lg font-bold text-white mb-3">Apresentação com Vídeos</h3>
-                    <p class="text-sm text-slate-400 leading-relaxed">
-                        Dê vida aos seus produtos gastronômicos ou físicos! Nossa plataforma aceita pequenos vídeos demonstrativos de cada item para o cliente ver em movimento a textura, caimento ou detalhes especiais antes de pedir.
-                    </p>
-                </div>
-
-                <!-- Highlight 5 -->
-                <div class="bg-black border border-white/5 rounded-3xl p-8 hover:border-[#25D366]/40 transition-all group hover:-translate-y-1 hover:shadow-[0_10px_35px_rgba(37,211,102,0.05)]">
-                    <div class="w-14 h-14 rounded-2xl bg-zinc-900 flex items-center justify-center mb-6 border border-white/5 group-hover:-rotate-3 transition-transform">
-                        <i data-lucide="clock-4" class="text-blue-400 w-6 h-6"></i>
-                    </div>
-                    <h3 class="text-lg font-bold text-white mb-3">Integração de Agendamentos</h3>
-                    <p class="text-sm text-slate-400 leading-relaxed">
-                        Além de comercializar produtos tradicionais, você pode disponibilizar vitrines de serviços com seleção de dias de atendimento e suporte a horários programados para clínicas, barbearias ou prestadores de serviços locais.
-                    </p>
-                </div>
-
-                <!-- Highlight 6 -->
-                <div class="bg-black border border-white/5 rounded-3xl p-8 hover:border-[#25D366]/40 transition-all group hover:-translate-y-1 hover:shadow-[0_10px_35px_rgba(37,211,102,0.05)]">
-                    <div class="w-14 h-14 rounded-2xl bg-[#25D366]/10 flex items-center justify-center mb-6 border border-[#25D366]/20 group-hover:-rotate-3 transition-transform">
-                        <i data-lucide="shield-check" class="text-[#25D366] w-6 h-6"></i>
-                    </div>
-                    <h3 class="text-lg font-bold text-white mb-3">Painel Administrativo VIP</h3>
-                    <p class="text-sm text-slate-400 leading-relaxed">
-                        Após receber sua loja pronta, nosso painel de controle protegido por senha permite alterar preços, atualizar estoques ou adicionar novos pratos em segundos via celular, sem depender de agência para atualizações simples.
-                    </p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- NICHES OF SPECIALTY -->
-    <section id="segmentos" class="py-24 bg-black border-b border-white/5">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="text-center max-w-2xl mx-auto space-y-4 mb-20">
-                <span class="text-xs font-bold px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/25 rounded-full tracking-wider text-emerald-400 font-outfit uppercase">SOLUÇÃO PARA CADA NEGÓCIO</span>
-                <h2 class="text-3xl sm:text-4xl font-extrabold font-outfit tracking-tight text-white">Segmentos de Especialidade</h2>
-                <p class="text-slate-400 text-sm sm:text-base">
-                    Nossa equipe modela a exibição, os termos de agendamento e o fluxo de fechamento de acordo com o padrão do seu nicho de atuação:
-                </p>
-            </div>
-
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-                <!-- Segment Cards -->
-                <div class="bg-zinc-950 border border-white/5 rounded-3xl p-6 text-center hover:bg-zinc-900 hover:border-[#25D366]/30 transition-all cursor-default">
-                    <div class="w-12 h-12 rounded-2xl bg-orange-500/10 flex items-center justify-center mx-auto mb-4">
-                        <i data-lucide="utensils" class="text-orange-400 w-5 h-5"></i>
-                    </div>
-                    <h4 class="font-bold text-white text-base">Restaurantes & Delivery</h4>
-                </div>
-                
-                <div class="bg-zinc-950 border border-white/5 rounded-3xl p-6 text-center hover:bg-zinc-900 hover:border-[#25D366]/30 transition-all cursor-default">
-                    <div class="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center mx-auto mb-4">
-                        <i data-lucide="scissors" class="text-blue-400 w-5 h-5"></i>
-                    </div>
-                    <h4 class="font-bold text-white text-base">Barbearias & Beleza</h4>
-                </div>
-
-                <div class="bg-zinc-950 border border-white/5 rounded-3xl p-6 text-center hover:bg-zinc-900 hover:border-[#25D366]/30 transition-all cursor-default">
-                    <div class="w-12 h-12 rounded-2xl bg-green-500/10 flex items-center justify-center mx-auto mb-4">
-                        <i data-lucide="shopping-bag" class="text-green-400 w-5 h-5"></i>
-                    </div>
-                    <h4 class="font-bold text-white text-base">Marmitarias & Alimentação</h4>
-                </div>
-
-                <div class="bg-zinc-950 border border-white/5 rounded-3xl p-6 text-center hover:bg-zinc-900 hover:border-[#25D366]/30 transition-all cursor-default">
-                    <div class="w-12 h-12 rounded-2xl bg-pink-500/10 flex items-center justify-center mx-auto mb-4">
-                        <i data-lucide="shirt" class="text-pink-400 w-5 h-5"></i>
-                    </div>
-                    <h4 class="font-bold text-white text-base">Lojas de Moda & Roupas</h4>
-                </div>
-
-                <div class="bg-zinc-950 border border-white/5 rounded-3xl p-6 text-center hover:bg-zinc-900 hover:border-[#25D366]/30 transition-all cursor-default">
-                    <div class="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto mb-4">
-                        <i data-lucide="gem" class="text-amber-400 w-5 h-5"></i>
-                    </div>
-                    <h4 class="font-bold text-white text-base">Joias & Acessórios</h4>
-                </div>
-
-                <div class="bg-zinc-950 border border-white/5 rounded-3xl p-6 text-center hover:bg-zinc-900 hover:border-[#25D366]/30 transition-all cursor-default">
-                    <div class="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center mx-auto mb-4">
-                        <i data-lucide="heart-pulse" class="text-red-400 w-5 h-5"></i>
-                    </div>
-                    <h4 class="font-bold text-white text-base">Clínicas & Agendamentos</h4>
-                </div>
-
-                <div class="bg-zinc-950 border border-white/5 rounded-3xl p-6 text-center hover:bg-zinc-900 hover:border-[#25D366]/30 transition-all cursor-default">
-                    <div class="w-12 h-12 rounded-2xl bg-sky-500/10 flex items-center justify-center mx-auto mb-4">
-                        <i data-lucide="smartphone" class="text-sky-400 w-5 h-5"></i>
-                    </div>
-                    <h4 class="font-bold text-white text-base">Eletrônicos & Afiliados</h4>
-                </div>
-
-                <div class="bg-zinc-950 border border-white/5 rounded-3xl p-6 text-center hover:bg-zinc-900 hover:border-[#25D366]/30 transition-all cursor-default">
-                    <div class="w-12 h-12 rounded-2xl bg-[#25D366]/10 flex items-center justify-center mx-auto mb-4">
-                        <i data-lucide="store" class="text-[#25D366] w-5 h-5"></i>
-                    </div>
-                    <h4 class="font-bold text-white text-base">Mercados & Açougues</h4>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- REAL PORTFOLIO CUSTOMERS SECTION (PRESENTED AS PREMIUM DEPLOYED SITES) -->
-    <section id="clientes" class="py-24 bg-zinc-950 border-b border-white/5">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="text-center max-w-3xl mx-auto space-y-4 mb-20">
-                <span class="text-xs font-bold px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/25 rounded-full tracking-wider text-[#25D366] font-outfit uppercase">PROVA SOCIAL E RESPEITO</span>
-                <h2 class="text-3xl sm:text-5xl font-black font-outfit tracking-tight text-white">Negócios que já estão vendendo online</h2>
-                <p class="text-slate-400 text-sm sm:text-base">
-                    Estes são alguns dos nossos clientes reais com catálogos configurados, ativos e gerando centenas de faturamentos diretamente via WhatsApp todos os dias. Clique e experimente o fluxo real:
-                </p>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <!-- Client Store 1 -->
-                <div class="bg-black rounded-[2.5rem] p-6.5 border border-white/5 flex flex-col justify-between hover:border-[#25D366]/50 hover:shadow-[0_15px_40px_rgba(37,211,102,0.06)] transition-all transform hover:-translate-y-0.5 duration-300">
-                    <div class="space-y-6">
-                        <div class="aspect-video rounded-[2rem] overflow-hidden bg-zinc-900 relative flex items-center justify-center border border-white/5 shadow-inner">
-                            <img src="https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=500" alt="Bossa Infor" class="w-full h-full object-cover opacity-10" referrerpolicy="no-referrer">
-                            <div class="absolute inset-0 flex items-center justify-center">
-                                <div class="w-24 h-24 rounded-full border-4 border-emerald-500/30 bg-zinc-900 flex items-center justify-center overflow-hidden shadow-2xl">
-                                    <img src="https://i.postimg.cc/Gpykbbz5/nova-logo-bossa-infor-png.png" class="w-full h-full object-cover" alt="Bossa Infor Logo" referrerpolicy="no-referrer">
+                    <div class="space-y-4">
+                        <div class="space-y-2">
+                            <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Logomarca (Opcional)</label>
+                            <div class="flex flex-col gap-3">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-20 h-20 bg-slate-100 rounded-full overflow-hidden border-2 border-slate-200 flex items-center justify-center flex-shrink-0 shadow-inner">
+                                        <img id="logo-preview" src="" class="w-full h-full object-cover hidden" referrerpolicy="no-referrer" onerror="this.classList.add('hidden'); document.getElementById('logo-icon').classList.remove('hidden')">
+                                        <i id="logo-icon" data-lucide="image" class="text-slate-300 w-6 h-6"></i>
+                                    </div>
+                                <div class="flex-1 flex flex-col sm:flex-row gap-2 min-w-0">
+                                    <input type="text" id="store-logo" oninput="window.updateLogoPreview(this.value); window.saveDraft()" placeholder="Link da Logomarca" class="flex-1 min-w-0 px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold text-sm">
+                                    <div class="flex gap-2 w-full sm:w-auto">
+                                        <button type="button" onclick="window.open('https://postimages.org/', '_blank')" class="flex-1 bg-blue-600 text-white px-5 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2 active-scale shadow-lg shadow-blue-100" title="Hospedar Foto">
+                                            <i data-lucide="camera" class="w-5 h-5"></i>
+                                            <span>Foto</span>
+                                        </button>
+                                        <button type="button" onclick="document.getElementById('store-logo').value=''; window.updateLogoPreview(''); window.saveDraft()" class="bg-red-100 text-red-600 px-5 py-4 rounded-2xl hover:bg-red-200 transition-all flex items-center justify-center flex-shrink-0 active-scale" title="Remover Logo">
+                                            <i data-lucide="trash-2" class="w-5 h-5"></i>
+                                        </button>
+                                    </div>
+                                </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="text-left space-y-2">
-                            <span class="text-[9px] uppercase font-bold tracking-widest text-emerald-400 font-outfit bg-white/5 px-2.5 py-1 rounded-full border border-white/10">LOJA DE INFOPRODUTOS E AUDIOPRODUTORAS</span>
-                            <h3 class="text-2xl font-extrabold text-white tracking-tight pt-1">Bossa Infor</h3>
-                            <p class="text-xs text-slate-400 font-medium">Design requintado para seleção de pacotes, edições especializadas, consultorias e materiais digitais premium.</p>
-                            <!-- Elegant Quote -->
-                            <div class="pt-3 border-t border-white/5">
-                                <p class="text-xs italic text-slate-400">"Uma ferramenta robusta que agilizou todo nosso processo de pré-vendas semanais."</p>
+
+                        <div class="space-y-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Chave PIX (Para pedidos)</label>
+                                    <input type="text" id="pix-key" oninput="window.saveDraft()" placeholder="E-mail, Celular ou CPF" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold shadow-sm">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Acréscimo Cartão de Crédito % (A partir de 4x)</label>
+                                    <input type="number" id="card-fee" oninput="window.saveDraft()" min="0" max="100" step="0.1" placeholder="Ex: 5 para somar 5% no cartão" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold shadow-sm">
+                                </div>
+                            </div>
+                            <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200/60 flex flex-col sm:flex-row items-center justify-between gap-4">
+                                <div class="space-y-0.5">
+                                    <h4 class="text-xs font-black uppercase text-slate-700">Parcelamento Inteligente no Cartão</h4>
+                                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wide">De 1x a 3x é SEM JUROS! A partir de 4x, calcula os juros automaticamente (Porcentagem configurada + 1.5% ao mês).</p>
+                                </div>
+                                <img src="https://i0.wp.com/imprensa24h.com.br/wp-content/uploads/2023/03/bandeiras-de-cartoes-de-credito-png-e-vetor.png?fit=1920%2C1080&ssl=1" alt="Bandeiras de Cartão" class="h-8 w-auto object-contain bg-white px-2 py-1 rounded-lg border border-slate-100 shadow-sm" referrerpolicy="no-referrer">
                             </div>
                         </div>
                     </div>
-                    <div class="pt-6">
-                        <a href="loja.html?id=bossa-infor-produtora" target="_blank" class="w-full py-4 bg-zinc-900 hover:bg-[#25D366] hover:text-black hover:border-transparent transition-all border border-white/10 text-white rounded-xl font-black uppercase text-xs flex items-center justify-center gap-2 tracking-wider active-scale">
-                            Visualizar Loja Real com Vídeos <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Client Store 2 -->
-                <div class="bg-black rounded-[2.5rem] p-6.5 border border-white/5 flex flex-col justify-between hover:border-[#25D366]/50 hover:shadow-[0_15px_40px_rgba(37,211,102,0.06)] transition-all transform hover:-translate-y-0.5 duration-300">
-                    <div class="space-y-6">
-                        <div class="aspect-video rounded-[2rem] overflow-hidden bg-zinc-900 relative flex items-center justify-center border border-white/5 shadow-inner">
-                            <img src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&q=80&w=500" alt="PAES BARRETO" class="w-full h-full object-cover opacity-10" referrerpolicy="no-referrer">
-                            <div class="absolute inset-0 flex items-center justify-center">
-                                <div class="w-24 h-24 rounded-full border-4 border-amber-500/30 bg-black flex items-center justify-center overflow-hidden shadow-2xl">
-                                    <img src="https://i.postimg.cc/02F8M4RS/Whats-App-Image-2026-04-29-at-19-40-20.jpg" class="w-full h-full object-cover" alt="PAES BARRETO Logo" referrerpolicy="no-referrer">
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Imagem de Banner (Opcional)</label>
+                        <div class="flex flex-col gap-3">
+                            <div class="flex items-center gap-4">
+                                <div class="w-20 h-12 bg-slate-100 rounded-xl overflow-hidden border-2 border-slate-200 flex items-center justify-center flex-shrink-0">
+                                    <img id="banner-preview" src="" class="w-full h-full object-cover hidden" referrerpolicy="no-referrer" onerror="this.classList.add('hidden'); document.getElementById('banner-icon').classList.remove('hidden')">
+                                    <i id="banner-icon" data-lucide="image" class="text-slate-300 w-5 h-5"></i>
+                                </div>
+                                <div class="flex-1 flex flex-col sm:flex-row gap-2 min-w-0">
+                                    <input type="text" id="banner-image" oninput="window.updateBannerPreview(this.value); window.saveDraft()" placeholder="Link ou use o botão" class="flex-1 min-w-0 px-4 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold text-sm">
+                                    <div class="flex gap-2 w-full sm:w-auto">
+                                        <button type="button" onclick="window.open('https://postimages.org/', '_blank')" class="flex-1 bg-blue-600 text-white px-4 sm:px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2 active-scale shadow-lg shadow-blue-100" title="Hospedar Foto">
+                                            <i data-lucide="camera" class="w-4 h-4"></i>
+                                            <span>Foto</span>
+                                        </button>
+                                        <button type="button" onclick="document.getElementById('banner-image').value=''; window.updateBannerPreview(''); window.saveDraft()" class="bg-red-100 text-red-600 px-4 py-4 rounded-2xl hover:bg-red-200 transition-all flex items-center justify-center flex-shrink-0 active-scale" title="Remover imagem">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="text-left space-y-2">
-                            <span class="text-[9px] uppercase font-bold tracking-widest text-[#25D366] font-outfit bg-white/5 px-2.5 py-1 rounded-full border border-white/10">PERFUMARIA E COSMÉTICOS PREMIUM</span>
-                            <h3 class="text-2xl font-extrabold text-white tracking-tight pt-1">PAES BARRETO</h3>
-                            <p class="text-xs text-slate-400 font-medium">Layout adaptado para produtos de alto padrão e perfumes icônicos importados de marcas renomadas de destaque.</p>
-                            <!-- Elegant Quote -->
-                            <div class="pt-3 border-t border-white/5">
-                                <p class="text-xs italic text-slate-400">"Nossos clientes amam a rapidez do carrinho de compras integrado no telefone."</p>
-                            </div>
-                        </div>
                     </div>
-                    <div class="pt-6">
-                        <a href="loja.html?id=paes-barreto" target="_blank" class="w-full py-4 bg-zinc-900 hover:bg-[#25D366] hover:text-black hover:border-transparent transition-all border border-white/10 text-white rounded-xl font-black uppercase text-xs flex items-center justify-center gap-2 tracking-wider active-scale">
-                            Visualizar Loja Real com Carrinho <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-                        </a>
-                    </div>
-                </div>
+                </section>
 
-                <!-- Client Store 3 -->
-                <div class="bg-black rounded-[2.5rem] p-6.5 border border-white/5 flex flex-col justify-between hover:border-[#25D366]/50 hover:shadow-[0_15px_40px_rgba(37,211,102,0.06)] transition-all transform hover:-translate-y-0.5 duration-300">
-                    <div class="space-y-6">
-                        <div class="aspect-video rounded-[2rem] overflow-hidden bg-zinc-900 relative flex items-center justify-center border border-white/5 shadow-inner">
-                            <img src="https://images.unsplash.com/photo-1526733169351-84074421272b?auto=format&fit=crop&q=80&w=500" alt="ROSENO & SOUZA" class="w-full h-full object-cover opacity-10" referrerpolicy="no-referrer">
-                            <div class="absolute inset-0 flex items-center justify-center">
-                                <div class="w-24 h-24 rounded-full border-4 border-zinc-700/30 bg-zinc-900 flex items-center justify-center overflow-hidden shadow-2xl">
-                                    <img src="https://i.postimg.cc/KcMfggyb/ROSENO-E-SOUZA.png" class="w-full h-full object-cover" alt="ROSENO & SOUZA Logo" referrerpolicy="no-referrer">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="text-left space-y-2">
-                            <span class="text-[9px] uppercase font-bold tracking-widest text-[#25D366] font-outfit bg-white/5 px-2.5 py-1 rounded-full border border-white/10">ELETRÔNICOS E UTENSÍLIOS DE ALTO PADRÃO</span>
-                            <h3 class="text-2xl font-extrabold text-white tracking-tight pt-1">ROSENO & SOUZA</h3>
-                            <p class="text-xs text-slate-400 font-medium">Apresentação para varejo de eletrônicos, celulares e periféricos, focada na conversão instantânea de ofertas limitadas.</p>
-                            <!-- Elegant Quote -->
-                            <div class="pt-3 border-t border-white/5">
-                                <p class="text-xs italic text-slate-400">"Simplesmente perfeito. Facilitou o envio dos pedidos formatados sem mensagens confusas."</p>
-                            </div>
-                        </div>
+                <section class="space-y-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="font-black uppercase italic tracking-widest text-sm text-orange-600">Itens do Catálogo</h3>
+                        <button type="button" onclick="window.addProduct()" class="bg-orange-600 text-white px-6 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest hover:bg-orange-700 active-scale shadow-lg shadow-orange-100">Adicionar Item</button>
                     </div>
-                    <div class="pt-6">
-                        <a href="loja.html?id=roseno-souza" target="_blank" class="w-full py-4 bg-zinc-900 hover:bg-[#25D366] hover:text-black hover:border-transparent transition-all border border-white/10 text-white rounded-xl font-black uppercase text-xs flex items-center justify-center gap-2 tracking-wider active-scale">
-                            Visualizar Loja Real de Eletrônicos <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
+                    <div id="products-list" class="space-y-4"></div>
+                    <datalist id="categories-datalist"></datalist>
+                </section>
 
-    <!-- PREMIUM REVENUE PLANS SECTION - Refactored for Premium Positioning (No Cheap SaaS Vibe) -->
-    <section id="valores" class="py-24 bg-black border-b border-white/5">
-        <div class="max-w-7xl mx-auto px-6">
-            <div class="text-center max-w-3xl mx-auto space-y-4 mb-20 flex flex-col items-center">
-                <span class="text-xs font-bold px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/25 rounded-full tracking-wider text-[#25D366] font-outfit uppercase">INVESTIMENTO COM CRIAÇÃO INCLUSA</span>
-                <h2 class="text-3xl sm:text-5xl font-black font-outfit tracking-tight text-white leading-tight">
-                    Investimento Premium Personalizado
-                </h2>
-                <p class="text-slate-400 text-sm sm:text-base max-w-2xl">
-                    Sem surpresas ocultas ou taxas percentuais abusivas sobre seus produtos ou vendas. Tarifação transparente baseada na complexidade de criação do seu projeto digital:
-                </p>
-                <div class="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-white/5 border border-white/10 rounded-full text-xs text-slate-400">
-                    <i data-lucide="info" class="w-3.5 h-3.5 text-emerald-400"></i> Setup, configuração estética e tratamento de logo 100% integrados
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                
-                <!-- CARD 1: CATALOGO DIGITAL -->
-                <div class="bg-zinc-950 border border-zinc-800/60 p-6 sm:p-8 rounded-[2.5rem] flex flex-col justify-between hover:border-[#25D366]/30 hover:shadow-[0_10px_30px_rgba(37,211,102,0.05)] transition-all relative group duration-300">
-                    <div class="space-y-6">
-                        <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-white/5 rounded-full text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            Plano 1
+                <section id="shipping-section" class="p-4 sm:p-8 bg-slate-50 rounded-[2rem] sm:rounded-[3rem] border border-slate-200 mt-6 space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="space-y-1">
+                            <h3 class="font-black uppercase italic tracking-tighter text-2xl sm:text-3xl leading-none">Taxas de Entrega</h3>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-tight">Cadastre bairros e valores de frete</p>
                         </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input type="text" id="new-neighborhood" placeholder="Nome do Bairro" class="flex-1 px-6 py-5 rounded-[1.5rem] bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-lg shadow-sm">
+                            <input type="text" id="new-shipping-price" placeholder="Preço (ex: 5,00)" class="w-full sm:w-40 px-6 py-5 rounded-[1.5rem] bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-lg shadow-sm">
+                            <button onclick="window.addShippingZone()" class="bg-orange-600 text-white px-8 py-5 rounded-[1.5rem] font-black uppercase italic tracking-widest hover:bg-orange-700 transition-all flex items-center justify-center gap-2 active-scale shadow-xl shadow-orange-200">
+                                <i data-lucide="plus" class="w-5 h-5"></i> Add
+                            </button>
+                        </div>
+                        <div id="shipping-zones-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
+                    </div>
+                </section>
+
+                <section class="p-4 sm:p-8 bg-slate-50 rounded-[2rem] sm:rounded-[3rem] border border-slate-200 mt-6 space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="space-y-1">
+                            <h3 class="font-black uppercase italic tracking-tighter text-2xl sm:text-3xl leading-none">Gestão de Vendedores</h3>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-tight">Gere links únicos e saiba quem vendeu</p>
+                        </div>
+                        <div id="vendor-plan-badge" class="bg-blue-100 text-blue-600 px-3 py-1 sm:px-4 sm:py-2 rounded-full text-[10px] font-black uppercase tracking-widest hidden whitespace-nowrap self-start sm:self-center transition-all">Plano Profissional</div>
+                    </div>
+
+                    <div id="vendors-restricted-msg" class="bg-white p-6 sm:p-10 rounded-3xl border border-slate-200 shadow-sm text-center space-y-4">
+                        <div class="bg-blue-50 text-blue-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto transition-transform hover:scale-110">
+                            <i data-lucide="lock" class="w-8 h-8"></i>
+                        </div>
+                        <div class="space-y-2">
+                            <h4 class="font-black uppercase italic tracking-tighter text-xl">Recurso Profissional</h4>
+                            <p class="text-xs text-slate-400 font-medium leading-relaxed max-w-xs mx-auto">A gestão de vendedores e links de afiliados está disponível apenas para parceiros do <span class="font-bold text-blue-600">Plano Profissional</span>.</p>
+                        </div>
+                        <button onclick="window.open('https://api.whatsapp.com/send?phone=5585992862177&text=Olá! Quero ativar o plano profissional para usar a gestão de vendedores.', '_blank')" class="w-full sm:w-auto px-8 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:bg-blue-700 transition-all active-scale shadow-lg shadow-blue-200">Ativar Agora</button>
+                    </div>
+
+                    <div id="vendors-manager" class="hidden space-y-6">
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <input type="text" id="new-vendor-name" placeholder="Nome do Vendedor" class="flex-1 px-6 py-5 rounded-[1.5rem] bg-white border-2 border-transparent focus:border-blue-500 outline-none transition-all font-bold text-lg shadow-sm">
+                            <button onclick="window.addVendor()" class="bg-blue-600 text-white px-8 py-5 rounded-[1.5rem] font-black uppercase italic tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2 active-scale shadow-xl shadow-blue-200">
+                                <i data-lucide="plus" class="w-5 h-5"></i> Add
+                            </button>
+                        </div>
+                        <div id="vendor-upgrade-suggestion"></div>
+                        <div id="vendors-list" class="space-y-4"></div>
+                    </div>
+                </section>
+
+                <div id="stats-container" class="hidden grid grid-cols-1 gap-4 mb-6">
+                    <div class="bg-slate-900 rounded-[1.5rem] p-6 text-white shadow-xl flex items-center justify-between border border-white/10">
                         <div>
-                            <h3 class="text-2xl font-black font-outfit text-white mb-2">CATÁLOGO DIGITAL</h3>
-                            <p class="text-slate-400 text-xs font-semibold leading-relaxed">Ideal para pequenos negócios que querem começar a vender online.</p>
+                            <p class="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 mb-1">Visitas no Seu Catálogo</p>
+                            <h3 id="total-clicks" class="text-3xl font-black italic tracking-tighter leading-none">0</h3>
                         </div>
-                        <div class="pt-4 border-t border-white/5 space-y-2">
-                            <div>
-                                <span class="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">A partir de</span>
-                                <div class="flex items-baseline gap-1 text-[#25D366] mt-0.5">
-                                    <span class="text-lg font-bold">R$</span>
-                                    <span class="text-5xl font-black font-outfit text-white">49</span>
-                                    <span class="text-lg font-bold text-white">,90</span>
-                                    <span class="text-slate-500 text-xs font-semibold ml-1">/mês</span>
-                                </div>
-                            </div>
-                            <div class="pt-1.5 border-t border-white/5">
-                                <span class="text-slate-500 text-[9px] font-bold uppercase tracking-wider block">Implantação inicial:</span>
-                                <span class="text-slate-300 text-xs font-bold">R$100 pagamento único</span>
-                            </div>
+                        <div class="p-4 bg-white/10 rounded-2xl">
+                            <i data-lucide="eye" class="text-orange-500 w-8 h-8"></i>
                         </div>
-
-                        <ul class="space-y-4 text-slate-300 text-sm text-left font-medium pt-2">
-                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Até 15 produtos cadastrados</li>
-                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Loja pronta em até 24h</li>
-                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Pedidos direto no WhatsApp</li>
-                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Painel simples pelo celular</li>
-                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Visual profissional personalizado</li>
-                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Suporte para atualizações</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="pt-8">
-                        <a href="https://api.whatsapp.com/send?phone=5585992862177&text=Olá! Quero solicitar a criação do meu CATÁLOGO DIGITAL prático por R$49,90/mês. Como podemos dar início?" target="_blank" class="w-full py-4.5 bg-zinc-900 hover:bg-[#25D366] hover:text-black block text-center transition-all border border-white/10 hover:border-transparent rounded-2xl font-black uppercase tracking-wider text-xs active-scale">
-                            QUERO MEU CATÁLOGO
-                        </a>
                     </div>
                 </div>
 
-                <!-- CARD 2: LOJA ONLINE PROFISSIONAL (THE STAR HIGHLIGHT CARD) -->
-                <div class="bg-gradient-to-b from-zinc-950 to-zinc-900 border-2 border-[#25D366]/60 p-6 sm:p-8.5 rounded-[2.5rem] flex flex-col justify-between hover:border-[#25D366] hover:shadow-[0_0_40px_rgba(37,211,102,0.15)] transition-all relative transform hover:-translate-y-1 duration-300">
-                    <div class="absolute -top-4 left-1/2 -translate-x-1/2 bg-[#25D366] text-black px-4.5 py-1.5 rounded-full font-black uppercase tracking-widest text-[9px] ring-4 ring-black shadow-lg">Mais Solicitado</div>
-                    
-                    <div class="space-y-6">
-                        <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-[#25D366]/10 rounded-full text-[10px] font-bold text-[#25D366] uppercase tracking-widest border border-[#25D366]/20">
-                            Plano 2
-                        </div>
-                        <div>
-                            <h3 class="text-2xl font-black font-outfit text-white mb-2">LOJA ONLINE PROFISSIONAL</h3>
-                            <p class="text-slate-300 text-xs font-semibold leading-relaxed">Perfeito para lojas, deliverys e negócios que querem vender mais online.</p>
-                        </div>
-                        <div class="pt-4 border-t border-white/5 space-y-2">
-                            <div>
-                                <span class="text-slate-400 text-[10px] font-bold uppercase tracking-wider block">A partir de</span>
-                                <div class="flex items-baseline gap-1 text-[#25D366] mt-0.5">
-                                    <span class="text-lg font-bold">R$</span>
-                                    <span class="text-5xl font-black font-outfit text-[#25D366]">79</span>
-                                    <span class="text-lg font-bold text-[#25D366]">,90</span>
-                                    <span class="text-slate-400 text-xs font-semibold ml-1">/mês</span>
-                                </div>
-                            </div>
-                            <div class="pt-1.5 border-t border-white/5">
-                                <span class="text-slate-400 text-[9px] font-bold uppercase tracking-wider block">Implantação inicial:</span>
-                                <span class="text-emerald-400 text-xs font-bold">R$150 pagamento único</span>
-                            </div>
-                        </div>
-
-                        <ul class="space-y-4 text-slate-200 text-sm text-left font-medium pt-2">
-                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Produtos ilimitados</li>
-                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Banners personalizados</li>
-                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Categorias organizadas</li>
-                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Carrinho de compras</li>
-                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Layout profissional da sua marca</li>
-                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Entrega rápida e pronta para divulgar</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="pt-8">
-                        <a href="https://api.whatsapp.com/send?phone=5585992862177&text=Olá! Quero solicitar a LOJA ONLINE PROFISSIONAL completa do plano de R$79,90/mês. Podem falar comigo sobre como cadastrar os produtos de primeira rodada?" target="_blank" class="w-full py-4.5 bg-[#25D366] text-black hover:bg-emerald-400 block text-center transition-all rounded-2xl font-extrabold uppercase tracking-wider text-xs shadow-lg shadow-[#25D366]/20 active-scale">
-                            SOLICITAR MINHA LOJA
-                        </a>
-                    </div>
-                </div>
-
-                <!-- CARD 3: DELIVERY & AGENDAMENTOS -->
-                <div class="bg-zinc-950 border border-zinc-800/60 p-6 sm:p-8 rounded-[2.5rem] flex flex-col justify-between hover:border-[#25D366]/30 hover:shadow-[0_10px_30px_rgba(37,211,102,0.05)] transition-all relative group duration-300">
-                    <div class="space-y-6">
-                        <div class="inline-flex items-center gap-1.5 px-3 py-1 bg-white/5 rounded-full text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                            Plano 3
-                        </div>
-                        <div>
-                            <h3 class="text-2xl font-black font-outfit text-white mb-2">DELIVERY & AGENDAMENTOS</h3>
-                            <p class="text-slate-400 text-xs font-semibold leading-relaxed">Ideal para restaurantes, barbearias, clínicas e negócios com atendimento.</p>
-                        </div>
-                        <div class="pt-4 border-t border-white/5 space-y-2">
-                            <div>
-                                <span class="text-slate-500 text-[10px] font-bold uppercase tracking-wider block">A partir de</span>
-                                <div class="flex items-baseline gap-1 text-[#25D366] mt-0.5">
-                                    <span class="text-lg font-bold">R$</span>
-                                    <span class="text-5xl font-black font-outfit text-white">119</span>
-                                    <span class="text-lg font-bold text-white">,90</span>
-                                    <span class="text-slate-500 text-xs font-semibold ml-1">/mês</span>
-                                </div>
-                            </div>
-                            <div class="pt-1.5 border-t border-white/5">
-                                <span class="text-slate-500 text-[9px] font-bold uppercase tracking-wider block">Implantação inicial:</span>
-                                <span class="text-slate-300 text-xs font-bold">R$200 pagamento único</span>
-                            </div>
-                        </div>
-
-                        <ul class="space-y-4 text-slate-300 text-sm text-left font-medium pt-2">
-                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Pedidos online no WhatsApp</li>
-                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Agendamento automático</li>
-                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Cardápio digital profissional</li>
-                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Fotos e vídeos dos produtos</li>
-                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Layout personalizado</li>
-                            <li class="flex items-center gap-3"><i data-lucide="check" class="w-4 h-4 text-[#25D366] shrink-0"></i> Suporte prioritário</li>
-                        </ul>
-                    </div>
-                    
-                    <div class="pt-8">
-                        <a href="https://api.whatsapp.com/send?phone=5585992862177&text=Olá! Desejo saber mais sobre o plano DELIVERY & AGENDAMENTOS de R$119,90/mês. Como inserimos o agendamento de horários?" target="_blank" class="w-full py-4.5 bg-zinc-900 hover:bg-[#25D366] hover:text-black block text-center transition-all border border-white/10 hover:border-transparent rounded-2xl font-black uppercase tracking-wider text-xs active-scale">
-                            FALAR NO WHATSAPP
-                        </a>
-                    </div>
-                </div>
+                <button id="main-action-btn" onclick="window.generateStore()" class="w-full py-6 sm:py-8 bg-slate-900 text-white rounded-[2rem] sm:rounded-[2.5rem] font-black uppercase italic tracking-widest text-xl sm:text-2xl hover:bg-slate-800 transition-all flex items-center justify-center gap-3 shadow-2xl active-scale touch-manipulation select-none">
+                    <i data-lucide="smartphone" class="w-6 h-6 sm:w-8 sm:h-8"></i> <span id="btn-text">Gerar Minha Página</span>
+                </button>
+                <div id="product-upgrade-suggestion"></div>
+                
+                <div id="upgrade-path-container" class="space-y-4"></div>
 
             </div>
         </div>
-    </section>
 
-    <!-- NEW CTA SECTION (EXTRA BOLD AND PREMIUM) -->
-    <section id="contato" class="py-24 bg-gradient-to-b from-zinc-950 to-black text-center relative overflow-hidden">
-        <!-- Background glows -->
-        <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(37,211,102,0.06),transparent_60%)]"></div>
-        <div class="max-w-4xl mx-auto px-6 relative z-10 space-y-10">
-            <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-[#25D366]/10 border border-[#25D366]/20 rounded-full text-xs font-bold text-[#25D366] tracking-wider uppercase font-outfit">
-                ⚡ PRODUTO FINAL ENTREGUE PRONTO EM 24H
+        <div id="result-section" class="hidden mt-12 space-y-6">
+            <div id="result-card" class="bg-orange-50 rounded-3xl p-8 border-2 border-orange-200">
+                <h3 class="text-orange-800 font-black italic uppercase tracking-tighter text-2xl mb-6">Página Gerada!</h3>
+                <div class="space-y-6">
+                    <div>
+                        <h4 class="text-orange-800 font-bold mb-2">Link Público:</h4>
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <div id="public-link" class="flex-1 bg-white px-4 py-3 rounded-xl border border-orange-200 text-slate-600 text-sm truncate font-mono"></div>
+                            <button onclick="copyLink('public-link')" class="px-6 py-3 bg-orange-600 text-white rounded-xl font-bold hover:bg-orange-700">Copiar Link</button>
+                        </div>
+                    </div>
+                </div>
             </div>
-            
-            <h2 class="text-4xl sm:text-6xl font-black font-outfit tracking-tight text-white max-w-3xl mx-auto leading-none">
-                Receba sua loja online pronta para vender em até 24h
-            </h2>
-            
-            <p class="text-base sm:text-lg text-slate-300 font-medium max-w-2xl mx-auto leading-relaxed">
-                Esqueça editores complicados ou gastar milhares de reais com agências que demoram meses. Você só nos envia as fotos de seus produtos ou cardápio existente, e nós cuidamos de toda a implementação.
-            </p>
-
-            <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
-                <a href="https://api.whatsapp.com/send?phone=5585992862177&text=Olá! Gostaria de falar com um especialista sobre a criação da minha loja online profissional pronta de 24h." target="_blank" class="w-full sm:w-auto inline-flex items-center justify-center gap-3 px-10 py-5.5 bg-[#25D366] text-black rounded-2xl font-black uppercase tracking-wider text-base hover:bg-emerald-400 hover:shadow-[0_20px_50px_rgba(37,211,102,0.3)] transition-all active-scale">
-                    <i data-lucide="message-square" class="w-5 h-5"></i> FALAR COM UM ESPECIALISTA NO WHATSAPP
-                </a>
-            </div>
-
-            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">
-                Sem burocracia • Sem cadastros intermináveis • Nós criamos e te entregamos pronta
-            </p>
         </div>
-    </section>
+    </main>
 
-    <!-- FOOTER -->
-    <footer class="py-12 text-center text-slate-600 text-[11px] font-bold uppercase tracking-widest border-t border-white/5 bg-black">
-        &copy; 2026 Desenvolvido por Bossa Infor - Vitrine Digital Profissional. Todos os direitos reservados.
+    <footer class="py-8 px-6 border-t border-slate-200 mt-10">
+        <div class="max-w-4xl mx-auto text-center">
+            <p class="text-slate-400 text-[10px] font-bold uppercase tracking-widest">Desenvolvido por Bossa Infor</p>
+        </div>
     </footer>
 
-    <!-- MODAL DE LOGIN (DISCRETA E ELEGANTE) -->
-    <div id="login-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-[100] hidden items-center justify-center p-4">
-        <!-- Close overlay background -->
-        <div class="absolute inset-0" onclick="closeLoginModal()"></div>
-        
-        <div class="w-full max-w-md bg-zinc-950 rounded-[3rem] border border-white/10 p-10 relative z-10 space-y-6 shadow-2xl">
-            <!-- Close Button -->
-            <button onclick="closeLoginModal()" class="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors">
-                <i data-lucide="x" class="w-6 h-6"></i>
-            </button>
+    <!-- BOTÃO DE SUPORTE FLUTUANTE -->
+    <a href="https://api.whatsapp.com/send?phone=5585992862177&text=Olá! Preciso de suporte com o CatálogoZap." target="_blank" class="fixed bottom-6 right-6 w-16 h-16 bg-green-500 text-white rounded-full shadow-2xl z-50 flex items-center justify-center hover:scale-110 active:scale-95 transition-all">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-whatsapp"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-11.7 8.38 8.38 0 0 1 3.8.9L21 3z"/><path d="M17 16c-1.5 1.5-4.5 1.5-6 0-1.5-1.5-1.5-4.5 0-6"/></svg>
+    </a>
 
-            <div class="text-center space-y-2">
-                <div class="w-12 h-12 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center mx-auto mb-2">
-                    <i data-lucide="lock" class="text-[#25D366] w-5 h-5"></i>
-                </div>
-                <h3 class="text-2xl font-bold font-outfit text-white">Painel do Parceiro</h3>
-                <p class="text-[10px] text-slate-400 uppercase font-black tracking-wider">Acesse para gerenciar seus produtos e dados</p>
-            </div>
-
-            <!-- Login Inputs Wrapper (MUST BE THE SAME ID AS PREVIOUS FOR JS TO BIND SUCCESSFULLY) -->
-            <div class="space-y-4" id="login-inputs">
-                <div class="relative text-left space-y-1">
-                    <label class="text-[9px] uppercase tracking-wider font-bold text-slate-400 ml-1">Telefone WhatsApp</label>
-                    <div class="relative">
-                        <i data-lucide="phone" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4"></i>
-                        <input type="text" id="login-whatsapp" placeholder="Ex: 85992862177" class="w-full pl-11 pr-5 py-4 bg-white/5 border border-white/5 hover:border-white/10 focus:border-[#25D366] rounded-2xl outline-none transition-all font-bold text-sm text-white">
-                    </div>
-                </div>
-
-                <div class="relative text-left space-y-1" id="pass-field-container">
-                    <label class="text-[9px] uppercase tracking-wider font-bold text-slate-400 ml-1">Senha de Acesso</label>
-                    <div class="relative">
-                        <i data-lucide="lock" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4"></i>
-                        <input type="password" id="login-password" placeholder="Digite sua senha" class="w-full pl-11 pr-5 py-4 bg-white/5 border border-white/5 hover:border-white/10 focus:border-[#25D366] rounded-2xl outline-none transition-all font-bold text-sm text-white">
-                    </div>
-                </div>
-
-                <button onclick="handleLogin()" id="login-btn" class="w-full py-4.5 bg-white text-slate-950 hover:bg-[#25D366] hover:text-black transition-all rounded-2xl font-black uppercase tracking-widest text-xs active-scale shadow-lg">
-                    Entrar no Painel
-                </button>
-            </div>
-
-            <!-- First Access Mode Box -->
-            <div id="first-access-msg" class="hidden p-6 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 text-center space-y-4">
-                <div>
-                    <h4 class="text-xs font-black uppercase text-[#25D366] mb-1">Primeiro Acesso Detectado!</h4>
-                    <p class="text-[10px] text-slate-300">Crie uma senha de 4 dígitos para proteger sua loja.</p>
-                </div>
-                <input type="password" id="new-password" placeholder="Defina sua senha" class="w-full px-5 py-3.5 bg-white rounded-xl outline-none font-bold text-sm text-slate-900 border-2 border-transparent focus:border-emerald-500">
-                <button onclick="saveFirstPassword()" class="w-full py-4 bg-[#25D366] text-black font-black uppercase tracking-widest text-xs rounded-xl shadow-lg active-scale">
-                    Salvar Senha e Entrar
-                </button>
-                <button onclick="cancelFirstAccess()" class="text-[9px] text-slate-400 hover:text-white uppercase font-bold tracking-widest underline">Voltar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MAIN AND MODAL LOGIN CONTROLLER -->
     <script>
-        lucide.createIcons();
+        // Tornar funções globais explicitamente para garantir funcionamento em botões
+        window.products = [{ id: Date.now().toString(), name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', videoUrl: '', category: '', description: '' }];
+        window.storePlan = 'free';
+        window.vendors = [];
+        window.shippingZones = [];
+        window.expandedProducts = new Set();
 
-        // Modal handler Functions
-        window.openLoginModal = function() {
-            document.getElementById('login-modal').classList.remove('hidden');
-            document.getElementById('login-modal').classList.add('flex');
-            document.body.style.overflow = 'hidden';
-        };
+        // Helper para normalizar categorias (Case-Insensitive)
+        window.getNormalizedCategory = function(input, currentProductId) {
+            if (!input) return '';
+            const trimmed = input.trim();
+            if (!trimmed) return '';
 
-        window.closeLoginModal = function() {
-            document.getElementById('login-modal').classList.remove('flex');
-            document.getElementById('login-modal').classList.add('hidden');
-            document.body.style.overflow = 'auto';
-        };
+            // Pegamos todas as categorias únicas de OUTROS produtos
+            const otherCategories = [...new Set(window.products
+                .filter(p => !currentProductId || p.id !== currentProductId)
+                .map(p => (p.category || '').trim())
+                .filter(c => c !== '')
+            )];
+            
+            // Procura uma que bata ignorando case
+            const match = otherCategories.find(c => c.toLowerCase() === trimmed.toLowerCase());
+            
+            // Se encontrou, retorna a versão que já existe no sistema (mantém o padrão)
+            if (match) {
+                return { value: match, exists: true };
+            }
 
-        let currentStoreId = null;
+            // Se for nova, sugere um padrão (Primeira Maiúscula)
+            return { value: trimmed.charAt(0).toUpperCase() + trimmed.slice(1), exists: false };
+        }
 
-        window.handleLogin = async function() {
-            const whatsapp = document.getElementById('login-whatsapp').value.replace(/\D/g, '');
-            const password = document.getElementById('login-password').value.trim();
-            const btn = document.getElementById('login-btn');
+        window.updateCategoriesDatalist = function() {
+            const datalist = document.getElementById('categories-datalist');
+            if (!datalist) return;
+            
+            const categories = [...new Set(window.products
+                .map(p => (p.category || '').trim())
+                .filter(c => c !== '')
+                .sort()
+            )];
+            
+            datalist.innerHTML = categories.map(c => `<option value="${c}">`).join('');
+        }
 
-            if (!whatsapp) {
-                alert("Por favor, digite seu telefone WhatsApp cadastrado.");
+        // Proxy de Imagem (Melhorado para Postimages e outros)
+        function proxyImg(url) {
+            if (!url) return '';
+            let u = url.trim();
+            
+            // Se for base64, retorna direto
+            if (u.startsWith('data:image')) return u;
+            
+            // Se for link do Firebase, não precisa de proxy
+            if (u.includes('firebasestorage.')) return u;
+            
+            // Tratamento inteligente para Postimages
+            if (u.includes('postimg.cc/')) {
+                // Se o cliente colou o link da página (ex: postimg.cc/65sF32Sj)
+                // Transformamos no link direto (ex: i.postimg.cc/65sF32Sj/image.jpg)
+                if (!u.includes('i.postimg.cc/')) {
+                    const parts = u.split('/');
+                    const id = parts[parts.length - 1];
+                    u = `https://i.postimg.cc/${id}/image.jpg`;
+                }
+            }
+            
+            // Tratamento para ImgBB
+            if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) {
+                u = u.replace('ibb.co/', 'i.ibb.co/') + '.png';
+            }
+
+            if (!u.startsWith('http')) u = 'https://' + u;
+            return u;
+        }
+
+        window.saveDraft = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const storeId = urlParams.get('edit') || urlParams.get('id');
+
+            const draft = {
+                storeId: storeId,
+                ownerName: document.getElementById('owner-name').value,
+                storeName: document.getElementById('store-name').value,
+                whatsapp: document.getElementById('whatsapp').value,
+                address: document.getElementById('address').value,
+                instagram: document.getElementById('instagram').value,
+                facebook: document.getElementById('facebook').value,
+                website: document.getElementById('website').value,
+                password: document.getElementById('password').value,
+                niche: document.getElementById('niche').value,
+                imageFormat: document.getElementById('image-format').value,
+                primaryColor: document.getElementById('primary-color').value,
+                secondaryColor: document.getElementById('secondary-color').value,
+                bannerImage: document.getElementById('banner-image').value,
+                storeLogo: document.getElementById('store-logo').value,
+                pixKey: document.getElementById('pix-key').value,
+                cardFee: document.getElementById('card-fee').value,
+                shippingZones: window.shippingZones,
+                products: window.products.map(p => ({
+                    ...p,
+                    i2: p.i2 || '',
+                    i3: p.i3 || '',
+                    i4: p.i4 || '',
+                    i5: p.i5 || '',
+                    i6: p.i6 || '',
+                    videoUrl: p.videoUrl || ''
+                })),
+                lastUpdated: Date.now()
+            };
+            localStorage.setItem('catalog_draft', JSON.stringify(draft));
+            console.log("Rascunho salvo localmente.");
+        }
+
+        window.updateBannerPreview = function(url) {
+            const img = document.getElementById('banner-preview');
+            const icon = document.getElementById('banner-icon');
+            if (url) {
+                img.src = proxyImg(url);
+                img.classList.remove('hidden');
+                if (icon) icon.classList.add('hidden');
+            } else {
+                img.src = '';
+                img.classList.add('hidden');
+                if (icon) icon.classList.remove('hidden');
+            }
+        }
+
+        window.updateLogoPreview = function(url) {
+            const img = document.getElementById('logo-preview');
+            const icon = document.getElementById('logo-icon');
+            if (url) {
+                img.src = proxyImg(url);
+                img.classList.remove('hidden');
+                if (icon) icon.classList.add('hidden');
+            } else {
+                img.src = '';
+                img.classList.add('hidden');
+                if (icon) icon.classList.remove('hidden');
+            }
+        }
+
+        window.loadDraft = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const currentStoreId = urlParams.get('edit') || urlParams.get('id');
+
+            const draftStr = localStorage.getItem('catalog_draft');
+            if (!draftStr) return;
+
+            try {
+                const draft = JSON.parse(draftStr);
+                
+                // Se estivermos editando, só carrega o rascunho se ele for para ESTA loja
+                if (currentStoreId && draft.storeId !== currentStoreId) return;
+                // Se NÃO estivermos editando, mas o rascunho for de uma edição anterior, não carrega
+                if (!currentStoreId && draft.storeId) return;
+
+                document.getElementById('owner-name').value = draft.ownerName || '';
+                document.getElementById('store-name').value = draft.storeName || '';
+                document.getElementById('whatsapp').value = draft.whatsapp || '';
+                document.getElementById('address').value = draft.address || '';
+                document.getElementById('instagram').value = draft.instagram || '';
+                document.getElementById('facebook').value = draft.facebook || '';
+                document.getElementById('website').value = draft.website || '';
+                document.getElementById('password').value = draft.password || '';
+                document.getElementById('niche').value = draft.niche || 'loja';
+                document.getElementById('image-format').value = draft.imageFormat || 'vertical';
+                document.getElementById('primary-color').value = draft.primaryColor || '#f97316';
+                document.getElementById('secondary-color').value = draft.secondaryColor || '#0f172a';
+                document.getElementById('banner-image').value = draft.bannerImage || '';
+                document.getElementById('store-logo').value = draft.storeLogo || '';
+                document.getElementById('pix-key').value = draft.pixKey || '';
+                document.getElementById('card-fee').value = draft.cardFee || '';
+                window.shippingZones = draft.shippingZones || [];
+                window.updateBannerPreview(draft.bannerImage);
+                window.updateLogoPreview(draft.storeLogo);
+                if (draft.products && Array.isArray(draft.products) && draft.products.length > 0) {
+                    window.products = draft.products.map(p => ({
+                        ...p,
+                        i2: p.i2 || '',
+                        i3: p.i3 || '',
+                        i4: p.i4 || '',
+                        i5: p.i5 || '',
+                        i6: p.i6 || '',
+                        videoUrl: p.videoUrl || ''
+                    }));
+                }
+            } catch (e) {
+                console.error("Erro ao carregar rascunho:", e);
+            }
+        }
+
+        window.clearDraft = function() {
+            localStorage.removeItem('catalog_draft');
+        }
+
+        window.addProduct = function() {
+            try {
+                let limit = 999;
+                if (window.storePlan === 'free') limit = 5;
+                else if (window.storePlan === 'basic') limit = 15;
+
+                if (window.products.length >= limit) {
+                    const planName = window.storePlan.toUpperCase();
+                    alert(`Limite atingido: O plano ${planName} permite apenas ${limit} produtos.\n\nPara cadastrar mais itens, mude para o Plano Profissional (Ilimitado) falando com nosso suporte.`);
+                    return;
+                }
+                const id = Date.now().toString();
+                window.products.push({ 
+                    id: id, 
+                    name: '', 
+                    price: '', 
+                    available: true, 
+                    f: false,
+                    vars: '', 
+                    wholesalePrice: '', 
+                    wholesaleMinQty: '', 
+                    image: '', 
+                    i2: '',
+                    i3: '',
+                    i4: '',
+                    i5: '',
+                    i6: '',
+                    videoUrl: '', 
+                    category: '', 
+                    description: '' 
+                });
+                window.renderProducts();
+                // Auto-expandir o novo produto
+                setTimeout(() => window.toggleProduct(id), 50);
+                window.saveDraft();
+            } catch (err) {
+                console.error("Erro ao adicionar produto:", err);
+            }
+        }
+
+        window.uploadImage = async function(productId, imageField = 'image') {
+            const fileInput = document.getElementById(`file-${productId}-${imageField}`);
+            if (!fileInput || !fileInput.files) return;
+            const file = fileInput.files[0];
+            if (!file) return;
+
+            // Validar tipo de arquivo
+            if (!file.type.startsWith('image/')) {
+                alert("Por favor, selecione apenas imagens.");
                 return;
             }
 
-            btn.innerText = "Verificando...";
+            // Validar tamanho (limite de 5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                alert("A imagem é muito grande! Escolha uma de até 5MB.");
+                return;
+            }
+
+            const btn = document.getElementById(`btn-upload-${productId}-${imageField}`);
+            const originalText = btn.innerHTML;
             btn.disabled = true;
+            btn.innerHTML = `<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mx-auto"></div>`;
 
             try {
-                const { doc, getDoc } = window.firebaseUtils;
-                let storeId = null;
-                let storeData = null;
+                const { ref, uploadBytesResumable, getDownloadURL } = window.firebaseUtils;
+                const storageRef = ref(window.storage, `products/${Date.now()}_${file.name}`);
+                const uploadTask = uploadBytesResumable(storageRef, file);
 
-                // 1º TENTATIVA: Buscar diretamente no trial_history pelo WhatsApp
-                try {
-                    let phoneVariants = [whatsapp];
-                    let prefix55 = '55' + whatsapp;
-                    let suffixNo55 = whatsapp.startsWith('55') ? whatsapp.substring(2) : whatsapp;
-                    if (!phoneVariants.includes(prefix55)) phoneVariants.push(prefix55);
-                    if (!phoneVariants.includes(suffixNo55)) phoneVariants.push(suffixNo55);
+                uploadTask.on('state_changed', 
+                    (snapshot) => {
+                        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                        btn.innerHTML = `<span class="text-[10px]">${Math.round(progress)}%</span>`;
+                    }, 
+                    (error) => {
+                        console.error("Erro no upload:", error);
+                        alert("Erro ao subir a imagem. Tente novamente.");
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                    }, 
+                    async () => {
+                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                        window.updateProduct(productId, imageField, downloadURL);
+                        const input = document.getElementById(`input-${productId}-${imageField}`);
+                        if (input) input.value = downloadURL;
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                        alert("Imagem enviada com sucesso!");
+                    }
+                );
+            } catch (error) {
+                console.error("Erro geral no upload:", error);
+                alert("Erro ao processar o upload.");
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
 
-                    for (const phoneItem of phoneVariants) {
-                        const historySnap = await getDoc(doc(window.db, "trial_history", phoneItem));
-                        if (historySnap.exists()) {
-                            const hData = historySnap.data();
-                            storeId = hData.storeId;
-                            const storeSnap = await getDoc(doc(window.db, "stores", storeId));
-                            if (storeSnap.exists()) {
-                                storeData = storeSnap.data();
-                                break;
-                            } else {
-                                // Registro órfão de trial_history detectado (loja removida), vamos apagar para não dar falso positivo
-                                try {
-                                    const { deleteDoc } = window.firebaseUtils;
-                                    await deleteDoc(doc(window.db, "trial_history", phoneItem));
-                                } catch(eDel){}
-                            }
+        window.removeProduct = function(id) {
+            if (window.storePlan === 'free' && window.products.length >= 5) {
+                alert("🔒 Limite atingido! No Plano FREE, ao atingir 5 produtos, as edições e remoções são bloqueadas para novas atualizações.\n\nFale com o suporte para subir para o Plano Profissional e liberar edições ilimitadas!");
+                return;
+            }
+            if (window.products.length > 1) {
+                if (!confirm("Remover este item?")) return;
+                window.products = window.products.filter(p => p.id !== id);
+                window.renderProducts();
+                window.saveDraft();
+            }
+        }
+
+        window.toggleProduct = function(id) {
+            try {
+                const content = document.getElementById(`content-${id}`);
+                const icon = document.getElementById(`chevron-${id}`);
+                const container = document.getElementById(`container-${id}`);
+                if (!content) return;
+                
+                if (content.classList.contains('open')) {
+                    content.classList.remove('open');
+                    if (icon) icon.style.transform = 'rotate(0deg)';
+                    if (container) {
+                        container.classList.remove('ring-2', 'ring-orange-500', 'bg-white');
+                        container.classList.add('bg-slate-50/50');
+                    }
+                    window.expandedProducts.delete(id);
+                } else {
+                    content.classList.add('open');
+                    if (icon) icon.style.transform = 'rotate(180deg)';
+                    if (container) {
+                        container.classList.add('ring-2', 'ring-orange-500', 'bg-white');
+                        container.classList.remove('bg-slate-50/50');
+                    }
+                    window.expandedProducts.add(id);
+                }
+            } catch (err) {
+                console.error("Erro ao alternar produto:", err);
+            }
+        }
+
+        window.updateProduct = function(id, field, value) {
+            if (window.storePlan === 'free' && window.products.length >= 5) {
+                // Permitir apenas toggle de disponibilidade e destaque se o usuário quiser esconder algo? 
+                // Não, o usuário pediu para não conseguir atualizar NADA.
+                alert("🔒 Edição Bloqueada! Você atingiu o limite de 5 produtos no Plano FREE.\n\nPara continuar editando ou remover itens, faça o upgrade para o Plano Profissional.");
+                return;
+            }
+            const p = window.products.find(p => p.id === id);
+            if (p) {
+                if (field === 'category') {
+                    const normalizedObj = window.getNormalizedCategory(value, id);
+                    p[field] = normalizedObj.value;
+                    
+                    const msgEl = document.getElementById(`cat-msg-${id}`);
+                    if (msgEl) {
+                        if (normalizedObj.exists && value.trim() !== '') {
+                            msgEl.innerText = `Categoria existente: ${normalizedObj.value}`;
+                            msgEl.classList.remove('hidden');
+                        } else {
+                            msgEl.classList.add('hidden');
                         }
                     }
-                } catch (err) {
-                    console.warn("Erro ao buscar no trial_history, tentando busca alternativa:", err);
+                    window.updateCategoriesDatalist();
+                } else {
+                    p[field] = value;
                 }
 
-                // 2º TENTATIVA: Se não encontrou pelo trial_history, faz a query por campo "w" no stores (método fallback)
-                if (!storeData) {
-                    const { collection, query, where, getDocs } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
-                    const q = query(collection(window.db, "stores"), where("w", "==", whatsapp));
-                    const querySnap = await getDocs(q);
+                if (field === 'available' || field === 'f') {
+                    window.renderProducts();
+                }
+                
+                // Atualizações em tempo real no cabeçalho
+                if (field === 'name') {
+                    const el = document.getElementById(`title-${id}`);
+                    if (el) el.innerText = value || 'Novo Item';
+                }
+                if (field === 'price') {
+                    const el = document.getElementById(`price-display-${id}`);
+                    if (el) el.innerText = value ? 'R$ ' + value : 'Sem preço';
+                }
+
+                if (field === 'image' || field === 'i2' || field === 'i3' || field === 'i4' || field === 'i5' || field === 'i6') {
+                    const img = document.getElementById(`preview-${id}-${field}`);
+                    const icon = document.getElementById(`icon-${id}-${field}`);
+                    const isMain = field === 'image';
+                    const headerImg = isMain ? document.getElementById(`header-img-${id}`) : null;
+                    const headerIcon = isMain ? document.getElementById(`header-icon-${id}`) : null;
+
+                    const proxied = proxyImg(value);
                     
-                    if (!querySnap.empty) {
-                        const storeDoc = querySnap.docs[0];
-                        storeId = storeDoc.id;
-                        storeData = storeDoc.data();
+                    if (img && icon) {
+                        if (value) {
+                            img.src = proxied;
+                            img.classList.remove('hidden');
+                            icon.classList.add('hidden');
+                        } else {
+                            img.src = '';
+                            img.classList.add('hidden');
+                            icon.classList.remove('hidden');
+                        }
+                    }
+
+                    if (isMain && headerImg && headerIcon) {
+                        if (value) {
+                            headerImg.src = proxied;
+                            headerImg.classList.remove('hidden');
+                            headerIcon.classList.add('hidden');
+                        } else {
+                            headerImg.src = '';
+                            headerImg.classList.add('hidden');
+                            headerIcon.classList.remove('hidden');
+                        }
+                    }
+                }
+            }
+            window.saveDraft();
+        }
+
+        window.moveProduct = function(id, direction) {
+            if (window.storePlan === 'free' && window.products.length >= 5) {
+                alert("🔒 Organização Bloqueada! No Plano FREE com 5 produtos, a ordem dos itens fica fixa.\n\nUpgrade para o Profissional para organizar seu catálogo!");
+                return;
+            }
+            const index = window.products.findIndex(p => p.id === id);
+            if (index === -1) return;
+            
+            const newIndex = index + direction;
+            if (newIndex < 0 || newIndex >= window.products.length) return;
+            
+            const temp = window.products[index];
+            window.products[index] = window.products[newIndex];
+            window.products[newIndex] = temp;
+            
+            window.renderProducts();
+            window.saveDraft();
+        }
+
+        window.renderProducts = function() {
+            try {
+                window.updateCategoriesDatalist();
+                const list = document.getElementById('products-list');
+                if (!list) return;
+                
+                const niche = document.getElementById('niche').value;
+                const isService = ['servicos', 'portfolio', 'clinica', 'salao', 'barbearia'].includes(niche);
+                const isAffiliate = niche === 'afiliados';
+                const isFood = niche === 'cardapio';
+                const isClinica = niche === 'clinica';
+                const isAcougue = niche === 'acougue';
+                const isBeauty = ['salao', 'barbearia'].includes(niche);
+
+                // Ocultar seção de frete para afiliados
+                const shippingSection = document.getElementById('shipping-section');
+                if (shippingSection) {
+                    if (isAffiliate) shippingSection.classList.add('hidden');
+                    else shippingSection.classList.remove('hidden');
+                }
+
+                let limit = 999;
+                if (window.storePlan === 'free') limit = 5;
+                else if (window.storePlan === 'basic') limit = 15;
+
+                const isLocked = window.storePlan === 'free' && window.products.length >= 5;
+
+                list.innerHTML = window.products.map((p, index) => {
+                    const isOpen = window.expandedProducts.has(p.id);
+                    const nameEscaped = String(p.name || '').replace(/"/g, '&quot;');
+                    const catEscaped = String(p.category || '').replace(/"/g, '&quot;');
+                    const priceEscaped = String(p.price || '').replace(/"/g, '&quot;');
+                    const varsEscaped = String(p.vars || '').replace(/"/g, '&quot;');
+                    const wPriceEscaped = String(p.wholesalePrice || '').replace(/"/g, '&quot;');
+                    const affiliateLinkEscaped = String(p.affiliateLink || '').replace(/"/g, '&quot;');
+                    const imgEscaped = String(p.image || '').replace(/"/g, '&quot;');
+                    const img2Escaped = String(p.i2 || '').replace(/"/g, '&quot;');
+                    const img3Escaped = String(p.i3 || '').replace(/"/g, '&quot;');
+                    const img4Escaped = String(p.i4 || '').replace(/"/g, '&quot;');
+                    const img5Escaped = String(p.i5 || '').replace(/"/g, '&quot;');
+                    const img6Escaped = String(p.i6 || '').replace(/"/g, '&quot;');
+                    const videoEscaped = String(p.videoUrl || '').replace(/"/g, '&quot;');
+                    const hasVideo = p.videoUrl && p.videoUrl.trim() !== '';
+                    
+                    return `
+                    <div id="container-${p.id}" class="${isOpen ? 'ring-2 ring-orange-500 bg-white' : 'bg-slate-50/50'} rounded-[2rem] border border-slate-200 overflow-hidden transition-all duration-300">
+                        <!-- CABEÇALHO COMPACTO -->
+                        <div onclick="window.toggleProduct('${p.id}')" class="p-4 flex items-center justify-between cursor-pointer hover:bg-white transition-colors">
+                            <div class="flex items-center gap-4 overflow-hidden">
+                                <div class="w-12 h-12 bg-white rounded-2xl border border-slate-100 flex-shrink-0 flex items-center justify-center overflow-hidden shadow-sm relative">
+                                    <img id="header-img-${p.id}" src="${proxyImg(p.image)}" class="w-full h-full object-cover ${p.image ? '' : 'hidden'}" referrerpolicy="no-referrer">
+                                    <i id="header-icon-${p.id}" data-lucide="image" class="text-slate-300 w-5 h-5 ${p.image ? 'hidden' : ''}"></i>
+                                    ${hasVideo ? `
+                                    <div class="absolute inset-0 bg-black/20 flex items-center justify-center">
+                                        <i data-lucide="video" class="text-white w-4 h-4 drop-shadow-md"></i>
+                                    </div>
+                                    ` : ''}
+                                </div>
+                                <div class="truncate">
+                                    <h4 id="title-${p.id}" class="font-black uppercase italic tracking-tighter text-slate-800 truncate">${p.name || 'Novo Item'}</h4>
+                                    <div class="flex items-center gap-2">
+                                        <p id="price-display-${p.id}" class="${niche === 'portfolio' ? 'hidden' : ''} text-[10px] font-bold text-orange-500 uppercase tracking-widest">${p.price ? 'R$ ' + p.price : (isClinica ? 'Sob Consulta' : 'Sem preço')}</p>
+                                        ${hasVideo ? '<span class="text-[8px] bg-indigo-50 text-indigo-500 px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1"><i data-lucide="video" class="w-2 h-2"></i> Vídeo</span>' : ''}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="flex items-center gap-1">
+                                    <button type="button" onclick="event.stopPropagation(); window.moveProduct('${p.id}', -1)" class="p-2 bg-white text-slate-400 hover:text-blue-600 rounded-xl border border-slate-100 shadow-sm transition-all active:scale-90 ${index === 0 ? 'invisible' : ''}" title="Subir">
+                                        <i data-lucide="chevron-up" class="w-4 h-4"></i>
+                                    </button>
+                                    <button type="button" onclick="event.stopPropagation(); window.moveProduct('${p.id}', 1)" class="p-2 bg-white text-slate-400 hover:text-blue-600 rounded-xl border border-slate-100 shadow-sm transition-all active:scale-90 ${index === window.products.length - 1 ? 'invisible' : ''}" title="Descer">
+                                        <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                                ${isLocked ? `<span class="bg-red-50 text-red-500 px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest flex items-center gap-1 shadow-sm border border-red-100"><i data-lucide="lock" class="w-2.5 h-2.5"></i> Bloqueado (Limite FREE)</span>` : (index >= limit ? `<span class="bg-blue-50 text-blue-500 px-2 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest flex items-center gap-1"><i data-lucide="lock" class="w-2.5 h-2.5"></i> Excedente</span>` : '')}
+                                <div id="chevron-${p.id}" class="text-slate-400 transition-transform duration-300" style="${isOpen ? 'transform: rotate(180deg)' : ''}">
+                                    <i data-lucide="chevron-down" class="w-6 h-6"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- CONTEÚDO DE EDIÇÃO -->
+                        <div id="content-${p.id}" class="collapsible-content px-4 sm:px-8 ${isOpen ? 'open' : ''}">
+                            <div class="flex justify-end gap-2 mb-6">
+                                <button type="button" onclick="event.stopPropagation(); window.removeProduct('${p.id}')" class="p-2.5 bg-red-50 text-red-400 hover:text-red-600 rounded-xl border border-red-100 shadow-sm transition-all" title="Remover item">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">
+                                        ${isClinica ? 'Nome do Procedimento / Médico' : (isBeauty ? 'Nome do Serviço / Corte' : (isAcougue ? 'Nome da Carne / Corte' : (isService ? 'Nome do Serviço / Portfólio' : 'Nome do Item')))}
+                                    </label>
+                                    <input type="text" value="${nameEscaped}" ${isLocked ? 'readonly disabled' : ''} oninput="window.updateProduct('${p.id}', 'name', this.value)" placeholder="${isClinica ? 'Ex: Consulta Ginecologia' : (isBeauty ? 'Ex: Corte de Cabelo / Hidratação' : (isAcougue ? 'Ex: Picanha Argentina' : (isService ? 'Ex: Logotipo Profissional' : 'Ex: Camiseta Branca')))}" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold ${isLocked ? 'opacity-60 cursor-not-allowed bg-slate-50' : ''}">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1 flex justify-between items-center">
+                                        <span>${isClinica ? 'Especialidade / Grupo' : (isAcougue ? 'Tipo de Carne (Bovina, Suína...)' : 'Categoria (Ex: Bebidas, Roupas...)')}</span>
+                                        <span id="cat-msg-${p.id}" class="text-[8px] text-blue-500 hidden font-black tracking-tighter">Categoria existente</span>
+                                    </label>
+                                    <input type="text" list="categories-datalist" value="${catEscaped}" ${isLocked ? 'readonly disabled' : ''} oninput="window.updateProduct('${p.id}', 'category', this.value)" placeholder="${isClinica ? 'Ex: Exames' : (isAcougue ? 'Ex: Bovina' : 'Ex: Bermudas')}" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold ${isLocked ? 'opacity-60 cursor-not-allowed bg-slate-50' : ''}">
+                                </div>
+                            </div>
+
+                             <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
+                                <div class="space-y-2 ${niche === 'portfolio' ? 'hidden' : ''}">
+                                    <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">
+                                        ${isClinica ? 'Valor da Consulta (Opcional)' : (isBeauty ? 'Valor do Serviço' : (isAcougue ? 'Preço por KG' : (isService ? 'Preço do Serviço' : 'Preço Varejo (R$)')))}
+                                    </label>
+                                    <input type="text" value="${priceEscaped}" ${isLocked ? 'readonly disabled' : ''} oninput="window.updateProduct('${p.id}', 'price', this.value)" placeholder="${isAcougue ? 'Ex: 45,90' : 'Ex: 150,00'}" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold ${isLocked ? 'opacity-60 cursor-not-allowed bg-slate-50' : ''}">
+                                </div>
+                                <div class="space-y-2 ${isService || isAffiliate || isFood || isClinica || isBeauty || isAcougue ? 'hidden' : ''}">
+                                    <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Variações (P, M, G ou Cores)</label>
+                                    <input type="text" value="${varsEscaped}" ${isLocked ? 'readonly disabled' : ''} oninput="window.updateProduct('${p.id}', 'vars', this.value)" placeholder="Ex: P, M, G" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold ${isLocked ? 'opacity-60 cursor-not-allowed bg-slate-50' : ''}">
+                                </div>
+                                <div class="space-y-2 ${isAffiliate ? '' : 'hidden'}">
+                                    <label class="text-[10px] font-bold uppercase tracking-widest text-blue-500 ml-1">Link de Afiliado (Obrigatório)</label>
+                                    <input type="text" value="${affiliateLinkEscaped}" ${isLocked ? 'readonly disabled' : ''} oninput="window.updateProduct('${p.id}', 'affiliateLink', this.value)" placeholder="Ex: https://amazon.com.br/item..." class="w-full px-5 py-4 rounded-2xl bg-blue-50 border-2 border-transparent focus:border-blue-500 outline-none transition-all font-bold ${isLocked ? 'opacity-60 cursor-not-allowed' : ''}">
+                                </div>
+                                <div class="space-y-2 ${isService ? 'md:col-span-3' : ''}">
+                                    <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Disponibilidade ${isLocked ? '(Bloqueado)' : ''}</label>
+                                    <div class="flex items-center gap-2 mt-2">
+                                        <button type="button" ${isLocked ? 'disabled' : ''} onclick="window.updateProduct('${p.id}', 'available', ${p.available === false ? 'true' : 'false'})" class="flex-1 py-4 rounded-2xl font-black uppercase text-[10px] transition-all flex items-center justify-center gap-2 border-2 ${p.available !== false ? 'bg-green-50 border-green-500 text-green-600' : 'bg-red-50 border-red-500 text-red-600'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}">
+                                            <i data-lucide="${p.available !== false ? 'check-circle' : 'x-circle'}" class="w-4 h-4"></i>
+                                            ${p.available !== false ? 'Disponível' : 'Esgotado'}
+                                        </button>
+                                        <button type="button" ${isLocked ? 'disabled' : ''} onclick="window.updateProduct('${p.id}', 'f', ${p.f ? 'false' : 'true'})" class="flex-1 py-4 rounded-2xl font-black uppercase text-[10px] transition-all flex items-center justify-center gap-2 border-2 ${p.f ? 'bg-orange-50 border-orange-500 text-orange-600' : 'bg-slate-50 border-slate-200 text-slate-400'} ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}">
+                                            <i data-lucide="star" class="w-4 h-4 ${p.f ? 'fill-current' : ''}"></i>
+                                            ${p.f ? 'Em Destaque' : 'Destacar'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 ${isService || isAffiliate || isFood || isClinica || isBeauty || isAcougue ? 'hidden' : ''}">
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-bold uppercase tracking-widest text-orange-400 ml-1">Preço Atacado (Opcional)</label>
+                                    <input type="text" value="${wPriceEscaped}" ${isLocked ? 'readonly disabled' : ''} oninput="window.updateProduct('${p.id}', 'wholesalePrice', this.value)" placeholder="Ex: 35,00" class="w-full px-5 py-4 rounded-2xl bg-orange-50/30 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold ${isLocked ? 'opacity-60 cursor-not-allowed bg-slate-50' : ''}">
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-bold uppercase tracking-widest text-orange-400 ml-1">Qtd Mínima Atacado</label>
+                                    <input type="number" value="${p.wholesaleMinQty || ''}" ${isLocked ? 'readonly disabled' : ''} oninput="window.updateProduct('${p.id}', 'wholesaleMinQty', this.value)" placeholder="Ex: 3" class="w-full px-5 py-4 rounded-2xl bg-orange-50/30 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold ${isLocked ? 'opacity-60 cursor-not-allowed bg-slate-50' : ''}">
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2 mt-6">
+                                <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Descrição</label>
+                                <textarea ${isLocked ? 'readonly disabled' : ''} oninput="window.updateProduct('${p.id}', 'description', this.value)" placeholder="${isClinica || isBeauty ? 'Descreva o procedimento, horários disponíveis, etc...' : (isAcougue ? 'Descreva a origem da carne, maturação, etc...' : 'Detalhes do produto, tamanhos, cores...')}" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-orange-500 text-sm h-28 resize-none outline-none transition-all font-medium ${isLocked ? 'opacity-60 cursor-not-allowed bg-slate-50' : ''}">${p.description || ''}</textarea>
+                            </div>
+                            
+                             <div class="space-y-4 mt-6">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-orange-500 ml-1">Fotos do Produto (Até 6)</label>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    ${[
+                                        { id: 'image', label: 'Foto Principal', value: imgEscaped },
+                                        { id: 'i2', label: 'Foto 2', value: img2Escaped },
+                                        { id: 'i3', label: 'Foto 3', value: img3Escaped },
+                                        { id: 'i4', label: 'Foto 4', value: img4Escaped },
+                                        { id: 'i5', label: 'Foto 5', value: img5Escaped },
+                                        { id: 'i6', label: 'Foto 6', value: img6Escaped }
+                                    ].map(img => `
+                                        <div class="bg-white p-4 rounded-2xl border border-slate-100 flex flex-col gap-3">
+                                            <label class="text-[9px] font-black uppercase tracking-widest text-slate-400">${img.label}</label>
+                                            <div class="flex items-center gap-3">
+                                                <div class="w-12 h-12 bg-slate-50 rounded-lg border-2 border-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center shadow-sm">
+                                                    <img id="preview-${p.id}-${img.id}" src="${proxyImg(img.value)}" class="w-full h-full object-cover ${img.value ? '' : 'hidden'}" referrerpolicy="no-referrer" onerror="this.classList.add('hidden'); document.getElementById('icon-${p.id}-${img.id}').classList.remove('hidden')">
+                                                    <i data-lucide="image" class="text-slate-300 w-5 h-5 ${img.value ? 'hidden' : ''}" id="icon-${p.id}-${img.id}"></i>
+                                                </div>
+                                                <div class="flex-1 flex flex-col gap-1.5 min-w-0">
+                                                    <input type="text" value="${img.value}" id="input-${p.id}-${img.id}" ${isLocked ? 'readonly disabled' : ''} oninput="window.updateProduct('${p.id}', '${img.id}', this.value)" placeholder="Link da foto" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-[10px] ${isLocked ? 'opacity-60 cursor-not-allowed' : ''}">
+                                                    <div class="flex gap-1.5 w-full">
+                                                        <button type="button" ${isLocked ? 'disabled' : ''} onclick="window.open('https://postimages.org/', '_blank')" class="flex-1 bg-blue-600 text-white px-2 py-2 rounded-xl font-black uppercase text-[8px] tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-1 active-scale ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}">
+                                                            <i data-lucide="camera" class="w-3 h-3"></i> Upload
+                                                        </button>
+                                                        <button type="button" ${isLocked ? 'disabled' : ''} onclick="document.getElementById('input-${p.id}-${img.id}').value=''; window.updateProduct('${p.id}', '${img.id}', '')" class="bg-red-50 text-red-600 px-2 py-2 rounded-xl hover:bg-red-100 transition-all flex items-center justify-center active-scale ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}">
+                                                            <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+
+                            <div class="space-y-3 mt-6">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-[10px] font-bold uppercase tracking-widest ${window.storePlan !== 'free' ? 'text-indigo-500' : 'text-slate-400'} ml-1 flex items-center gap-2">
+                                        <i data-lucide="video" class="w-3.5 h-3.5"></i> Vídeo do Produto (Hospede e cole o link)
+                                    </label>
+                                    ${window.storePlan === 'free' ? '<span class="text-[8px] bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">Premium</span>' : (window.storePlan === 'basic' ? '<span class="text-[8px] bg-blue-50 text-blue-500 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">Básico (Máx 3)</span>' : '<span class="text-[8px] bg-indigo-50 text-indigo-500 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">Profissional</span>')}
+                                </div>
+                                <div class="flex flex-col sm:flex-row gap-2">
+                                    <div class="flex-1">
+                                        ${(() => {
+                                            const videoCount = window.products.filter(p => p.videoUrl && p.videoUrl.trim() !== '').length;
+                                            const canAddMore = window.storePlan === 'premium' || (window.storePlan === 'basic' && (videoCount < 3 || (p.videoUrl && p.videoUrl.trim() !== '')));
+                                            const isVideoLocked = window.storePlan === 'free' || !canAddMore;
+                                            
+                                            return `<input type="text" value="${videoEscaped}" 
+                                                   ${isVideoLocked ? 'readonly disabled' : ''} 
+                                                   oninput="window.updateProduct('${p.id}', 'videoUrl', this.value)" 
+                                                   placeholder="${window.storePlan === 'premium' ? 'LINK DIRETO (.mp4)' : (window.storePlan === 'basic' ? (canAddMore ? 'LINK DIRETO (.mp4)' : 'Limite atingido!') : 'Apenas Premium')}" 
+                                                   class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-indigo-500 outline-none transition-all font-bold text-xs ${isVideoLocked ? 'opacity-50 cursor-not-allowed bg-slate-50' : ''}">`;
+                                        })()}
+                                    </div>
+                                    <button type="button" onclick="window.open('https://www.videotourl.com/', '_blank')" class="bg-indigo-600 text-white px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 active-scale shadow-lg shadow-indigo-100" title="Hospedar Vídeo">
+                                        <i data-lucide="clapperboard" class="w-5 h-5"></i>
+                                        <span>Hospedar Vídeo</span>
+                                    </button>
+                                </div>
+                                <div class="bg-indigo-50 p-3 rounded-xl border border-indigo-100">
+                                    <p class="text-[9px] text-indigo-700 font-black uppercase tracking-widest mb-1 mb-1">Atenção para funcionar:</p>
+                                    <p class="text-[9px] text-indigo-600 font-medium leading-relaxed">
+                                        1. Clique em "Hospedar Vídeo" e suba seu arquivo.<br>
+                                        2. Após o upload, copie o <b>Link Direto (Direct Link)</b>.<br>
+                                        3. Cole o link no campo acima.<br>
+                                        4. O link deve terminar obrigatoriamente com <span class="font-bold">.mp4</span> para carregar na loja.
+                                    </p>
+                                </div>
+                            </div>
+                            
+                            <div class="pt-6 flex justify-center">
+                                <button type="button" onclick="window.toggleProduct('${p.id}')" class="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-orange-500 transition-colors">Fechar Edição</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                }).join('');
+                if (window.lucide) lucide.createIcons();
+            } catch (err) {
+                console.error("Erro ao renderizar produtos:", err);
+            }
+        }
+
+        window.addVendor = function() {
+            const nameInput = document.getElementById('new-vendor-name');
+            const name = nameInput.value.trim();
+            if (!name) return;
+            
+            const code = window.slugify(name).toUpperCase();
+            
+            // Verifica se o código já existe
+            if (window.vendors.find(v => v.code === code)) {
+                alert("Já existe um vendedor com este nome ou código similar.");
+                return;
+            }
+
+            window.vendors.push({ name, code, clicks: 0 });
+            nameInput.value = '';
+            window.renderVendors();
+            window.saveDraft();
+        }
+
+        window.removeVendor = function(code) {
+            if (!confirm("Remover este vendedor?")) return;
+            window.vendors = window.vendors.filter(v => v.code !== code);
+            window.renderVendors();
+            window.saveDraft();
+        }
+
+        window.renderVendors = function() {
+            const list = document.getElementById('vendors-list');
+            const restrictedMsg = document.getElementById('vendors-restricted-msg');
+            const manager = document.getElementById('vendors-manager');
+            const badge = document.getElementById('vendor-plan-badge');
+            
+                // Sugestões de upgrade nos botões
+                const vendorSugg = document.getElementById('vendor-upgrade-suggestion');
+                const productSugg = document.getElementById('product-upgrade-suggestion');
+                const upgradeMsg = window.storePlan === 'free' ? 'Upgrade para Basic (15 produtos)' : (window.storePlan === 'basic' ? 'Upgrade para Premium (Ilimitado)' : '');
+                const upgradeLink = window.storePlan === 'free' ? 'https://api.whatsapp.com/send?phone=5585992862177&text=Olá! Estou no Plano FREE e quero subir para o Plano BASIC.' : 'https://api.whatsapp.com/send?phone=5585992862177&text=Olá! Estou no Plano BASIC e quero subir para o Plano PREMIUM.';
+                
+                if (window.storePlan !== 'premium') {
+                    const btnHTML = `<button onclick="window.open('${upgradeLink}', '_blank')" class="w-full mt-2 py-3 bg-blue-50 text-blue-600 rounded-xl border border-blue-100 font-bold uppercase tracking-widest text-[9px] hover:bg-blue-100 transition-all flex items-center justify-center gap-2 active-scale">🚀 ${upgradeMsg}</button>`;
+                    if(vendorSugg) vendorSugg.innerHTML = btnHTML;
+                    if(productSugg) productSugg.innerHTML = btnHTML;
+                }
+
+                // Sugestões de upgrade
+                const upgradeContainer = document.getElementById('upgrade-path-container');
+                if (upgradeContainer) {
+                    if (window.storePlan === 'free') {
+                        upgradeContainer.innerHTML = `
+                            <div class="mt-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900 rounded-[2rem] border-2 border-blue-100 dark:border-blue-900/30 shadow-xl overflow-hidden relative">
+                                <div class="absolute top-0 right-0 p-4 opacity-10">
+                                    <i data-lucide="zap" class="w-12 h-12 text-blue-600"></i>
+                                </div>
+                                <div class="relative z-10">
+                                    <span class="bg-blue-600 text-white text-[9px] font-black uppercase px-3 py-1 rounded-full mb-3 inline-block tracking-widest">Oportunidade</span>
+                                    <h4 class="text-slate-900 dark:text-white font-black uppercase italic italic tracking-tighter text-lg leading-tight mb-2">Subir para o Plano Basic?</h4>
+                                    <p class="text-slate-500 dark:text-slate-400 text-xs font-medium mb-5 leading-relaxed">Libere espaço para até 15 produtos e tenha um catálogo mais completo.</p>
+                                    <button onclick="window.open('https://api.whatsapp.com/send?phone=5585992862177&text=Olá! Estou no Plano FREE e quero subir para o Plano BASIC para cadastrar 15 produtos.', '_blank')" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase italic tracking-widest text-xs hover:bg-blue-700 transition-all flex items-center justify-center gap-2 active-scale shadow-lg shadow-blue-600/20">
+                                        <i data-lucide="arrow-up-circle" class="w-4 h-4"></i> Atualizar para o Basic
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    } else if (window.storePlan === 'basic') {
+                        upgradeContainer.innerHTML = `
+                            <div class="mt-8 p-6 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-slate-800 dark:to-slate-900 rounded-[2rem] border-2 border-indigo-100 dark:border-indigo-900/30 shadow-xl overflow-hidden relative">
+                                <div class="absolute top-0 right-0 p-4 opacity-10">
+                                    <i data-lucide="crown" class="w-12 h-12 text-indigo-600"></i>
+                                </div>
+                                <div class="relative z-10">
+                                    <span class="bg-indigo-600 text-white text-[9px] font-black uppercase px-3 py-1 rounded-full mb-3 inline-block tracking-widest">Recomendado</span>
+                                    <h4 class="text-slate-900 dark:text-white font-black uppercase italic italic tracking-tighter text-lg leading-tight mb-2">Vá para o Plano Premium</h4>
+                                    <p class="text-slate-500 dark:text-slate-400 text-xs font-medium mb-5 leading-relaxed">Produtos ILIMITADOS, vídeos e todas as funções liberadas.</p>
+                                    <button onclick="window.open('https://api.whatsapp.com/send?phone=5585992862177&text=Olá! Estou no Plano BASIC e quero subir para o Plano PREMIUM para produtos ilimitados e vídeos.', '_blank')" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase italic tracking-widest text-xs hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 active-scale shadow-lg shadow-indigo-600/20">
+                                        <i data-lucide="zap" class="w-4 h-4"></i> Atualizar para o Premium
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        upgradeContainer.innerHTML = '';
                     }
                 }
 
-                if (!storeData) {
-                    alert("WhatsApp não encontrado no banco de dados. Caso deseje contratar, entre em contato com nosso atendimento pelo botão do WhatsApp!");
-                    btn.innerText = "Entrar no Painel";
-                    btn.disabled = false;
+            if (window.storePlan === 'premium') {
+                restrictedMsg.classList.add('hidden');
+                manager.classList.remove('hidden');
+                badge.classList.remove('hidden');
+                badge.innerText = "Plano Profissional";
+                badge.className = "bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest";
+            } else {
+                restrictedMsg.classList.remove('hidden');
+                manager.classList.add('hidden');
+                badge.classList.remove('hidden');
+                
+                if (window.storePlan === 'basic') {
+                    badge.innerText = "Plano Básico";
+                    badge.className = "bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest";
+                } else {
+                    badge.innerText = "Plano Free";
+                    badge.className = "bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest";
+                }
+            }
+
+            if (!list) return;
+            
+            const storeId = new URLSearchParams(window.location.search).get('edit') || new URLSearchParams(window.location.search).get('id') || localStorage.getItem('lastStoreId');
+            const baseUrl = window.location.origin + window.location.pathname.replace('criar.html', 'loja.html');
+
+            list.innerHTML = window.vendors.map(v => {
+                const link = `${baseUrl}?id=${storeId}&v=${v.code}`;
+                const clicks = v.clicks || 0;
+                return `
+                    <div class="bg-white p-5 rounded-[1.5rem] border border-slate-100 flex flex-col gap-4 shadow-sm transition-all hover:shadow-md">
+                        <div class="flex items-center justify-between gap-4">
+                            <div class="flex flex-col min-w-0">
+                                <span class="font-black text-slate-800 uppercase italic tracking-tighter text-base truncate">${v.name}</span>
+                                <span class="text-[9px] text-blue-600 font-bold uppercase tracking-widest flex items-center gap-1">
+                                    <i data-lucide="bar-chart-3" class="w-2.5 h-2.5"></i>
+                                    ${clicks} ${clicks === 1 ? 'clique' : 'cliques'}
+                                </span>
+                            </div>
+                            <button onclick="window.removeVendor('${v.code}')" class="text-red-400 hover:text-red-600 p-3 bg-red-50 rounded-xl active-scale flex-shrink-0">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                        <div class="flex flex-col sm:flex-row gap-2">
+                            <div class="flex-1 bg-slate-50 px-4 py-3 rounded-xl text-[10px] font-mono text-slate-400 truncate border border-slate-100 flex items-center">${link}</div>
+                            <button onclick="navigator.clipboard.writeText('${link}'); alert('Link do vendedor copiado!')" class="bg-slate-900 text-white px-6 py-3 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all active-scale flex items-center justify-center gap-2">
+                                <i data-lucide="copy" class="w-3 h-3"></i> Copiar Link
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            if (window.lucide) lucide.createIcons();
+        }
+
+        window.slugify = function(text) {
+            return text.toString().toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // Remove acentos
+                .replace(/\s+/g, '-')           // Espaços por -
+                .replace(/[^\w\-]+/g, '')       // Remove caracteres especiais
+                .replace(/\-\-+/g, '-')         // Remove múltiplos -
+                .replace(/^-+/, '')             // Remove - do início
+                .replace(/-+$/, '');            // Remove - do fim
+        }
+
+        window.checkWhatsApp = async function(val) {
+            const whatsappClean = val.replace(/\D/g, '');
+            if (whatsappClean.length < 10) {
+                document.getElementById('whatsapp-match-msg').classList.add('hidden');
+                return;
+            }
+
+            // Se já estivermos editando uma loja específica via URL, não mudamos o comportamento
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('edit') || urlParams.get('id')) return;
+
+            try {
+                // Aguarda o Firebase inicializar
+                let attempts = 0;
+                while ((!window.db || !window.firebaseUtils) && attempts < 50) {
+                    await new Promise(r => setTimeout(r, 100));
+                    attempts++;
+                }
+
+                const { doc, getDoc, deleteDoc } = window.firebaseUtils;
+                
+                let hasValidStore = false;
+                let phoneVariants = [whatsappClean];
+                let prefix55 = '55' + whatsappClean;
+                let suffixNo55 = whatsappClean.startsWith('55') ? whatsappClean.substring(2) : whatsappClean;
+                if (!phoneVariants.includes(prefix55)) phoneVariants.push(prefix55);
+                if (!phoneVariants.includes(suffixNo55)) phoneVariants.push(suffixNo55);
+
+                for (const phoneItem of phoneVariants) {
+                    const historySnap = await getDoc(doc(window.db, "trial_history", phoneItem));
+                    if (historySnap.exists()) {
+                        const historyData = historySnap.data();
+                        const targetStoreId = historyData.storeId;
+                        
+                        // Verifica se de fato a loja existe na coleção stores
+                        const storeSnap = await getDoc(doc(window.db, "stores", targetStoreId));
+                        if (storeSnap.exists()) {
+                            hasValidStore = true;
+                            window.existingStoreId = targetStoreId;
+                            break;
+                        } else {
+                            // Loja foi removida, limpa trial_history órfão para liberar número
+                            try {
+                                await deleteDoc(doc(window.db, "trial_history", phoneItem));
+                            } catch(eDel){}
+                        }
+                    }
+                }
+
+                if (hasValidStore) {
+                    // Mostra mensagem de loja encontrada avisando para logar acima
+                    matchMsg.classList.remove('hidden');
+
+                    // Muda para modo ATUALIZAR (ainda permite tentar atualizar se a pessoa preencher tudo, mas o login é o ideal)
+                    btn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+                    btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    if (btnText) btnText.innerText = "Atualizar Meu Catálogo";
+                    if (btnIcon) btnIcon.setAttribute('data-lucide', 'refresh-cw');
+
+                    // Preenche o campo de login para facilitar
+                    document.getElementById('login-whatsapp').value = whatsappClean;
+                } else {
+                    window.existingStoreId = null;
+                    matchMsg.classList.add('hidden');
+                    // Volta para modo GERAR
+                    btn.classList.add('bg-slate-900', 'hover:bg-slate-800');
+                    btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    if (btnText) btnText.innerText = "Gerar Minha Página";
+                    if (btnIcon) btnIcon.setAttribute('data-lucide', 'smartphone');
+                }
+                if (window.lucide) lucide.createIcons();
+            } catch (e) {
+                console.error("Erro ao verificar WhatsApp:", e);
+            }
+        }
+
+        window.directLogin = async function() {
+            const whatsapp = document.getElementById('login-whatsapp').value.replace(/\D/g, '');
+            const password = document.getElementById('login-pass').value.trim();
+
+            if (!whatsapp || !password) {
+                alert("Preencha WhatsApp e Senha para entrar.");
+                return;
+            }
+
+            try {
+                // Aguarda o Firebase inicializar
+                let attempts = 0;
+                while ((!window.db || !window.firebaseUtils) && attempts < 50) {
+                    await new Promise(r => setTimeout(r, 100));
+                    attempts++;
+                }
+
+                const { doc, getDoc, deleteDoc } = window.firebaseUtils;
+                
+                let foundHistoryData = null;
+                let matchedPhoneKey = null;
+                
+                let phoneVariants = [whatsapp];
+                let prefix55 = '55' + whatsapp;
+                let suffixNo55 = whatsapp.startsWith('55') ? whatsapp.substring(2) : whatsapp;
+                if (!phoneVariants.includes(prefix55)) phoneVariants.push(prefix55);
+                if (!phoneVariants.includes(suffixNo55)) phoneVariants.push(suffixNo55);
+
+                for (const phoneItem of phoneVariants) {
+                    const hSnap = await getDoc(doc(window.db, "trial_history", phoneItem));
+                    if (hSnap.exists()) {
+                        foundHistoryData = hSnap.data();
+                        matchedPhoneKey = phoneItem;
+                        break;
+                    }
+                }
+                
+                if (!foundHistoryData) {
+                    alert("Loja não encontrada para este número. Crie uma nova abaixo!");
                     return;
                 }
 
-                currentStoreId = storeId;
+                const storeId = foundHistoryData.storeId;
+                const storeSnap = await getDoc(doc(window.db, "stores", storeId));
+                
+                if (!storeSnap.exists()) {
+                    try {
+                        await deleteDoc(doc(window.db, "trial_history", matchedPhoneKey));
+                    } catch(eDel){}
+                    alert("A loja anteriormente criada para este número já foi excluída do sistema. Você já pode criar uma nova com este mesmo telefone abaixo!");
+                    return;
+                }
 
-                // Verificação de senha
+                const storeData = storeSnap.data();
+
+                // Lógica de senha para lojas antigas ou novas
                 if (!storeData.password) {
-                    // Primeiro acesso
-                    document.getElementById('login-inputs').classList.add('hidden');
-                    document.getElementById('first-access-msg').classList.remove('hidden');
-                } else {
-                    if (!password) {
-                        alert("Digite sua senha de acesso.");
-                        btn.innerText = "Entrar no Painel";
-                        btn.disabled = false;
+                    if (confirm("Você ainda não tinha uma senha. Esta senha digitada será salva como sua nova senha. Confirmar?")) {
+                        const { updateDoc } = window.firebaseUtils;
+                        await updateDoc(doc(window.db, "stores", storeId), { password: password });
+                    } else {
                         return;
                     }
-
-                    if (storeData.password === password) {
-                        window.location.href = `criar.html?edit=${currentStoreId}`;
-                    } else {
-                        alert("Senha incorreta!");
-                    }
+                } else if (storeData.password !== password) {
+                    alert("Senha incorreta!");
+                    return;
                 }
+
+                window.location.href = `criar.html?edit=${storeId}`;
             } catch (e) {
-                console.error(e);
-                alert("Erro ao entrar no Painel. Recarregue e tente novamente.");
-            } finally {
-                btn.innerText = "Entrar no Painel";
-                btn.disabled = false;
+                console.error("Erro no login:", e);
+                alert("Erro ao validar acesso.");
             }
         }
 
-        window.saveFirstPassword = async function() {
-            const newPass = document.getElementById('new-password').value.trim();
-            if (newPass.length < 4) {
-                alert("A sua nova senha deve ter pelo menos 4 dígitos para segurança.");
+        window.generateStore = async function() {
+            // Aguarda o Firebase inicializar
+            let attempts = 0;
+            while (!window.db && attempts < 50) {
+                await new Promise(r => setTimeout(r, 100));
+                attempts++;
+            }
+            if (!window.db) {
+                alert("Erro: O banco de dados não carregou. Recarregue a página.");
                 return;
             }
 
-            try {
-                const { doc, updateDoc } = window.firebaseUtils;
-                await updateDoc(doc(window.db, "stores", currentStoreId), {
-                    password: newPass
+            const ownerName = document.getElementById('owner-name').value;
+            const name = document.getElementById('store-name').value;
+            const whatsapp = document.getElementById('whatsapp').value;
+            const bannerImage = document.getElementById('banner-image').value;
+            const address = document.getElementById('address').value;
+            const instagram = document.getElementById('instagram').value;
+            const facebook = document.getElementById('facebook').value;
+            const website = document.getElementById('website').value;
+            const password = document.getElementById('password').value;
+
+            if (!name || !whatsapp || !ownerName || (window.storePlan === 'free' && !password)) {
+                alert("Preencha o seu nome, o nome da loja, WhatsApp e senha!");
+                return;
+            }
+
+            if (password && password.length < 4) {
+                alert("A senha deve ter pelo menos 4 dígitos!");
+                return;
+            }
+
+            const btn = document.getElementById('main-action-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="animate-spin" data-lucide="loader-2"></i> Salvando...';
+            btn.disabled = true;
+            if (window.lucide) lucide.createIcons();
+
+            // Objeto ultra-otimizado
+            const data = {
+                cn: ownerName,
+                n: name,
+                w: whatsapp.replace(/\D/g, ''),
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                status: "trial",
+                password: password,
+                expiresAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString() // 3 dias de teste
+            };
+
+            if (address) data.a = address;
+            if (instagram) data.ig = instagram.replace('@', '');
+            if (facebook) data.fb = facebook;
+            if (website) data.ws = website;
+            if (bannerImage) data.bi = bannerImage;
+            
+            // Novos campos: Logo, PIX e Taxa do Cartão
+            const logoVal = document.getElementById('store-logo').value;
+            const pixVal = document.getElementById('pix-key').value;
+            const cardFeeVal = document.getElementById('card-fee').value;
+            if (logoVal) data.lg = logoVal;
+            if (pixVal) data.px = pixVal;
+            if (cardFeeVal) data.cf = parseFloat(cardFeeVal);
+            
+            data.c = document.getElementById('primary-color').value.replace('#', '');
+            data.b = document.getElementById('secondary-color').value.replace('#', '');
+            data.t = document.getElementById('niche').value;
+            data.imf = document.getElementById('image-format').value;
+            
+            const validProducts = window.products.filter(p => p.name);
+            if (validProducts.length > 0) {
+                data.p = validProducts.map(p => {
+                    const item = { id: p.id, n: p.name };
+                    if (p.price) item.p = p.price;
+                    if (p.image) item.i = p.image;
+                    if (p.i2) item.i2 = p.i2;
+                    if (p.i3) item.i3 = p.i3;
+                    if (p.i4) item.i4 = p.i4;
+                    if (p.i5) item.i5 = p.i5;
+                    if (p.i6) item.i6 = p.i6;
+                    if (p.videoUrl) item.v = p.videoUrl;
+                    if (p.description) item.d = p.description;
+                    if (p.category) item.cat = p.category;
+                    if (p.wholesalePrice) item.wp = p.wholesalePrice;
+                    if (p.wholesaleMinQty) item.wq = parseInt(p.wholesaleMinQty);
+                    if (p.available === false) item.av = false;
+                    if (p.vars) item.vars = p.vars;
+                    if (p.f) item.f = true;
+                    if (p.affiliateLink) item.al = p.affiliateLink;
+                    return item;
                 });
-                window.location.href = `criar.html?edit=${currentStoreId}`;
-            } catch (e) {
-                alert("Erro ao salvar senha de acesso.");
+            }
+
+            // Preserva o plano e vendedores
+            data.plan = window.storePlan;
+            if (window.vendors.length > 0) {
+                data.v = window.vendors.map(v => ({ name: v.name, code: v.code }));
+            }
+            if (window.shippingZones.length > 0) {
+                data.sh = window.shippingZones;
+            }
+
+            try {
+                const whatsappClean = whatsapp.replace(/\D/g, '');
+                const urlParams = new URLSearchParams(window.location.search);
+                const existingId = urlParams.get('edit') || urlParams.get('id') || window.existingStoreId;
+                const { doc, getDoc, setDoc } = window.firebaseUtils;
+
+                // Se não estivermos editando explicitamente, mas o número já existe
+                if (!urlParams.get('edit') && !urlParams.get('id') && window.existingStoreId) {
+                    // Opcional: Você pode carregar os dados da loja antiga aqui se quiser, 
+                    // mas por enquanto vamos apenas salvar por cima do ID existente.
+                }
+
+                // TRAVA DE WHATSAPP REFORÇADA: Verifica se o número já possui uma loja
+                let hasValidStoreOnSubmit = false;
+                let matchedStoreIdOnSubmit = null;
+                
+                let phoneVariants = [whatsappClean];
+                let prefix55 = '55' + whatsappClean;
+                let suffixNo55 = whatsappClean.startsWith('55') ? whatsappClean.substring(2) : whatsappClean;
+                if (!phoneVariants.includes(prefix55)) phoneVariants.push(prefix55);
+                if (!phoneVariants.includes(suffixNo55)) phoneVariants.push(suffixNo55);
+
+                for (const phoneItem of phoneVariants) {
+                    const hSnap = await getDoc(doc(window.db, "trial_history", phoneItem));
+                    if (hSnap.exists()) {
+                        const hData = hSnap.data();
+                        const storeSnap = await getDoc(doc(window.db, "stores", hData.storeId));
+                        if (storeSnap.exists()) {
+                            hasValidStoreOnSubmit = true;
+                            matchedStoreIdOnSubmit = hData.storeId;
+                            break;
+                        } else {
+                            // É órfão, apaga o histórico de trial e continua normalmente
+                            try {
+                                const { deleteDoc } = window.firebaseUtils;
+                                await deleteDoc(doc(window.db, "trial_history", phoneItem));
+                            } catch(eDel){}
+                        }
+                    }
+                }
+
+                if (hasValidStoreOnSubmit) {
+                    // Se for uma criação nova OU se estiver editando mas o ID for diferente do registrado para esse número
+                    if (!existingId || (existingId !== matchedStoreIdOnSubmit)) {
+                        const confirmEdit = confirm(`AVISO: O número ${whatsappClean} já está vinculado à loja "${matchedStoreIdOnSubmit}".\n\nVocê deseja editar a loja existente em vez de criar uma nova?`);
+                        if (confirmEdit) {
+                            window.location.href = `criar.html?edit=${matchedStoreIdOnSubmit}`;
+                            return;
+                        } else {
+                            alert("Não é permitido criar múltiplas lojas com o mesmo número de WhatsApp.");
+                            btn.innerHTML = originalText;
+                            btn.disabled = false;
+                            if (window.lucide) lucide.createIcons();
+                            return;
+                        }
+                    }
+                }
+
+                let storeId = existingId;
+                if (!storeId) {
+                    let slug = window.slugify(name);
+                    if (!slug) slug = 'loja';
+                    const docSnap = await getDoc(doc(window.db, "stores", slug));
+                    if (docSnap.exists()) {
+                        // Se já existe, adiciona um sufixo aleatório curto
+                        storeId = slug + '-' + Math.random().toString(36).substring(2, 5);
+                    } else {
+                        storeId = slug;
+                    }
+                }
+                
+                // Se estiver editando, mantém o status e expiração originais
+                if (existingId) {
+                    const docSnap = await getDoc(doc(window.db, "stores", existingId));
+                    if (docSnap.exists()) {
+                        const oldData = docSnap.data();
+                        data.status = oldData.status || "trial";
+                        data.expiresAt = oldData.expiresAt || data.expiresAt;
+                        data.createdAt = oldData.createdAt || data.createdAt;
+                    }
+                }
+
+                // Salva no Firebase
+                await setDoc(doc(window.db, "stores", storeId), data);
+
+                // Se for uma criação nova, registra no histórico de testes (Trava Opção 2)
+                if (!existingId) {
+                    await setDoc(doc(window.db, "trial_history", whatsappClean), {
+                        whatsapp: whatsappClean,
+                        storeId: storeId,
+                        createdAt: new Date().toISOString()
+                    });
+                }
+
+                const publicUrl = window.location.origin + window.location.pathname.replace('criar.html', 'loja.html') + '?id=' + storeId;
+
+                // Salva o ID na memória do navegador
+                localStorage.setItem('lastStoreId', storeId);
+                localStorage.setItem('lastStoreName', name);
+                window.clearDraft(); // Limpa o rascunho após criar a loja
+
+                // Tenta atualizar a interface (se falhar aqui, o dado já está salvo)
+                try {
+                    // Transforma o botão em "Atualizar"
+                    const mainBtn = document.getElementById('main-action-btn');
+                    if (mainBtn) {
+                        mainBtn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+                        mainBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    }
+                    
+                    const btnTextEl = document.getElementById('btn-text');
+                    if (btnTextEl) btnTextEl.innerText = "Atualizar Minha Página";
+                    
+                    const publicLinkEl = document.getElementById('public-link');
+                    if (publicLinkEl) publicLinkEl.innerText = publicUrl;
+                    
+                    const resultSection = document.getElementById('result-section');
+                    const resultCard = document.getElementById('result-card');
+                    
+                    if (resultSection) resultSection.classList.remove('hidden');
+                    
+                    if (resultCard) {
+                        const editBtnId = 'edit-page-btn';
+                        let editBtn = document.getElementById(editBtnId);
+                        
+                        if (!editBtn) {
+                            editBtn = document.createElement('div');
+                            editBtn.id = editBtnId;
+                            editBtn.className = "mt-4 flex flex-col items-center gap-3";
+                            editBtn.innerHTML = `
+                                <a href="loja.html?id=${storeId}" target="_blank" class="text-orange-600 font-bold underline text-sm flex items-center gap-1">
+                                    <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Visualizar minha página agora
+                                </a>
+                                <button onclick="window.deleteStore('${storeId}')" class="text-red-500 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1 hover:text-red-700 transition-colors">
+                                    <i data-lucide="trash-2" class="w-3 h-3"></i> Excluir esta página permanentemente
+                                </button>
+                                <p class="text-[10px] text-slate-400">Guarde este link para editar sua página futuramente!</p>
+                            `;
+                            resultCard.appendChild(editBtn);
+                        } else {
+                            const link = editBtn.querySelector('a');
+                            if (link) link.href = `loja.html?id=${storeId}`;
+                            const delBtn = editBtn.querySelector('button');
+                            if (delBtn) delBtn.onclick = () => window.deleteStore(storeId);
+                        }
+                    }
+
+                    window.checkLastStore(); // Atualiza o botão do topo
+                } catch (uiError) {
+                    console.error("Erro ao atualizar interface (mas os dados foram salvos):", uiError);
+                }
+            } catch (error) {
+                console.error("Erro ao salvar:", error);
+                alert("Erro ao salvar no banco de dados. Verifique sua conexão e tente novamente. (Erro: " + error.message + ")");
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                if (window.lucide) lucide.createIcons();
             }
         }
 
-        window.cancelFirstAccess = function() {
-            document.getElementById('login-inputs').classList.remove('hidden');
-            document.getElementById('first-access-msg').classList.add('hidden');
+        window.copyLink = function(id) {
+            const text = document.getElementById(id).innerText;
+            navigator.clipboard.writeText(text);
+            alert("Link copiado!");
         }
 
-        window.onload = () => {
+        function getEmbedUrl(url) {
+            if (!url) return { url: '', isDirect: false, original: '' };
+            let u = url.trim();
+            const original = u;
+            
+            // YouTube
+            if (u.includes('youtube.com/watch?v=') || u.includes('youtu.be/')) {
+                const id = u.includes('watch?v=') ? u.split('v=')[1].split('&')[0] : u.split('youtu.be/')[1].split('?')[0];
+                return { url: `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=0`, isDirect: false, original };
+            }
+            if (u.includes('youtube.com/shorts/')) {
+                const id = u.split('shorts/')[1].split('?')[0];
+                return { url: `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=0`, isDirect: false, original };
+            }
+            
+            // Instagram
+            if (u.includes('instagram.com/')) {
+                let cleanUrl = u.split('?')[0];
+                if (!cleanUrl.endsWith('/')) cleanUrl += '/';
+                return { url: `${cleanUrl}embed/captioned/`, isDirect: false, original };
+            }
+            
+            // TikTok
+            if (u.includes('tiktok.com/')) {
+                if (u.includes('/video/')) {
+                    const id = u.split('/video/')[1].split('?')[0];
+                    return { url: `https://www.tiktok.com/embed/v2/${id}`, isDirect: false, original };
+                }
+            }
+
+            // Direct Video Extensions (Stricter)
+            const isDirectFile = u.match(/\.(mp4|webm|ogg|mov|m4v)$/i);
+            if (isDirectFile) {
+                return { url: u, isDirect: true, original };
+            }
+            
+            return { url: u, isDirect: false, original };
+        }
+
+        window.openTutorial = function(videoId) {
+            const modal = document.getElementById('video-modal');
+            const iframe = document.getElementById('tutorial-iframe');
+            iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&modestbranding=1`;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+
+        window.closeTutorial = function() {
+            const modal = document.getElementById('video-modal');
+            const iframe = document.getElementById('tutorial-iframe');
+            iframe.src = '';
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = 'auto';
+        }
+
+        window.checkLastStore = function() {
+            const lastId = localStorage.getItem('lastStoreId');
+            const lastName = localStorage.getItem('lastStoreName');
+            const container = document.getElementById('last-store-container');
+            if (lastId) {
+                container.classList.remove('hidden');
+                container.querySelector('button').title = `Editar: ${lastName}`;
+            } else {
+                container.classList.add('hidden');
+            }
+        }
+
+        window.editLastStore = function() {
+            const lastId = localStorage.getItem('lastStoreId');
+            if (lastId) {
+                const url = new URL(window.location.href);
+                url.searchParams.set('edit', lastId);
+                window.location.href = url.toString();
+            }
+        }
+
+        window.sairPainel = function() {
+            if (confirm("Deseja realmente sair do painel de edição e voltar para a página principal?")) {
+                window.location.href = "index.html";
+            }
+        }
+
+        window.deleteStore = async function(id) {
+            if (!confirm("TEM CERTEZA? Isso vai apagar sua página para sempre e o link deixará de funcionar!")) return;
+            
+            try {
+                const { doc, getDoc, deleteDoc } = window.firebaseUtils;
+                
+                // Buscar dados para apagar histórico de trial completo também nos formatos com e sem 55
+                const storeSnap = await getDoc(doc(window.db, "stores", id));
+                if (storeSnap.exists()) {
+                    const data = storeSnap.data();
+                    if (data.w) {
+                        const phone = data.w.replace(/\D/g, '');
+                        try {
+                            await deleteDoc(doc(window.db, "trial_history", phone));
+                        } catch(e){}
+                        
+                        let altPhone = phone;
+                        if (phone.startsWith('55') && phone.length > 10) {
+                            altPhone = phone.substring(2);
+                        } else {
+                            altPhone = '55' + phone;
+                        }
+                        try {
+                            await deleteDoc(doc(window.db, "trial_history", altPhone));
+                        } catch(e){}
+                    }
+                }
+
+                await deleteDoc(doc(window.db, "stores", id));
+                
+                // Limpa a memória se for a última loja
+                if (localStorage.getItem('lastStoreId') === id) {
+                    localStorage.removeItem('lastStoreId');
+                    localStorage.removeItem('lastStoreName');
+                }
+                
+                alert("Página excluída com sucesso!");
+                window.location.href = 'criar.html';
+            } catch (error) {
+                console.error("Erro ao excluir:", error);
+                alert("Erro ao excluir. Tente novamente.");
+            }
+        }
+
+        window.loadFromFirebase = async function(forcedId = null) {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const storeId = forcedId || urlParams.get('edit') || urlParams.get('id');
+                if (!storeId) return;
+
+                // Aguarda o Firebase inicializar
+                let attempts = 0;
+                while ((!window.db || !window.firebaseUtils) && attempts < 50) {
+                    await new Promise(r => setTimeout(r, 100));
+                    attempts++;
+                }
+
+                const { doc, getDoc } = window.firebaseUtils;
+                const docSnap = await getDoc(doc(window.db, "stores", storeId));
+
+                if (docSnap.exists()) {
+                    // Exibe botões de ações logadas (Ver Loja e Sair)
+                    const loggedActions = document.getElementById('logged-actions');
+                    const btnViewStore = document.getElementById('btn-view-store');
+                    if (loggedActions && btnViewStore) {
+                        loggedActions.classList.remove('hidden');
+                        loggedActions.classList.add('flex');
+                        btnViewStore.href = `loja.html?id=${storeId}`;
+                    }
+
+                    // Re-utiliza a lógica de UI de edição
+                    const mainBtn = document.getElementById('main-action-btn');
+                    if (mainBtn) {
+                        mainBtn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+                        mainBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    }
+                    const btnTextEl = document.getElementById('btn-text');
+                    if (btnTextEl) btnTextEl.innerText = "Atualizar Minha Página";
+                    
+                    const data = docSnap.data();
+                    window.storePlan = data.plan || 'free';
+                    window.vendors = data.v || [];
+                    window.shippingZones = data.sh || [];
+                    
+                    const statsCont = document.getElementById('stats-container');
+                    const clicksEl = document.getElementById('total-clicks');
+                    if (statsCont && clicksEl) {
+                        statsCont.classList.remove('hidden');
+                        clicksEl.innerText = data.clicks || 0;
+                    }
+                    
+                    if (data.lg) document.getElementById('store-logo').value = data.lg;
+                    if (data.px) document.getElementById('pix-key').value = data.px;
+                    if (data.cf) document.getElementById('card-fee').value = data.cf;
+                    
+                    // Verifica se o rascunho local é mais recente que o dado do servidor
+                    if (!forcedId) {
+                        const draftStr = localStorage.getItem('catalog_draft');
+                        if (draftStr) {
+                            try {
+                                const draft = JSON.parse(draftStr);
+                                if (draft.storeId === storeId && draft.lastUpdated) {
+                                    const serverUpdate = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
+                                    if (draft.lastUpdated > serverUpdate) {
+                                        console.log("Usando rascunho local mais recente");
+                                        if (window.lucide) lucide.createIcons();
+                                        return;
+                                    }
+                                }
+                            } catch (e) { console.error("Erro ao comparar rascunho:", e); }
+                        }
+                    }
+
+                    // Preenche os campos se não usou rascunho
+                    document.getElementById('owner-name').value = data.cn || '';
+                    document.getElementById('store-name').value = data.n || '';
+                    document.getElementById('whatsapp').value = data.w || '';
+                    document.getElementById('address').value = data.a || '';
+                    document.getElementById('instagram').value = data.ig || '';
+                    document.getElementById('facebook').value = data.fb || '';
+                    document.getElementById('website').value = data.ws || '';
+                    document.getElementById('password').value = data.password || '';
+                    document.getElementById('primary-color').value = data.c ? '#' + data.c : '#f97316';
+                    document.getElementById('secondary-color').value = data.b ? '#' + data.b : '#0f172a';
+                    document.getElementById('banner-image').value = data.bi || '';
+                    window.updateBannerPreview(data.bi);
+                    window.updateLogoPreview(data.lg);
+                    document.getElementById('niche').value = data.t || 'loja';
+                    document.getElementById('image-format').value = data.imf || 'vertical';
+                    
+                    if (data.p && data.p.length > 0) {
+                        window.products = data.p.map(p => ({
+                            id: p.id || Math.random().toString(36).substr(2, 9),
+                            name: p.n,
+                            price: p.p,
+                            wholesalePrice: p.wp || '',
+                            wholesaleMinQty: p.wq || '',
+                            image: p.i,
+                            i2: p.i2 || '',
+                            i3: p.i3 || '',
+                            i4: p.i4 || '',
+                            i5: p.i5 || '',
+                            i6: p.i6 || '',
+                            videoUrl: p.v || '',
+                            category: p.cat || '',
+                            description: p.d || '',
+                            available: p.av !== false,
+                            vars: p.vars || '',
+                            f: p.f || false,
+                            affiliateLink: p.al || ''
+                        }));
+                        // Normalização retroativa de categorias no carregamento
+                        const tempCategories = {};
+                        window.products.forEach(p => {
+                            const cat = (p.category || '').trim();
+                            if (!cat) return;
+                            const key = cat.toLowerCase();
+                            if (!tempCategories[key]) {
+                                tempCategories[key] = cat;
+                            } else {
+                                p.category = tempCategories[key];
+                            }
+                        });
+                    } else {
+                        // Se a loja existe mas não tem produtos salvos, mantém o padrão ou limpa
+                        // window.products = [{ id: Date.now().toString(), name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', description: '' }];
+                    }
+                    window.renderProducts();
+                    window.renderVendors();
+                }
+            } catch (e) { console.error("Erro ao carregar dados:", e); }
+        }
+
+        window.onload = async () => {
+            window.loadDraft();
+            window.checkLastStore();
+            await window.loadFromFirebase();
+            window.renderProducts();
+            window.renderVendors();
+            window.renderShippingZones();
             if (window.lucide) lucide.createIcons();
         };
+
+        window.addShippingZone = function() {
+            const neighborhoodInput = document.getElementById('new-neighborhood');
+            const priceInput = document.getElementById('new-shipping-price');
+            const neighborhood = neighborhoodInput.value.trim();
+            const price = priceInput.value.trim();
+
+            if (!neighborhood || !price) {
+                alert("Preencha o nome do bairro e o valor do frete!");
+                return;
+            }
+
+            window.shippingZones.push({ neighborhood, price });
+            neighborhoodInput.value = '';
+            priceInput.value = '';
+            window.renderShippingZones();
+            window.saveDraft();
+        }
+
+        window.removeShippingZone = function(index) {
+            window.shippingZones.splice(index, 1);
+            window.renderShippingZones();
+            window.saveDraft();
+        }
+
+        window.renderShippingZones = function() {
+            const list = document.getElementById('shipping-zones-list');
+            if (!list) return;
+
+            list.innerHTML = window.shippingZones.map((z, index) => `
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 flex items-center justify-between shadow-sm">
+                    <div class="flex flex-col">
+                        <span class="font-bold text-slate-800 text-sm">${z.neighborhood}</span>
+                        <span class="text-[10px] font-black text-orange-500 uppercase tracking-widest">Frete: R$ ${z.price}</span>
+                    </div>
+                    <button onclick="window.removeShippingZone(${index})" class="text-red-400 hover:text-red-600 p-2 bg-red-50 rounded-lg active-scale">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            `).join('');
+            if (window.lucide) lucide.createIcons();
+        }
     </script>
 </body>
 </html>

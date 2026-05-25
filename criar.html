@@ -929,36 +929,63 @@
                             
                              <div class="space-y-4 mt-6">
                                 <label class="text-[10px] font-black uppercase tracking-widest text-orange-500 ml-1">Fotos do Produto (Até 6)</label>
+                                ${isBeauty ? `
+                                    <div class="bg-indigo-50 border border-indigo-100/60 text-indigo-900 p-4 rounded-2xl text-xs font-semibold leading-relaxed flex items-start gap-2.5 shadow-sm">
+                                        <i data-lucide="sparkles" class="w-5 h-5 text-indigo-500 shrink-0 mt-0.5"></i>
+                                        <div>
+                                            <span class="font-extrabold text-indigo-600 block mb-0.5 uppercase tracking-wider text-[10px]">✨ RECURSO DE ANTES E DEPOIS ATIVO</span>
+                                            Cadastre o resultado final na <b>Foto DEPOIS (Principal)</b> e o início na <b>Foto ANTES (Foto 2)</b>. Seus clientes poderão alternar com um clique na página de vendas para comparar o excelente resultado!
+                                        </div>
+                                    </div>
+                                ` : ''}
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    ${[
-                                        { id: 'image', label: 'Foto Principal', value: imgEscaped },
-                                        { id: 'i2', label: 'Foto 2', value: img2Escaped },
-                                        { id: 'i3', label: 'Foto 3', value: img3Escaped },
-                                        { id: 'i4', label: 'Foto 4', value: img4Escaped },
-                                        { id: 'i5', label: 'Foto 5', value: img5Escaped },
-                                        { id: 'i6', label: 'Foto 6', value: img6Escaped }
-                                    ].map(img => `
-                                        <div class="bg-white p-4 rounded-2xl border border-slate-100 flex flex-col gap-3">
-                                            <label class="text-[9px] font-black uppercase tracking-widest text-slate-400">${img.label}</label>
-                                            <div class="flex items-center gap-3">
-                                                <div class="w-12 h-12 bg-slate-50 rounded-lg border-2 border-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center shadow-sm">
-                                                    <img id="preview-${p.id}-${img.id}" src="${proxyImg(img.value)}" class="w-full h-full object-cover ${img.value ? '' : 'hidden'}" referrerpolicy="no-referrer" onerror="this.classList.add('hidden'); document.getElementById('icon-${p.id}-${img.id}').classList.remove('hidden')">
-                                                    <i data-lucide="image" class="text-slate-300 w-5 h-5 ${img.value ? 'hidden' : ''}" id="icon-${p.id}-${img.id}"></i>
-                                                </div>
-                                                <div class="flex-1 flex flex-col gap-1.5 min-w-0">
-                                                    <input type="text" value="${img.value}" id="input-${p.id}-${img.id}" ${isLocked ? 'readonly disabled' : ''} oninput="window.updateProduct('${p.id}', '${img.id}', this.value)" placeholder="Link da foto" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-[10px] ${isLocked ? 'opacity-60 cursor-not-allowed' : ''}">
-                                                    <div class="flex gap-1.5 w-full">
-                                                        <button type="button" ${isLocked ? 'disabled' : ''} onclick="window.open('https://postimages.org/', '_blank')" class="flex-1 bg-blue-600 text-white px-2 py-2 rounded-xl font-black uppercase text-[8px] tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-1 active-scale ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}">
-                                                            <i data-lucide="camera" class="w-3 h-3"></i> Upload
-                                                        </button>
-                                                        <button type="button" ${isLocked ? 'disabled' : ''} onclick="document.getElementById('input-${p.id}-${img.id}').value=''; window.updateProduct('${p.id}', '${img.id}', '')" class="bg-red-50 text-red-600 px-2 py-2 rounded-xl hover:bg-red-100 transition-all flex items-center justify-center active-scale ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}">
-                                                            <i data-lucide="trash-2" class="w-3 h-3"></i>
-                                                        </button>
+                                    ${(() => {
+                                        const labels = isBeauty ? {
+                                            'image': 'Foto DEPOIS (Resultado Final) ✨',
+                                            'i2': 'Foto ANTES (Início/Preparação) ✂️',
+                                            'i3': 'Foto Opcional 3',
+                                            'i4': 'Foto Opcional 4',
+                                            'i5': 'Foto Opcional 5',
+                                            'i6': 'Foto Opcional 6'
+                                        } : {
+                                            'image': 'Foto Principal',
+                                            'i2': 'Foto 2',
+                                            'i3': 'Foto 3',
+                                            'i4': 'Foto 4',
+                                            'i5': 'Foto 5',
+                                            'i6': 'Foto 6'
+                                        };
+
+                                        return [
+                                            { id: 'image', label: labels['image'], value: imgEscaped },
+                                            { id: 'i2', label: labels['i2'], value: img2Escaped },
+                                            { id: 'i3', label: labels['i3'], value: img3Escaped },
+                                            { id: 'i4', label: labels['i4'], value: img4Escaped },
+                                            { id: 'i5', label: labels['i5'], value: img5Escaped },
+                                            { id: 'i6', label: labels['i6'], value: img6Escaped }
+                                        ].map(img => `
+                                            <div class="bg-white p-4 rounded-2xl border border-slate-100 flex flex-col gap-3">
+                                                <label class="text-[9px] font-black uppercase tracking-widest text-slate-400">${img.label}</label>
+                                                <div class="flex items-center gap-3">
+                                                    <div class="w-12 h-12 bg-slate-50 rounded-lg border-2 border-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center shadow-sm">
+                                                        <img id="preview-${p.id}-${img.id}" src="${proxyImg(img.value)}" class="w-full h-full object-cover ${img.value ? '' : 'hidden'}" referrerpolicy="no-referrer" onerror="this.classList.add('hidden'); document.getElementById('icon-${p.id}-${img.id}').classList.remove('hidden')">
+                                                        <i data-lucide="image" class="text-slate-300 w-5 h-5 ${img.value ? 'hidden' : ''}" id="icon-${p.id}-${img.id}"></i>
+                                                    </div>
+                                                    <div class="flex-1 flex flex-col gap-1.5 min-w-0">
+                                                        <input type="text" value="${img.value}" id="input-${p.id}-${img.id}" ${isLocked ? 'readonly disabled' : ''} oninput="window.updateProduct('${p.id}', '${img.id}', this.value)" placeholder="Link da foto" class="w-full px-3 py-2.5 rounded-xl bg-slate-50 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-[10px] ${isLocked ? 'opacity-60 cursor-not-allowed' : ''}">
+                                                        <div class="flex gap-1.5 w-full">
+                                                            <button type="button" ${isLocked ? 'disabled' : ''} onclick="window.open('https://postimages.org/', '_blank')" class="flex-1 bg-blue-600 text-white px-2 py-2 rounded-xl font-black uppercase text-[8px] tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-1 active-scale ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}">
+                                                                <i data-lucide="camera" class="w-3 h-3"></i> Upload
+                                                            </button>
+                                                            <button type="button" ${isLocked ? 'disabled' : ''} onclick="document.getElementById('input-${p.id}-${img.id}').value=''; window.updateProduct('${p.id}', '${img.id}', '')" class="bg-red-50 text-red-600 px-2 py-2 rounded-xl hover:bg-red-100 transition-all flex items-center justify-center active-scale ${isLocked ? 'opacity-50 cursor-not-allowed' : ''}">
+                                                                <i data-lucide="trash-2" class="w-3 h-3"></i>
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    `).join('')}
+                                        `).join('');
+                                    })()}
                                 </div>
                             </div>
 

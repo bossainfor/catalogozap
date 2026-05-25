@@ -371,7 +371,7 @@
     <script>
         // Tornar funções globais explicitamente para garantir funcionamento em botões
         window.products = [{ id: Date.now().toString(), name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', videoUrl: '', category: '', description: '' }];
-        window.storePlan = 'free';
+        window.storePlan = 'premium';
         window.vendors = [];
         window.shippingZones = [];
         window.expandedProducts = new Set();
@@ -567,15 +567,6 @@
 
         window.addProduct = function() {
             try {
-                let limit = 999;
-                if (window.storePlan === 'free') limit = 5;
-                else if (window.storePlan === 'basic') limit = 15;
-
-                if (window.products.length >= limit) {
-                    const planName = window.storePlan.toUpperCase();
-                    alert(`Limite atingido: O plano ${planName} permite apenas ${limit} produtos.\n\nPara cadastrar mais itens, mude para o Plano Profissional (Ilimitado) falando com nosso suporte.`);
-                    return;
-                }
                 const id = Date.now().toString();
                 window.products.push({ 
                     id: id, 
@@ -663,10 +654,6 @@
         }
 
         window.removeProduct = function(id) {
-            if (window.storePlan === 'free' && window.products.length >= 5) {
-                alert("🔒 Limite atingido! No Plano FREE, ao atingir 5 produtos, as edições e remoções são bloqueadas para novas atualizações.\n\nFale com o suporte para subir para o Plano Profissional e liberar edições ilimitadas!");
-                return;
-            }
             if (window.products.length > 1) {
                 if (!confirm("Remover este item?")) return;
                 window.products = window.products.filter(p => p.id !== id);
@@ -705,12 +692,6 @@
         }
 
         window.updateProduct = function(id, field, value) {
-            if (window.storePlan === 'free' && window.products.length >= 5) {
-                // Permitir apenas toggle de disponibilidade e destaque se o usuário quiser esconder algo? 
-                // Não, o usuário pediu para não conseguir atualizar NADA.
-                alert("🔒 Edição Bloqueada! Você atingiu o limite de 5 produtos no Plano FREE.\n\nPara continuar editando ou remover itens, faça o upgrade para o Plano Profissional.");
-                return;
-            }
             const p = window.products.find(p => p.id === id);
             if (p) {
                 if (field === 'category') {
@@ -783,10 +764,6 @@
         }
 
         window.moveProduct = function(id, direction) {
-            if (window.storePlan === 'free' && window.products.length >= 5) {
-                alert("🔒 Organização Bloqueada! No Plano FREE com 5 produtos, a ordem dos itens fica fixa.\n\nUpgrade para o Profissional para organizar seu catálogo!");
-                return;
-            }
             const index = window.products.findIndex(p => p.id === id);
             if (index === -1) return;
             
@@ -822,11 +799,8 @@
                     else shippingSection.classList.remove('hidden');
                 }
 
-                let limit = 999;
-                if (window.storePlan === 'free') limit = 5;
-                else if (window.storePlan === 'basic') limit = 15;
-
-                const isLocked = window.storePlan === 'free' && window.products.length >= 5;
+                let limit = 999999;
+                const isLocked = false;
 
                 list.innerHTML = window.products.map((p, index) => {
                     const isOpen = window.expandedProducts.has(p.id);
@@ -990,24 +964,17 @@
 
                             <div class="space-y-3 mt-6">
                                 <div class="flex items-center justify-between">
-                                    <label class="text-[10px] font-bold uppercase tracking-widest ${window.storePlan !== 'free' ? 'text-indigo-500' : 'text-slate-400'} ml-1 flex items-center gap-2">
+                                    <label class="text-[10px] font-bold uppercase tracking-widest text-indigo-500 ml-1 flex items-center gap-2">
                                         <i data-lucide="video" class="w-3.5 h-3.5"></i> Vídeo do Produto (Hospede e cole o link)
                                     </label>
-                                    ${window.storePlan === 'free' ? '<span class="text-[8px] bg-slate-100 text-slate-400 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">Premium</span>' : (window.storePlan === 'basic' ? '<span class="text-[8px] bg-blue-50 text-blue-500 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">Básico (Máx 3)</span>' : '<span class="text-[8px] bg-indigo-50 text-indigo-500 px-2 py-0.5 rounded-full font-black uppercase tracking-widest">Profissional</span>')}
+                                    <span class="text-[8px] bg-green-50 text-green-600 px-2 py-0.5 rounded-full font-black uppercase tracking-widest border border-green-150 shadow-sm">Liberado</span>
                                 </div>
                                 <div class="flex flex-col sm:flex-row gap-2">
                                     <div class="flex-1">
-                                        ${(() => {
-                                            const videoCount = window.products.filter(p => p.videoUrl && p.videoUrl.trim() !== '').length;
-                                            const canAddMore = window.storePlan === 'premium' || (window.storePlan === 'basic' && (videoCount < 3 || (p.videoUrl && p.videoUrl.trim() !== '')));
-                                            const isVideoLocked = window.storePlan === 'free' || !canAddMore;
-                                            
-                                            return `<input type="text" value="${videoEscaped}" 
-                                                   ${isVideoLocked ? 'readonly disabled' : ''} 
-                                                   oninput="window.updateProduct('${p.id}', 'videoUrl', this.value)" 
-                                                   placeholder="${window.storePlan === 'premium' ? 'LINK DIRETO (.mp4)' : (window.storePlan === 'basic' ? (canAddMore ? 'LINK DIRETO (.mp4)' : 'Limite atingido!') : 'Apenas Premium')}" 
-                                                   class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-indigo-500 outline-none transition-all font-bold text-xs ${isVideoLocked ? 'opacity-50 cursor-not-allowed bg-slate-50' : ''}">`;
-                                        })()}
+                                        <input type="text" value="${videoEscaped}" 
+                                               oninput="window.updateProduct('${p.id}', 'videoUrl', this.value)" 
+                                               placeholder="LINK DIRETO (.mp4)" 
+                                               class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-indigo-500 outline-none transition-all font-bold text-xs">
                                     </div>
                                     <button type="button" onclick="window.open('https://www.videotourl.com/', '_blank')" class="bg-indigo-600 text-white px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 active-scale shadow-lg shadow-indigo-100" title="Hospedar Vídeo">
                                         <i data-lucide="clapperboard" class="w-5 h-5"></i>
@@ -1070,76 +1037,24 @@
             const manager = document.getElementById('vendors-manager');
             const badge = document.getElementById('vendor-plan-badge');
             
-                // Sugestões de upgrade nos botões
-                const vendorSugg = document.getElementById('vendor-upgrade-suggestion');
-                const productSugg = document.getElementById('product-upgrade-suggestion');
-                const upgradeMsg = window.storePlan === 'free' ? 'Upgrade para Basic (15 produtos)' : (window.storePlan === 'basic' ? 'Upgrade para Premium (Ilimitado)' : '');
-                const upgradeLink = window.storePlan === 'free' ? 'https://api.whatsapp.com/send?phone=5585992862177&text=Olá! Estou no Plano FREE e quero subir para o Plano BASIC.' : 'https://api.whatsapp.com/send?phone=5585992862177&text=Olá! Estou no Plano BASIC e quero subir para o Plano PREMIUM.';
-                
-                if (window.storePlan !== 'premium') {
-                    const btnHTML = `<button onclick="window.open('${upgradeLink}', '_blank')" class="w-full mt-2 py-3 bg-blue-50 text-blue-600 rounded-xl border border-blue-100 font-bold uppercase tracking-widest text-[9px] hover:bg-blue-100 transition-all flex items-center justify-center gap-2 active-scale">🚀 ${upgradeMsg}</button>`;
-                    if(vendorSugg) vendorSugg.innerHTML = btnHTML;
-                    if(productSugg) productSugg.innerHTML = btnHTML;
-                }
+            // Sugestões de upgrade nos botões
+            const vendorSugg = document.getElementById('vendor-upgrade-suggestion');
+            const productSugg = document.getElementById('product-upgrade-suggestion');
+            if (vendorSugg) vendorSugg.innerHTML = '';
+            if (productSugg) productSugg.innerHTML = '';
 
-                // Sugestões de upgrade
-                const upgradeContainer = document.getElementById('upgrade-path-container');
-                if (upgradeContainer) {
-                    if (window.storePlan === 'free') {
-                        upgradeContainer.innerHTML = `
-                            <div class="mt-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-900 rounded-[2rem] border-2 border-blue-100 dark:border-blue-900/30 shadow-xl overflow-hidden relative">
-                                <div class="absolute top-0 right-0 p-4 opacity-10">
-                                    <i data-lucide="zap" class="w-12 h-12 text-blue-600"></i>
-                                </div>
-                                <div class="relative z-10">
-                                    <span class="bg-blue-600 text-white text-[9px] font-black uppercase px-3 py-1 rounded-full mb-3 inline-block tracking-widest">Oportunidade</span>
-                                    <h4 class="text-slate-900 dark:text-white font-black uppercase italic italic tracking-tighter text-lg leading-tight mb-2">Subir para o Plano Basic?</h4>
-                                    <p class="text-slate-500 dark:text-slate-400 text-xs font-medium mb-5 leading-relaxed">Libere espaço para até 15 produtos e tenha um catálogo mais completo.</p>
-                                    <button onclick="window.open('https://api.whatsapp.com/send?phone=5585992862177&text=Olá! Estou no Plano FREE e quero subir para o Plano BASIC para cadastrar 15 produtos.', '_blank')" class="w-full py-4 bg-blue-600 text-white rounded-2xl font-black uppercase italic tracking-widest text-xs hover:bg-blue-700 transition-all flex items-center justify-center gap-2 active-scale shadow-lg shadow-blue-600/20">
-                                        <i data-lucide="arrow-up-circle" class="w-4 h-4"></i> Atualizar para o Basic
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-                    } else if (window.storePlan === 'basic') {
-                        upgradeContainer.innerHTML = `
-                            <div class="mt-8 p-6 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-slate-800 dark:to-slate-900 rounded-[2rem] border-2 border-indigo-100 dark:border-indigo-900/30 shadow-xl overflow-hidden relative">
-                                <div class="absolute top-0 right-0 p-4 opacity-10">
-                                    <i data-lucide="crown" class="w-12 h-12 text-indigo-600"></i>
-                                </div>
-                                <div class="relative z-10">
-                                    <span class="bg-indigo-600 text-white text-[9px] font-black uppercase px-3 py-1 rounded-full mb-3 inline-block tracking-widest">Recomendado</span>
-                                    <h4 class="text-slate-900 dark:text-white font-black uppercase italic italic tracking-tighter text-lg leading-tight mb-2">Vá para o Plano Premium</h4>
-                                    <p class="text-slate-500 dark:text-slate-400 text-xs font-medium mb-5 leading-relaxed">Produtos ILIMITADOS, vídeos e todas as funções liberadas.</p>
-                                    <button onclick="window.open('https://api.whatsapp.com/send?phone=5585992862177&text=Olá! Estou no Plano BASIC e quero subir para o Plano PREMIUM para produtos ilimitados e vídeos.', '_blank')" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase italic tracking-widest text-xs hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 active-scale shadow-lg shadow-indigo-600/20">
-                                        <i data-lucide="zap" class="w-4 h-4"></i> Atualizar para o Premium
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-                    } else {
-                        upgradeContainer.innerHTML = '';
-                    }
-                }
+            // Sugestões de upgrade
+            const upgradeContainer = document.getElementById('upgrade-path-container');
+            if (upgradeContainer) {
+                upgradeContainer.innerHTML = '';
+            }
 
-            if (window.storePlan === 'premium') {
-                restrictedMsg.classList.add('hidden');
-                manager.classList.remove('hidden');
+            if (restrictedMsg) restrictedMsg.classList.add('hidden');
+            if (manager) manager.classList.remove('hidden');
+            if (badge) {
                 badge.classList.remove('hidden');
-                badge.innerText = "Plano Profissional";
-                badge.className = "bg-indigo-100 text-indigo-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest";
-            } else {
-                restrictedMsg.classList.remove('hidden');
-                manager.classList.add('hidden');
-                badge.classList.remove('hidden');
-                
-                if (window.storePlan === 'basic') {
-                    badge.innerText = "Plano Básico";
-                    badge.className = "bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest";
-                } else {
-                    badge.innerText = "Plano Free";
-                    badge.className = "bg-slate-100 text-slate-500 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest";
-                }
+                badge.innerText = "Recursos Liberados";
+                badge.className = "bg-green-100 text-green-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-200 shadow-sm";
             }
 
             if (!list) return;
@@ -1359,7 +1274,7 @@
             const website = document.getElementById('website').value;
             const password = document.getElementById('password').value;
 
-            if (!name || !whatsapp || !ownerName || (window.storePlan === 'free' && !password)) {
+            if (!name || !whatsapp || !ownerName || !password) {
                 alert("Preencha o seu nome, o nome da loja, WhatsApp e senha!");
                 return;
             }
@@ -1770,7 +1685,7 @@
                     if (btnTextEl) btnTextEl.innerText = "Atualizar Minha Página";
                     
                     const data = docSnap.data();
-                    window.storePlan = data.plan || 'free';
+                    window.storePlan = 'premium';
                     window.vendors = data.v || [];
                     window.shippingZones = data.sh || [];
                     

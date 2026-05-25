@@ -90,6 +90,10 @@
                     <button onclick="loadStores()" class="bg-white border border-slate-200 px-6 py-4 rounded-2xl sm:rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-50 shadow-sm active:scale-95 transition-all shrink-0">
                         <i data-lucide="refresh-cw" class="w-4 h-4"></i> <span class="hidden sm:inline">Atualizar</span>
                     </button>
+                    
+                    <button onclick="openCreateStoreModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-4 rounded-2xl sm:rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg hover:shadow-xl active:scale-95 transition-all shrink-0">
+                        <i data-lucide="plus" class="w-4 h-4"></i> <span>Criar Loja</span>
+                    </button>
                 </div>
             </div>
 
@@ -299,17 +303,17 @@
                 let planColorClass = 'text-slate-400 bg-slate-50';
 
                 if (plan === 'premium') {
-                    planBadge = '<span class="bg-indigo-100 text-indigo-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1"><i data-lucide="star" class="w-2.5 h-2.5 fill-current"></i> Premium</span>';
-                    planIconAction = 'star';
-                    planColorClass = 'text-indigo-600 bg-indigo-50';
+                    planBadge = '<span class="bg-[#10B981]/15 text-[#10B981] px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 border border-[#10B981]/10"><i data-lucide="calendar" class="w-2.5 h-2.5 fill-current"></i> P3: Delivery & Agenda</span>';
+                    planIconAction = 'calendar';
+                    planColorClass = 'text-green-600 bg-green-50 border border-green-200';
                 } else if (plan === 'basic') {
-                    planBadge = '<span class="bg-blue-100 text-blue-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1"><i data-lucide="zap" class="w-2.5 h-2.5 fill-current"></i> Básico</span>';
-                    planIconAction = 'zap';
-                    planColorClass = 'text-blue-600 bg-blue-50';
+                    planBadge = '<span class="bg-[#2563EB]/15 text-[#2563EB] px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 border border-[#2563EB]/10"><i data-lucide="shopping-bag" class="w-2.5 h-2.5 fill-current"></i> P2: Loja Online</span>';
+                    planIconAction = 'shopping-bag';
+                    planColorClass = 'text-blue-600 bg-blue-50 border border-blue-200';
                 } else {
-                    planBadge = '<span class="bg-slate-100 text-slate-500 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">Free</span>';
-                    planIconAction = 'award';
-                    planColorClass = 'text-slate-400 bg-slate-50';
+                    planBadge = '<span class="bg-[#475569]/15 text-[#475569] px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 border border-[#475569]/10"><i data-lucide="tag" class="w-2.5 h-2.5 fill-current"></i> P1: Catálogo Digital</span>';
+                    planIconAction = 'tag';
+                    planColorClass = 'text-slate-400 bg-slate-50 border border-slate-200';
                 }
 
                 const vendors = data.v || [];
@@ -359,6 +363,9 @@
                     </td>
                     <td class="px-6 py-5 text-right">
                         <div class="flex items-center justify-end gap-2">
+                            <button onclick="showBookings('${id}')" title="Ver Agendamentos de Clientes" class="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors">
+                                <i data-lucide="calendar" size="16"></i>
+                            </button>
                             <button onclick="setAppLink('${id}')" title="Link do Aplicativo" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
                                 <i data-lucide="smartphone" size="16"></i>
                             </button>
@@ -374,7 +381,7 @@
                             <button onclick="activateStore('${id}', '${data.expiresAt}')" title="Ativar +30 dias" class="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
                                 <i data-lucide="calendar-plus" size="16"></i>
                             </button>
-                            <button onclick="togglePlan('${id}', '${plan}')" title="Ciclar Plano (Free > Basic > Premium)" class="p-2 ${planColorClass} rounded-lg hover:shadow-md transition-all">
+                            <button onclick="togglePlan('${id}', '${plan}')" title="Ciclar Plano (P1 > P2 > P3)" class="p-2 ${planColorClass} rounded-lg hover:shadow-md transition-all">
                                 <i data-lucide="${planIconAction}" size="16" class="${plan === 'free' ? '' : 'fill-current'}"></i>
                             </button>
                             <button onclick="blockStore('${id}')" title="${data.status === 'blocked' ? 'Desbloquear' : 'Bloquear'}" class="p-2 ${data.status === 'blocked' ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-orange-50 text-orange-600 hover:bg-orange-100'} rounded-lg transition-colors">
@@ -445,11 +452,14 @@
                             </button>
                         </div>
                         <div class="flex items-center gap-2 w-full">
-                            <button onclick="showVendors('${id}')" class="flex-1 py-3 bg-indigo-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md shadow-indigo-100/50">
-                                <i data-lucide="users" class="w-3.5 h-3.5"></i> Vend. (${vendorCount})
+                            <button onclick="showVendors('${id}')" class="flex bg-indigo-600 text-white px-3 py-3 rounded-xl font-black uppercase text-[9px] tracking-widest flex-1 items-center justify-center gap-1.5 active:scale-95 transition-all shadow-md">
+                                <i data-lucide="users" class="w-3.5 h-3.5"></i> Vend
                             </button>
-                            <button onclick="blockStore('${id}')" class="flex-1 py-3 ${data.status === 'blocked' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-orange-50 text-orange-600 border-orange-100'} rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all border shadow-sm">
-                                <i data-lucide="${data.status === 'blocked' ? 'unlock' : 'lock'}" class="w-3.5 h-3.5"></i> ${data.status === 'blocked' ? 'Desbl' : 'Bloq'}
+                            <button onclick="showBookings('${id}')" class="flex bg-emerald-600 text-white px-3 py-3 rounded-xl font-black uppercase text-[9px] tracking-widest flex-1 items-center justify-center gap-1.5 active:scale-95 transition-all shadow-md">
+                                <i data-lucide="calendar" class="w-3.5 h-3.5"></i> Agenda
+                            </button>
+                            <button onclick="blockStore('${id}')" class="flex ${data.status === 'blocked' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-orange-50 text-orange-600 border-orange-100'} px-3 py-3 rounded-xl font-black uppercase text-[9px] tracking-widest flex-1 items-center justify-center gap-1.5 active:scale-95 transition-all border shadow-sm">
+                                <i data-lucide="${data.status === 'blocked' ? 'unlock' : 'lock'}" class="w-3.5 h-3.5"></i> ${data.status === 'blocked' ? 'Desb' : 'Bloq'}
                             </button>
                         </div>
                         <div class="flex items-center gap-2 w-full pt-1">
@@ -506,10 +516,16 @@
 
         async function togglePlan(id, currentPlan) {
             const plans = ['free', 'basic', 'premium'];
+            const planLabels = {
+                'free': 'P1: CATÁLOGO DIGITAL',
+                'basic': 'P2: LOJA ONLINE',
+                'premium': 'P3: DELIVERY & AGENDA'
+            };
             const currentIndex = plans.indexOf(currentPlan);
             const nextPlan = plans[(currentIndex + 1) % plans.length];
+            const nextLabel = planLabels[nextPlan];
             
-            if (!confirm(`Deseja alterar o plano desta loja para ${nextPlan.toUpperCase()}?`)) return;
+            if (!confirm(`Deseja alterar o plano desta loja para ${nextLabel}?`)) return;
             
             try {
                 await window.fs.updateDoc(window.fs.doc(window.db, "stores", id), {
@@ -904,6 +920,326 @@
             const editUrl = `${baseUrl}criar.html?edit=${id}`;
             navigator.clipboard.writeText(editUrl);
             alert("Link de edição copiado para a área de transferência!");
+        }
+
+        window.openCreateStoreModal = function() {
+            const modal = document.createElement('div');
+            modal.id = 'create-store-modal';
+            modal.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto';
+            modal.innerHTML = `
+                <div class="bg-white w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl flex flex-col my-8">
+                    <div class="p-6 bg-slate-900 text-white flex items-center justify-between">
+                        <div>
+                            <h3 class="font-black uppercase italic tracking-tighter text-xl">Criar Nova Loja</h3>
+                            <p class="text-xs text-white/50 font-bold uppercase tracking-widest">Painel Master de Criação</p>
+                        </div>
+                        <button onclick="document.getElementById('create-store-modal').remove()" class="text-white/50 hover:text-white transition-colors">
+                            <i data-lucide="x"></i>
+                        </button>
+                    </div>
+                    <form onsubmit="submitCreateStore(event)" class="p-6 space-y-4 overflow-y-auto max-h-[70vh] custom-scrollbar">
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">ID / Slug da Loja (Link)</label>
+                            <input type="text" id="create-store-slug" required oninput="this.value = this.value.toLowerCase().trim().replace(/[^a-z0-9-]/g, '')" placeholder="ex: salao-renova" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm focus:outline-none focus:border-slate-900">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Nome do Estabelecimento</label>
+                            <input type="text" id="create-store-name" required placeholder="ex: Salão Renova" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm focus:outline-none focus:border-slate-900">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">WhatsApp (com DDD)</label>
+                            <input type="text" id="create-store-whatsapp" required placeholder="ex: 85992862177" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm focus:outline-none focus:border-slate-900">
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Dono / Responsável</label>
+                            <input type="text" id="create-store-owner" required placeholder="ex: Maria da Silva" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm focus:outline-none focus:border-slate-900">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Nicho / Tipo</label>
+                                <select id="create-store-niche" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm focus:outline-none focus:border-slate-900">
+                                    <option value="loja">Loja Geral</option>
+                                    <option value="cardapio">Restaurante / Delivery</option>
+                                    <option value="salao">Salão de Beleza</option>
+                                    <option value="barbearia">Barbearia</option>
+                                    <option value="acougue">Açougue</option>
+                                    <option value="clinica">Clínica / Saúde</option>
+                                    <option value="servicos">Serviços Gerais</option>
+                                    <option value="portfolio">Portfólio / Catálogo</option>
+                                    <option value="afiliados">Afiliados / Promoções</option>
+                                </select>
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Plano Inicial</label>
+                                <select id="create-store-plan" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm focus:outline-none focus:border-slate-900">
+                                    <option value="free">P1: Catálogo Digital</option>
+                                    <option value="basic">P2: Loja Online</option>
+                                    <option value="premium">P3: Delivery & Agenda</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400">Senha de Acesso (Dono)</label>
+                            <input type="text" id="create-store-password" required value="1234" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm focus:outline-none focus:border-slate-900">
+                        </div>
+                        <div class="pt-4">
+                            <button type="submit" id="btn-submit-create-store" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase tracking-widest text-sm hover:shadow-lg transition-all active-scale">Criar Estabelecimento</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            lucide.createIcons();
+        }
+
+        window.submitCreateStore = async function(event) {
+            event.preventDefault();
+            const slug = document.getElementById('create-store-slug').value.trim().toLowerCase().replace(/[^a-z0-9-]/g, '');
+            const name = document.getElementById('create-store-name').value.trim();
+            const whatsapp = document.getElementById('create-store-whatsapp').value.replace(/\D/g, '');
+            const owner = document.getElementById('create-store-owner').value.trim();
+            const niche = document.getElementById('create-store-niche').value;
+            const plan = document.getElementById('create-store-plan').value;
+            const password = document.getElementById('create-store-password').value.trim();
+
+            if (!slug || !name || !whatsapp || !owner || !password) {
+                alert("Preencha todos os campos obrigatórios!");
+                return;
+            }
+
+            if (password.length < 4) {
+                alert("A senha de acesso deve ter pelo menos 4 dígitos!");
+                return;
+            }
+
+            const btn = document.getElementById('btn-submit-create-store');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<i class="animate-spin inline-block mr-2" data-lucide="loader-2"></i> Criando...';
+            btn.disabled = true;
+            lucide.createIcons();
+
+            try {
+                const { doc, getDoc, setDoc } = window.fs;
+                
+                // 1. Validar se ID já existe
+                const checkSnap = await getDoc(doc(window.db, "stores", slug));
+                if (checkSnap.exists()) {
+                    alert("Aviso: Esta ID / Slug já está em uso por outro catálogo.");
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    lucide.createIcons();
+                    return;
+                }
+
+                // 2. Criar objeto de dados
+                const storeData = {
+                    n: name,
+                    cn: owner,
+                    w: whatsapp,
+                    password: password,
+                    status: plan === 'free' ? 'trial' : 'active',
+                    plan: plan,
+                    t: niche,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 dias inicial
+                    c: "f97316", // Cor principal (laranja)
+                    b: "0f172a", // Cor secundária (azul escuro)
+                    imf: "vertical",
+                    p: [] // Inicia sem produtos
+                };
+
+                await setDoc(doc(window.db, "stores", slug), storeData);
+
+                // 3. Registrar no histórico de testes
+                try {
+                    await setDoc(doc(window.db, "trial_history", whatsapp), {
+                        whatsapp: whatsapp,
+                        storeId: slug,
+                        createdAt: new Date().toISOString()
+                    });
+                } catch(eH) { console.warn("Histórico de trial ignorado ou erro:", eH); }
+
+                document.getElementById('create-store-modal').remove();
+                alert("Loja criada e configurada com sucesso pelo painel!");
+                loadStores();
+            } catch(err) {
+                console.error("Erro ao criar loja:", err);
+                alert("Erro ao criar registro: " + err.message);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+                lucide.createIcons();
+            }
+        }
+
+        let currentBookingStoreId = null;
+
+        window.showBookings = async function(storeId) {
+            currentBookingStoreId = storeId;
+            const store = allStores.find(s => s.id === storeId);
+            const storeName = store ? store.n : 'Estabelecimento';
+            
+            const modal = document.createElement('div');
+            modal.id = 'bookings-modal';
+            modal.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto';
+            modal.innerHTML = `
+                <div class="bg-white w-full max-w-4xl rounded-3xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+                    <div class="p-6 bg-slate-900 text-white flex items-center justify-between">
+                        <div>
+                            <h3 class="font-black uppercase italic tracking-tighter text-xl">Agendamentos de Clientes</h3>
+                            <p class="text-xs text-white/50 font-bold uppercase tracking-widest">${storeName}</p>
+                        </div>
+                        <button onclick="document.getElementById('bookings-modal').remove()" class="text-white/50 hover:text-white transition-colors">
+                            <i data-lucide="x"></i>
+                        </button>
+                    </div>
+                    <div class="overflow-y-auto p-6 flex-1 custom-scrollbar space-y-4" id="bookings-modal-content">
+                        <div class="text-center py-12">
+                            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900 mx-auto mb-4"></div>
+                            <p class="text-slate-400 font-bold text-xs uppercase tracking-widest">Buscando agendamentos...</p>
+                        </div>
+                    </div>
+                    <div class="p-6 border-t border-slate-100 flex justify-end">
+                        <button onclick="document.getElementById('bookings-modal').remove()" class="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl font-black uppercase text-[10px] tracking-widest">Fechar Painel</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            lucide.createIcons();
+            
+            loadBookingsForStore(storeId);
+        }
+
+        window.loadBookingsForStore = async function(storeId) {
+            const container = document.getElementById('bookings-modal-content');
+            if (!container) return;
+
+            try {
+                const { collection, getDocs } = window.fs;
+                const snap = await getDocs(collection(window.db, "bookings"));
+                const list = [];
+                snap.forEach(d => {
+                    const data = d.data();
+                    if (data.storeId === storeId) {
+                        list.push({ id: d.id, ...data });
+                    }
+                });
+
+                list.sort((a,b) => {
+                    const dateA = a.date ? new Date(a.date + 'T' + (a.time || '00:00')).getTime() : 0;
+                    const dateB = b.date ? new Date(b.date + 'T' + (b.time || '00:00')).getTime() : 0;
+                    return dateB - dateA;
+                });
+
+                if (list.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center py-16 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+                            <i data-lucide="calendar-off" class="w-10 h-10 text-slate-300 mx-auto mb-3"></i>
+                            <h4 class="font-black uppercase text-slate-700 text-sm">Nenhum agendamento encontrado</h4>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wide mt-1">Os agendamentos concluídos pelos clientes aparecerão aqui automaticamente.</p>
+                        </div>
+                    `;
+                    lucide.createIcons();
+                    return;
+                }
+
+                container.innerHTML = `
+                    <div class="overflow-x-auto border border-slate-100 rounded-2xl">
+                        <table class="w-full text-left border-collapse min-w-[650px]">
+                            <thead>
+                                <tr class="bg-slate-50 text-[9px] font-black uppercase tracking-widest text-slate-400 border-b border-slate-100">
+                                    <th class="px-4 py-4">Cliente</th>
+                                    <th class="px-4 py-4">Serviço / Procedimento</th>
+                                    <th class="px-4 py-4">Data / Horário</th>
+                                    <th class="px-4 py-4 text-center">Status</th>
+                                    <th class="px-4 py-4 text-right">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${list.map(b => {
+                                    const dateParts = (b.date || '').split('-');
+                                    const dateFormatted = dateParts.length === 3 ? `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}` : b.date;
+                                    
+                                    let statusBadge = '<span class="bg-amber-105 text-amber-700 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-amber-200">Pendente</span>';
+                                    if (b.status === 'confirmed') {
+                                        statusBadge = '<span class="bg-green-105 text-green-700 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-green-200">Confirmado</span>';
+                                    } else if (b.status === 'cancelled') {
+                                        statusBadge = '<span class="bg-red-105 text-red-700 px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border border-red-200">Cancelado</span>';
+                                    }
+
+                                    let waClean = b.phone ? b.phone.replace(/\D/g, '') : '';
+                                    if (waClean.length <= 11 && waClean.length > 0) waClean = '55' + waClean;
+                                    const waLink = `https://api.whatsapp.com/send?phone=${waClean}`;
+
+                                    return `
+                                        <tr class="border-b border-slate-50 text-xs hover:bg-slate-50/40 transition-colors">
+                                            <td class="px-4 py-3.5">
+                                                <div class="font-black text-slate-800 uppercase italic tracking-tight">${b.name}</div>
+                                                <a href="${waLink}" target="_blank" class="text-[10px] text-slate-400 font-bold hover:text-green-500 transition-colors flex items-center gap-1 mt-0.5">
+                                                    <i data-lucide="phone" class="w-3 h-3 text-green-500"></i> ${b.phone}
+                                                </a>
+                                                ${b.email ? `<div class="text-[10px] text-slate-400">${b.email}</div>` : ''}
+                                            </td>
+                                            <td class="px-4 py-3.5 font-bold text-slate-700">
+                                                ${b.serviceName}
+                                            </td>
+                                            <td class="px-4 py-3.5">
+                                                <div class="font-black text-slate-800">${dateFormatted}</div>
+                                                <div class="text-[10px] text-slate-400 font-medium font-bold uppercase tracking-wider">às ${b.time}</div>
+                                            </td>
+                                            <td class="px-4 py-3.5 text-center">
+                                                ${statusBadge}
+                                            </td>
+                                            <td class="px-4 py-3.5 text-right space-x-1 whitespace-nowrap">
+                                                <button onclick="updateBookingStatus('${b.id}', 'confirmed')" title="Confirmar Agendamento" class="p-1.5 bg-green-50 text-green-600 rounded-lg hover:bg-green-105 transition-colors inline-flex items-center active-scale border border-green-100">
+                                                    <i data-lucide="check" class="w-4 h-4 shadow-sm"></i>
+                                                </button>
+                                                <button onclick="updateBookingStatus('${b.id}', 'cancelled')" title="Cancelar Agendamento" class="p-1.5 bg-amber-50 text-amber-600 rounded-lg hover:bg-amber-105 transition-colors inline-flex items-center active-scale border border-amber-100">
+                                                    <i data-lucide="ban" class="w-4 h-4 shadow-sm"></i>
+                                                </button>
+                                                <button onclick="deleteBookingStatus('${b.id}')" title="Excluir Agendamento" class="p-1.5 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors inline-flex items-center active-scale">
+                                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                lucide.createIcons();
+            } catch(e) {
+                console.error("Erro ao carregar agendamentos:", e);
+                container.innerHTML = `<p class="text-center text-red-500 py-8 font-bold">Erro de conexão ao carregar agendamentos.</p>`;
+            }
+        }
+
+        window.updateBookingStatus = async function(id, newStatus) {
+            try {
+                const { doc, updateDoc } = window.fs;
+                await updateDoc(doc(window.db, "bookings", id), { status: newStatus });
+                if (currentBookingStoreId) {
+                    loadBookingsForStore(currentBookingStoreId);
+                }
+            } catch (err) {
+                console.error("Erro ao alterar status de agendamento:", err);
+                alert("Erro ao alterar status!");
+            }
+        }
+
+        window.deleteBookingStatus = async function(id) {
+            if (!confirm("Deseja mesmo apagar esse agendamento do banco de dados?")) return;
+            try {
+                const { doc, deleteDoc } = window.fs;
+                await deleteDoc(doc(window.db, "bookings", id));
+                if (currentBookingStoreId) {
+                    loadBookingsForStore(currentBookingStoreId);
+                }
+            } catch(err) {
+                console.error("Erro ao excluir agendamento:", err);
+                alert("Erro ao realizar exclusão.");
+            }
         }
 
         window.onload = () => {

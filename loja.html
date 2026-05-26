@@ -178,7 +178,7 @@
             updateCartUI();
         }
 
-        window.toggleTheme = function() {
+        function toggleTheme() {
             document.documentElement.classList.toggle('dark');
             const isDark = document.documentElement.classList.contains('dark');
             localStorage.setItem('theme', isDark ? 'dark' : 'light');
@@ -644,12 +644,12 @@
             return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(num);
         }
 
-        window.toggleCart = function(open) {
+        function toggleCart(open) {
             document.getElementById('cart-drawer').classList.toggle('open', open);
             document.getElementById('overlay').classList.toggle('open', open);
         }
 
-        window.addToCart = function(productId, variations = {}) {
+        function addToCart(productId, variations = {}) {
             const product = storeData.products.find(p => p.id === productId);
             const varKey = JSON.stringify(variations);
             const existing = cart.find(item => item.id === productId && JSON.stringify(item.variations || {}) === varKey);
@@ -660,22 +660,22 @@
                 cart.push({ ...product, quantity: 1, variations });
             }
             updateCartUI();
-            window.toggleCart(true);
+            toggleCart(true);
         }
 
-        window.updateQuantity = function(id, delta, varKey) {
+        function updateQuantity(id, delta, varKey) {
             const item = cart.find(i => i.id === id && JSON.stringify(i.variations || {}) === varKey);
             if (item) {
                 item.quantity += delta;
                 if (item.quantity <= 0) {
-                    window.removeFromCart(id, varKey);
+                    removeFromCart(id, varKey);
                 } else {
                     updateCartUI();
                 }
             }
         }
 
-        window.removeFromCart = function(id, varKey) {
+        function removeFromCart(id, varKey) {
             cart = cart.filter(i => !(i.id === id && JSON.stringify(i.variations || {}) === varKey));
             updateCartUI();
         }
@@ -843,7 +843,7 @@
             renderStore();
         }
 
-        window.checkout = function() {
+        function checkout() {
             let message = `*Novo Pedido - ${storeData.name}*\n\n`;
             
             // Adiciona vendedor se existir
@@ -900,185 +900,26 @@
                 message += `\n\n_(Favor enviar o link de pagamento no valor exato)_`;
             }
             
-            let whatsapp = String(storeData.whatsapp || '').replace(/\D/g, '');
-            if (!whatsapp) {
-                alert("Erro: O número de WhatsApp do estabelecimento não está configurado.");
-                return;
-            }
+            let whatsapp = storeData.whatsapp.replace(/\D/g, '');
             if (whatsapp.length <= 11) whatsapp = '55' + whatsapp;
             window.open(`https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(message)}`, '_blank');
         }
 
-        window.requestQuote = function(productId, variations = '') {
+        function requestQuote(productId, variations = '') {
             const product = storeData.products.find(p => p.id === productId);
             const isBeauty = ['salao', 'barbearia'].includes(storeData.type);
             const isClinica = storeData.type === 'clinica';
             
+            let message = '';
             if (isBeauty || isClinica) {
-                // Abre o formulário de agendamento interativo
-                window.openSchedulingModal(productId, variations);
-                return;
+                message = `*Agendamento - ${storeData.name}*\n\nOlá! Gostaria de agendar um horário para:\n*${product.name}*\n${variations ? `*Opções:* ${variations}\n` : ''}\nQuais são os horários disponíveis?`;
+            } else {
+                message = `*Pedido de Orçamento - ${storeData.name}*\n\nOlá! Gostaria de solicitar um orçamento para:\n*${product.name}*\n${variations ? `*Opções:* ${variations}\n` : ''}\nAguardo seu retorno!`;
             }
             
-            // Orçamento normal para outros serviços
-            let message = `*Pedido de Orçamento - ${storeData.name}*\n\nOlá! Gostaria de solicitar um orçamento para:\n*${product.name}*\n${variations ? `*Opções:* ${variations}\n` : ''}\nAguardo seu retorno!`;
-            let whatsapp = String(storeData.whatsapp || '').replace(/\D/g, '');
-            if (!whatsapp) {
-                alert("Erro: O número de WhatsApp do estabelecimento não está configurado.");
-                return;
-            }
+            let whatsapp = storeData.whatsapp.replace(/\D/g, '');
             if (whatsapp.length <= 11) whatsapp = '55' + whatsapp;
             window.open(`https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(message)}`, '_blank');
-        }
-
-        window.openSchedulingModal = function(productId, variations = '') {
-            const product = storeData.products.find(p => p.id === productId);
-            if (!product) return;
-
-            // Fechar modal de detalhes do produto se estiver aberto
-            closeModal();
-
-            // Remover modal de agendamento anterior se já existir
-            const oldModal = document.getElementById('scheduling-modal');
-            if (oldModal) oldModal.remove();
-
-            // Criar o modal de agendamento
-            const modal = document.createElement('div');
-            modal.id = 'scheduling-modal';
-            modal.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[1100] flex items-center justify-center p-3 sm:p-6';
-            
-            // Obter data de hoje no formato YYYY-MM-DD para limitar a seleção retroativa
-            const todayStr = new Date().toISOString().split('T')[0];
-
-            // Opções de profissionais/vendedores da loja
-            const vendors = storeData.vendors || [];
-            let profSelectionHTML = '';
-            if (vendors.length > 0) {
-                profSelectionHTML = `
-                    <div class="space-y-1.5 text-left">
-                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-300 ml-1">Escolha o Profissional</label>
-                        <select id="sched-prof" class="w-full px-4 py-3 sm:py-3.5 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600 font-bold text-xs sm:text-sm outline-none text-slate-800 dark:text-slate-100">
-                            <option value="">Qualquer Disponível</option>
-                            ${vendors.map(v => `<option value="${v.name}">${v.name}</option>`).join('')}
-                        </select>
-                    </div>
-                `;
-            }
-
-            modal.innerHTML = `
-                <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-2xl sm:rounded-[2rem] shadow-2xl overflow-hidden flex flex-col border border-slate-100 dark:border-slate-700 max-h-[90vh]">
-                    <!-- Header -->
-                    <div class="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between text-left shrink-0">
-                        <div>
-                            <div class="flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full animate-pulse" style="background-color: ${storeData.primaryColor}"></span>
-                                <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Solicitar Horário</h3>
-                            </div>
-                            <h2 class="text-xl font-black uppercase italic tracking-tighter dark:text-white leading-none mt-1">Dados de Agendamento</h2>
-                        </div>
-                        <button onclick="document.getElementById('scheduling-modal').remove()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-all active-scale dark:text-white">
-                            <i data-lucide="x" class="w-5 h-5"></i>
-                        </button>
-                    </div>
-
-                    <!-- Body -->
-                    <div class="p-6 overflow-y-auto space-y-4 text-left flex-1 custom-scrollbar">
-                        <!-- Serviço Informações -->
-                        <div class="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700/60 flex items-center gap-3">
-                            <div class="w-10 h-10 bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700 overflow-hidden flex-shrink-0 flex items-center justify-center shadow-sm">
-                                <img src="${proxyImg(product.image)}" class="w-full h-full object-cover">
-                            </div>
-                            <div class="min-w-0">
-                                <h4 class="font-black text-xs sm:text-sm text-slate-800 dark:text-slate-100 uppercase italic tracking-tight line-clamp-1">${product.name}</h4>
-                                <p class="text-[10px] font-bold tracking-widest mt-0.5" style="color: ${storeData.primaryColor}">${formatCurrency(product.price)}</p>
-                                ${variations ? `<p class="text-[8px] text-slate-400 font-bold uppercase mt-0.5 truncate">${variations}</p>` : ''}
-                            </div>
-                        </div>
-
-                        <!-- Data e Hora -->
-                        <div class="grid grid-cols-2 gap-3">
-                            <div class="space-y-1.5 text-left">
-                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-300 ml-1">Data Ideal</label>
-                                <input type="date" id="sched-date" min="${todayStr}" value="${todayStr}" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600 font-bold text-xs sm:text-sm outline-none text-slate-800 dark:text-slate-100">
-                            </div>
-                            <div class="space-y-1.5 text-left">
-                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-300 ml-1">Horário Ideal</label>
-                                <input type="time" id="sched-time" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600 font-bold text-xs sm:text-sm outline-none text-slate-800 dark:text-slate-100" required>
-                            </div>
-                        </div>
-
-                        <!-- Profissional se houver -->
-                        ${profSelectionHTML}
-
-                        <!-- Seu Nome -->
-                        <div class="space-y-1.5 text-left">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-300 ml-1">Seu Nome</label>
-                            <input type="text" id="sched-name" placeholder="Digite seu nome completo" class="w-full px-4 py-3.5 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600 font-bold text-xs sm:text-sm outline-none text-slate-800 dark:text-slate-100">
-                        </div>
-
-                        <!-- Observações -->
-                        <div class="space-y-1.5 text-left">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-300 ml-1">Observações (Opcional)</label>
-                            <textarea id="sched-notes" placeholder="Ex: Alguma restrição, tintura preferencial, etc..." class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl border border-slate-200 dark:border-slate-600 font-medium text-xs sm:text-sm h-20 outline-none text-slate-800 dark:text-slate-100 resize-none"></textarea>
-                        </div>
-                    </div>
-
-                    <!-- Footer -->
-                    <div class="p-5 sm:p-6 border-t border-slate-100 dark:border-slate-700 shrink-0">
-                        <button onclick="confirmScheduling('${productId}', '${variations}')" class="w-full py-4 text-white font-black uppercase italic tracking-widest rounded-2xl shadow-lg transition-all active-scale flex items-center justify-center gap-2.5 text-xs sm:text-sm" style="background-color: ${storeData.primaryColor}">
-                            <i data-lucide="calendar-check" class="w-4 h-4 sm:w-5 sm:h-5"></i>
-                            <span>Confirmar Agendamento</span>
-                        </button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(modal);
-            if (window.lucide) lucide.createIcons();
-        }
-
-        window.confirmScheduling = function(productId, variations = '') {
-            const product = storeData.products.find(p => p.id === productId);
-            if (!product) return;
-
-            const dateVal = document.getElementById('sched-date').value;
-            const timeVal = document.getElementById('sched-time').value;
-            const nameVal = document.getElementById('sched-name').value.trim();
-            const profEl = document.getElementById('sched-prof');
-            const profVal = profEl ? profEl.value : '';
-            const notesVal = document.getElementById('sched-notes').value.trim();
-
-            if (!dateVal || !timeVal || !nameVal) {
-                alert("Por favor, preencha a Data, Horário e seu Nome.");
-                return;
-            }
-
-            // Formatar Data para PT-BR (DD/MM/AAAA)
-            const dateParts = dateVal.split('-');
-            const formattedDate = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
-
-            // Criar mensagem zap
-            let message = `*Solicitação de Agendamento - ${storeData.name}*\n\n`;
-            message += `👤 *Cliente:* ${nameVal}\n`;
-            message += `💇 *Serviço:* ${product.name}\n`;
-            if (variations) message += `💬 *Opções:* ${variations}\n`;
-            message += `📅 *Data:* ${formattedDate}\n`;
-            message += `⏰ *Horário:* ${timeVal}\n`;
-            if (profVal) message += `💼 *Atendente/Profissional:* ${profVal}\n`;
-            if (notesVal) message += `📝 *Observação:* ${notesVal}\n`;
-
-            let whatsapp = String(storeData.whatsapp || '').replace(/\D/g, '');
-            if (!whatsapp) {
-                alert("Erro: O número de WhatsApp do estabelecimento não está configurado.");
-                return;
-            }
-            if (whatsapp.length <= 11) whatsapp = '55' + whatsapp;
-            
-            // Abre WhatsApp
-            window.open(`https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(message)}`, '_blank');
-
-            // Remove o modal
-            const mod = document.getElementById('scheduling-modal');
-            if (mod) mod.remove();
         }
 
         window.filterByCategory = function(cat) {
@@ -1471,7 +1312,7 @@
                                         </a>
                                     ` : ''}
                                     ${!isAffiliate ? `
-                                        <a href="https://api.whatsapp.com/send?phone=55${String(storeData.whatsapp || '').replace(/\D/g, '')}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-all flex items-center justify-center text-white" title="WhatsApp">
+                                        <a href="https://api.whatsapp.com/send?phone=55${storeData.whatsapp.replace(/\D/g, '')}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-all flex items-center justify-center text-white" title="WhatsApp">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-phone"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                                         </a>
                                     ` : ''}

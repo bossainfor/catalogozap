@@ -210,10 +210,12 @@
             currentVariations[label] = value;
             const parent = btn.parentElement;
             parent.querySelectorAll('.var-btn').forEach(b => {
-                b.classList.remove('bg-orange-50', 'text-orange-600', 'dark:bg-orange-900/20');
+                b.classList.remove('bg-orange-50', 'text-orange-600', 'dark:bg-orange-900/20', 'border-transparent');
+                b.classList.add('bg-slate-50', 'text-slate-800', 'dark:bg-slate-800', 'dark:text-white');
                 b.style.borderColor = '';
             });
-            btn.classList.add('bg-orange-50', 'text-orange-600', 'dark:bg-orange-900/20');
+            btn.classList.remove('bg-slate-50', 'text-slate-800', 'dark:bg-slate-800', 'dark:text-white');
+            btn.classList.add('bg-orange-50', 'text-orange-600', 'dark:bg-orange-900/20', 'border-transparent');
             btn.style.borderColor = storeData.primaryColor;
         }
 
@@ -371,7 +373,7 @@
                     <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4 text-slate-400">${optPhrase}</p>
                     <div class="flex flex-wrap gap-3">
                         ${opt.values.map(val => `
-                            <button onclick="selectVariation('${opt.label}', '${val}', this)" class="var-btn border-2 border-slate-100 dark:border-slate-700/50 px-6 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all hover:border-slate-300 dark:text-white active-scale">
+                            <button onclick="selectVariation('${opt.label}', '${val}', this)" class="var-btn border-2 px-6 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all bg-slate-50 border-slate-200 text-slate-800 dark:bg-slate-800 dark:border-slate-700/80 dark:text-white hover:border-slate-300 active-scale shadow-sm">
                                 ${val}
                             </button>
                         `).join('')}
@@ -614,6 +616,7 @@
                     vendors: data.v || [],
                     shippingZones: data.sh || [],
                     logo: data.lg || '',
+                    paymentBadgeImage: data.pmb || '',
                     pixKey: data.px || '',
                     appLink: data.al || '',
                     cf: data.cf || 0,
@@ -1569,6 +1572,16 @@
                     </main>
 
                     ${directSchedulingHTML}
+
+                    <!-- Bloco das Bandeiras de Cartão & Pix (PNG no Rodapé) -->
+                    ${(storeData.paymentBadgeImage && storeData.paymentBadgeImage.trim() !== '' && storeData.paymentBadgeImage !== 'undefined') ? `
+                    <div class="max-w-6xl mx-auto px-4 py-8 flex flex-col items-center justify-center text-center">
+                        <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4 text-slate-400 dark:text-slate-500">Meios de Pagamento Aceitos</p>
+                        <div class="w-full flex justify-center">
+                            <img src="${proxyImg(storeData.paymentBadgeImage)}" alt="Bandeiras de Pagamento" class="max-w-[420px] w-full h-auto object-contain mx-auto transition-all duration-300 hover:scale-[1.02]" referrerpolicy="no-referrer">
+                        </div>
+                    </div>
+                    ` : ''}
 
                     <footer class="bg-slate-900 text-white py-12 px-6 mt-10">
                         <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">

@@ -696,20 +696,20 @@
             toggleCart(true);
         }
 
-        function updateQuantity(id, delta, varKey) {
-            const item = cart.find(i => i.id === id && JSON.stringify(i.variations || {}) === varKey);
+        window.updateQuantity = function(index, delta) {
+            const item = cart[index];
             if (item) {
                 item.quantity += delta;
                 if (item.quantity <= 0) {
-                    removeFromCart(id, varKey);
+                    window.removeFromCart(index);
                 } else {
                     updateCartUI();
                 }
             }
         }
 
-        function removeFromCart(id, varKey) {
-            cart = cart.filter(i => !(i.id === id && JSON.stringify(i.variations || {}) === varKey));
+        window.removeFromCart = function(index) {
+            cart.splice(index, 1);
             updateCartUI();
         }
 
@@ -729,13 +729,12 @@
                 footerContainer.innerHTML = '';
             } else {
                 let total = 0;
-                itemsContainer.innerHTML = cart.map(item => {
+                itemsContainer.innerHTML = cart.map((item, idx) => {
                     const isWholesale = item.wholesaleMinQty && item.quantity >= item.wholesaleMinQty;
                     const priceToUse = isWholesale ? item.wholesalePrice : item.price;
                     const subtotal = parseFloat(String(priceToUse || '0').replace(',', '.')) * item.quantity;
                     total += subtotal;
 
-                    const varKey = JSON.stringify(item.variations || {});
                     const varDisplay = Object.entries(item.variations || {}).map(([k, v]) => `${k}: ${v}`).join(' | ');
 
                     return `
@@ -749,12 +748,12 @@
                                     ${isWholesale ? '<span class="text-[8px] bg-orange-100 dark:bg-orange-900/40 text-orange-600 px-1.5 py-0.5 rounded font-black uppercase">Atacado</span>' : ''}
                                 </div>
                                 <div class="flex items-center gap-2 mt-2">
-                                    <button onclick="updateQuantity('${item.id}', -1, '${varKey}')" class="w-6 h-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded flex items-center justify-center">-</button>
-                                    <span class="text-xs font-bold">${item.quantity}</span>
-                                    <button onclick="updateQuantity('${item.id}', 1, '${varKey}')" class="w-6 h-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded flex items-center justify-center">+</button>
+                                    <button onclick="window.updateQuantity(${idx}, -1)" class="w-6 h-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded flex items-center justify-center cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-bold text-sm select-none">-</button>
+                                    <span class="text-xs font-bold w-4 text-center">${item.quantity}</span>
+                                    <button onclick="window.updateQuantity(${idx}, 1)" class="w-6 h-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded flex items-center justify-center cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-bold text-sm select-none">+</button>
                                 </div>
                             </div>
-                            <button onclick="removeFromCart('${item.id}', '${varKey}')" class="text-red-400"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            <button onclick="window.removeFromCart(${idx})" class="text-red-400 cursor-pointer hover:text-red-600 transition-all p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
                         </div>
                     `;
                 }).join('');

@@ -333,6 +333,20 @@
                 }
             }
 
+            // Novas opções dedicadas de calçados / roupas
+            if (product.sh_sizes) {
+                const values = product.sh_sizes.split(',').map(v => v.trim()).filter(v => v !== '');
+                if (values.length > 0) {
+                    options.push({ label: 'Tamanho', values });
+                }
+            }
+            if (product.sh_colors) {
+                const values = product.sh_colors.split(',').map(v => v.trim()).filter(v => v !== '');
+                if (values.length > 0) {
+                    options.push({ label: 'Cor', values });
+                }
+            }
+
             // Fallback para extração da descrição
             if (options.length === 0 && product.description && (product.description.includes('[') || product.description.includes('('))) {
                 const matches = product.description.match(/[\[\(](.*?)[\]\)]/g);
@@ -349,8 +363,12 @@
 
             options.forEach((opt, idx) => {
                 const div = document.createElement('div');
+                let optPhrase = `Escolha seu ${opt.label}`;
+                if (opt.label.toLowerCase() === 'cor') optPhrase = 'Escolha sua Cor';
+                else if (opt.label.toLowerCase() === 'tamanho') optPhrase = 'Escolha seu Tamanho';
+
                 div.innerHTML = `
-                    <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4 text-slate-400">Escolha seu ${opt.label}</p>
+                    <p class="text-[10px] font-black uppercase tracking-[0.2em] mb-4 text-slate-400">${optPhrase}</p>
                     <div class="flex flex-wrap gap-3">
                         ${opt.values.map(val => `
                             <button onclick="selectVariation('${opt.label}', '${val}', this)" class="var-btn border-2 border-slate-100 dark:border-slate-700/50 px-6 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all hover:border-slate-300 dark:text-white active-scale">
@@ -378,6 +396,15 @@
             addBtn.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+
+                // Validação de opções obrigatórias para o item (como tamanho e cor)
+                for (const opt of options) {
+                    if (!currentVariations[opt.label]) {
+                        alert(`Por favor, selecione seu(sua) ${opt.label} antes de continuar.`);
+                        return;
+                    }
+                }
+
                 const varsStr = Object.entries(currentVariations).map(([k, v]) => `${k}: ${v}`).join(', ');
                 if (isAffiliate) {
                     window.open(product.affiliateLink, '_blank');

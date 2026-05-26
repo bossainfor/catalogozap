@@ -834,6 +834,8 @@
                     const catEscaped = String(p.category || '').replace(/"/g, '&quot;');
                     const priceEscaped = String(p.price || '').replace(/"/g, '&quot;');
                     const varsEscaped = String(p.vars || '').replace(/"/g, '&quot;');
+                    const shSizesEscaped = String(p.sh_sizes || '').replace(/"/g, '&quot;');
+                    const shColorsEscaped = String(p.sh_colors || '').replace(/"/g, '&quot;');
                     const wPriceEscaped = String(p.wholesalePrice || '').replace(/"/g, '&quot;');
                     const affiliateLinkEscaped = String(p.affiliateLink || '').replace(/"/g, '&quot;');
                     const imgEscaped = String(p.image || '').replace(/"/g, '&quot;');
@@ -945,6 +947,24 @@
                                 <div class="space-y-2">
                                     <label class="text-[10px] font-bold uppercase tracking-widest text-orange-400 ml-1">Qtd Mínima Atacado</label>
                                     <input type="number" value="${p.wholesaleMinQty || ''}" ${isLocked ? 'readonly disabled' : ''} oninput="window.updateProduct('${p.id}', 'wholesaleMinQty', this.value)" placeholder="Ex: 3" class="w-full px-5 py-4 rounded-2xl bg-orange-50/30 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold ${isLocked ? 'opacity-60 cursor-not-allowed bg-slate-50' : ''}">
+                                </div>
+                            </div>
+
+                            <!-- Grade de Tamanhos & Cores para Calçados/Roupas -->
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 ${isService || isAffiliate || isFood || isClinica || isBeauty || isAcougue ? 'hidden' : ''} p-5 bg-indigo-50/40 dark:bg-slate-800/20 rounded-[2rem] border border-indigo-100/50 dark:border-slate-700/50">
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 ml-1 flex items-center gap-1.5">
+                                        <i data-lucide="footprints" class="w-4 h-4"></i> Numerações / Tamanhos (Calçados/Vestuário)
+                                    </label>
+                                    <input type="text" value="${shSizesEscaped}" ${isLocked ? 'readonly disabled' : ''} oninput="window.updateProduct('${p.id}', 'sh_sizes', this.value)" placeholder="Ex: 34, 35, 36, 37, 38, 39, 40" class="w-full px-5 py-4 rounded-2xl bg-white dark:bg-slate-800 border-2 border-transparent focus:border-indigo-500 outline-none transition-all font-bold ${isLocked ? 'opacity-60 cursor-not-allowed bg-slate-50' : ''}">
+                                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider ml-1">Separe os tamanhos por vírgula</p>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 ml-1 flex items-center gap-1.5">
+                                        <i data-lucide="palette" class="w-4 h-4"></i> Cores Disponíveis para Escolha
+                                    </label>
+                                    <input type="text" value="${shColorsEscaped}" ${isLocked ? 'readonly disabled' : ''} oninput="window.updateProduct('${p.id}', 'sh_colors', this.value)" placeholder="Ex: Preto, Branco, Vermelho / Preto, Azul" class="w-full px-5 py-4 rounded-2xl bg-white dark:bg-slate-800 border-2 border-transparent focus:border-indigo-500 outline-none transition-all font-bold ${isLocked ? 'opacity-60 cursor-not-allowed bg-slate-50' : ''}">
+                                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider ml-1">Separe as cores por vírgula</p>
                                 </div>
                             </div>
                             

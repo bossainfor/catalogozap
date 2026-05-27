@@ -206,6 +206,79 @@
             });
         }, 1000);
 
+        let currentRotSlide = 0;
+        let rotInterval = null;
+        let totalRotSlides = 0;
+
+        window.initRotSlider = function(total) {
+            currentRotSlide = 0;
+            totalRotSlides = total;
+            if (rotInterval) clearInterval(rotInterval);
+            if (total <= 1) return;
+            rotInterval = setInterval(() => {
+                window.nextRotSlide();
+            }, 5500);
+        }
+
+        window.updateRotSlideUI = function() {
+            const container = document.getElementById('rot-slider-container');
+            if (!container) return;
+            container.style.transform = `translateX(-${(currentRotSlide * 100) / totalRotSlides}%)`;
+            
+            for (let i = 0; i < totalRotSlides; i++) {
+                const dot = document.getElementById(`rot-dot-${i}`);
+                if (dot) {
+                    if (i === currentRotSlide) {
+                        dot.classList.remove('bg-white/40');
+                        dot.classList.add('bg-white', 'scale-125');
+                    } else {
+                        dot.classList.remove('bg-white', 'scale-125');
+                        dot.classList.add('bg-white/40');
+                    }
+                }
+            }
+        }
+
+        window.nextRotSlide = function() {
+            if (totalRotSlides <= 1) return;
+            currentRotSlide = (currentRotSlide + 1) % totalRotSlides;
+            window.updateRotSlideUI();
+        }
+
+        window.prevRotSlide = function() {
+            if (totalRotSlides <= 1) return;
+            currentRotSlide = (currentRotSlide - 1 + totalRotSlides) % totalRotSlides;
+            window.updateRotSlideUI();
+        }
+
+        window.setRotSlide = function(index) {
+            currentRotSlide = index;
+            window.updateRotSlideUI();
+            if (totalRotSlides > 1) {
+                if (rotInterval) clearInterval(rotInterval);
+                rotInterval = setInterval(() => {
+                    window.nextRotSlide();
+                }, 5500);
+            }
+        }
+
+        window.toggleModalDescription = function() {
+            const content = document.getElementById('desc-expand-content');
+            const chevron = document.getElementById('desc-chevron');
+            if (!content || !chevron) return;
+
+            const isOpen = !content.classList.contains('max-h-0');
+            if (isOpen) {
+                content.style.maxHeight = '0px';
+                content.classList.add('max-h-0', 'opacity-0');
+                chevron.style.transform = 'rotate(0deg)';
+            } else {
+                content.classList.remove('max-h-0', 'opacity-0');
+                content.style.maxHeight = content.scrollHeight + 'px';
+                chevron.style.transform = 'rotate(180deg)';
+            }
+        }
+
         window.selectVariation = function(label, value, btn) {
             currentVariations[label] = value;
             const parent = btn.parentElement;
@@ -312,7 +385,29 @@
             document.getElementById('modal-title').innerText = product.name;
             document.getElementById('modal-price').innerText = formatCurrency(product.price);
             document.getElementById('modal-price').style.color = storeData.primaryColor;
-            document.getElementById('modal-desc').innerText = product.description || 'Este item ainda não possui uma descrição detalhada disponível.';
+            const descEl = document.getElementById('modal-desc');
+            if (product.description) {
+                descEl.innerHTML = `
+                    <div class="border border-slate-100 dark:border-slate-700/60 rounded-2xl overflow-hidden bg-slate-50/50 dark:bg-slate-900/30 transition-all duration-300">
+                        <button onclick="window.toggleModalDescription()" class="w-full flex items-center justify-between p-4 sm:p-5 font-black text-xs sm:text-sm uppercase tracking-wider text-slate-700 dark:text-slate-200 select-none hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
+                            <span class="flex items-center gap-2">
+                                <i data-lucide="info" class="w-4 h-4 text-orange-500"></i>
+                                Descrição do Produto
+                            </span>
+                            <i id="desc-chevron" data-lucide="chevron-down" class="w-4 h-4 transition-transform duration-300"></i>
+                        </button>
+                        <div id="desc-expand-content" class="max-h-0 overflow-hidden transition-all duration-300 ease-in-out opacity-0">
+                            <div class="p-5 border-t border-slate-100 dark:border-slate-700/60 text-slate-500 dark:text-slate-400 text-xs sm:text-sm leading-relaxed font-semibold whitespace-pre-line bg-white dark:bg-slate-800">
+                                ${product.description}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                descEl.innerHTML = `
+                    <p class="text-xs sm:text-sm text-slate-400 italic">Este item não possui descrição disponível.</p>
+                `;
+            }
             
             const badgeCont = document.getElementById('modal-badge-container');
             badgeCont.innerHTML = '';
@@ -1384,6 +1479,89 @@
                 return;
             }
 
+            const bannerList = storeData.bannerImage 
+                ? storeData.bannerImage.split(',').map(b => b.trim()).filter(b => b !== '') 
+                : [];
+
+            const slides = bannerList.length > 0 
+                ? bannerList.map((url, i) => ({ type: 'url', url: proxyImg(url) }))
+                : [
+                    { 
+                        type: 'gradient', 
+                        bg: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)', 
+                        title: 'GRAVAÇÕES PROFISSIONAIS', 
+                        desc: 'Vozes profissionais e qualidade líder no mercado para sua empresa.', 
+                        icon: 'mic'
+                    },
+                    { 
+                        type: 'gradient', 
+                        bg: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', 
+                        title: 'VÍDEOS COMERCIAIS LUCRATIVOS', 
+                        desc: 'Vídeos promocionais pensados para engajar no WhatsApp e Instagram.', 
+                        icon: 'video'
+                    },
+                    { 
+                        type: 'gradient', 
+                        bg: 'linear-gradient(135deg, #4f46e5 0%, #4338ca 100%)', 
+                        title: 'JINGLES & COMERCIAIS COMPLETOS', 
+                        desc: 'Anuncie de forma profissional e aumente suas vendas de verdade.', 
+                        icon: 'music'
+                    }
+                ];
+
+            const sliderId = `rot-slider`;
+            const rotatingBannerHTML = `
+                <div class="max-w-6xl mx-auto px-4 sm:px-6 mt-6">
+                    <div class="relative overflow-hidden w-full aspect-[21/9] md:aspect-[21/7] rounded-2xl sm:rounded-3xl border border-slate-100 dark:border-slate-800 shadow-md group/slider">
+                        <!-- Slides -->
+                        <div id="${sliderId}-container" class="relative w-full h-full flex transition-transform duration-500 ease-in-out" style="width: ${slides.length * 100}%;">
+                            ${slides.map((slide, index) => {
+                                if (slide.type === 'url') {
+                                    return `
+                                        <div class="w-full h-full relative" style="width: ${100 / slides.length}%;">
+                                            <img src="${slide.url}" class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 hover:scale-105" referrerpolicy="no-referrer">
+                                        </div>
+                                    `;
+                                } else {
+                                    return `
+                                        <div class="w-full h-full flex flex-col justify-center px-8 sm:px-16 text-white relative" style="width: ${100 / slides.length}%; background: ${slide.bg};">
+                                            <!-- Ambient decorative shapes -->
+                                            <div class="absolute -right-10 -bottom-10 w-44 h-44 sm:w-64 sm:h-64 rounded-full bg-white/10 blur-2xl pointer-events-none"></div>
+                                            <div class="absolute -left-10 -top-10 w-44 h-44 sm:w-64 sm:h-64 rounded-full bg-black/10 blur-2xl pointer-events-none"></div>
+                                            
+                                            <div class="relative z-10 max-w-xl space-y-2 sm:space-y-4 text-left">
+                                                <span class="inline-flex gap-1.5 items-center px-3 py-1 rounded-full bg-white/20 text-[9px] sm:text-xs font-black tracking-widest uppercase">
+                                                    <i data-lucide="${slide.icon}" class="w-3.5 h-3.5"></i> DESTAQUE DA SEMANA
+                                                </span>
+                                                <h3 class="text-xl sm:text-4xl font-extrabold tracking-tighter uppercase italic leading-none whitespace-normal">${slide.title}</h3>
+                                                <p class="text-xs sm:text-lg font-medium text-white/90 leading-tight whitespace-normal">${slide.desc}</p>
+                                            </div>
+                                        </div>
+                                    `;
+                                }
+                            }).join('')}
+                        </div>
+
+                        <!-- Controls -->
+                        ${slides.length > 1 ? `
+                            <button onclick="window.prevRotSlide()" class="absolute left-4 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-2 sm:p-3 rounded-full backdrop-blur-md transition-all opacity-0 group-hover/slider:opacity-100 z-30 active-scale">
+                                <i data-lucide="chevron-left" class="w-4 h-4 sm:w-5 h-5"></i>
+                            </button>
+                            <button onclick="window.nextRotSlide()" class="absolute right-4 top-1/2 -translate-y-1/2 bg-black/20 hover:bg-black/40 text-white p-2 sm:p-3 rounded-full backdrop-blur-md transition-all opacity-0 group-hover/slider:opacity-100 z-30 active-scale">
+                                <i data-lucide="chevron-right" class="w-4 h-4 sm:w-5 h-5"></i>
+                            </button>
+                            
+                            <!-- Dots -->
+                            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-30">
+                                ${slides.map((_, i) => `
+                                    <button onclick="window.setRotSlide(${i})" id="rot-dot-${i}" class="w-2 h-2 rounded-full ${i === 0 ? 'bg-white scale-125' : 'bg-white/40'} transition-all"></button>
+                                `).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+
             const featuredProducts = storeData.products.filter(p => p.f && p.available !== false);
             const featuredHTML = featuredProducts.length > 0 ? `
                 <div class="bg-slate-50 dark:bg-slate-800/50 py-8 border-b border-slate-100 dark:border-slate-800">
@@ -1524,6 +1702,8 @@
                         </div>
                     </div>
 
+                    ${rotatingBannerHTML}
+
                     ${featuredHTML}
 
                     <div class="px-6 py-4 bg-white dark:bg-slate-900 sticky top-0 z-[45] border-b border-slate-100 dark:border-slate-800">
@@ -1622,6 +1802,10 @@
             `;
             
             if (window.lucide) lucide.createIcons();
+
+            if (typeof window.initRotSlider === 'function' && typeof slides !== 'undefined') {
+                window.initRotSlider(slides.length);
+            }
 
             // Toggle do Carrinho flutuante (não aparece em serviços ou afiliados)
             const cartFab = document.getElementById('cart-fab');

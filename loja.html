@@ -744,8 +744,8 @@
                     instagram: data.ig,
                     facebook: data.fb,
                     website: data.ws,
-                    primaryColor: data.c.startsWith('#') ? data.c : '#' + data.c,
-                    secondaryColor: data.b.startsWith('#') ? data.b : '#' + data.b,
+                    primaryColor: (data.c || 'f97316').startsWith('#') ? (data.c || 'f97316') : '#' + (data.c || 'f97316'),
+                    secondaryColor: (data.b || '0f172a').startsWith('#') ? (data.b || '0f172a') : '#' + (data.b || '0f172a'),
                     bannerImage: data.bi,
                     banners: data.banners || [],
                     type: data.t || 'loja',
@@ -769,7 +769,7 @@
                     products: (data.p || []).map(p => {
                         return {
                             id: p.id || Math.random().toString(36).substr(2, 9),
-                            name: p.n,
+                            name: p.n || 'Sem Nome',
                             price: p.p,
                             wholesalePrice: p.wp || '',
                             wholesaleMinQty: p.wq || '',
@@ -1404,14 +1404,15 @@
             let filteredProducts = storeData.products.filter(p => p.available !== false);
             
             if (selectedCategory !== 'Todos') {
-                filteredProducts = filteredProducts.filter(p => p.category === selectedCategory);
+                filteredProducts = filteredProducts.filter(p => (p.category || '').trim().toLowerCase() === selectedCategory.trim().toLowerCase());
             }
             
             if (searchQuery) {
+                const searchClean = searchQuery.toLowerCase().trim();
                 filteredProducts = filteredProducts.filter(p => 
-                    p.name.toLowerCase().includes(searchQuery) || 
-                    (p.description && p.description.toLowerCase().includes(searchQuery)) ||
-                    (p.category && p.category.toLowerCase().includes(searchQuery))
+                    (p.name && p.name.toLowerCase().includes(searchClean)) || 
+                    (p.description && p.description.toLowerCase().includes(searchClean)) ||
+                    (p.category && p.category.toLowerCase().includes(searchClean))
                 );
             }
 

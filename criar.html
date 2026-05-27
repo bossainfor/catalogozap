@@ -1673,10 +1673,10 @@
                 });
             }
 
-            // Preserva o plano e vendedores
+            // Preserva o plano e vendedores (com cliques integrados)
             data.plan = window.storePlan;
             if (window.vendors.length > 0) {
-                data.v = window.vendors.map(v => ({ name: v.name, code: v.code }));
+                data.v = window.vendors.map(v => ({ name: v.name, code: v.code, clicks: v.clicks || 0 }));
             }
             if (window.shippingZones.length > 0) {
                 data.sh = window.shippingZones;
@@ -1753,7 +1753,7 @@
                     }
                 }
                 
-                // Se estiver editando, mantém o status e expiração originais
+                // Se estiver editando, mantém o status, expiração, cliques, reset e revendedor originais
                 if (existingId) {
                     const docSnap = await getDoc(doc(window.db, "stores", existingId));
                     if (docSnap.exists()) {
@@ -1761,6 +1761,14 @@
                         data.status = oldData.status || "trial";
                         data.expiresAt = oldData.expiresAt || data.expiresAt;
                         data.createdAt = oldData.createdAt || data.createdAt;
+                        
+                        // Preserva estatísticas de visualização
+                        if (oldData.clicks !== undefined) data.clicks = oldData.clicks;
+                        if (oldData.lastResetMonth !== undefined) data.lastResetMonth = oldData.lastResetMonth;
+                        
+                        // Preserva dados do revendedor parceiro
+                        if (oldData.resellerId !== undefined) data.resellerId = oldData.resellerId;
+                        if (oldData.resellerName !== undefined) data.resellerName = oldData.resellerName;
                     }
                 }
 

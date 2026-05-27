@@ -1497,7 +1497,7 @@
                                 const cursorClass = isClickable ? 'cursor-pointer' : 'cursor-default pointer-events-none';
                                 return `
                                 <div ${clickAction} class="snap-start flex-shrink-0 w-full h-full relative ${cursorClass} group/slide overflow-hidden">
-                                    <img src="${proxyImg(b.i)}" alt="Banner Promocional" class="w-full h-full object-contain sm:object-cover group-hover/slide:scale-105 transition-transform duration-700 ease-out" referrerpolicy="no-referrer">
+                                    <img src="${proxyImg(b.i)}" alt="Banner Promocional" class="w-full h-full object-fill group-hover/slide:scale-105 transition-transform duration-700 ease-out" referrerpolicy="no-referrer">
                                     <div class="absolute inset-0 bg-gradient-to-t from-black/10 dark:from-black/30 via-transparent to-transparent"></div>
                                 </div>
                                 `;

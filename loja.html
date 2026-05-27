@@ -638,6 +638,8 @@
                     pixKey: data.px || '',
                     appLink: data.al || '',
                     cf: data.cf || 0,
+                    pb: data.pb || [],
+                    resellerWhatsapp: data.resellerWhatsapp || '',
                     products: (data.p || []).map(p => {
                         return {
                             id: p.id || Math.random().toString(36).substr(2, 9),

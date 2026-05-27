@@ -1160,6 +1160,8 @@
 
         // Carrossel de Banners Promocionais (Movimentos e Slideshow)
         window.currentPromoSlide = 0;
+        let isProgramScroll = false;
+        
         window.slidePromoCarousel = function(direction) {
             const el = document.getElementById('promo-carousel');
             if (!el) return;
@@ -1174,6 +1176,7 @@
             const el = document.getElementById('promo-carousel');
             if (!el) return;
             const itemWidth = el.offsetWidth;
+            isProgramScroll = true;
             el.scrollTo({
                 left: slideIndex * itemWidth,
                 behavior: 'smooth'
@@ -1194,6 +1197,7 @@
                     }
                 }
             }
+            setTimeout(() => { isProgramScroll = false; }, 600);
         }
 
         window.initPromoCarouselAutoPlay = function() {
@@ -1202,6 +1206,7 @@
             
             // Escuta rolagem de toque no mobile para atualizar indicador
             el.addEventListener('scroll', () => {
+                if (isProgramScroll) return;
                 const index = Math.round(el.scrollLeft / el.offsetWidth);
                 if (window.currentPromoSlide !== index && index < el.children.length) {
                     window.currentPromoSlide = index;
@@ -1223,7 +1228,7 @@
             if (window.promoCarouselInterval) clearInterval(window.promoCarouselInterval);
             window.promoCarouselInterval = setInterval(() => {
                 window.slidePromoCarousel(1);
-            }, 4500);
+            }, 8000);
         }
 
         window.filterByCategory = function(cat) {
@@ -1482,20 +1487,22 @@
              if (storeData.pb && Array.isArray(storeData.pb) && storeData.pb.length > 0) {
                  const validBanners = storeData.pb.filter(b => b.i && b.i.trim() !== '');
                  if (validBanners.length > 0) {
-                     promoBannersHTML = `
-                     <div class="max-w-6xl mx-auto px-4 mt-6 mb-2 relative group/carousel">
-                         <!-- Carrossel Wrapper -->
-                         <div id="promo-carousel" class="flex overflow-x-auto snap-x snap-mandatory scroll-smooth rounded-[1.5rem] sm:rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-800 scrollbar-hide relative aspect-[21/9] sm:aspect-[21/7] select-none touch-pan-x bg-slate-100 dark:bg-slate-800">
-                             ${validBanners.map((b, idx) => {
-                                 const clickAction = b.al ? `onclick="window.open('${b.al.startsWith('http') ? b.al : 'https://' + b.al}', '_blank')"` : '';
-                                 return `
-                                 <div ${clickAction} class="snap-start flex-shrink-0 w-full h-full relative cursor-pointer group/slide overflow-hidden">
-                                     <img src="${proxyImg(b.i)}" alt="Banner Promocional" class="w-full h-full object-cover group-hover/slide:scale-105 transition-transform duration-700 ease-out" referrerpolicy="no-referrer">
-                                     <div class="absolute inset-0 bg-gradient-to-t from-black/20 dark:from-black/40 via-transparent to-transparent"></div>
-                                 </div>
-                                 `;
-                             }).join('')}
-                         </div>
+                    promoBannersHTML = `
+                    <div class="max-w-6xl mx-auto px-4 mt-6 mb-2 relative group/carousel">
+                        <!-- Carrossel Wrapper -->
+                        <div id="promo-carousel" class="flex overflow-x-auto snap-x snap-mandatory scroll-smooth rounded-[1.5rem] sm:rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-800 scrollbar-hide relative aspect-[21/9] sm:aspect-[21/7] select-none touch-pan-x bg-slate-100 dark:bg-slate-800">
+                            ${validBanners.map((b, idx) => {
+                                const isClickable = b.al && b.al.trim() !== '' && !b.al.toLowerCase().includes('postimg') && !b.al.toLowerCase().includes('postimages');
+                                const clickAction = isClickable ? `onclick="window.open('${b.al.startsWith('http') ? b.al : 'https://' + b.al}', '_blank')"` : '';
+                                const cursorClass = isClickable ? 'cursor-pointer' : 'cursor-default pointer-events-none';
+                                return `
+                                <div ${clickAction} class="snap-start flex-shrink-0 w-full h-full relative ${cursorClass} group/slide overflow-hidden">
+                                    <img src="${proxyImg(b.i)}" alt="Banner Promocional" class="w-full h-full object-contain sm:object-cover group-hover/slide:scale-105 transition-transform duration-700 ease-out" referrerpolicy="no-referrer">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/10 dark:from-black/30 via-transparent to-transparent"></div>
+                                </div>
+                                `;
+                            }).join('')}
+                        </div>
                          
                          <!-- Setas de Direção (Esquerda e Direita) -->
                          ${validBanners.length > 1 ? `

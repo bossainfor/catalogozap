@@ -2217,15 +2217,9 @@
                         <i id="promo-icon-${b.id}" data-lucide="image" class="text-slate-350 w-5 h-5 ${b.i ? 'hidden' : ''}"></i>
                     </div>
                     <div class="flex-1 w-full space-y-3 min-w-0">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div class="space-y-1">
-                                <label class="text-[9px] font-black uppercase tracking-widest text-slate-400">Link da Imagem do Banner (do Canva ou PostImages)</label>
-                                <input type="text" id="promo-img-input-${b.id}" value="${b.i || ''}" oninput="window.updatePromoBanner('${b.id}', 'i', this.value)" placeholder="Cole o link direto da imagem" class="w-full px-4 py-2.5 bg-white rounded-xl border border-slate-200 text-[10px] font-bold outline-none focus:border-blue-500 transition-all text-slate-700">
-                            </div>
-                            <div class="space-y-1">
-                                <label class="text-[9px] font-black uppercase tracking-widest text-slate-400">Link de Destino / Redirecionamento (Opcional)</label>
-                                <input type="text" value="${b.al || ''}" oninput="window.updatePromoBanner('${b.id}', 'al', this.value)" placeholder="Cole o link do produto em oferta" class="w-full px-4 py-2.5 bg-white rounded-xl border border-slate-200 text-[10px] font-bold outline-none focus:border-blue-500 transition-all text-slate-700">
-                            </div>
+                        <div class="space-y-1">
+                            <label class="text-[9px] font-black uppercase tracking-widest text-slate-400">Link da Imagem do Banner (do Canva ou PostImages)</label>
+                            <input type="text" id="promo-img-input-${b.id}" value="${b.i || ''}" oninput="window.updatePromoBanner('${b.id}', 'i', this.value)" placeholder="Cole o link direto da imagem" class="w-full px-4 py-2.5 bg-white rounded-xl border border-slate-200 text-[10px] font-bold outline-none focus:border-blue-500 transition-all text-slate-700">
                         </div>
                         <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200/50">
                             <div class="flex gap-2">

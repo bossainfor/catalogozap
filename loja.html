@@ -165,144 +165,6 @@
         let searchQuery = '';
         let currentVariations = {};
         let selectedShippingZone = null;
-        let calculatedShippingState = null;
-        let calculatedShippingPrice = 0;
-        let calculatedShippingRegion = '';
-        window.lastEnteredCEP = '';
-        window.currentPromoSlide = 0;
-
-        window.getPromoSlidesCount = function() {
-            if (!storeData) return 0;
-            if (storeData.banners && storeData.banners.length > 0) {
-                return storeData.banners.length;
-            } else if (storeData.bannerImage && storeData.bannerImage.trim() !== '' && storeData.bannerImage !== 'undefined') {
-                return 1;
-            } else {
-                return 3;
-            }
-        }
-        window.prevPromoSlide = function() {
-            const total = window.getPromoSlidesCount();
-            if (total <= 1) return;
-            window.currentPromoSlide = (window.currentPromoSlide - 1 + total) % total;
-            window.updatePromoCarousel();
-            window.resetPromoAutoplay();
-        }
-        window.nextPromoSlide = function() {
-            const total = window.getPromoSlidesCount();
-            if (total <= 1) return;
-            window.currentPromoSlide = (window.currentPromoSlide + 1) % total;
-            window.updatePromoCarousel();
-            window.resetPromoAutoplay();
-        }
-        window.setPromoSlide = function(idx) {
-            window.currentPromoSlide = idx;
-            window.updatePromoCarousel();
-            window.resetPromoAutoplay();
-        }
-        window.updatePromoCarousel = function() {
-            const track = document.getElementById('promo-carousel-track');
-            if (!track) return;
-            track.style.transform = `translateX(-${window.currentPromoSlide * 100}%)`;
-            
-            const total = window.getPromoSlidesCount();
-            for (let i = 0; i < total; i++) {
-                const dot = document.getElementById(`promo-dot-${i}`);
-                if (dot) {
-                    if (i === window.currentPromoSlide) {
-                        dot.classList.remove('bg-white/40');
-                        dot.classList.add('bg-white', 'scale-125');
-                    } else {
-                        dot.classList.add('bg-white/40');
-                        dot.classList.remove('bg-white', 'scale-125');
-                    }
-                }
-            }
-        }
-        window.resetPromoAutoplay = function() {
-            if (window.promoInterval) clearInterval(window.promoInterval);
-            const total = window.getPromoSlidesCount();
-            if (total > 1) {
-                window.promoInterval = setInterval(() => {
-                    const t = window.getPromoSlidesCount();
-                    window.currentPromoSlide = (window.currentPromoSlide + 1) % t;
-                    window.updatePromoCarousel();
-                }, 5000);
-            }
-        }
-
-        window.handleCEPPrediction = async function(cepRaw) {
-            let cep = cepRaw.replace(/\D/g, '');
-            window.lastEnteredCEP = cepRaw;
-            if (cep.length !== 8) {
-                if (cep.length === 0) {
-                    calculatedShippingState = null;
-                    calculatedShippingPrice = 0;
-                    calculatedShippingRegion = '';
-                    updateCartUI();
-                }
-                return;
-            }
-
-            const spinner = document.getElementById('cep-loading-spinner');
-            if (spinner) spinner.classList.remove('hidden');
-
-            try {
-                const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data && !data.erro) {
-                        const uf = data.uf; // SP, CE, RJ, etc.
-                        calculatedShippingState = `${data.localidade} - ${uf}`;
-                        
-                        const sudeste = ['SP', 'RJ', 'MG', 'ES'];
-                        const sul = ['PR', 'SC', 'RS'];
-                        const centroeste = ['DF', 'GO', 'MT', 'MS'];
-                        const nordeste = ['MA', 'PI', 'CE', 'RN', 'PB', 'PE', 'AL', 'SE', 'BA'];
-                        const norte = ['AM', 'PA', 'RO', 'RR', 'AC', 'AP', 'TO'];
-
-                        let region = 'sudeste';
-                        let priceString = storeData.sh_sud || '14,90';
-
-                        if (sudeste.includes(uf)) {
-                            region = 'sudeste';
-                            priceString = storeData.sh_sud || '14,90';
-                        } else if (sul.includes(uf)) {
-                            region = 'sul';
-                            priceString = storeData.sh_sul || '18,90';
-                        } else if (centroeste.includes(uf)) {
-                            region = 'centroeste';
-                            priceString = storeData.sh_co || '21,90';
-                        } else if (nordeste.includes(uf)) {
-                            region = 'nordeste';
-                            priceString = storeData.sh_ne || '24,90';
-                        } else if (norte.includes(uf)) {
-                            region = 'norte';
-                            priceString = storeData.sh_no || '28,90';
-                        }
-
-                        calculatedShippingRegion = region;
-                        calculatedShippingPrice = parseFloat(priceString.replace(',', '.'));
-                    } else {
-                        calculatedShippingState = "CEP não encontrado";
-                        calculatedShippingPrice = 0;
-                        calculatedShippingRegion = '';
-                    }
-                } else {
-                    calculatedShippingState = "Erro ao buscar CEP";
-                    calculatedShippingPrice = 0;
-                    calculatedShippingRegion = '';
-                }
-            } catch (e) {
-                console.error("Erro ao consultar CEP:", e);
-                // Fallback local se a API de CEP falhar
-                calculatedShippingState = "Estado Identificado";
-                calculatedShippingPrice = parseFloat((storeData.sh_sud || '14,90').replace(',', '.'));
-            }
-
-            if (spinner) spinner.classList.add('hidden');
-            updateCartUI();
-        }
         let selectedPaymentMethod = 'pix';
         let selectedInstallment = 1;
 
@@ -744,22 +606,15 @@
                     instagram: data.ig,
                     facebook: data.fb,
                     website: data.ws,
-                    primaryColor: (data.c || 'f97316').startsWith('#') ? (data.c || 'f97316') : '#' + (data.c || 'f97316'),
-                    secondaryColor: (data.b || '0f172a').startsWith('#') ? (data.b || '0f172a') : '#' + (data.b || '0f172a'),
+                    primaryColor: data.c.startsWith('#') ? data.c : '#' + data.c,
+                    secondaryColor: data.b.startsWith('#') ? data.b : '#' + data.b,
                     bannerImage: data.bi,
-                    banners: data.banners || [],
                     type: data.t || 'loja',
                     imageFormat: data.imf || 'vertical',
                     status: data.status || 'active',
                     expiresAt: data.expiresAt || data.createdAt,
                     vendors: data.v || [],
                     shippingZones: data.sh || [],
-                    shippingStrategy: data.sh_strategy || 'local',
-                    sh_sud: data.sh_sud || '14,90',
-                    sh_sul: data.sh_sul || '18,90',
-                    sh_co: data.sh_co || '21,90',
-                    sh_ne: data.sh_ne || '24,90',
-                    sh_no: data.sh_no || '28,90',
                     logo: data.lg || '',
                     subtitle: data.sub || '',
                     paymentBadgeImage: data.pmb || '',
@@ -769,7 +624,7 @@
                     products: (data.p || []).map(p => {
                         return {
                             id: p.id || Math.random().toString(36).substr(2, 9),
-                            name: p.n || 'Sem Nome',
+                            name: p.n,
                             price: p.p,
                             wholesalePrice: p.wp || '',
                             wholesaleMinQty: p.wq || '',
@@ -903,40 +758,17 @@
                     `;
                 }).join('');
 
-                let shippingHTML = '';
-                if (storeData.shippingStrategy === 'national') {
-                    shippingHTML = `
-                        <div class="space-y-2 mb-4 bg-emerald-500/5 dark:bg-emerald-500/10 p-4 rounded-xl border border-emerald-500/10 text-center">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-[#25D366] block mb-1 text-left ml-1">Cálculo de Frete (Nacional)</label>
-                            <div class="relative flex items-center">
-                                <input type="text" id="cart-cep" oninput="window.handleCEPPrediction(this.value)" value="${window.lastEnteredCEP || ''}" placeholder="Digite seu CEP" maxlength="9" class="w-full px-4 py-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 font-bold text-sm outline-none dark:text-white text-center tracking-widest placeholder:tracking-normal focus:border-[#25D366] transition-colors">
-                                <div id="cep-loading-spinner" class="absolute right-3 hidden">
-                                    <div class="w-4 h-4 border-2 border-[#25D366] border-t-transparent rounded-full animate-spin"></div>
-                                </div>
-                            </div>
-                            <div id="cep-status" class="text-[11px] font-black mt-2 text-slate-500 dark:text-slate-400">
-                                ${calculatedShippingState ? `📍 Envio para: <span class="text-[#25D366] bg-[#25D366]/10 px-2 py-0.5 rounded font-extrabold text-xs">${calculatedShippingState}</span> (+ ${formatCurrency(calculatedShippingPrice)})` : 'Digite o CEP de 8 dígitos para calcular'}
-                            </div>
-                        </div>
-                    `;
-                } else if (storeData.shippingZones && storeData.shippingZones.length > 0) {
-                    shippingHTML = `
-                        <div class="space-y-2 mb-4">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Selecione seu Bairro (Entrega)</label>
-                            <select onchange="window.setShippingZone(this.value)" class="w-full px-4 py-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 font-bold text-sm outline-none dark:text-white">
-                                <option value="">Selecione...</option>
-                                ${storeData.shippingZones.map((z, idx) => `<option value="${idx}" ${selectedShippingZone && selectedShippingZone.neighborhood === z.neighborhood ? 'selected' : ''}>${z.neighborhood} (+ ${formatCurrency(z.price)})</option>`).join('')}
-                            </select>
-                        </div>
-                    `;
-                }
+                const shippingHTML = (storeData.shippingZones && storeData.shippingZones.length > 0) ? `
+                    <div class="space-y-2 mb-4">
+                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Selecione seu Bairro (Entrega)</label>
+                        <select onchange="window.setShippingZone(this.value)" class="w-full px-4 py-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 font-bold text-sm outline-none dark:text-white">
+                            <option value="">Selecione...</option>
+                            ${storeData.shippingZones.map((z, idx) => `<option value="${idx}" ${selectedShippingZone && selectedShippingZone.neighborhood === z.neighborhood ? 'selected' : ''}>${z.neighborhood} (+ ${formatCurrency(z.price)})</option>`).join('')}
+                        </select>
+                    </div>
+                ` : '';
 
-                let shippingPrice = 0;
-                if (storeData.shippingStrategy === 'national') {
-                    shippingPrice = calculatedShippingPrice;
-                } else if (selectedShippingZone) {
-                    shippingPrice = parseFloat(selectedShippingZone.price.replace(',', '.'));
-                }
+                const shippingPrice = selectedShippingZone ? parseFloat(selectedShippingZone.price.replace(',', '.')) : 0;
                 const grandTotal = total + shippingPrice;
 
                 // Cálculo da taxa do cartão progressive
@@ -1000,13 +832,7 @@
                             <span class="text-slate-400">Subtotal</span>
                             <span class="dark:text-white">${formatCurrency(total)}</span>
                         </div>
-                        ${(storeData.shippingStrategy === 'national' && calculatedShippingPrice > 0) ? `
-                            <div class="flex justify-between text-xs font-bold animate-fade-in text-emerald-500">
-                                <span>Envio (${calculatedShippingState || 'CEP'})</span>
-                                <span>${formatCurrency(calculatedShippingPrice)}</span>
-                            </div>
-                        ` : ''}
-                        ${(storeData.shippingStrategy !== 'national' && selectedShippingZone) ? `
+                        ${selectedShippingZone ? `
                             <div class="flex justify-between text-xs font-bold">
                                 <span class="text-slate-400">Entrega (${selectedShippingZone.neighborhood})</span>
                                 <span class="dark:text-white">${formatCurrency(shippingPrice)}</span>
@@ -1072,12 +898,7 @@
                 message += `- ${item.quantity}x ${item.name} ${vars ? `[${vars}]` : ''} (${priceDisplay})${isWholesale ? ' *[ATACADO]*' : ''}\n`;
             });
 
-            if (storeData.shippingStrategy === 'national') {
-                if (calculatedShippingPrice > 0) {
-                    message += `\n*Envio (CEP ${window.lastEnteredCEP || ''}):* ${calculatedShippingState || 'Nacional'} (+ ${formatCurrency(calculatedShippingPrice)})`;
-                    total += calculatedShippingPrice;
-                }
-            } else if (selectedShippingZone) {
+            if (selectedShippingZone) {
                 const shippingPrice = parseFloat(String(selectedShippingZone.price || '0').replace(',', '.'));
                 message += `\n*Entrega:* ${selectedShippingZone.neighborhood} (+ ${formatCurrency(shippingPrice)})`;
                 total += shippingPrice;
@@ -1404,15 +1225,14 @@
             let filteredProducts = storeData.products.filter(p => p.available !== false);
             
             if (selectedCategory !== 'Todos') {
-                filteredProducts = filteredProducts.filter(p => (p.category || '').trim().toLowerCase() === selectedCategory.trim().toLowerCase());
+                filteredProducts = filteredProducts.filter(p => p.category === selectedCategory);
             }
             
             if (searchQuery) {
-                const searchClean = searchQuery.toLowerCase().trim();
                 filteredProducts = filteredProducts.filter(p => 
-                    (p.name && p.name.toLowerCase().includes(searchClean)) || 
-                    (p.description && p.description.toLowerCase().includes(searchClean)) ||
-                    (p.category && p.category.toLowerCase().includes(searchClean))
+                    p.name.toLowerCase().includes(searchQuery) || 
+                    (p.description && p.description.toLowerCase().includes(searchQuery)) ||
+                    (p.category && p.category.toLowerCase().includes(searchQuery))
                 );
             }
 
@@ -1516,6 +1336,7 @@
                     <div class="p-3 sm:p-5 flex flex-col flex-1 justify-between gap-2">
                         <div>
                             <h3 class="font-bold text-slate-800 dark:text-white text-xs sm:text-lg mb-1 line-clamp-2 leading-tight min-h-[2.5rem] sm:min-h-0">${p.name}</h3>
+                            ${p.description ? `<p class="hidden sm:block text-slate-500 dark:text-slate-400 text-xs mb-3 line-clamp-2">${p.description}</p>` : ''}
                         </div>
                         <div class="pt-2">
                             <p class="font-black text-lg sm:text-2xl mb-3 dark:text-white tracking-tighter" style="color: ${storeData.primaryColor}">${formatCurrency(p.price)}</p>
@@ -1669,71 +1490,6 @@
                 `;
             }
 
-            // Construção dos Slides do Carrossel de Banner
-            let slides = [];
-            if (storeData.banners && storeData.banners.filter(b => b && b.trim() !== '').length > 0) {
-                slides = storeData.banners.filter(b => b && b.trim() !== '');
-            } else if (storeData.bannerImage && storeData.bannerImage.trim() !== '' && storeData.bannerImage !== 'undefined') {
-                slides = [storeData.bannerImage];
-            } else {
-                slides = [
-                    "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1920&h=650&fit=crop",
-                    "https://images.unsplash.com/photo-1472851294608-062f824d29cc?q=80&w=1920&h=650&fit=crop",
-                    "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=1920&h=650&fit=crop"
-                ];
-            }
-
-            const promoCarouselHTML = `
-                <section class="w-full max-w-6xl mx-auto px-4 sm:px-6 mt-6">
-                    <div class="relative w-full aspect-[21/9] sm:aspect-[16/5] rounded-[1.5rem] sm:rounded-[2.5rem] overflow-hidden shadow-lg border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 group">
-                        <!-- Track de slides -->
-                        <div id="promo-carousel-track" class="flex w-full h-full transition-transform duration-700 ease-out" style="transform: translateX(-${window.currentPromoSlide * 100}%)">
-                            ${slides.map((slideUrl, idx) => `
-                                <div class="w-full h-full flex-shrink-0 relative">
-                                    <img src="${proxyImg(slideUrl)}" class="w-full h-full object-cover select-none" referrerpolicy="no-referrer" alt="Promoção ${idx + 1}" onerror="this.src='https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=1000&fit=crop'">
-                                    
-                                    <!-- Overlay opcional se for banner padrão Unsplash -->
-                                    ${(!storeData.banners || storeData.banners.length === 0) ? `
-                                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex flex-col justify-end p-6 sm:p-12 text-white text-left">
-                                            ${idx === 0 ? `
-                                                <span class="text-[9px] sm:text-xs font-black uppercase tracking-[0.2em] bg-orange-600 text-white px-3 py-1.5 rounded-full w-fit mb-2 animate-bounce">FRETE GRÁTIS</span>
-                                                <h3 class="text-xl sm:text-4xl font-extrabold uppercase italic tracking-tighter leading-none mb-1 shadow-sm">Nova Coleção de Calçados</h3>
-                                                <p class="text-[10px] sm:text-sm font-medium text-slate-200 uppercase tracking-wider leading-none shadow-sm">Encontre os melhores tênis premium do mercado com envio imediato!</p>
-                                            ` : idx === 1 ? `
-                                                <span class="text-[9px] sm:text-xs font-black uppercase tracking-[0.2em] bg-indigo-600 text-white px-3 py-1.5 rounded-full w-fit mb-2">QUENTÍSSIMO</span>
-                                                <h3 class="text-xl sm:text-4xl font-extrabold uppercase italic tracking-tighter leading-none mb-1 shadow-sm">Até 50% de Desconto Real</h3>
-                                                <p class="text-[10px] sm:text-sm font-medium text-slate-200 uppercase tracking-wider leading-none shadow-sm">Ofertas especiais válidas enquanto durarem os nossos estoques!</p>
-                                            ` : `
-                                                <span class="text-[9px] sm:text-xs font-black uppercase tracking-[0.2em] bg-emerald-600 text-white px-3 py-1.5 rounded-full w-fit mb-2">GARANTIA TOTAL</span>
-                                                <h3 class="text-xl sm:text-4xl font-extrabold uppercase italic tracking-tighter leading-none mb-1 shadow-sm">Compra Segura via WhatsApp</h3>
-                                                <p class="text-[10px] sm:text-sm font-medium text-slate-200 uppercase tracking-wider leading-none shadow-sm">Seu pedido verificado e montado na hora por nossa equipe!</p>
-                                            `}
-                                        </div>
-                                    ` : ''}
-                                </div>
-                            `).join('')}
-                        </div>
-
-                        <!-- Botões de Navegação -->
-                        ${slides.length > 1 ? `
-                            <button onclick="window.prevPromoSlide()" class="absolute left-4 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/60 p-2 sm:p-3 rounded-full text-white backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 active:scale-90 z-20">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-left sm:w-6 sm:h-6"><path d="m15 18-6-6 6-6"/></svg>
-                            </button>
-                            <button onclick="window.nextPromoSlide()" class="absolute right-4 top-1/2 -translate-y-1/2 bg-black/30 hover:bg-black/60 p-2 sm:p-3 rounded-full text-white backdrop-blur-sm transition-all opacity-0 group-hover:opacity-100 active:scale-90 z-20">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chevron-right sm:w-6 sm:h-6"><path d="m9 18 6-6-6-6"/></svg>
-                            </button>
-                            
-                            <!-- Indicadores de Bullet -->
-                            <div class="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-1.5 sm:gap-2 z-20">
-                                ${slides.map((_, idx) => `
-                                    <button onclick="window.setPromoSlide(${idx})" id="promo-dot-${idx}" class="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full transition-all duration-300 ${idx === window.currentPromoSlide ? 'bg-white scale-125' : 'bg-white/40'}"></button>
-                                `).join('')}
-                            </div>
-                        ` : ''}
-                    </div>
-                </section>
-            `;
-
             app.innerHTML = `
                 ${mesaBanner}
                 <div class="min-h-screen bg-white dark:bg-slate-900 flex flex-col">
@@ -1767,8 +1523,6 @@
                             </div>
                         </div>
                     </div>
-
-                    ${promoCarouselHTML}
 
                     ${featuredHTML}
 
@@ -1868,7 +1622,6 @@
             `;
             
             if (window.lucide) lucide.createIcons();
-            window.resetPromoAutoplay();
 
             // Toggle do Carrinho flutuante (não aparece em serviços ou afiliados)
             const cartFab = document.getElementById('cart-fab');

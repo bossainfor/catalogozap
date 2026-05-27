@@ -2222,7 +2222,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div class="space-y-1">
                                 <label class="text-[9px] font-black uppercase tracking-widest text-slate-400">Link da Imagem do Banner (do Canva ou PostImages)</label>
-                                <input type="text" id="promo-img-input-${b.id}" value="${b.i || ''}" oninput="window.updatePromoBanner('${b.id}', 'i', this.value)" placeholder="Cole o link ou clique no botão" class="w-full px-4 py-2.5 bg-white rounded-xl border border-slate-200 text-[10px] font-bold outline-none focus:border-blue-500 transition-all text-slate-700">
+                                <input type="text" id="promo-img-input-${b.id}" value="${b.i || ''}" oninput="window.updatePromoBanner('${b.id}', 'i', this.value)" placeholder="Cole o link direto da imagem" class="w-full px-4 py-2.5 bg-white rounded-xl border border-slate-200 text-[10px] font-bold outline-none focus:border-blue-500 transition-all text-slate-700">
                             </div>
                             <div class="space-y-1">
                                 <label class="text-[9px] font-black uppercase tracking-widest text-slate-400">Link de Destino / Redirecionamento (Opcional)</label>
@@ -2231,11 +2231,7 @@
                         </div>
                         <div class="flex flex-wrap items-center justify-between gap-3 pt-2 border-t border-slate-200/50">
                             <div class="flex gap-2">
-                                <button type="button" onclick="window.triggerDirectUpload('promo-img-input-${b.id}', 'promo-preview-${b.id}', 'promo-icon-${b.id}')" class="bg-blue-600 text-white px-4 py-1.5 rounded-xl font-black uppercase text-[8px] tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-1.5 active-scale shadow-sm">
-                                    <i data-lucide="upload" class="w-3.5 h-3.5"></i>
-                                    <span>Foto Local</span>
-                                </button>
-                                <button type="button" onclick="window.open('https://postimages.org/', '_blank')" class="bg-white text-slate-600 px-4 py-1.5 rounded-xl font-black uppercase text-[8px] tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-1.5 active-scale border border-slate-200">
+                                <button type="button" onclick="window.open('https://postimages.org/', '_blank')" class="bg-blue-600 text-white px-4 py-1.5 rounded-xl font-black uppercase text-[8px] tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-1.5 active-scale shadow-sm">
                                     <i data-lucide="camera" class="w-3.5 h-3.5"></i>
                                     <span>PostImages</span>
                                 </button>

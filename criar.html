@@ -95,24 +95,6 @@
         </div>
     </header>
 
-    <!-- BANNER DE ALERTA DE RASCUNHO LOCAL -->
-    <div id="draft-alert-banner" class="bg-amber-500 border-b border-amber-600 text-slate-900 hidden transition-all">
-        <div class="max-w-4xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold w-full">
-            <div class="flex items-center gap-2">
-                <i data-lucide="alert-triangle" class="w-5 h-5 text-slate-900 shrink-0"></i>
-                <span>Identificamos alterações não salvas mais recentes guardadas neste navegador. Quer restaurar seu rascunho?</span>
-            </div>
-            <div class="flex items-center gap-2 shrink-0">
-                <button onclick="window.applyDraftAndRestore()" class="bg-slate-900 text-white px-3 py-1.5 rounded-lg border border-transparent hover:bg-slate-800 transition-all font-black text-[10px] uppercase tracking-wider">
-                    Restaurar Rascunho
-                </button>
-                <button onclick="window.discardDraftOnly()" class="bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg transition-all font-black text-[10px] uppercase tracking-wider" title="Descartar rascunho temporário e usar a versão do servidor">
-                    Ignorar
-                </button>
-            </div>
-        </div>
-    </div>
-
     <main class="max-w-4xl mx-auto px-4 py-8 pb-32">
         <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
             <div class="bg-orange-500 p-8 text-white">
@@ -287,37 +269,28 @@
                             </div>
                         </div>
                     </div>
-                    <!-- Banners Rotativos (Carrossel) -->
-                    <div class="space-y-4 border-t border-slate-200/65 pt-6">
-                        <div class="space-y-1">
-                            <label class="text-xs font-black text-orange-600 uppercase tracking-widest flex items-center gap-1.5 leading-none">
-                                <i data-lucide="sliders" class="w-4 h-4"></i> Carrossel de Banners Promocionais (Rotativos)
-                            </label>
-                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider leading-relaxed">
-                                Cadastre imagens no formato horizontal profissional (ex: 1920x560px, similar ao Canva/Mercado Shops). Os banners passam automaticamente na sua loja em todos os nichos!
-                            </p>
-                        </div>
-                        
+                    <div class="space-y-2">
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Imagem de Banner (Opcional)</label>
                         <div class="flex flex-col gap-3">
-                            <div class="flex flex-col sm:flex-row gap-3">
-                                <input type="text" id="new-banner-url" placeholder="Cole o link da imagem (ou clique em Hospedar)" class="flex-1 px-5 py-4 rounded-2xl bg-white border border-slate-200 focus:border-orange-500 outline-none transition-all font-bold text-sm shadow-sm">
-                                <div class="flex gap-2">
-                                    <button type="button" onclick="window.open('https://postimages.org/', '_blank')" class="bg-blue-600 text-white px-5 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2 active-scale shadow-lg shadow-blue-100" title="Hospedar Foto">
-                                        <i data-lucide="camera" class="w-4 h-4"></i>
-                                        <span>Foto</span>
-                                    </button>
-                                    <button type="button" onclick="window.addBannerImage()" class="bg-orange-600 text-white px-5 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-orange-700 transition-all flex items-center justify-center gap-2 active-scale shadow-lg shadow-orange-100">
-                                        <i data-lucide="plus" class="w-4 h-4"></i>
-                                        <span>Add</span>
-                                    </button>
+                            <div class="flex items-center gap-4">
+                                <div class="w-20 h-12 bg-slate-100 rounded-xl overflow-hidden border-2 border-slate-200 flex items-center justify-center flex-shrink-0">
+                                    <img id="banner-preview" src="" class="w-full h-full object-cover hidden" referrerpolicy="no-referrer" onerror="this.classList.add('hidden'); document.getElementById('banner-icon').classList.remove('hidden')">
+                                    <i id="banner-icon" data-lucide="image" class="text-slate-300 w-5 h-5"></i>
+                                </div>
+                                <div class="flex-1 flex flex-col sm:flex-row gap-2 min-w-0">
+                                    <input type="text" id="banner-image" oninput="window.updateBannerPreview(this.value); window.saveDraft()" placeholder="Link ou use o botão" class="flex-1 min-w-0 px-4 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold text-sm">
+                                    <div class="flex gap-2 w-full sm:w-auto">
+                                        <button type="button" onclick="window.open('https://postimages.org/', '_blank')" class="flex-1 bg-blue-600 text-white px-4 sm:px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-700 transition-all flex items-center justify-center gap-2 active-scale shadow-lg shadow-blue-100" title="Hospedar Foto">
+                                            <i data-lucide="camera" class="w-4 h-4"></i>
+                                            <span>Foto</span>
+                                        </button>
+                                        <button type="button" onclick="document.getElementById('banner-image').value=''; window.updateBannerPreview(''); window.saveDraft()" class="bg-red-100 text-red-600 px-4 py-4 rounded-2xl hover:bg-red-200 transition-all flex items-center justify-center flex-shrink-0 active-scale" title="Remover imagem">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-                            
-                            <!-- Lista de banners cadastrados -->
-                            <div id="banner-images-list" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 pt-2"></div>
                         </div>
-                        <!-- Campo oculto para compatibilidade retroativa -->
-                        <input type="hidden" id="banner-image">
                     </div>
                 </section>
 
@@ -333,22 +306,12 @@
                 <section id="shipping-section" class="p-4 sm:p-8 bg-slate-50 rounded-[2rem] sm:rounded-[3rem] border border-slate-200 mt-6 space-y-6">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div class="space-y-1">
-                            <h3 class="font-black uppercase italic tracking-tighter text-2xl sm:text-3xl leading-none">Taxas de Entrega / Envio</h3>
-                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-tight">Defina como calcular o valor do frete</p>
+                            <h3 class="font-black uppercase italic tracking-tighter text-2xl sm:text-3xl leading-none">Taxas de Entrega</h3>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-tight">Cadastre bairros e valores de frete</p>
                         </div>
                     </div>
 
-                    <!-- Seletor de Tipo de Frete / Estratégia (Disponível apenas para lojas online) -->
-                    <div id="shipping-strategy-container" class="space-y-2 hidden max-w-xl">
-                        <label class="text-[10px] font-black uppercase tracking-widest text-[#f97316] ml-1">Estratégia de Envio</label>
-                        <select id="shipping-strategy" onchange="window.toggleShippingStrategy(); window.saveDraft()" class="w-full px-5 py-4 rounded-2xl bg-white border border-slate-200 outline-none transition-all font-bold text-sm">
-                            <option value="local">Estratégia 1: Entrega sob Consulta ou por Bairros (Local)</option>
-                            <option value="national" selected>Estratégia 2: Frete Nacional Automático (Por CEP/Estado - Dropshipping)</option>
-                        </select>
-                    </div>
-
-                    <!-- Bloco da Estratégia 1: Local -->
-                    <div id="shipping-strategy-local" class="space-y-4">
+                    <div class="space-y-4">
                         <div class="flex flex-col sm:flex-row gap-3">
                             <input type="text" id="new-neighborhood" placeholder="Nome do Bairro" class="flex-1 px-6 py-5 rounded-[1.5rem] bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-lg shadow-sm">
                             <input type="text" id="new-shipping-price" placeholder="Preço (ex: 5,00)" class="w-full sm:w-40 px-6 py-5 rounded-[1.5rem] bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-lg shadow-sm">
@@ -357,37 +320,6 @@
                             </button>
                         </div>
                         <div id="shipping-zones-list" class="grid grid-cols-1 sm:grid-cols-2 gap-3"></div>
-                    </div>
-
-                    <!-- Bloco da Estratégia 2: Nacional -->
-                    <div id="shipping-strategy-national" class="space-y-6 hidden">
-                        <div class="bg-emerald-50 border border-emerald-200 p-6 rounded-3xl space-y-2">
-                            <span class="inline-block text-[10px] bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full font-black uppercase tracking-wider">Cálculo Preciso & Inteligente</span>
-                            <h4 class="font-bold text-slate-800 text-base">Estratégia 2 (Recomendada para Dropshipping)</h4>
-                            <p class="text-slate-600 text-xs leading-relaxed">O cliente digita o CEP na sacola. O sistema descobre instantaneamente o Estado (UF) e aplica a taxa configurada para a região. Ideal para vender de forma profissional sem precisar de planilhas de peso!</p>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <div class="space-y-2">
-                                <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Região Sudeste (SP, RJ, MG, ES)</label>
-                                <input type="text" id="sh-national-sudeste" oninput="window.saveDraft()" placeholder="Ex: 14,90" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-slate-200 focus:border-orange-500 outline-none transition-all font-bold">
-                            </div>
-                            <div class="space-y-2">
-                                <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Região Sul (PR, SC, RS)</label>
-                                <input type="text" id="sh-national-sul" oninput="window.saveDraft()" placeholder="Ex: 18,90" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-slate-200 focus:border-orange-500 outline-none transition-all font-bold">
-                            </div>
-                            <div class="space-y-2">
-                                <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Região Centro-Oeste (DF, GO, MT, MS)</label>
-                                <input type="text" id="sh-national-centroeste" oninput="window.saveDraft()" placeholder="Ex: 21,90" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-slate-200 focus:border-orange-500 outline-none transition-all font-bold">
-                            </div>
-                            <div class="space-y-2">
-                                <label class="text-[10px] font-bold uppercase tracking-widest text-[#f97316] ml-1">Região Nordeste (Todos os Estados)</label>
-                                <input type="text" id="sh-national-nordeste" oninput="window.saveDraft()" placeholder="Ex: 24,90" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-slate-200 focus:border-orange-500 outline-none transition-all font-bold">
-                            </div>
-                            <div class="space-y-2">
-                                <label class="text-[10px] font-bold uppercase tracking-widest text-slate-500 ml-1">Região Norte (Todos os Estados)</label>
-                                <input type="text" id="sh-national-norte" oninput="window.saveDraft()" placeholder="Ex: 28,90" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-slate-200 focus:border-orange-500 outline-none transition-all font-bold">
-                            </div>
-                        </div>
                     </div>
                 </section>
 
@@ -478,9 +410,7 @@
         window.storePlan = 'free';
         window.vendors = [];
         window.shippingZones = [];
-        window.bannerImages = [];
         window.expandedProducts = new Set();
-        window.isLoadingStore = true;
 
         // Helper para normalizar categorias (Case-Insensitive)
         window.getNormalizedCategory = function(input, currentProductId) {
@@ -552,10 +482,6 @@
         }
 
         window.saveDraft = function() {
-            if (window.isLoadingStore) {
-                console.log("Rascunho não salvo: carregamento inicial em andamento.");
-                return;
-            }
             const urlParams = new URLSearchParams(window.location.search);
             const storeId = urlParams.get('edit') || urlParams.get('id');
 
@@ -580,13 +506,6 @@
                 pixKey: document.getElementById('pix-key').value,
                 cardFee: document.getElementById('card-fee').value,
                 shippingZones: window.shippingZones,
-                bannerImages: window.bannerImages,
-                shippingStrategy: document.getElementById('shipping-strategy')?.value || 'local',
-                sh_national_sudeste: document.getElementById('sh-national-sudeste')?.value || '14,90',
-                sh_national_sul: document.getElementById('sh-national-sul')?.value || '18,90',
-                sh_national_centroeste: document.getElementById('sh-national-centroeste')?.value || '21,90',
-                sh_national_nordeste: document.getElementById('sh-national-nordeste')?.value || '24,90',
-                sh_national_norte: document.getElementById('sh-national-norte')?.value || '28,90',
                 products: window.products.map(p => ({
                     ...p,
                     i2: p.i2 || '',
@@ -654,9 +573,8 @@
             try {
                 const draft = JSON.parse(draftStr);
                 
-                // Se estivermos editando, só descarta o rascunho se ele for de OUTRA loja com ID diferente cadastrado.
-                // Se o rascunho for não-vinculado (sem storeId), permitimos carregar se o whatsapp bater ou se for restaurado pelo banner.
-                if (currentStoreId && draft.storeId && draft.storeId !== currentStoreId) return;
+                // Se estivermos editando, só carrega o rascunho se ele for para ESTA loja
+                if (currentStoreId && draft.storeId !== currentStoreId) return;
                 // Se NÃO estivermos editando, mas o rascunho for de uma edição anterior, não carrega
                 if (!currentStoreId && draft.storeId) return;
 
@@ -679,18 +597,6 @@
                 document.getElementById('pix-key').value = draft.pixKey || '';
                 document.getElementById('card-fee').value = draft.cardFee || '';
                 window.shippingZones = draft.shippingZones || [];
-                window.bannerImages = draft.bannerImages || (draft.bannerImage ? [draft.bannerImage] : []);
-                if (document.getElementById('shipping-strategy') && draft.shippingStrategy) {
-                    document.getElementById('shipping-strategy').value = draft.shippingStrategy;
-                }
-                if (document.getElementById('sh-national-sudeste')) {
-                    document.getElementById('sh-national-sudeste').value = draft.sh_national_sudeste || '14,90';
-                    document.getElementById('sh-national-sul').value = draft.sh_national_sul || '18,90';
-                    document.getElementById('sh-national-centroeste').value = draft.sh_national_centroeste || '21,90';
-                    document.getElementById('sh-national-nordeste').value = draft.sh_national_nordeste || '24,90';
-                    document.getElementById('sh-national-norte').value = draft.sh_national_norte || '28,90';
-                }
-                if (window.toggleShippingStrategy) window.toggleShippingStrategy();
                 window.updateBannerPreview(draft.bannerImage);
                 window.updateLogoPreview(draft.storeLogo);
                 window.updatePaymentBadgePreview(draft.paymentBadgeImage || '');
@@ -712,26 +618,6 @@
 
         window.clearDraft = function() {
             localStorage.removeItem('catalog_draft');
-        }
-
-        window.applyDraftAndRestore = function() {
-            window.loadDraft();
-            window.renderProducts();
-            window.renderVendors();
-            window.renderShippingZones();
-            window.renderBannerImages();
-            const bannerEl = document.getElementById('draft-alert-banner');
-            if (bannerEl) bannerEl.classList.add('hidden');
-            if (window.lucide) lucide.createIcons();
-            alert("Rascunho temporário restaurado com sucesso!");
-        }
-
-        window.discardDraftOnly = function() {
-            if (confirm("Quer mesmo descartar estas alterações temporárias deste navegador e usar apenas a versão salva no servidor?\n\nIsso limpará o rascunho temporário do seu dispositivo.")) {
-                localStorage.removeItem('catalog_draft');
-                const bannerEl = document.getElementById('draft-alert-banner');
-                if (bannerEl) bannerEl.classList.add('hidden');
-            }
         }
 
         window.addProduct = function() {
@@ -989,19 +875,6 @@
                 if (shippingSection) {
                     if (isAffiliate) shippingSection.classList.add('hidden');
                     else shippingSection.classList.remove('hidden');
-                }
-
-                // Mostrar seletor de estratégia de frete apenas no nicho 'loja' (lojas online)
-                const strategyContainer = document.getElementById('shipping-strategy-container');
-                if (strategyContainer) {
-                    if (niche === 'loja') {
-                        strategyContainer.classList.remove('hidden');
-                    } else {
-                        strategyContainer.classList.add('hidden');
-                    }
-                }
-                if (window.toggleShippingStrategy) {
-                    window.toggleShippingStrategy();
                 }
 
                 let limit = 999;
@@ -1611,14 +1484,6 @@
             data.b = document.getElementById('secondary-color').value.replace('#', '');
             data.t = document.getElementById('niche').value;
             data.imf = document.getElementById('image-format').value;
-            data.banners = window.bannerImages;
-            
-            data.sh_strategy = document.getElementById('shipping-strategy')?.value || 'local';
-            data.sh_sud = document.getElementById('sh-national-sudeste')?.value || '14,90';
-            data.sh_sul = document.getElementById('sh-national-sul')?.value || '18,90';
-            data.sh_co = document.getElementById('sh-national-centroeste')?.value || '21,90';
-            data.sh_ne = document.getElementById('sh-national-nordeste')?.value || '24,90';
-            data.sh_no = document.getElementById('sh-national-norte')?.value || '28,90';
             
             const validProducts = window.products.filter(p => p.name);
             if (validProducts.length > 0) {
@@ -2003,7 +1868,23 @@
                     if (data.pmb) document.getElementById('payment-badge-image').value = data.pmb;
                     if (data.sub) document.getElementById('store-subtitle').value = data.sub;
                     
-                    window.serverStoreUpdatedAt = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
+                    // Verifica se o rascunho local é mais recente que o dado do servidor
+                    if (!forcedId) {
+                        const draftStr = localStorage.getItem('catalog_draft');
+                        if (draftStr) {
+                            try {
+                                const draft = JSON.parse(draftStr);
+                                if (draft.storeId === storeId && draft.lastUpdated) {
+                                    const serverUpdate = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
+                                    if (draft.lastUpdated > serverUpdate) {
+                                        console.log("Usando rascunho local mais recente");
+                                        if (window.lucide) lucide.createIcons();
+                                        return;
+                                    }
+                                }
+                            } catch (e) { console.error("Erro ao comparar rascunho:", e); }
+                        }
+                    }
 
                     // Preenche os campos se não usou rascunho
                     document.getElementById('owner-name').value = data.cn || '';
@@ -2019,23 +1900,11 @@
                     document.getElementById('secondary-color').value = data.b ? '#' + data.b : '#0f172a';
                     document.getElementById('banner-image').value = data.bi || '';
                     document.getElementById('payment-badge-image').value = data.pmb || '';
-                    window.bannerImages = data.banners || (data.bi ? [data.bi] : []);
                     window.updateBannerPreview(data.bi);
                     window.updateLogoPreview(data.lg);
                     window.updatePaymentBadgePreview(data.pmb || '');
                     document.getElementById('niche').value = data.t || 'loja';
                     document.getElementById('image-format').value = data.imf || 'vertical';
-                    if (document.getElementById('shipping-strategy')) {
-                        document.getElementById('shipping-strategy').value = data.sh_strategy || 'local';
-                    }
-                    if (document.getElementById('sh-national-sudeste')) {
-                        document.getElementById('sh-national-sudeste').value = data.sh_sud || '14,90';
-                        document.getElementById('sh-national-sul').value = data.sh_sul || '18,90';
-                        document.getElementById('sh-national-centroeste').value = data.sh_co || '21,90';
-                        document.getElementById('sh-national-nordeste').value = data.sh_ne || '24,90';
-                        document.getElementById('sh-national-norte').value = data.sh_no || '28,90';
-                    }
-                    if (window.toggleShippingStrategy) window.toggleShippingStrategy();
                     
                     if (data.p && data.p.length > 0) {
                         window.products = data.p.map(p => ({
@@ -2078,66 +1947,18 @@
                     }
                     window.renderProducts();
                     window.renderVendors();
-                    window.renderShippingZones();
-                    window.renderBannerImages();
                 }
             } catch (e) { console.error("Erro ao carregar dados:", e); }
         }
 
         window.onload = async () => {
-            window.isLoadingStore = true;
-            
-            const urlParams = new URLSearchParams(window.location.search);
-            const storeId = urlParams.get('edit') || urlParams.get('id');
-            
-            if (!storeId) {
-                // Se é uma criação nova do zero, carrega o rascunho local por padrão
-                window.loadDraft();
-            }
-            
+            window.loadDraft();
             window.checkLastStore();
-            
-            if (storeId) {
-                // Se é edição de loja existente, sempre carrega do servidor primeiro
-                await window.loadFromFirebase();
-                
-                // Agora verifica se existe um rascunho local mais recente e mostra a opção de restaurar
-                const draftStr = localStorage.getItem('catalog_draft');
-                if (draftStr) {
-                    try {
-                        const draft = JSON.parse(draftStr);
-                        const isSameStore = (draft.storeId === storeId);
-                        const isUnlinkedDraft = !draft.storeId;
-                        const draftPhone = (draft.whatsapp || '').replace(/\D/g, '');
-                        const currentPhone = (document.getElementById('whatsapp')?.value || '').replace(/\D/g, '');
-                        const isSamePhone = draftPhone && currentPhone && (draftPhone === currentPhone);
-
-                        if (isSameStore || (isUnlinkedDraft && isSamePhone)) {
-                            const serverUpdate = window.serverStoreUpdatedAt || 0;
-                            // Se o rascunho é mais recente ou o servidor não tem produtos salvos mas o rascunho tem produtos preenchidos
-                            const draftHasProducts = draft.products && draft.products.length > 0 && draft.products.some(p => p.name);
-                            const serverHasProducts = window.products && window.products.length > 0 && window.products.some(p => p.name);
-
-                            if (draft.lastUpdated > serverUpdate || (draftHasProducts && !serverHasProducts)) {
-                                console.log("Há alterações temporárias no rascunho local do navegador que são mais recentes que a nuvem.");
-                                const bannerEl = document.getElementById('draft-alert-banner');
-                                if (bannerEl) bannerEl.classList.remove('hidden');
-                            }
-                        }
-                    } catch (e) {
-                        console.error("Erro ao verificar rascunho local:", e);
-                    }
-                }
-            } else {
-                // Renderização normal de nova loja
-                window.renderProducts();
-                window.renderVendors();
-                window.renderShippingZones();
-                window.renderBannerImages();
-            }
-            
+            await window.loadFromFirebase();
+            window.renderProducts();
+            window.renderVendors();
+            window.renderShippingZones();
             if (window.lucide) lucide.createIcons();
-            window.isLoadingStore = false;
         };
 
         window.addShippingZone = function() {
@@ -2162,92 +1983,6 @@
             window.shippingZones.splice(index, 1);
             window.renderShippingZones();
             window.saveDraft();
-        }
-
-        window.toggleShippingStrategy = function() {
-            const strategySelect = document.getElementById('shipping-strategy');
-            const localBlock = document.getElementById('shipping-strategy-local');
-            const nationalBlock = document.getElementById('shipping-strategy-national');
-            if (strategySelect && localBlock && nationalBlock) {
-                const niche = document.getElementById('niche').value;
-                const isNational = strategySelect.value === 'national' && niche === 'loja';
-                if (isNational) {
-                    localBlock.classList.add('hidden');
-                    nationalBlock.classList.remove('hidden');
-                } else {
-                    localBlock.classList.remove('hidden');
-                    nationalBlock.classList.add('hidden');
-                }
-            }
-        }
-
-        window.addBannerImage = function() {
-            const input = document.getElementById('new-banner-url');
-            if (!input) return;
-            const url = input.value.trim();
-            if (!url) {
-                alert("Por favor, digite ou cole o link da imagem do seu banner!");
-                return;
-            }
-            if (!window.bannerImages) window.bannerImages = [];
-            window.bannerImages.push(url);
-            input.value = '';
-            
-            // Compatibilidade retroativa
-            const singleInput = document.getElementById('banner-image');
-            if (singleInput && window.bannerImages.length === 1) {
-                singleInput.value = url;
-            }
-            
-            window.renderBannerImages();
-            window.saveDraft();
-        }
-
-        window.removeBannerImage = function(index) {
-            if (!window.bannerImages) return;
-            window.bannerImages.splice(index, 1);
-            
-            // Compatibilidade retroativa
-            const singleInput = document.getElementById('banner-image');
-            if (singleInput) {
-                singleInput.value = window.bannerImages.length > 0 ? window.bannerImages[0] : '';
-            }
-            
-            window.renderBannerImages();
-            window.saveDraft();
-        }
-
-        window.renderBannerImages = function() {
-            const list = document.getElementById('banner-images-list');
-            if (!list) return;
-            
-            if (!window.bannerImages || window.bannerImages.length === 0) {
-                list.innerHTML = `
-                    <div class="col-span-full py-8 text-center bg-slate-100 rounded-3xl border border-dashed border-slate-300 text-slate-400 font-bold text-xs uppercase tracking-widest leading-relaxed">
-                        Nenhum banner cadastrado.<br>
-                        <span class="text-[10px] text-slate-400 font-medium normal-case block mt-1 px-4">Cadastre seus próprios banners acima! Se não cadastrar nenhum banner personalizado, a loja exibirá lindos banners profissionais de calçados / ofertas para manter sua página atraente!</span>
-                    </div>
-                `;
-                return;
-            }
-            
-            list.innerHTML = window.bannerImages.map((b, index) => {
-                return `
-                    <div class="relative bg-white border border-slate-200 p-3 rounded-2xl shadow-sm flex flex-col gap-2 overflow-hidden transition-all hover:shadow-md">
-                        <div class="aspect-[16/5] w-full rounded-xl overflow-hidden bg-slate-50 border border-slate-100">
-                            <img src="${b}" class="w-full h-full object-cover" referrerpolicy="no-referrer" onerror="this.src='https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=400&fit=crop'">
-                        </div>
-                        <div class="flex items-center justify-between gap-2">
-                            <span class="text-[9px] font-black uppercase tracking-widest text-[#f97316]">Slide ${index + 1}</span>
-                            <button type="button" onclick="window.removeBannerImage(${index})" class="text-red-500 hover:text-red-700 p-1.5 bg-red-50 hover:bg-red-100 rounded-xl active-scale transition-colors">
-                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-            
-            if (window.lucide) lucide.createIcons();
         }
 
         window.renderShippingZones = function() {

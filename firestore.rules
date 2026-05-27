@@ -23,5 +23,10 @@ service cloud.firestore {
       // Allow all operations on trial history
       allow read, write: if true;
     }
+
+    match /resellers/{resellerId} {
+      // Allow all operations on resellers
+      allow read, write: if true;
+    }
   }
 }

@@ -70,67 +70,128 @@
         </header>
 
         <main class="max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 sm:py-8 space-y-6">
-            <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-                <div class="text-center lg:text-left">
-                    <h2 class="text-3xl sm:text-4xl font-black uppercase italic tracking-tighter">Gerenciar Lojas</h2>
-                    <p class="text-slate-500 font-medium text-sm">Controle de assinaturas e status dos clientes</p>
+            <!-- Tabs de Navegação -->
+            <div class="flex border-b border-slate-200/60 gap-4 mb-6 shrink-0 overflow-x-auto no-scrollbar">
+                <button id="tab-stores-btn" onclick="window.switchAdminTab('stores')" class="px-5 py-4 border-b-4 border-slate-900 font-black uppercase italic tracking-wider text-xs flex items-center gap-2 text-slate-900 hover:text-slate-950 transition-all shrink-0">
+                    <i data-lucide="store" class="w-4 h-4"></i> Lojas Cadastradas
+                </button>
+                <button id="tab-resellers-btn" onclick="window.switchAdminTab('resellers')" class="px-5 py-4 border-b-4 border-transparent font-black uppercase text-slate-400 hover:text-slate-700 tracking-wider text-xs flex items-center gap-2 transition-all shrink-0">
+                    <i data-lucide="users" class="w-4 h-4"></i> Gerenciar Revendedores
+                </button>
+            </div>
+
+            <!-- TAB 1: GERENCIAR LOJAS -->
+            <div id="stores-tab-content" class="space-y-6">
+                <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+                    <div class="text-center lg:text-left">
+                        <h2 class="text-3xl sm:text-4xl font-black uppercase italic tracking-tighter">Gerenciar Lojas</h2>
+                        <p class="text-slate-500 font-medium text-sm">Controle de assinaturas e status dos clientes</p>
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-3 w-full lg:w-auto">
+                        <div class="relative flex-1 lg:w-72">
+                            <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
+                            <input type="text" id="search-input" oninput="filterStores()" placeholder="Buscar loja, cliente ou zap..." class="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-2xl sm:rounded-xl text-sm focus:outline-none focus:border-slate-900 shadow-sm font-bold">
+                        </div>
+                        
+                        <div class="flex bg-white p-1 rounded-2xl border border-slate-200 shadow-sm overflow-x-auto no-scrollbar shrink-0">
+                            <button onclick="renderStores(allStores)" class="px-5 py-3 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all bg-slate-900 text-white shadow-lg whitespace-nowrap">Todas</button>
+                            <button onclick="filterByStatus('active')" class="px-5 py-3 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all text-slate-400 hover:text-slate-600 whitespace-nowrap">Ativas</button>
+                            <button onclick="filterByStatus('expired')" class="px-5 py-3 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all text-slate-400 hover:text-slate-600 whitespace-nowrap">Expiradas</button>
+                        </div>
+
+                        <button onclick="loadStores()" class="bg-white border border-slate-200 px-6 py-4 rounded-2xl sm:rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-50 shadow-sm active:scale-95 transition-all shrink-0">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i> <span class="hidden sm:inline">Atualizar</span>
+                        </button>
+
+                        <button onclick="window.openCreateStoreModal()" class="bg-[#4f46e5] hover:bg-[#4338ca] text-white px-6 py-4 rounded-2xl sm:rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-md hover:shadow-lg active:scale-95 transition-all shrink-0">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i> <span>Criar Loja</span>
+                        </button>
+                    </div>
                 </div>
-                <div class="flex flex-col md:flex-row gap-3 w-full lg:w-auto">
-                    <div class="relative flex-1 lg:w-72">
-                        <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
-                        <input type="text" id="search-input" oninput="filterStores()" placeholder="Buscar loja, cliente ou zap..." class="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-2xl sm:rounded-xl text-sm focus:outline-none focus:border-slate-900 shadow-sm font-bold">
-                    </div>
-                    
-                    <div class="flex bg-white p-1 rounded-2xl border border-slate-200 shadow-sm overflow-x-auto no-scrollbar shrink-0">
-                        <button onclick="renderStores(allStores)" class="px-5 py-3 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all bg-slate-900 text-white shadow-lg whitespace-nowrap">Todas</button>
-                        <button onclick="filterByStatus('active')" class="px-5 py-3 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all text-slate-400 hover:text-slate-600 whitespace-nowrap">Ativas</button>
-                        <button onclick="filterByStatus('expired')" class="px-5 py-3 rounded-xl font-black uppercase tracking-widest text-[9px] transition-all text-slate-400 hover:text-slate-600 whitespace-nowrap">Expiradas</button>
+
+                <div class="bg-white rounded-[2rem] sm:rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+                    <!-- Desktop Table View -->
+                    <div class="hidden md:block overflow-x-auto">
+                        <div class="min-w-[1000px]">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-100 uppercase tracking-tighter">
+                                        <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400">Loja / Cliente</th>
+                                        <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400">WhatsApp</th>
+                                        <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400 text-center">Status</th>
+                                        <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400 text-center">Plano</th>
+                                        <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400 text-center">Vendedores</th>
+                                        <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400 text-center">Visitas</th>
+                                        <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400">Expiração / Senha</th>
+                                        <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400 text-right">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="stores-table-body">
+                                    <!-- Lojas serão carregadas aqui -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
-                    <button onclick="loadStores()" class="bg-white border border-slate-200 px-6 py-4 rounded-2xl sm:rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-50 shadow-sm active:scale-95 transition-all shrink-0">
-                        <i data-lucide="refresh-cw" class="w-4 h-4"></i> <span class="hidden sm:inline">Atualizar</span>
-                    </button>
+                    <!-- Mobile Card View -->
+                    <div id="stores-mobile-list" class="md:hidden divide-y divide-slate-100">
+                        <!-- Lojas mobile serão carregadas aqui -->
+                    </div>
 
-                    <button onclick="window.openCreateStoreModal()" class="bg-[#4f46e5] hover:bg-[#4338ca] text-white px-6 py-4 rounded-2xl sm:rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-md hover:shadow-lg active:scale-95 transition-all shrink-0">
-                        <i data-lucide="plus-circle" class="w-4 h-4"></i> <span>Criar Loja</span>
-                    </button>
+                    <div id="loading-indicator" class="p-12 text-centerSub limit hidden">
+                        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-slate-900 mx-auto"></div>
+                    </div>
+                    <div id="empty-state" class="p-12 text-center hidden">
+                        <p class="text-slate-400 font-medium">Nenhuma loja encontrada no banco de dados.</p>
+                    </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-[2rem] sm:rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
-                <!-- Desktop Table View (Scroll horizontal for tablets/small laptops) -->
-                <div class="hidden md:block overflow-x-auto">
-                    <div class="min-w-[1000px]">
-                        <table class="w-full text-left border-collapse">
-                            <thead>
-                                <tr class="bg-slate-50 border-b border-slate-100 uppercase tracking-tighter">
-                                    <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400">Loja / Cliente</th>
-                                    <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400">WhatsApp</th>
-                                    <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400 text-center">Status</th>
-                                    <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400 text-center">Plano</th>
-                                    <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400 text-center">Vendedores</th>
-                                    <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400 text-center">Visitas</th>
-                                    <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400">Expiração / Senha</th>
-                                    <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400 text-right">Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody id="stores-table-body">
-                                <!-- Lojas serão carregadas aqui -->
-                            </tbody>
-                        </table>
+            <!-- TAB 2: GERENCIAR REVENDEDORES (Oculto por Padrão) -->
+            <div id="resellers-tab-content" class="hidden space-y-6">
+                <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+                    <div class="text-center lg:text-left">
+                        <h2 class="text-3xl sm:text-4xl font-black uppercase italic tracking-tighter">Gerenciar Revendedores</h2>
+                        <p class="text-slate-500 font-medium text-sm">Crie painéis de revenda e controle de acessos</p>
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-3 w-full lg:w-auto">
+                        <div class="relative flex-1 lg:w-72">
+                            <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4"></i>
+                            <input type="text" id="reseller-search-input" oninput="window.filterResellers()" placeholder="Buscar revendedor por nome ou login..." class="w-full pl-11 pr-4 py-4 bg-white border border-slate-200 rounded-2xl sm:rounded-xl text-sm focus:outline-none focus:border-slate-900 shadow-sm font-bold">
+                        </div>
+                        <button onclick="window.loadResellers()" class="bg-white border border-slate-200 px-6 py-4 rounded-2xl sm:rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-slate-50 shadow-sm active:scale-95 transition-all shrink-0">
+                            <i data-lucide="refresh-cw" class="w-4 h-4"></i> <span class="hidden sm:inline">Atualizar</span>
+                        </button>
+                        <button onclick="window.openCreateResellerModal()" class="bg-indigo-600 hover:bg-slate-800 text-white px-6 py-4 rounded-2xl sm:rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-md hover:shadow-lg active:scale-95 transition-all shrink-0">
+                            <i data-lucide="user-plus" class="w-4 h-4"></i> <span>Novo Revendedor</span>
+                        </button>
                     </div>
                 </div>
 
-                <!-- Mobile Card View -->
-                <div id="stores-mobile-list" class="md:hidden divide-y divide-slate-100">
-                    <!-- Lojas mobile serão carregadas aqui -->
-                </div>
-
-                <div id="loading-indicator" class="p-12 text-center hidden">
-                    <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-slate-900 mx-auto"></div>
-                </div>
-                <div id="empty-state" class="p-12 text-center hidden">
-                    <p class="text-slate-400 font-medium">Nenhuma loja encontrada no banco de dados.</p>
+                <div class="bg-white rounded-[2rem] sm:rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+                    <div class="overflow-x-auto min-w-full">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-100 uppercase tracking-tighter">
+                                    <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400">Nome / Usuário</th>
+                                    <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400">WhatsApp</th>
+                                    <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400 text-center">Status</th>
+                                    <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400 text-center">Lojas Ativas</th>
+                                    <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400">Senha / Expiração</th>
+                                    <th class="px-6 py-5 text-[10px] font-black tracking-widest text-slate-400 text-right">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resellers-table-body">
+                                <!-- Revendedores carregados aqui -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div id="resellers-loading-indicator" class="p-12 text-center hidden">
+                        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-slate-900 mx-auto"></div>
+                    </div>
+                    <div id="resellers-empty-state" class="p-12 text-center hidden">
+                        <p class="text-slate-400 font-medium">Nenhum revendedor cadastrado no banco de dados.</p>
+                    </div>
                 </div>
             </div>
         </main>
@@ -145,6 +206,357 @@
     <script>
         const ADMIN_PASSWORD = "13259898Aa#@";
         let allStores = [];
+        let allResellers = [];
+
+        window.switchAdminTab = function(tab) {
+            const tabStoresBtn = document.getElementById('tab-stores-btn');
+            const tabResellersBtn = document.getElementById('tab-resellers-btn');
+            const storesContent = document.getElementById('stores-tab-content');
+            const resellersContent = document.getElementById('resellers-tab-content');
+
+            if (tab === 'stores') {
+                tabStoresBtn.className = "px-5 py-4 border-b-4 border-slate-900 font-black uppercase italic tracking-wider text-xs flex items-center gap-2 text-slate-900 hover:text-slate-950 transition-all shrink-0";
+                tabResellersBtn.className = "px-5 py-4 border-b-4 border-transparent font-black uppercase text-slate-400 hover:text-slate-700 tracking-wider text-xs flex items-center gap-2 transition-all shrink-0";
+                storesContent.classList.remove('hidden');
+                resellersContent.classList.add('hidden');
+                loadStores();
+            } else {
+                tabStoresBtn.className = "px-5 py-4 border-b-4 border-transparent font-black uppercase text-slate-400 hover:text-slate-700 tracking-wider text-xs flex items-center gap-2 transition-all shrink-0";
+                tabResellersBtn.className = "px-5 py-4 border-b-4 border-slate-900 font-black uppercase italic tracking-wider text-xs flex items-center gap-2 text-slate-900 hover:text-slate-950 transition-all shrink-0";
+                storesContent.classList.add('hidden');
+                resellersContent.classList.remove('hidden');
+                loadResellers();
+            }
+            if (window.lucide) lucide.createIcons();
+        }
+
+        async function loadResellers() {
+            const tbody = document.getElementById('resellers-table-body');
+            const loader = document.getElementById('resellers-loading-indicator');
+            const empty = document.getElementById('resellers-empty-state');
+
+            tbody.innerHTML = '';
+            loader.classList.remove('hidden');
+            empty.classList.add('hidden');
+
+            try {
+                // Certifica-se de que o Firebase está pronto
+                let attempts = 0;
+                while ((!window.db || !window.fs) && attempts < 150) {
+                    await new Promise(r => setTimeout(r, 100));
+                    attempts++;
+                }
+
+                // Carrega primeiramente as lojas se o array estiver vazio para podermos correlacionar contagens
+                if (allStores.length === 0) {
+                    const qStores = window.fs.query(window.fs.collection(window.db, "stores"));
+                    const querySnapshotStores = await window.fs.getDocs(qStores);
+                    allStores = [];
+                    querySnapshotStores.forEach(docSnap => {
+                        allStores.push({ id: docSnap.id, ...docSnap.data() });
+                    });
+                }
+
+                console.log("Buscando revendedores no firestore...");
+                const qResellers = window.fs.query(window.fs.collection(window.db, "resellers"));
+                const querySnapshot = await window.fs.getDocs(qResellers);
+                
+                loader.classList.add('hidden');
+                allResellers = [];
+
+                if (querySnapshot.empty) {
+                    empty.classList.remove('hidden');
+                    return;
+                }
+
+                querySnapshot.forEach((docSnap) => {
+                    allResellers.push({ id: docSnap.id, ...docSnap.data() });
+                });
+
+                allResellers.sort((a, b) => {
+                    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                    return dateB - dateA;
+                });
+
+                renderResellers(allResellers);
+            } catch (err) {
+                console.error("Erro ao carregar revendedores:", err);
+                alert("Erro ao ler coleção de revendedores no banco de dados.");
+                loader.classList.add('hidden');
+            }
+        }
+
+        window.filterResellers = function() {
+            const term = document.getElementById('reseller-search-input').value.toLowerCase().trim();
+            if (!term) {
+                renderResellers(allResellers);
+                return;
+            }
+            const filtered = allResellers.filter(r => 
+                (r.name && r.name.toLowerCase().includes(term)) ||
+                (r.id && r.id.toLowerCase().includes(term)) ||
+                (r.whatsapp && r.whatsapp.includes(term))
+            );
+            renderResellers(filtered);
+        }
+
+        function renderResellers(resellers) {
+            const tbody = document.getElementById('resellers-table-body');
+            const empty = document.getElementById('resellers-empty-state');
+
+            tbody.innerHTML = '';
+            if (resellers.length === 0) {
+                empty.classList.remove('hidden');
+                return;
+            } else {
+                empty.classList.add('hidden');
+            }
+
+            resellers.forEach((r) => {
+                const isBlocked = r.status === 'blocked';
+                const expiresAt = r.expiresAt ? new Date(r.expiresAt) : null;
+                const isExpired = expiresAt && new Date() > expiresAt;
+                
+                let statusBadge = '';
+                if (isBlocked) {
+                    statusBadge = '<span class="bg-red-100 text-red-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">BLOQUEADO</span>';
+                } else if (isExpired) {
+                    statusBadge = '<span class="bg-orange-100 text-orange-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">EXPIRADO</span>';
+                } else {
+                    statusBadge = '<span class="bg-green-100 text-green-600 px-2 py-1 rounded-full text-[9px] font-black uppercase tracking-widest">ATIVO</span>';
+                }
+
+                // Contar lojas pertencentes a este revendedor
+                const sellerStores = allStores.filter(s => s.resellerId === r.id);
+                const activeStoresCount = sellerStores.filter(s => s.status !== 'blocked').length;
+                const totalStoresCount = sellerStores.length;
+
+                let waClean = r.whatsapp ? r.whatsapp.replace(/\D/g, '') : '';
+                if (waClean.length <= 11 && waClean.length > 0) waClean = '55' + waClean;
+                const waLink = `https://api.whatsapp.com/send?phone=${waClean}`;
+
+                const row = document.createElement('tr');
+                row.className = "border-b border-slate-50 hover:bg-slate-50/50 transition-colors";
+                row.innerHTML = `
+                    <td class="px-6 py-5">
+                        <div class="font-black text-sm text-slate-900 uppercase italic tracking-tighter">${r.name || 'Sem Nome'}</div>
+                        <div class="text-[9px] text-indigo-600 font-bold uppercase tracking-widest flex items-center gap-1 mt-0.5">
+                            <i data-lucide="user" class="w-2.5 h-2.5"></i> Usuário: ${r.id}
+                        </div>
+                    </td>
+                    <td class="px-6 py-5">
+                        <a href="${waLink}" target="_blank" class="text-xs font-black text-slate-600 hover:text-green-500 flex items-center gap-1 transition-colors">
+                            <i data-lucide="phone" class="w-3 h-3 text-green-500"></i> ${r.whatsapp || '-'}
+                        </a>
+                    </td>
+                    <td class="px-6 py-5 text-center">
+                        ${statusBadge}
+                    </td>
+                    <td class="px-6 py-5 text-center">
+                        <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-black">
+                            <i data-lucide="store" class="w-3.5 h-3.5"></i> ${activeStoresCount} / ${totalStoresCount}
+                        </span>
+                    </td>
+                    <td class="px-6 py-5">
+                        <div class="text-xs font-bold text-slate-600">
+                            Expira em: ${expiresAt ? expiresAt.toLocaleDateString('pt-BR') : 'Sem Limite'}
+                        </div>
+                        <div class="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-50 border border-blue-100 rounded-lg text-[9px] text-blue-600 font-black uppercase tracking-widest mt-1">
+                            <i data-lucide="key" class="w-2.5 h-2.5"></i> Senha: ${r.password || '---'}
+                        </div>
+                    </td>
+                    <td class="px-6 py-5 text-right">
+                        <div class="flex items-center justify-end gap-2">
+                            <button onclick="window.openCreateResellerModal('${r.id}')" title="Editar Revendedor" class="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors">
+                                <i data-lucide="settings" size="16"></i>
+                            </button>
+                            <button onclick="window.toggleResellerStatus('${r.id}', '${r.status || 'active'}')" title="${isBlocked ? 'Desbloquear Painel' : 'Bloquear Painel'}" class="p-2 ${isBlocked ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-red-50 text-red-600 hover:bg-red-100'} rounded-lg transition-colors">
+                                <i data-lucide="${isBlocked ? 'unlock' : 'lock'}" size="16"></i>
+                            </button>
+                            <button onclick="window.renewReseller('${r.id}', '${r.expiresAt || ''}')" title="Estender Validade" class="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors">
+                                <i data-lucide="calendar-plus" size="16"></i>
+                            </button>
+                            <button onclick="window.deleteReseller('${r.id}')" title="Excluir Revendedor" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
+                                <i data-lucide="trash-2" size="16"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            if (window.lucide) lucide.createIcons();
+        }
+
+        window.openCreateResellerModal = function(resellerId = null) {
+            // Remove modal anterior
+            const oldModal = document.getElementById('create-reseller-modal');
+            if (oldModal) oldModal.remove();
+
+            const r = resellerId ? allResellers.find(x => x.id === resellerId) : null;
+
+            const modal = document.createElement('div');
+            modal.id = 'create-reseller-modal';
+            modal.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[1100] flex items-center justify-center p-3 sm:p-6';
+            modal.innerHTML = `
+                <div class="bg-white max-w-md w-full rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col text-left animate-fade-in">
+                    <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                        <div>
+                            <div class="flex items-center gap-1">
+                                <span class="w-2.5 h-2.5 rounded-full bg-indigo-600 animate-pulse"></span>
+                                <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Parceiros</h3>
+                            </div>
+                            <h2 class="text-xl font-black uppercase italic tracking-tighter text-slate-900 mt-1">${r ? 'Editar Revendedor' : 'Criar Revendedor'}</h2>
+                        </div>
+                        <button onclick="document.getElementById('create-reseller-modal').remove()" class="p-2 hover:bg-slate-100 rounded-full transition-all">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-6 space-y-4">
+                        <div class="space-y-1.5">
+                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Nome Completo</label>
+                            <input type="text" id="reseller-name" value="${r ? r.name || '' : ''}" placeholder="Ex: Rodrigo Revendas" class="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 font-bold text-sm outline-none focus:border-indigo-500 transition-colors">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">WhatsApp (Contato)</label>
+                                <input type="text" id="reseller-whatsapp" value="${r ? r.whatsapp || '' : ''}" placeholder="Ex: 85991823611" class="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 font-bold text-sm outline-none focus:border-indigo-500 transition-colors">
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Usuário / Login</label>
+                                <input type="text" id="reseller-login" value="${r ? r.id || '' : ''}" ${r ? 'disabled' : ''} placeholder="Ex: rodrigorevenda" class="w-full px-4 py-3 bg-slate-50 disabled:opacity-50 rounded-xl border border-slate-200 font-bold text-sm outline-none focus:border-indigo-500 transition-colors">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Senha do Painel</label>
+                                <input type="text" id="reseller-password" value="${r ? r.password || '' : ''}" placeholder="Ex: 123456" class="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 font-bold text-sm outline-none focus:border-indigo-500 transition-colors">
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Data de Expiração</label>
+                                <input type="date" id="reseller-expires" value="${r && r.expiresAt ? r.expiresAt.substring(0, 10) : ''}" class="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 font-bold text-sm outline-none focus:border-indigo-500 transition-colors">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-6 border-t border-slate-100 flex items-center justify-end gap-3 bg-slate-50/50">
+                        <button onclick="document.getElementById('create-reseller-modal').remove()" class="px-5 py-3 bg-white border border-slate-200 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-500 shadow-sm transition-all active:scale-95">Cancelar</button>
+                        <button onclick="window.saveResellerAction('${resellerId || ''}')" class="px-6 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md hover:bg-slate-900 transition-all active:scale-95 flex items-center gap-2">
+                            <i data-lucide="check" class="w-4 h-4"></i> Salvar
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            if (window.lucide) lucide.createIcons();
+        }
+
+        window.saveResellerAction = async function(resellerId = '') {
+            const name = document.getElementById('reseller-name').value.trim();
+            const whatsapp = document.getElementById('reseller-whatsapp').value.trim().replace(/\D/g, '');
+            const login = document.getElementById('reseller-login').value.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+            const password = document.getElementById('reseller-password').value.trim();
+            const expiresRaw = document.getElementById('reseller-expires').value;
+
+            if (!name || !whatsapp || !login || !password) {
+                alert("Por favor, preencha todos os campos obrigatórios.");
+                return;
+            }
+
+            try {
+                const docRef = window.fs.doc(window.db, "resellers", login);
+                
+                // Se for novo, valida se chave de login já existe
+                if (!resellerId) {
+                    const snap = await window.fs.getDoc(docRef);
+                    if (snap.exists()) {
+                        alert(`O Usuário de Login "${login}" já está cadastrado por outro revendedor! Por favor escolha outro username.`);
+                        return;
+                    }
+                }
+
+                // Define expiração padrão de 1 ano se não colocado de forma manual
+                const expiresAt = expiresRaw ? new Date(expiresRaw).toISOString() : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+
+                const resellerData = {
+                    name,
+                    whatsapp,
+                    password,
+                    expiresAt,
+                    status: resellerId ? (allResellers.find(x => x.id === resellerId).status || 'active') : 'active',
+                    updatedAt: new Date().toISOString()
+                };
+
+                if (!resellerId) {
+                    resellerData.createdAt = new Date().toISOString();
+                }
+
+                await window.fs.setDoc(docRef, resellerData, { merge: true });
+                document.getElementById('create-reseller-modal').remove();
+                
+                alert("Revendedor gravado com sucesso!");
+                loadResellers();
+            } catch (err) {
+                console.error("Erro ao gravar revendedor:", err);
+                alert("Falha ao salvar no Firestore: " + err.message);
+            }
+        }
+
+        window.toggleResellerStatus = async function(id, currentStatus) {
+            const newStatus = currentStatus === 'blocked' ? 'active' : 'blocked';
+            const actionText = newStatus === 'blocked' ? 
+                'Deseja realmente BLOQUEAR esta conta de revenda? Ele não conseguirá mais gerenciar seus catálogos.' : 
+                'Deseja reativar esta conta de revendedor?';
+
+            if (!confirm(actionText)) return;
+
+            try {
+                const docRef = window.fs.doc(window.db, "resellers", id);
+                await window.fs.updateDoc(docRef, { status: newStatus, updatedAt: new Date().toISOString() });
+                
+                alert(`Revendedor ${newStatus === 'blocked' ? 'bloqueado' : 'ativado'} com sucesso!`);
+                loadResellers();
+            } catch (err) {
+                console.error(err);
+                alert("Erro ao alterar situação: " + err.message);
+            }
+        }
+
+        window.renewReseller = async function(id, expiresAt) {
+            const currentExp = expiresAt ? new Date(expiresAt) : new Date();
+            // Adiciona 30 dias por padrão
+            const newExp = new Date(currentExp.getTime() + 30 * 24 * 60 * 60 * 1000);
+            
+            if (!confirm(`Estender validade deste revendedor em +30 dias? Nova data: ${newExp.toLocaleDateString('pt-BR')}`)) return;
+
+            try {
+                const docRef = window.fs.doc(window.db, "resellers", id);
+                await window.fs.updateDoc(docRef, { expiresAt: newExp.toISOString(), status: 'active', updatedAt: new Date().toISOString() });
+                alert("Validade estendida e revendedor liberado!");
+                loadResellers();
+            } catch (err) {
+                console.error(err);
+                alert("Erro ao renovar: " + err.message);
+            }
+        }
+
+        window.deleteReseller = async function(id) {
+            if (!confirm(`TEM CERTEZA absoluta que deseja EXCLUIR o revendedor "${id}"? Isso é irreversível!`)) return;
+
+            try {
+                const docRef = window.fs.doc(window.db, "resellers", id);
+                await window.fs.deleteDoc(docRef);
+                alert("Revendedor excluído do sistema.");
+                loadResellers();
+            } catch (err) {
+                console.error(err);
+                alert("Erro ao remover: " + err.message);
+            }
+        }
 
         function checkPassword() {
             const input = document.getElementById('admin-password').value;
@@ -327,10 +739,17 @@
                 if (waClean.length <= 11 && waClean.length > 0) waClean = '55' + waClean;
                 const waLink = `https://api.whatsapp.com/send?phone=${waClean}`;
 
+                const resellerLabel = data.resellerId ? `
+                    <span class="inline-flex items-center gap-1 bg-purple-50 hover:bg-purple-100 border border-purple-100 rounded-lg px-2 py-0.5 mt-1 text-[8px] sm:text-[9px] font-black uppercase text-purple-700 tracking-wider transition-colors select-none">
+                        <i data-lucide="user" class="w-2.5 h-2.5"></i> Revendedor: ${data.resellerId}
+                    </span>
+                ` : '';
+
                 row.innerHTML = `
                     <td class="px-6 py-5">
                         <div class="font-black text-sm text-slate-900 uppercase italic tracking-tighter">${data.n || 'Sem Nome'}</div>
-                        <div class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">${data.cn || 'Dono não informado'}</div>
+                        <div class="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-none">${data.cn || 'Dono não informado'}</div>
+                        ${resellerLabel}
                     </td>
                     <td class="px-6 py-5">
                         <a href="${waLink}" target="_blank" class="text-xs font-black text-slate-600 hover:text-green-500 flex items-center gap-1 transition-colors">
@@ -405,7 +824,8 @@
                     <div class="flex justify-between items-start">
                         <div>
                             <div class="font-black text-base text-slate-900 uppercase italic tracking-tighter">${data.n || 'Sem Nome'}</div>
-                            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">${data.cn || 'Dono não informado'}</div>
+                            <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">${data.cn || 'Dono não informado'}</div>
+                            ${resellerLabel}
                         </div>
                         <div class="flex flex-col items-end gap-1.5">
                             ${statusBadge}
@@ -933,6 +1353,13 @@
             modal.id = 'create-store-modal';
             modal.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[1100] flex items-center justify-center p-3 sm:p-6';
 
+            // Gerar opções de revendedores
+            let resellerOptions = '<option value="">Direto (Sem Revendedor)</option>';
+            const listRes = window.allResellers || [];
+            listRes.forEach(r => {
+                resellerOptions += `<option value="${r.id}">${r.name} (${r.id})</option>`;
+            });
+
             modal.innerHTML = `
                 <div class="bg-white dark:bg-slate-800 w-full max-w-lg rounded-2xl sm:rounded-[2rem] shadow-2xl overflow-hidden flex flex-col border border-slate-100 dark:border-slate-700 max-h-[95vh] animate-fade-in text-left">
                     <!-- Header -->
@@ -995,22 +1422,28 @@
                             </div>
                         </div>
 
-                        <!-- Plano e Status -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Plano, Status e Revendedor -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div class="space-y-1.5">
                                 <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Plano</label>
                                 <select id="new-store-plan" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700/30 rounded-xl border border-slate-200 dark:border-slate-600 font-bold text-xs sm:text-sm outline-none text-slate-800 dark:text-slate-100 focus:border-indigo-500 transition-colors">
-                                    <option value="premium" selected>Premium (Completo)</option>
-                                    <option value="basic">Basic (Intermediário)</option>
-                                    <option value="free">Free (Grátis)</option>
+                                    <option value="premium" selected>Premium</option>
+                                    <option value="basic">Básico</option>
+                                    <option value="free">Free</option>
                                 </select>
                             </div>
                             <div class="space-y-1.5">
-                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Situação da Conta</label>
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Situação</label>
                                 <select id="new-store-status" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700/30 rounded-xl border border-slate-200 dark:border-slate-600 font-bold text-xs sm:text-sm outline-none text-slate-800 dark:text-slate-100 focus:border-indigo-500 transition-colors">
-                                    <option value="active" selected>Ativo (Pago)</option>
-                                    <option value="trial">Em Teste (7 dias)</option>
+                                    <option value="active" selected>Ativo</option>
+                                    <option value="trial">Em Teste</option>
                                     <option value="blocked">Bloqueado</option>
+                                </select>
+                            </div>
+                            <div class="space-y-1.5 sm:col-span-1">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Revendedor</label>
+                                <select id="new-store-reseller" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700/30 rounded-xl border border-slate-200 dark:border-slate-600 font-bold text-xs sm:text-sm outline-none text-slate-800 dark:text-slate-100 focus:border-indigo-500 transition-colors">
+                                    ${resellerOptions}
                                 </select>
                             </div>
                         </div>
@@ -1038,6 +1471,7 @@
             const niche = document.getElementById('new-store-niche').value;
             const plan = document.getElementById('new-store-plan').value;
             const status = document.getElementById('new-store-status').value;
+            const resellerId = document.getElementById('new-store-reseller').value;
 
             if (!name || !slug || !owner || !whatsapp || !password) {
                 alert("Por favor, preencha todos os campos obrigatórios.");
@@ -1054,6 +1488,17 @@
             if (whatsappClean.length < 10) {
                 alert("WhatsApp inválido. Digite um número com DDD.");
                 return;
+            }
+
+            // Pesquisa info do revendedor
+            let resName = '';
+            let resWa = '';
+            if (resellerId) {
+                const partner = (window.allResellers || []).find(x => x.id === resellerId);
+                if (partner) {
+                    resName = partner.name || '';
+                    resWa = partner.whatsapp || '';
+                }
             }
 
             try {
@@ -1120,7 +1565,10 @@
                     imf: "vertical",
                     p: defaultServices,
                     v: [],
-                    sh: []
+                    sh: [],
+                    resellerId: resellerId || "",
+                    resellerName: resName || "",
+                    resellerWhatsapp: resWa || ""
                 };
 
                 // Grava no banco

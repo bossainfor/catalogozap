@@ -52,6 +52,32 @@
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
+    <!-- BLOCK OVERLAY FOR RESTRICTED DIRECT SIGNDOWN -->
+    <div id="block-overlay" class="fixed inset-0 bg-slate-900/95 backdrop-blur-md z-[200] hidden items-center justify-center p-4">
+        <div class="bg-white w-full max-w-xl rounded-[2.5rem] p-10 border border-slate-100 shadow-2xl text-center space-y-6">
+            <div class="h-16 w-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto border border-red-100 shadow-sm">
+                <i data-lucide="shield-alert" class="w-8 h-8"></i>
+            </div>
+            <div class="space-y-2">
+                <h3 class="text-2xl font-black italic uppercase tracking-tighter text-slate-900">Acesso Restrito</h3>
+                <p class="text-[10px] text-red-500 uppercase font-black tracking-wider">Criação de novos catálogos de teste suspensa</p>
+            </div>
+            <p class="text-slate-600 text-sm font-medium leading-relaxed">
+                A criação direta de novas páginas de demonstração/teste foi desabilitada nesta área para evitar abusos no sistema.
+                <br><br>
+                Se você deseja criar um catálogo profissional ou iniciar um teste gratuito, por favor <strong>solicite o seu link exclusivo de criação</strong> com o seu revendedor especialista ou fale com nosso suporte.
+            </p>
+            
+            <div class="flex flex-col gap-3 pt-2">
+                <a href="index.html" class="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest text-xs rounded-2xl shadow-lg transition-all active-scale text-center flex items-center justify-center gap-2">
+                    <i data-lucide="home" class="w-4 h-4"></i> Ir para a Página Inicial
+                </a>
+                <a href="https://api.whatsapp.com/send?phone=5585992862177&text=Olá! Desejo criar meu catálogo profissional e preciso de um link exclusivo de parceiro." target="_blank" class="w-full py-4 bg-[#25D366] hover:bg-[#128C7E] text-white font-black uppercase tracking-widest text-xs rounded-2xl shadow-lg transition-all active-scale text-center flex items-center justify-center gap-2">
+                    <i data-lucide="message-square" class="w-4 h-4"></i> Solicitar Link no WhatsApp
+                </a>
+            </div>
+        </div>
+    </div>
     <!-- MODAL DE VÍDEO -->
     <div id="video-modal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[100] hidden items-center justify-center p-4" onclick="closeTutorial()">
         <div class="bg-slate-800 w-full max-w-4xl rounded-[2.5rem] overflow-hidden shadow-2xl relative border border-white/10" onclick="event.stopPropagation()">
@@ -1951,11 +1977,24 @@
             }
         }
 
+        window.showBlockOverlay = function() {
+            const overlay = document.getElementById('block-overlay');
+            if (overlay) {
+                overlay.classList.remove('hidden');
+                overlay.classList.add('flex');
+                document.body.style.overflow = 'hidden';
+                if (window.lucide) lucide.createIcons();
+            }
+        }
+
         window.loadFromFirebase = async function(forcedId = null) {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
                 const storeId = forcedId || urlParams.get('edit') || urlParams.get('id');
-                if (!storeId) return;
+                if (!storeId) {
+                    window.showBlockOverlay();
+                    return;
+                }
 
                 // Aguarda o Firebase inicializar
                 let attempts = 0;
@@ -2095,8 +2134,13 @@
 
                     window.renderProducts();
                     window.renderVendors();
+                } else {
+                    window.showBlockOverlay();
                 }
-            } catch (e) { console.error("Erro ao carregar dados:", e); }
+            } catch (e) { 
+                console.error("Erro ao carregar dados:", e); 
+                window.showBlockOverlay();
+            }
         }
 
         window.onload = async () => {

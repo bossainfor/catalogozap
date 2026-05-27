@@ -95,6 +95,19 @@
         </div>
     </header>
 
+    <!-- BANNER DE ALERTA DE RASCUNHO LOCAL -->
+    <div id="draft-alert-banner" class="bg-amber-500 border-b border-amber-600 text-slate-900 hidden transition-all">
+        <div class="max-w-4xl mx-auto px-4 py-3 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold">
+            <div class="flex items-center gap-2">
+                <i data-lucide="alert-triangle" class="w-5 h-5 text-slate-900 shrink-0"></i>
+                <span>Você está editando um rascunho salvo temporariamente no seu navegador. Os dados salvos no servidor podem diferir.</span>
+            </div>
+            <button onclick="window.discardDraftAndLoadServer()" class="bg-slate-900 text-white px-3 py-1.5 rounded-lg border border-transparent hover:bg-slate-800 transition-all font-black text-[10px] uppercase tracking-wider shrink-0">
+                Descarregar Rascunho / Buscar do Servidor
+            </button>
+        </div>
+    </div>
+
     <main class="max-w-4xl mx-auto px-4 py-8 pb-32">
         <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
             <div class="bg-orange-500 p-8 text-white">
@@ -462,6 +475,7 @@
         window.shippingZones = [];
         window.bannerImages = [];
         window.expandedProducts = new Set();
+        window.isLoadingStore = true;
 
         // Helper para normalizar categorias (Case-Insensitive)
         window.getNormalizedCategory = function(input, currentProductId) {
@@ -533,6 +547,10 @@
         }
 
         window.saveDraft = function() {
+            if (window.isLoadingStore) {
+                console.log("Rascunho não salvo: carregamento inicial em andamento.");
+                return;
+            }
             const urlParams = new URLSearchParams(window.location.search);
             const storeId = urlParams.get('edit') || urlParams.get('id');
 
@@ -688,6 +706,13 @@
 
         window.clearDraft = function() {
             localStorage.removeItem('catalog_draft');
+        }
+
+        window.discardDraftAndLoadServer = async function() {
+            if (confirm("Quer mesmo descartar este rascunho temporário do navegador e carregar a versão mais recente salva na nuvem (servidor)?\n\nIsso recarregará a página instalando as configurações e produtos salvos mais recentemente.")) {
+                localStorage.removeItem('catalog_draft');
+                window.location.reload();
+            }
         }
 
         window.addProduct = function() {
@@ -1969,6 +1994,8 @@
                                     const serverUpdate = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
                                     if (draft.lastUpdated > serverUpdate) {
                                         console.log("Usando rascunho local mais recente");
+                                        const bannerEl = document.getElementById('draft-alert-banner');
+                                        if (bannerEl) bannerEl.classList.remove('hidden');
                                         if (window.lucide) lucide.createIcons();
                                         return;
                                     }
@@ -2055,6 +2082,7 @@
         }
 
         window.onload = async () => {
+            window.isLoadingStore = true;
             window.loadDraft();
             window.checkLastStore();
             await window.loadFromFirebase();
@@ -2063,6 +2091,7 @@
             window.renderShippingZones();
             window.renderBannerImages();
             if (window.lucide) lucide.createIcons();
+            window.isLoadingStore = false;
         };
 
         window.addShippingZone = function() {

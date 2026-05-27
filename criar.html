@@ -1610,13 +1610,11 @@
             if (paymentBadgeVal) data.pmb = paymentBadgeVal;
             
             // Adicional: Carrossel de Banners Promocionais
-            if (window.promotionalBanners && window.promotionalBanners.length > 0) {
-                data.pb = window.promotionalBanners.map(b => ({
-                    id: b.id,
-                    i: b.i || '',
-                    al: b.al || ''
-                }));
-            }
+            data.pb = (window.promotionalBanners || []).map(b => ({
+                id: b.id,
+                i: b.i || '',
+                al: b.al || ''
+            }));
             
             data.c = document.getElementById('primary-color').value.replace('#', '');
             data.b = document.getElementById('secondary-color').value.replace('#', '');

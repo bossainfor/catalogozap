@@ -491,24 +491,36 @@
             if (cleanPhone.length <= 11 && cleanPhone.length > 0) cleanPhone = '55' + cleanPhone;
             
             const textParam = text ? `&text=${encodeURIComponent(text)}` : '';
-            const url = `https://wa.me/${cleanPhone}${textParam}`;
+            const webUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}${textParam}`;
+            const deepLink = `whatsapp://send?phone=${cleanPhone}${textParam}`;
             
             try {
                 const ua = navigator.userAgent || '';
-                const isWebView = /wv|Kodular|thunkable/i.test(ua) || (window.Android && window.Android.showToast);
+                const isWebView = /wv|Kodular|thunkable|bubble|android/i.test(ua) || (window.Android && window.Android.showToast);
                 const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
                 
                 if (isWebView || isMobile) {
-                    window.location.href = url;
+                    // Tenta o esquema whatsapp:// direto, pois em WebViews (como no Kodular) ele abre o app nativo diretamente
+                    // sem passar por redirecionador web, o que previne o erro de esquema de URL desconhecida (net::ERR_UNKNOWN_URL_SCHEME).
+                    const link = document.createElement('a');
+                    link.href = deepLink;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    // Fallback rápido após 450ms se por algum motivo whatsapp:// não responder
+                    setTimeout(() => {
+                        window.location.href = webUrl;
+                    }, 450);
                 } else {
-                    const win = window.open(url, '_blank');
+                    const win = window.open(webUrl, '_blank');
                     if (!win) {
-                        window.location.href = url;
+                        window.location.href = webUrl;
                     }
                 }
             } catch (err) {
                 console.error("Erro no redirecionamento whatsapp:", err);
-                window.location.href = url;
+                window.location.href = webUrl;
             }
         }
 

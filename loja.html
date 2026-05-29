@@ -485,42 +485,72 @@
             return u;
         }
 
-        // Resolutor de redirecionamento resiliente para WhatsApp de alta compatibilidade (WebViews / Kodular / Mobile)
+        // Resolutor de redirecionamento resiliente para WhatsApp de alta compatibilidade (WebViews / Kodular / Mobile / PC / Browsers)
         window.openResilientWhatsApp = function(phone, text) {
             let cleanPhone = String(phone).replace(/\D/g, '');
-            if (cleanPhone.length <= 11 && cleanPhone.length > 0) cleanPhone = '55' + cleanPhone;
+            if (cleanPhone.length <= 11 && cleanPhone.length > 0) {
+                cleanPhone = '55' + cleanPhone;
+            }
             
-            const textParam = text ? `&text=${encodeURIComponent(text)}` : '';
-            const webUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}${textParam}`;
-            const deepLink = `whatsapp://send?phone=${cleanPhone}${textParam}`;
+            // Corrige possíveis problemas de dupla ou tripla codificação do texto
+            let decodedText = '';
+            try {
+                // Tenta decodificar recursivamente para garantir que temos o texto puro sem codificação de URL
+                let currentText = text || '';
+                let lastText = '';
+                let attempts = 0;
+                while (currentText !== lastText && attempts < 5) {
+                    lastText = currentText;
+                    currentText = decodeURIComponent(currentText);
+                    attempts++;
+                }
+                decodedText = currentText;
+            } catch (e) {
+                decodedText = text || '';
+            }
+            
+            // Codifica o texto purificado de forma limpa uma única vez
+            const encodedText = encodeURIComponent(decodedText);
+            
+            // Links universais seguros (wa.me é o mais resiliente no PC e Mobile)
+            const waMeUrl = `https://wa.me/${cleanPhone}?text=${encodedText}`;
+            const apiWebUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedText}`;
+            const nativeDeepLink = `whatsapp://send?phone=${cleanPhone}&text=${encodedText}`;
             
             try {
                 const ua = navigator.userAgent || '';
+                // Detecção robusta de WebViews / Apps mobile hibridos / Emuladores
                 const isWebView = /wv|Kodular|thunkable|bubble|android/i.test(ua) || (window.Android && window.Android.showToast);
                 const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
                 
                 if (isWebView || isMobile) {
-                    // Tenta o esquema whatsapp:// direto, pois em WebViews (como no Kodular) ele abre o app nativo diretamente
-                    // sem passar por redirecionador web, o que previne o erro de esquema de URL desconhecida (net::ERR_UNKNOWN_URL_SCHEME).
-                    const link = document.createElement('a');
-                    link.href = deepLink;
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
+                    // 1. Tenta redirecionamento normal usando wa.me (altamente recomendado e compatível)
+                    window.location.href = waMeUrl;
                     
-                    // Fallback rápido após 450ms se por algum motivo whatsapp:// não responder
+                    // 2. Primeiro Fallback (350ms): Tenta forçar o link nativo "whatsapp://" caso o WebView bloqueie wa.me
                     setTimeout(() => {
-                        window.location.href = webUrl;
-                    }, 450);
+                        const link = document.createElement('a');
+                        link.href = nativeDeepLink;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    }, 350);
+                    
+                    // 3. Segundo Fallback (800ms): Tenta a URL clássica api.whatsapp.com como última opção
+                    setTimeout(() => {
+                        window.location.href = apiWebUrl;
+                    }, 800);
                 } else {
-                    const win = window.open(webUrl, '_blank');
+                    // No Desktop / Computador, abre wa.me em uma nova guia de forma limpa e moderna
+                    const win = window.open(waMeUrl, '_blank');
                     if (!win) {
-                        window.location.href = webUrl;
+                        window.location.href = waMeUrl;
                     }
                 }
             } catch (err) {
                 console.error("Erro no redirecionamento whatsapp:", err);
-                window.location.href = webUrl;
+                // Último recurso de emergência
+                window.location.href = waMeUrl;
             }
         }
 

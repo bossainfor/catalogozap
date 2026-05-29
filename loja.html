@@ -485,6 +485,33 @@
             return u;
         }
 
+        // Resolutor de redirecionamento resiliente para WhatsApp de alta compatibilidade (WebViews / Kodular / Mobile)
+        window.openResilientWhatsApp = function(phone, text) {
+            let cleanPhone = String(phone).replace(/\D/g, '');
+            if (cleanPhone.length <= 11 && cleanPhone.length > 0) cleanPhone = '55' + cleanPhone;
+            
+            const textParam = text ? `&text=${encodeURIComponent(text)}` : '';
+            const url = `https://wa.me/${cleanPhone}${textParam}`;
+            
+            try {
+                const ua = navigator.userAgent || '';
+                const isWebView = /wv|Kodular|thunkable/i.test(ua) || (window.Android && window.Android.showToast);
+                const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
+                
+                if (isWebView || isMobile) {
+                    window.location.href = url;
+                } else {
+                    const win = window.open(url, '_blank');
+                    if (!win) {
+                        window.location.href = url;
+                    }
+                }
+            } catch (err) {
+                console.error("Erro no redirecionamento whatsapp:", err);
+                window.location.href = url;
+            }
+        }
+
         function getEmbedUrl(url) {
             if (!url) return { url: '', isDirect: false, original: '' };
             let u = url.trim();
@@ -537,16 +564,6 @@
                 const docSnap = await getDoc(doc(window.db, "stores", storeId));
 
                 if (!docSnap.exists()) return null;
-
-                // Click Tracker Global
-                try {
-                    const { updateDoc, increment, doc } = window.firebaseUtils;
-                    await updateDoc(doc(window.db, "stores", storeId), {
-                        clicks: increment(1)
-                    });
-                } catch (e) {
-                    console.error("Erro ao registrar acesso:", e);
-                }
 
                 const data = docSnap.data();
 
@@ -953,7 +970,7 @@
             
             let whatsapp = storeData.whatsapp.replace(/\D/g, '');
             if (whatsapp.length <= 11) whatsapp = '55' + whatsapp;
-            window.open(`https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(message)}`, '_blank');
+            window.openResilientWhatsApp(whatsapp, message);
         }
 
         function requestQuote(productId, variations = '') {
@@ -971,7 +988,7 @@
             let message = `*Pedido de Orçamento - ${storeData.name}*\n\nOlá! Gostaria de solicitar um orçamento para:\n*${product.name}*\n${variations ? `*Opções:* ${variations}\n` : ''}\nAguardo seu retorno!`;
             let whatsapp = storeData.whatsapp.replace(/\D/g, '');
             if (whatsapp.length <= 11) whatsapp = '55' + whatsapp;
-            window.open(`https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(message)}`, '_blank');
+            window.openResilientWhatsApp(whatsapp, message);
         }
 
         window.openSchedulingModal = function(productId, variations = '') {
@@ -1114,8 +1131,8 @@
             let whatsapp = storeData.whatsapp.replace(/\D/g, '');
             if (whatsapp.length <= 11) whatsapp = '55' + whatsapp;
             
-            // Abre WhatsApp
-            window.open(`https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(message)}`, '_blank');
+            // Abre WhatsApp resiliente
+            window.openResilientWhatsApp(whatsapp, message);
 
             // Remove o modal
             const mod = document.getElementById('scheduling-modal');
@@ -1155,7 +1172,7 @@
             let whatsapp = storeData.whatsapp.replace(/\D/g, '');
             if (whatsapp.length <= 11) whatsapp = '55' + whatsapp;
 
-            window.open(`https://api.whatsapp.com/send?phone=${whatsapp}&text=${encodeURIComponent(message)}`, '_blank');
+            window.openResilientWhatsApp(whatsapp, message);
         }
 
         // Carrossel de Banners Promocionais (Movimentos e Slideshow)
@@ -1287,7 +1304,7 @@
                             <p class="text-slate-500 font-medium leading-relaxed text-sm">
                                 O período de teste ou a mensalidade deste catálogo está suspenso. Para reativar e continuar vendendo, consulte seu gestor ou suporte técnico.
                             </p>
-                            <a href="https://api.whatsapp.com/send?phone=${supportPhone}&text=${supportText}" 
+                            <a href="#" onclick="window.openResilientWhatsApp('${supportPhone}', decodeURIComponent('${supportText}')); return false;" 
                                class="block w-full py-4 bg-green-500 hover:bg-green-600 text-white font-black uppercase italic tracking-widest rounded-2xl transition-all shadow-lg active:scale-95 text-xs">
                                 <i data-lucide="phone" class="inline-block mr-2 w-4.5 h-4.5"></i> Contatar Suporte
                             </a>
@@ -1487,17 +1504,17 @@
                  const validBanners = storeData.pb.filter(b => b.i && b.i.trim() !== '');
                  if (validBanners.length > 0) {
                     promoBannersHTML = `
-                    <div class="max-w-6xl mx-auto px-4 mt-6 mb-2 relative group/carousel">
+                    <div class="w-full relative group/carousel mt-0 mb-4 overflow-hidden">
                         <!-- Carrossel Wrapper -->
-                        <div id="promo-carousel" class="flex overflow-x-auto snap-x snap-mandatory scroll-smooth rounded-[1.5rem] sm:rounded-[2.5rem] shadow-xl border border-slate-100 dark:border-slate-800 scrollbar-hide relative aspect-[21/9] sm:aspect-[21/7] select-none touch-pan-x bg-slate-100 dark:bg-slate-800">
+                        <div id="promo-carousel" class="flex overflow-x-auto snap-x snap-mandatory scroll-smooth rounded-none border-b border-slate-100 dark:border-slate-800/40 scrollbar-hide relative aspect-[16/7] sm:aspect-[21/7] lg:aspect-[21/6] select-none touch-pan-x bg-slate-100 dark:bg-slate-800 w-full">
                             ${validBanners.map((b, idx) => {
                                 const isClickable = b.al && b.al.trim() !== '' && !b.al.toLowerCase().includes('postimg') && !b.al.toLowerCase().includes('postimages');
                                 const clickAction = isClickable ? `onclick="window.open('${b.al.startsWith('http') ? b.al : 'https://' + b.al}', '_blank')"` : '';
                                 const cursorClass = isClickable ? 'cursor-pointer' : 'cursor-default pointer-events-none';
                                 return `
                                 <div ${clickAction} class="snap-start flex-shrink-0 w-full h-full relative ${cursorClass} group/slide overflow-hidden">
-                                    <img src="${proxyImg(b.i)}" alt="Banner Promocional" class="w-full h-full object-fill group-hover/slide:scale-105 transition-transform duration-700 ease-out" referrerpolicy="no-referrer">
-                                    <div class="absolute inset-0 bg-gradient-to-t from-black/10 dark:from-black/30 via-transparent to-transparent"></div>
+                                    <img src="${proxyImg(b.i)}" alt="Banner Promocional" class="w-full h-full object-cover group-hover/slide:scale-105 transition-transform duration-700 ease-out" referrerpolicy="no-referrer">
+                                    <div class="absolute inset-0 bg-gradient-to-t from-black/20 dark:from-black/45 via-transparent to-transparent"></div>
                                 </div>
                                 `;
                             }).join('')}
@@ -1505,15 +1522,15 @@
                          
                          <!-- Setas de Direção (Esquerda e Direita) -->
                          ${validBanners.length > 1 ? `
-                         <button onclick="window.slidePromoCarousel(-1)" class="absolute left-6 top-1/2 -translate-y-1/2 z-20 bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-700 p-2.5 sm:p-3 rounded-full shadow-lg border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-800 dark:text-white hover:scale-110 active:scale-95 transition-all opacity-0 group-hover/carousel:opacity-100 backdrop-blur-md">
+                         <button onclick="window.slidePromoCarousel(-1)" class="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-700 p-2 sm:p-2.5 rounded-full shadow-lg border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-800 dark:text-white hover:scale-110 active:scale-95 transition-all opacity-100 sm:opacity-0 group-hover/carousel:opacity-100 backdrop-blur-md">
                              <i data-lucide="chevron-left" class="w-5 h-5"></i>
                          </button>
-                         <button onclick="window.slidePromoCarousel(1)" class="absolute right-6 top-1/2 -translate-y-1/2 z-20 bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-700 p-2.5 sm:p-3 rounded-full shadow-lg border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-800 dark:text-white hover:scale-110 active:scale-95 transition-all opacity-0 group-hover/carousel:opacity-100 backdrop-blur-md">
+                         <button onclick="window.slidePromoCarousel(1)" class="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-white/80 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-700 p-2 sm:p-2.5 rounded-full shadow-lg border border-slate-100 dark:border-slate-700 flex items-center justify-center text-slate-800 dark:text-white hover:scale-110 active:scale-95 transition-all opacity-100 sm:opacity-0 group-hover/carousel:opacity-100 backdrop-blur-md">
                              <i data-lucide="chevron-right" class="w-5 h-5"></i>
                          </button>
                          
                          <!-- Indicadores em bolinhas (Dots) -->
-                         <div class="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-1.5 bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+                         <div class="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-1.5 bg-black/35 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
                              ${validBanners.map((_, idx) => `
                              <button onclick="window.goToPromoSlide(${idx})" id="promo-dot-${idx}" class="w-2 h-2 rounded-full transition-all duration-300 ${idx === 0 ? 'bg-white scale-125' : 'bg-white/40 hover:bg-white/60'}"></button>
                              `).join('')}
@@ -1751,7 +1768,7 @@
                                         </a>
                                     ` : ''}
                                     ${!isAffiliate ? `
-                                        <a href="https://api.whatsapp.com/send?phone=55${storeData.whatsapp.replace(/\D/g, '')}" target="_blank" class="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-all flex items-center justify-center text-white" title="WhatsApp">
+                                        <a href="#" onclick="window.openResilientWhatsApp('55' + '${storeData.whatsapp.replace(/\D/g, '')}', ''); return false;" class="p-3 bg-white/10 rounded-full hover:bg-white/20 transition-all flex items-center justify-center text-white" title="WhatsApp">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-phone"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                                         </a>
                                     ` : ''}

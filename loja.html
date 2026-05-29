@@ -522,38 +522,34 @@
             
             // Links universais seguros (wa.me é o mais resiliente no PC e Mobile)
             const waMeUrl = `https://wa.me/${cleanPhone}${encodedText ? '?text=' + encodedText : ''}`;
-            const apiWebUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}${encodedText ? '&text=' + encodedText : ''}`;
+            const apiWebUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodedText}`;
+            const nativeDeepLink = `whatsapp://send?phone=${cleanPhone}&text=${encodedText}`;
             
             try {
-                // Suporte avançado para ponte de comunicação com WebView do AppInventor/Kodular.
-                // Se a página estiver rodando dentro de um WebViewer do Kodular, enviamos o link direto do WhatsApp
-                // via WebViewString. Isso permite que o desenvolvedor do app o intercepte no bloco "when WebViewer.WebViewStringChange"
-                // e o abra de forma externa/nativa perfeita usando ActivityStarter ou Open Website.
-                if (window.AppInventor && typeof window.AppInventor.setWebViewString === 'function') {
-                    window.AppInventor.setWebViewString(waMeUrl);
-                    return;
-                }
-
                 const ua = navigator.userAgent || '';
                 // Detecção robusta de WebViews / Apps mobile hibridos / Emuladores
                 const isWebView = /wv|Kodular|thunkable|bubble|android/i.test(ua) || (window.Android && window.Android.showToast);
                 const isMobile = /Android|iPhone|iPad|iPod/i.test(ua);
                 
-                if (isWebView) {
-                    // Em WebViews (como no APK do Kodular), redirecionar ou forçar links customizados do tipo "whatsapp://" 
-                    // sem suporte nativo configurado causa erro instantâneo no Android (ERR_UNKNOWN_URL_SCHEME).
-                    // Para evitar isso, usamos wa.me HTTPS limpo e desativamos qualquer tentativa de carregar "whatsapp://" internamente.
-                    window.location.href = waMeUrl;
-                } else if (isMobile) {
-                    // Navegadores móveis convencionais
+                if (isWebView || isMobile) {
+                    // 1. Tenta redirecionamento normal usando wa.me (altamente recomendado e compatível)
                     window.location.href = waMeUrl;
                     
-                    // Fallback leve para o link clásico api.whatsapp.com caso caia
+                    // 2. Primeiro Fallback (350ms): Tenta forçar o link nativo "whatsapp://" caso o WebView bloqueie wa.me
+                    setTimeout(() => {
+                        const link = document.createElement('a');
+                        link.href = nativeDeepLink;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                    }, 350);
+                    
+                    // 3. Segundo Fallback (800ms): Tenta a URL clássica api.whatsapp.com como última opção
                     setTimeout(() => {
                         window.location.href = apiWebUrl;
-                    }, 1000);
+                    }, 800);
                 } else {
-                    // No Desktop, abre wa.me em uma nova guia de forma limpa e moderna
+                    // No Desktop / Computador, abre wa.me em uma nova guia de forma limpa e moderna
                     const win = window.open(waMeUrl, '_blank');
                     if (!win) {
                         window.location.href = waMeUrl;
@@ -561,6 +557,7 @@
                 }
             } catch (err) {
                 console.error("Erro no redirecionamento whatsapp:", err);
+                // Último recurso de emergência
                 window.location.href = waMeUrl;
             }
         }

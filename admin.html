@@ -354,9 +354,9 @@
                         ${statusBadge}
                     </td>
                     <td class="px-6 py-5 text-center">
-                        <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg text-xs font-black">
+                        <button onclick="window.viewResellerClients('${r.id}')" title="Clique para ver os clientes de ${r.name || r.id}" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 hover:text-indigo-800 rounded-lg text-xs font-black transition-all hover:scale-105 active:scale-95 cursor-pointer select-none">
                             <i data-lucide="store" class="w-3.5 h-3.5"></i> ${activeStoresCount} / ${totalStoresCount}
-                        </span>
+                        </button>
                     </td>
                     <td class="px-6 py-5">
                         <div class="text-xs font-bold text-slate-600">
@@ -638,15 +638,30 @@
         }
 
         function filterStores() {
-            const term = document.getElementById('search-input').value.toLowerCase();
+            const term = document.getElementById('search-input').value.toLowerCase().trim();
             const filtered = allStores.filter(s => 
                 (s.n && s.n.toLowerCase().includes(term)) || 
                 (s.cn && s.cn.toLowerCase().includes(term)) ||
                 (s.w && s.w.includes(term)) ||
-                (s.id && s.id.toLowerCase().includes(term))
+                (s.id && s.id.toLowerCase().includes(term)) ||
+                (s.resellerId && s.resellerId.toLowerCase().includes(term)) ||
+                (s.resellerName && s.resellerName.toLowerCase().includes(term))
             );
             renderStores(filtered);
         }
+
+        window.viewResellerClients = function(resellerId) {
+            if (!resellerId) return;
+            // 1. Switch to stores tab
+            window.switchAdminTab('stores');
+            // 2. Set search input value
+            const searchInput = document.getElementById('search-input');
+            if (searchInput) {
+                searchInput.value = resellerId;
+                // 3. Trigger filter
+                filterStores();
+            }
+        };
 
         window.filterByStatus = function(status) {
             let filtered = [];
@@ -740,8 +755,14 @@
                 const waLink = `https://api.whatsapp.com/send?phone=${waClean}`;
 
                 const resellerLabel = data.resellerId ? `
-                    <span class="inline-flex items-center gap-1 bg-purple-50 hover:bg-purple-100 border border-purple-100 rounded-lg px-2 py-0.5 mt-1 text-[8px] sm:text-[9px] font-black uppercase text-purple-700 tracking-wider transition-colors select-none">
+                    <span onclick="window.viewResellerClients('${data.resellerId}')" style="cursor: pointer;" title="Clique para ver todos os clientes de ${data.resellerId}" class="inline-flex items-center gap-1 bg-purple-50 hover:bg-purple-150 border border-purple-105 rounded-lg px-2 py-0.5 mt-1 text-[8px] sm:text-[9px] font-black uppercase text-purple-700 tracking-wider transition-all select-none">
                         <i data-lucide="user" class="w-2.5 h-2.5"></i> Revendedor: ${data.resellerId}
+                    </span>
+                ` : '';
+
+                const appConfiguredLabel = (data.al && data.al.trim() !== '') ? `
+                    <span class="inline-flex items-center gap-1 bg-blue-50/70 border border-blue-100 rounded-lg px-2 py-0.5 mt-1 text-[8px] sm:text-[9px] font-black uppercase text-blue-700 tracking-wider select-none animate-pulse">
+                        <i data-lucide="smartphone" class="w-2.5 h-2.5"></i> App Configurado
                     </span>
                 ` : '';
 
@@ -749,7 +770,10 @@
                     <td class="px-6 py-5">
                         <div class="font-black text-sm text-slate-900 uppercase italic tracking-tighter">${data.n || 'Sem Nome'}</div>
                         <div class="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-none">${data.cn || 'Dono não informado'}</div>
-                        ${resellerLabel}
+                        <div class="flex flex-wrap items-center gap-1">
+                            ${resellerLabel}
+                            ${appConfiguredLabel}
+                        </div>
                     </td>
                     <td class="px-6 py-5">
                         <a href="${waLink}" target="_blank" class="text-xs font-black text-slate-600 hover:text-green-500 flex items-center gap-1 transition-colors">
@@ -782,8 +806,9 @@
                     </td>
                     <td class="px-6 py-5 text-right">
                         <div class="flex items-center justify-end gap-2">
-                            <button onclick="setAppLink('${id}')" title="Link do Aplicativo" class="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors">
+                            <button onclick="setAppLink('${id}')" title="${(data.al && data.al.trim() !== '') ? 'Alterar Link do Aplicativo (Ativo)' : 'Configurar Link do Aplicativo (Inativo)'}" class="p-2 ${(data.al && data.al.trim() !== '') ? 'bg-blue-600 text-white hover:bg-blue-700' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'} rounded-lg transition-colors relative">
                                 <i data-lucide="smartphone" size="16"></i>
+                                ${(data.al && data.al.trim() !== '') ? '<span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-green-500 border border-white rounded-full"></span>' : ''}
                             </button>
                             <button onclick="changeStoreId('${id}')" title="Mudar ID (Link)" class="p-2 bg-yellow-50 text-yellow-600 rounded-lg hover:bg-yellow-100 transition-colors">
                                 <i data-lucide="tag" size="16"></i>
@@ -820,12 +845,20 @@
                 // Mobile Card
                 const card = document.createElement('div');
                 card.className = "p-5 sm:p-6 space-y-5";
+                const appConfiguredLabelMobile = (data.al && data.al.trim() !== '') ? `
+                    <span class="inline-flex items-center gap-1 bg-blue-50 border border-blue-100 rounded-lg px-2 py-0.5 mt-1 text-[8px] font-black uppercase text-blue-700 tracking-wider select-none animate-pulse">
+                        <i data-lucide="smartphone" class="w-2.5 h-2.5"></i> App Configurado
+                    </span>
+                ` : '';
                 card.innerHTML = `
                     <div class="flex justify-between items-start">
                         <div>
                             <div class="font-black text-base text-slate-900 uppercase italic tracking-tighter">${data.n || 'Sem Nome'}</div>
                             <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">${data.cn || 'Dono não informado'}</div>
-                            ${resellerLabel}
+                            <div class="flex flex-wrap items-center gap-1 mt-1">
+                                ${resellerLabel}
+                                ${appConfiguredLabelMobile}
+                            </div>
                         </div>
                         <div class="flex flex-col items-end gap-1.5">
                             ${statusBadge}
@@ -877,8 +910,9 @@
                             </button>
                         </div>
                         <div class="flex items-center gap-2 w-full pt-1">
-                            <button onclick="setAppLink('${id}')" class="flex-1 py-3 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center active:scale-95 transition-all border border-blue-100" title="Link do App">
+                            <button onclick="setAppLink('${id}')" class="flex-1 py-3 ${(data.al && data.al.trim() !== '') ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100' : 'bg-blue-50 text-blue-600 border-blue-100'} rounded-xl flex items-center justify-center active:scale-95 transition-all border relative" title="${(data.al && data.al.trim() !== '') ? 'Alterar Link do Aplicativo (Ativo)' : 'Configurar Link do Aplicativo (Inativo)'}">
                                 <i data-lucide="smartphone" class="w-4 h-4"></i>
+                                ${(data.al && data.al.trim() !== '') ? '<span class="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-green-400 rounded-full"></span>' : ''}
                             </button>
                             <button onclick="changeStoreId('${id}')" class="flex-1 py-3 bg-yellow-50 text-yellow-600 rounded-xl flex items-center justify-center active:scale-95 transition-all border border-yellow-100" title="Mudar ID (Link)">
                                 <i data-lucide="tag" class="w-4 h-4"></i>

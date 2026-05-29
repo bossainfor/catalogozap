@@ -425,6 +425,11 @@
                     <td class="px-6 py-4">
                         <div class="font-black text-sm text-slate-950 uppercase italic tracking-tighter">${data.n || 'Sem Nome'}</div>
                         <div class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">${data.cn || 'Dono não informado'}</div>
+                        ${data.al && data.al.trim() !== '' ? `
+                        <div class="inline-flex items-center gap-1 bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider mt-1 border border-blue-100">
+                            <i data-lucide="smartphone" class="w-2.5 h-2.5"></i> App Ativo
+                        </div>
+                        ` : ''}
                     </td>
                     <td class="px-6 py-4">
                         <a href="${waLink}" target="_blank" class="text-xs font-black text-slate-600 hover:text-green-500 flex items-center gap-1 transition-colors">
@@ -480,6 +485,11 @@
                         <div>
                             <div class="font-black text-sm text-slate-900 uppercase italic tracking-tighter leading-tight">${data.n || 'Sem Nome'}</div>
                             <div class="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-0.5">${data.cn || 'Dono não informado'}</div>
+                            ${data.al && data.al.trim() !== '' ? `
+                            <div class="inline-flex items-center gap-1 bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-wider mt-1.5 border border-blue-100">
+                                <i data-lucide="smartphone" class="w-2.5 h-2.5"></i> App Ativo
+                            </div>
+                            ` : ''}
                         </div>
                         ${statusBadge}
                     </div>

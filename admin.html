@@ -652,14 +652,221 @@
 
         window.viewResellerClients = function(resellerId) {
             if (!resellerId) return;
-            // 1. Switch to stores tab
-            window.switchAdminTab('stores');
-            // 2. Set search input value
-            const searchInput = document.getElementById('search-input');
-            if (searchInput) {
-                searchInput.value = resellerId;
-                // 3. Trigger filter
-                filterStores();
+
+            // Remove modal anterior se houver
+            const oldModal = document.getElementById('reseller-clients-modal');
+            if (oldModal) oldModal.remove();
+
+            const reseller = allResellers.find(r => r.id === resellerId) || { id: resellerId, name: resellerId };
+            const resellerStores = allStores.filter(s => s.resellerId === resellerId);
+
+            const modal = document.createElement('div');
+            modal.id = 'reseller-clients-modal';
+            modal.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[1100] flex items-center justify-center p-3 sm:p-6';
+            
+            let contentHtml = '';
+            if (resellerStores.length === 0) {
+                contentHtml = `
+                    <div class="p-12 text-center text-slate-500 py-16">
+                        <i data-lucide="store" class="w-12 h-12 text-slate-300 mx-auto mb-4 animate-bounce"></i>
+                        <p class="font-bold text-sm uppercase tracking-wider text-slate-400">Nenhum Cliente Encontrado</p>
+                        <p class="text-xs text-slate-400 mt-1 max-w-xs mx-auto">Este revendedor ainda não criou nenhum catálogo/loja de cliente.</p>
+                    </div>
+                `;
+            } else {
+                contentHtml = `
+                    <div class="overflow-y-auto max-h-[60vh] px-6 py-2 divide-y divide-slate-100">
+                        <!-- Desktop View inside Modal -->
+                        <div class="overflow-x-auto hidden sm:block">
+                            <table class="w-full text-left border-collapse text-xs">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-100 uppercase tracking-tighter">
+                                        <th class="px-4 py-3 font-black text-slate-400">Cliente / Catálogo</th>
+                                        <th class="px-4 py-3 font-black text-slate-400">WhatsApp</th>
+                                        <th class="px-4 py-3 font-black text-slate-400 text-center">Situação</th>
+                                        <th class="px-4 py-3 font-black text-slate-400 text-center">App Link</th>
+                                        <th class="px-4 py-3 font-black text-slate-400 text-right">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${resellerStores.map(store => {
+                                        const expiresAt = new Date(store.expiresAt || store.createdAt);
+                                        const isExpired = new Date() > expiresAt;
+                                        const isBlocked = store.status === 'blocked';
+                                        
+                                        let statusBadge = '';
+                                        if (isBlocked) {
+                                            statusBadge = '<span class="bg-red-105 text-red-600 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest">BLOQUEADO</span>';
+                                        } else if (isExpired) {
+                                            statusBadge = '<span class="bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest font-black">EXPIRADO</span>';
+                                        } else {
+                                            statusBadge = '<span class="bg-green-100 text-green-600 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-widest">ATIVO</span>';
+                                        }
+
+                                        let waClean = store.w ? store.w.replace(/\D/g, '') : '';
+                                        if (waClean.length <= 11 && waClean.length > 0) waClean = '55' + waClean;
+                                        const waLink = `https://api.whatsapp.com/send?phone=${waClean}`;
+
+                                        const hasApp = store.al && store.al.trim() !== '';
+                                        const appBadge = hasApp ? `
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-600 text-white rounded-lg text-[9px] font-black uppercase tracking-widest animate-pulse border border-blue-600 shadow-sm" title="${store.al}">
+                                                <i data-lucide="smartphone" class="w-3 h-3"></i> ATIVO
+                                            </span>
+                                        ` : `
+                                            <span class="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 text-slate-450 rounded-lg text-[9px] font-black uppercase tracking-widest border border-slate-205 text-slate-400">
+                                                <i data-lucide="smartphone" class="w-3 h-3"></i> INATIVO
+                                            </span>
+                                        `;
+
+                                        return `
+                                            <tr class="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                                                <td class="px-4 py-4">
+                                                    <div class="font-black text-slate-900 uppercase italic tracking-tighter leading-tight">${store.n || 'Sem Nome'}</div>
+                                                    <div class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">${store.cn || 'Sem Dono'}</div>
+                                                    <div class="text-[8px] text-indigo-500 font-bold tracking-widest uppercase mt-0.5">ID: ${store.id}</div>
+                                                </td>
+                                                <td class="px-4 py-4">
+                                                    <a href="${waLink}" target="_blank" class="font-bold text-slate-600 hover:text-green-500 flex items-center gap-1 transition-colors">
+                                                        <i data-lucide="phone" class="w-3 h-3 text-green-500"></i> ${store.w || '-'}
+                                                    </a>
+                                                </td>
+                                                <td class="px-4 py-4 text-center">
+                                                    ${statusBadge}
+                                                    <div class="text-[9px] text-slate-400 font-bold mt-1">Vence: ${expiresAt.toLocaleDateString('pt-BR')}</div>
+                                                </td>
+                                                <td class="px-4 py-4 text-center">
+                                                    ${appBadge}
+                                                </td>
+                                                <td class="px-4 py-4 text-right">
+                                                    <button onclick="window.setResellerStoreAppLink('${store.id}', '${resellerId}')" class="px-3 py-1.5 ${hasApp ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-600' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-100'} rounded-lg font-black uppercase tracking-widest text-[9px] transition-all hover:scale-105 active:scale-95 cursor-pointer">
+                                                        ${hasApp ? 'Alterar App' : 'Colocar App'}
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Mobile View inside Modal -->
+                        <div class="sm:hidden space-y-4 py-3">
+                            ${resellerStores.map(store => {
+                                const expiresAt = new Date(store.expiresAt || store.createdAt);
+                                const isExpired = new Date() > expiresAt;
+                                const isBlocked = store.status === 'blocked';
+                                
+                                let statusColor = 'text-green-600 bg-green-50 border-green-200';
+                                let statusText = 'Ativo';
+                                if (isBlocked) {
+                                    statusColor = 'text-red-600 bg-red-50 border-red-200';
+                                    statusText = 'Bloqueado';
+                                } else if (isExpired) {
+                                    statusColor = 'text-orange-600 bg-orange-50 border-orange-200';
+                                    statusText = 'Expirado';
+                                }
+
+                                const hasApp = store.al && store.al.trim() !== '';
+
+                                return `
+                                    <div class="p-4 bg-slate-50 border border-slate-100 rounded-2xl space-y-3">
+                                        <div class="flex justify-between items-start gap-2">
+                                            <div>
+                                                <div class="font-black text-xs text-slate-900 uppercase italic tracking-tighter leading-tight">${store.n || 'Sem Nome'}</div>
+                                                <div class="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-none mt-0.5">${store.cn || 'Sem Dono'}</div>
+                                            </div>
+                                            <span class="px-2 py-0.5 ${statusColor} text-[8px] font-black uppercase rounded-lg border select-none">${statusText}</span>
+                                        </div>
+
+                                        <div class="flex justify-between items-center bg-white p-2 rounded-xl border border-slate-100">
+                                            <span class="text-[9px] text-slate-400 font-black uppercase tracking-wider">Aplicativo</span>
+                                            ${hasApp ? `
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-600 text-white rounded-md text-[8px] font-black uppercase tracking-widest animate-pulse border border-blue-600 shadow-sm" title="${store.al}">
+                                                    <i data-lucide="smartphone" class="w-2.5 h-2.5"></i> ATIVO
+                                                </span>
+                                            ` : `
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-400 rounded-md text-[8px] font-black uppercase tracking-widest border border-slate-200">
+                                                    <i data-lucide="smartphone" class="w-2.5 h-2.5"></i> INATIVO
+                                                </span>
+                                            `}
+                                        </div>
+
+                                        <div class="flex items-center justify-between gap-2 pt-1">
+                                            <span class="text-[9px] text-slate-400 font-bold">Vence: ${expiresAt.toLocaleDateString('pt-BR')}</span>
+                                            <button onclick="window.setResellerStoreAppLink('${store.id}', '${resellerId}')" class="px-3 py-2 ${hasApp ? 'bg-indigo-50 hover:bg-indigo-150 text-indigo-600' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-100'} rounded-xl font-black uppercase tracking-widest text-[9px] transition-all hover:scale-105 active:scale-95 cursor-pointer">
+                                                ${hasApp ? 'Alterar App' : 'Colocar App'}
+                                            </button>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            modal.innerHTML = `
+                <div class="bg-white max-w-4xl w-full rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col text-left animate-fade-in mx-4 sm:mx-0">
+                    <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                        <div>
+                            <div class="flex items-center gap-1.5">
+                                <span class="w-2.5 h-2.5 rounded-full bg-blue-600 animate-pulse"></span>
+                                <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Clientes do Parceiro</h3>
+                            </div>
+                            <h2 class="text-xl font-black uppercase italic tracking-tighter text-slate-900 mt-1">Clientes de: ${reseller.name || reseller.id}</h2>
+                            <p class="text-[11px] text-slate-400 font-bold mt-0.5">Total de lojas encontradas: <span class="text-slate-900 font-black">${resellerStores.length}</span> (Defina o link do aplicativo para as desejadas)</p>
+                        </div>
+                        <button onclick="document.getElementById('reseller-clients-modal').remove()" class="p-2 hover:bg-slate-200/50 rounded-full transition-all text-slate-400 hover:text-slate-900 cursor-pointer">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    ${contentHtml}
+
+                    <div class="p-6 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
+                        <button onclick="document.getElementById('reseller-clients-modal').remove(); window.switchAdminTab('stores'); document.getElementById('search-input').value = '${resellerId}'; filterStores();" class="px-4 py-2 hover:bg-slate-100 border border-slate-200 bg-white text-slate-800 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-1.5 shadow-sm transition-all active:scale-95 cursor-pointer">
+                            <i data-lucide="external-link" class="w-3.5 h-3.5"></i> Ver na Lista Geral
+                        </button>
+
+                        <button onclick="document.getElementById('reseller-clients-modal').remove()" class="px-6 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md transition-all active:scale-95 cursor-pointer">
+                            Fechar
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.setResellerStoreAppLink = async function(storeId, resellerId) {
+            const store = allStores.find(s => s.id === storeId);
+            if (!store) return;
+
+            const currentLink = store.al || "";
+            const newLink = prompt(`LINK DO APLICATIVO (Kodular/APK/Store)\nCliente: ${store.n}\nDigite o link para download do app:`, currentLink);
+            
+            if (newLink === null) return; // Cancelou
+
+            try {
+                const linkVal = newLink.trim();
+                await window.fs.updateDoc(window.fs.doc(window.db, "stores", storeId), {
+                    al: linkVal
+                });
+
+                // Atualiza localmente
+                store.al = linkVal;
+
+                alert("Link do aplicativo do cliente atualizado com sucesso!");
+                
+                // Recarrega as contagens dos revendedores e o modal
+                renderResellers(allResellers);
+                
+                // Recarrega o modal para mudar o estado na hora de forma reativa e fluida!
+                window.viewResellerClients(resellerId);
+            } catch (e) {
+                console.error("Erro ao salvar link do app do cliente de revenda:", e);
+                alert("Erro ao salvar link.");
             }
         };
 

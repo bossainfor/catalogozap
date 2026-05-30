@@ -454,6 +454,7 @@
         window.vendors = [];
         window.shippingZones = [];
         window.promotionalBanners = [];
+        window.videoUploadUrl = 'https://www.videotourl.com/';
         window.expandedProducts = new Set();
 
         // Helper para normalizar categorias (Case-Insensitive)
@@ -1239,7 +1240,7 @@
                                                    class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-indigo-500 outline-none transition-all font-bold text-xs ${isVideoLocked ? 'opacity-50 cursor-not-allowed bg-slate-50' : ''}">`;
                                         })()}
                                     </div>
-                                    <button type="button" onclick="window.open('https://www.videotourl.com/', '_blank')" class="bg-indigo-600 text-white px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 active-scale shadow-lg shadow-indigo-100" title="Hospedar Vídeo">
+                                    <button type="button" onclick="window.open(window.videoUploadUrl || 'https://www.videotourl.com/', '_blank')" class="bg-indigo-600 text-white px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 active-scale shadow-lg shadow-indigo-100" title="Hospedar Vídeo">
                                         <i data-lucide="clapperboard" class="w-5 h-5"></i>
                                         <span>Hospedar Vídeo</span>
                                     </button>
@@ -2012,6 +2013,16 @@
                 }
 
                 const { doc, getDoc } = window.firebaseUtils;
+
+                try {
+                    const docGlob = await getDoc(doc(window.db, "configs", "global"));
+                    if (docGlob.exists() && docGlob.data().videoUploadUrl) {
+                        window.videoUploadUrl = docGlob.data().videoUploadUrl;
+                    }
+                } catch (errG) {
+                    console.error("Erro ao carregar url de video global:", errG);
+                }
+
                 const docSnap = await getDoc(doc(window.db, "stores", storeId));
 
                 if (docSnap.exists()) {

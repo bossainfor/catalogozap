@@ -354,7 +354,8 @@
                 });
 
                 loader.classList.add('hidden');
-                document.getElementById('stat-stores-active').innerText = allStores.filter(x => x.status !== 'blocked').length;
+                const limitVal = (resellerData && resellerData.maxStores !== undefined) ? resellerData.maxStores : 5;
+                document.getElementById('stat-stores-active').innerText = `${allStores.filter(x => x.status !== 'blocked').length} / ${limitVal}`;
                 document.getElementById('stat-stores-clicks').innerText = totalClicks;
 
                 if (allStores.length === 0) {
@@ -544,8 +545,9 @@
 
         window.openCreateStoreModal = function(storeId = null) {
             const st = storeId ? allStores.find(x => x.id === storeId) : null;
+            const maxAllowed = (resellerData && resellerData.maxStores !== undefined) ? resellerData.maxStores : 5;
 
-            if (!st && allStores.length >= 5) {
+            if (!st && allStores.length >= maxAllowed) {
                 const oldModal = document.getElementById('reseller-store-modal');
                 if (oldModal) oldModal.remove();
 
@@ -558,8 +560,8 @@
                             <i data-lucide="shield-alert" class="w-8 h-8"></i>
                         </div>
                         <div class="text-center space-y-2">
-                            <h2 class="text-xl font-black uppercase italic tracking-tighter text-red-600">Limite Atingido (5 Lojas)</h2>
-                            <p class="text-slate-500 text-sm font-bold">Você atingiu o limite de 5 catálogos ativos em sua conta.</p>
+                            <h2 class="text-xl font-black uppercase italic tracking-tighter text-red-600 font-extrabold">Limite Atingido (${maxAllowed} Lojas)</h2>
+                            <p class="text-slate-500 text-sm font-bold">Você atingiu o limite de ${maxAllowed} catálogos ativos em sua conta.</p>
                         </div>
                         <p class="text-slate-600 text-xs text-center leading-relaxed">
                             Para cadastrar novas lojas ou expandir seu plano de revenda, entre em contato com o suporte master clicando abaixo.
@@ -686,8 +688,9 @@
                 return;
             }
 
-            if (!editingId && allStores.length >= 5) {
-                alert("Você já atingiu o limite de 5 catálogos ativos permitido em seu plano. Entre em contato com o suporte master para liberar mais slots.");
+            const maxAllowed = (resellerData && resellerData.maxStores !== undefined) ? resellerData.maxStores : 5;
+            if (!editingId && allStores.length >= maxAllowed) {
+                alert(`Você já atingiu o limite de ${maxAllowed} catálogos ativos permitido em seu plano. Entre em contato com o suporte master para liberar mais slots.`);
                 return;
             }
 

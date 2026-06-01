@@ -1714,7 +1714,7 @@
                         ${(storeData.bannerImage && !storeData.hideBannerBg && storeData.bannerImage !== storeData.logo) ? `<img src="${proxyImg(storeData.bannerImage)}" class="absolute inset-0 w-full h-full object-cover opacity-30 z-0" referrerpolicy="no-referrer">` : ''}
                         ${logoHTML}
                         <div class="relative z-10">
-                            <h1 class="text-4xl sm:text-6xl md:text-7xl font-black italic uppercase tracking-tighter filter drop-shadow-md leading-[0.9]">${storeData.name}</h1>
+                            <h1 class="text-4xl sm:text-6xl md:text-7xl font-black italic uppercase tracking-tighter filter drop-shadow-md leading-[0.9]" style="text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.9), -2px -2px 10px rgba(0, 0, 0, 0.9), 2px -2px 10px rgba(0, 0, 0, 0.9), -2px 2px 10px rgba(0, 0, 0, 0.9);">${storeData.name}</h1>
                             ${storeData.subtitle ? `<div class="mt-4 mb-4"><span class="text-[11px] sm:text-xs font-black uppercase tracking-[0.2em] text-white bg-black/40 border border-white/10 inline-flex px-5 py-2.5 rounded-2xl backdrop-blur-md shadow-sm select-none">${storeData.subtitle}</span></div>` : ''}
                             <div class="flex flex-wrap justify-center gap-3 relative z-10">
                                 ${!isAffiliate ? `

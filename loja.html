@@ -693,6 +693,7 @@
                     primaryColor: data.c.startsWith('#') ? data.c : '#' + data.c,
                     secondaryColor: data.b.startsWith('#') ? data.b : '#' + data.b,
                     bannerImage: data.bi,
+                    hideBannerBg: data.hb || false,
                     type: data.t || 'loja',
                     imageFormat: data.imf || 'vertical',
                     status: data.status || 'active',
@@ -1710,7 +1711,7 @@
                             <i data-lucide="message-square" class="w-6 h-6"></i>
                         </button>
                         
-                        ${storeData.bannerImage ? `<img src="${proxyImg(storeData.bannerImage)}" class="absolute inset-0 w-full h-full object-cover opacity-30 z-0" referrerpolicy="no-referrer">` : ''}
+                        ${(storeData.bannerImage && !storeData.hideBannerBg && storeData.bannerImage !== storeData.logo) ? `<img src="${proxyImg(storeData.bannerImage)}" class="absolute inset-0 w-full h-full object-cover opacity-30 z-0" referrerpolicy="no-referrer">` : ''}
                         ${logoHTML}
                         <div class="relative z-10">
                             <h1 class="text-4xl sm:text-6xl md:text-7xl font-black italic uppercase tracking-tighter filter drop-shadow-md leading-[0.9]">${storeData.name}</h1>

@@ -1707,9 +1707,7 @@
                             <i data-lucide="moon" class="dark:hidden w-6 h-6"></i>
                         </button>
                         
-                        <button onclick="toggleAI(true)" class="absolute top-4 right-4 z-50 bg-white/20 p-3 rounded-full backdrop-blur-md hover:bg-white/30 transition-all active-scale">
-                            <i data-lucide="message-square" class="w-6 h-6"></i>
-                        </button>
+                        
                         
                         ${(storeData.bannerImage && !storeData.hideBannerBg && storeData.bannerImage !== storeData.logo) ? `<img src="${proxyImg(storeData.bannerImage)}" class="absolute inset-0 w-full h-full object-cover opacity-30 z-0" referrerpolicy="no-referrer">` : ''}
                         ${logoHTML}

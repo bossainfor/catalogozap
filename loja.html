@@ -1881,8 +1881,8 @@
             <!-- Header -->
             <div class="bg-slate-900 p-4 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-[#25D366] rounded-full flex items-center justify-center animate-pulse">
-                        <i data-lucide="bot" class="w-5 h-5 text-slate-900"></i>
+                    <div class="w-8 h-8 bg-gradient-to-tr from-emerald-400 to-[#25D366] rounded-full flex items-center justify-center animate-pulse shadow-md shadow-emerald-500/20">
+                        <i data-lucide="headset" class="w-4.5 h-4.5 text-slate-900"></i>
                     </div>
                     <div>
                         <h4 class="text-white text-sm font-black uppercase italic leading-none">Atendente Virtual</h4>
@@ -1924,8 +1924,15 @@
         </div>
     </div>
 
-    <button id="ai-trigger" onclick="toggleAI(true)" class="hidden fixed bottom-32 left-6 sm:left-auto sm:right-6 z-50 bg-slate-900 dark:bg-slate-800 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-xl hover:scale-110 active-scale transition-all border-2 border-[#25D366] opacity-0 pointer-events-none">
-        <i data-lucide="message-square" class="w-6 h-6 text-[#25D366]"></i>
+    <button id="ai-trigger" onclick="toggleAI(true)" class="hidden fixed bottom-32 left-6 sm:left-auto sm:right-6 z-50 bg-gradient-to-r from-slate-950 to-slate-800 dark:from-slate-900 dark:to-slate-800 text-white pl-3 pr-4 py-2.5 rounded-full flex items-center justify-center gap-2.5 shadow-2xl hover:scale-105 active-scale transition-all duration-300 border-2 border-emerald-500 opacity-0 pointer-events-none">
+        <div class="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-emerald-500 to-[#25D366] text-slate-950 shadow-md shrink-0">
+            <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
+            <i data-lucide="headset" class="relative w-4.5 h-4.5 text-slate-950"></i>
+        </div>
+        <div class="flex flex-col items-start text-left select-none">
+            <span class="text-[9px] uppercase font-black tracking-wider text-emerald-400 leading-none">Dúvidas?</span>
+            <span class="text-[10px] font-black text-white leading-normal uppercase">Atendente Virtual</span>
+        </div>
     </button>
 
     <script>
@@ -1935,15 +1942,22 @@
         function toggleAI(show) {
             aiOpen = show;
             const widget = document.getElementById('ai-attendant');
+            const trigger = document.getElementById('ai-trigger');
             
             if(show) {
                 widget.style.display = 'block';
+                if(trigger) {
+                    trigger.classList.add('scale-0', 'opacity-0', 'pointer-events-none');
+                }
                 setTimeout(() => {
                     widget.classList.remove('opacity-0', 'translate-y-10', 'pointer-events-none');
                     document.getElementById('ai-input').focus();
                 }, 10);
             } else {
                 widget.classList.add('opacity-0', 'translate-y-10', 'pointer-events-none');
+                if(trigger) {
+                    trigger.classList.remove('scale-0', 'opacity-0', 'pointer-events-none');
+                }
                 setTimeout(() => { if(!aiOpen) widget.style.display = 'none'; }, 500);
             }
         }
@@ -2105,8 +2119,11 @@
             if (isAffiliate) return; // Não mostra IA se for afiliado
             
             setTimeout(() => {
-                document.getElementById('ai-trigger').classList.remove('opacity-0', 'pointer-events-none');
-                lucide.createIcons();
+                const trigger = document.getElementById('ai-trigger');
+                if (trigger) {
+                    trigger.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+                }
+                if (window.lucide) lucide.createIcons();
             }, 2000);
         });
 

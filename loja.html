@@ -1901,6 +1901,19 @@
                 </div>
             </div>
 
+            <!-- Suggestion Chips / Quick Actions -->
+            <div class="px-3 py-2 bg-slate-100 dark:bg-slate-700 flex flex-nowrap overflow-x-auto gap-2 border-t border-slate-200/50 dark:border-slate-600 select-none custom-scrollbar shrink-0">
+                <button type="button" onclick="window.triggerQuickAction('whatsapp')" class="bg-gradient-to-r from-emerald-500 to-[#25D366] hover:from-emerald-600 hover:to-[#22c35e] text-slate-900 duration-200 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 active-scale shadow-sm shadow-emerald-500/20">
+                    <i data-lucide="phone" class="w-3.5 h-3.5 animate-pulse"></i> Falar com Atendente
+                </button>
+                <button type="button" onclick="window.triggerQuickAction('pagamento')" class="bg-white dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 transition-all duration-200 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 active-scale shadow-sm">
+                    <i data-lucide="credit-card" class="w-3.5 h-3.5"></i> Pagamentos
+                </button>
+                <button type="button" onclick="window.triggerQuickAction('frete')" class="bg-white dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 transition-all duration-200 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 active-scale shadow-sm">
+                    <i data-lucide="truck" class="w-3.5 h-3.5"></i> Entrega & Frete
+                </button>
+            </div>
+
             <!-- Input Area -->
             <div class="p-3 bg-white border-t border-slate-100 flex gap-2">
                 <input type="text" id="ai-input" placeholder="Pergunte aqui..." class="flex-grow bg-slate-100 border-none rounded-xl px-4 py-3 text-[11px] font-bold focus:ring-2 focus:ring-[#25D366] outline-none">
@@ -1935,7 +1948,7 @@
             }
         }
 
-        function appendMessage(text, type, productLink = null) {
+        function appendMessage(text, type, productLink = null, actionType = null) {
             const messages = document.getElementById('ai-messages');
             const div = document.createElement('div');
             div.className = type === 'user' 
@@ -1955,16 +1968,59 @@
                     toggleAI(false);
                 };
                 div.appendChild(btn);
-                setTimeout(() => lucide.createIcons(), 0);
+                setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 0);
+            }
+
+            if(actionType === 'whatsapp') {
+                const btn = document.createElement('button');
+                btn.className = 'mt-1.5 bg-gradient-to-r from-emerald-500 to-[#25D366] hover:from-emerald-600 hover:to-[#22c35e] text-slate-900 duration-200 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 self-start active-scale shadow-md shadow-emerald-500/20 border border-emerald-450/20';
+                btn.innerHTML = `<i data-lucide="phone" class="w-4 h-4"></i> Chamar Atendente`;
+                btn.onclick = () => {
+                    let whatsapp = (storeData && storeData.whatsapp) ? storeData.whatsapp.replace(/\D/g, '') : '';
+                    if (whatsapp.length <= 11 && whatsapp.length > 0) whatsapp = '55' + whatsapp;
+                    window.openResilientWhatsApp(whatsapp, "Olá! Vim do assistente do seu catálogo e gostaria de esclarecer dúvidas.");
+                };
+                div.appendChild(btn);
+                setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 0);
             }
 
             messages.appendChild(div);
             messages.scrollTop = messages.scrollHeight;
         }
 
+        window.triggerQuickAction = function(action) {
+            if (action === 'whatsapp') {
+                appendMessage("Quero falar no WhatsApp / Falar com Atendente", 'user');
+                setTimeout(() => {
+                    appendMessage("Claro! Você pode falar diretamente com o atendente humano clicando no botão abaixo para tirar dúvidas ou fazer seu pedido pelo WhatsApp:", 'bot', null, 'whatsapp');
+                }, 300);
+            } else if (action === 'pagamento') {
+                appendMessage("Quais as formas de pagamento?", 'user');
+                setTimeout(() => {
+                    const resp = findResponse("pagamento");
+                    appendMessage(resp.text, 'bot', resp.product, resp.action);
+                }, 300);
+            } else if (action === 'frete') {
+                appendMessage("Como funciona a entrega / frete?", 'user');
+                setTimeout(() => {
+                    const resp = findResponse("entrega");
+                    appendMessage(resp.text, 'bot', resp.product, resp.action);
+                }, 300);
+            }
+        }
+
         function findResponse(query) {
             const queryLower = query.toLowerCase().trim();
             const products = window.fullCatalog || [];
+
+            // 0. PRIORIDADE EXTRA: Contato, suporte, whatsapp, atendente, ajuda etc.
+            const contactKeys = ['contato', 'whatsapp', 'zap', 'telefone', 'falar', 'conversar', 'suporte', 'ajuda', 'duvida', 'dúvida', 'vendedor', 'humano', 'ligar', 'chamar', 'atendente', 'comprar', 'pedir', 'informacao', 'informações', 'mensagens'];
+            if (contactKeys.some(key => queryLower.includes(key))) {
+                return {
+                    text: "Você pode falar diretamente conosco via WhatsApp de forma simples, rápida e personalizada! Clique no botão abaixo para iniciar a conversa com o nosso time de suporte e tirar todas as suas dúvidas:",
+                    action: 'whatsapp'
+                };
+            }
 
             // 1. PRIORIDADE: Busca de Produtos
             const matches = products.filter(p => {
@@ -2039,7 +2095,7 @@
 
             setTimeout(() => {
                 const responseObj = findResponse(query);
-                appendMessage(responseObj.text, 'bot', responseObj.product);
+                appendMessage(responseObj.text, 'bot', responseObj.product, responseObj.action);
             }, 400);
         }
 

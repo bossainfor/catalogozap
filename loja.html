@@ -1328,8 +1328,9 @@
 
             // Verificação de Expiração
             const now = new Date();
+            const isLifetime = storeData.isLifetime === true || storeData.isLifetime === "true" || storeData.plan === "lifetime";
             const expiresAt = new Date(storeData.expiresAt || storeData.createdAt);
-            const isExpired = now > expiresAt;
+            const isExpired = isLifetime ? false : now > expiresAt;
             const isBlocked = storeData.status === 'blocked' || storeData.isResellerSuspended === true;
             const tableNum = urlParams.get('m');
             const mesaBanner = tableNum ? `

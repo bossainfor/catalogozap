@@ -1,6 +1,6 @@
 {
   "name": "CatálogoZap",
-  "description": "Crie seu catálogo profissional, loja online e presença digital completa com divulgação no portal Minha Divulgação.",
+  "description": "Crie seu catálogo profissional, loja online e presença digital completa totalmente integrada com o WhatsApp.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

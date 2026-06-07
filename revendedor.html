@@ -463,8 +463,9 @@
 
             stores.forEach(data => {
                 const id = data.id;
+                const isLifetime = data.isLifetime === true || data.isLifetime === 'true' || data.plan === 'lifetime';
                 const expiresAt = new Date(data.expiresAt || data.createdAt);
-                const isExpired = new Date() > expiresAt;
+                const isExpired = isLifetime ? false : new Date() > expiresAt;
                 const isBlocked = data.status === 'blocked';
 
                 let statusBadge = '';
@@ -511,11 +512,19 @@
                         </span>
                     </td>
                     <td class="px-6 py-4">
-                        <div class="text-xs font-bold ${isExpired ? 'text-red-500 font-black' : 'text-slate-600'}">
-                            ${expiresAt.toLocaleDateString('pt-BR')}
-                        </div>
-                        <div class="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-50 border border-blue-100 rounded-lg text-[9px] text-blue-600 font-black mt-1">
-                            Senha: ${data.password || '---'}
+                        ${isLifetime ? `
+                            <div class="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest">
+                                <i data-lucide="infinity" class="w-3.5 h-3.5"></i> Vitalício
+                            </div>
+                        ` : `
+                            <div class="text-xs font-bold ${isExpired ? 'text-red-500 font-black' : 'text-slate-600'}">
+                                ${expiresAt.toLocaleDateString('pt-BR')}
+                            </div>
+                        `}
+                        <div class="block">
+                            <div class="inline-flex items-center gap-1 px-1.5 py-0.5 bg-blue-50 border border-blue-100 rounded-lg text-[9px] text-blue-600 font-black mt-1">
+                                Senha: ${data.password || '---'}
+                            </div>
                         </div>
                     </td>
                     <td class="px-6 py-4 text-right">
@@ -579,7 +588,9 @@
                         </div>
                         <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-100 col-span-1">
                             <div class="text-[8px] font-black uppercase text-slate-400 tracking-wider">Expiração</div>
-                            <div class="font-black ${isExpired ? 'text-red-500' : 'text-slate-800'} mt-0.5">${expiresAt.toLocaleDateString('pt-BR')}</div>
+                            <div class="font-black ${isExpired ? 'text-red-500' : 'text-slate-800'} mt-0.5">
+                                ${isLifetime ? '<span class="text-purple-600 font-extrabold flex items-center gap-0.5"><i data-lucide="infinity" class="w-3 h-3"></i> Vitalício</span>' : expiresAt.toLocaleDateString('pt-BR')}
+                            </div>
                         </div>
                         <div class="bg-blue-50/50 p-2.5 rounded-xl border border-blue-100 col-span-1">
                             <div class="text-[8px] font-black uppercase text-blue-400 tracking-wider">Senha</div>

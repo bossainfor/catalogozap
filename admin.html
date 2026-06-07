@@ -777,8 +777,9 @@
                                 </thead>
                                 <tbody>
                                     ${resellerStores.map(store => {
+                                        const isLifetime = store.isLifetime === true || store.isLifetime === 'true' || store.plan === 'lifetime';
                                         const expiresAt = new Date(store.expiresAt || store.createdAt);
-                                        const isExpired = new Date() > expiresAt;
+                                        const isExpired = isLifetime ? false : new Date() > expiresAt;
                                         const isBlocked = store.status === 'blocked';
                                         
                                         let statusBadge = '';
@@ -819,7 +820,7 @@
                                                 </td>
                                                 <td class="px-4 py-4 text-center">
                                                     ${statusBadge}
-                                                    <div class="text-[9px] text-slate-400 font-bold mt-1">Vence: ${expiresAt.toLocaleDateString('pt-BR')}</div>
+                                                    <div class="text-[9px] text-slate-400 font-bold mt-1 flex items-center justify-center gap-1">Vence: ${isLifetime ? '<span class="text-purple-600 font-black uppercase text-[10px] flex items-center gap-0.5"><i data-lucide="infinity" class="w-3.5 h-3.5 inline"></i> Vitalício</span>' : expiresAt.toLocaleDateString('pt-BR')}</div>
                                                 </td>
                                                 <td class="px-4 py-4 text-center">
                                                     ${appBadge}
@@ -839,8 +840,9 @@
                         <!-- Mobile View inside Modal -->
                         <div class="sm:hidden space-y-4 py-3">
                             ${resellerStores.map(store => {
+                                const isLifetime = store.isLifetime === true || store.isLifetime === 'true' || store.plan === 'lifetime';
                                 const expiresAt = new Date(store.expiresAt || store.createdAt);
-                                const isExpired = new Date() > expiresAt;
+                                const isExpired = isLifetime ? false : new Date() > expiresAt;
                                 const isBlocked = store.status === 'blocked';
                                 
                                 let statusColor = 'text-green-600 bg-green-50 border-green-200';
@@ -879,7 +881,7 @@
                                         </div>
 
                                         <div class="flex items-center justify-between gap-2 pt-1">
-                                            <span class="text-[9px] text-slate-400 font-bold">Vence: ${expiresAt.toLocaleDateString('pt-BR')}</span>
+                                            <span class="text-[9px] text-slate-400 font-bold flex items-center gap-1">Vence: ${isLifetime ? '<span class="text-purple-600 font-black uppercase text-[10px] flex items-center gap-0.5"><i data-lucide="infinity" class="w-3.5 h-3.5 inline"></i> Vitalício</span>' : expiresAt.toLocaleDateString('pt-BR')}</span>
                                             <button onclick="window.setResellerStoreAppLink('${store.id}', '${resellerId}')" class="px-3 py-2 ${hasApp ? 'bg-indigo-50 hover:bg-indigo-150 text-indigo-600' : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm shadow-blue-100'} rounded-xl font-black uppercase tracking-widest text-[9px] transition-all hover:scale-105 active:scale-95 cursor-pointer">
                                                 ${hasApp ? 'Alterar App' : 'Colocar App'}
                                             </button>
@@ -961,13 +963,15 @@
             let filtered = [];
             if (status === 'active') {
                 filtered = allStores.filter(s => {
+                    const isLifetime = s.isLifetime === true || s.isLifetime === 'true' || s.plan === 'lifetime';
                     const expiresAt = new Date(s.expiresAt || s.createdAt);
-                    return s.status !== 'blocked' && new Date() <= expiresAt;
+                    return s.status !== 'blocked' && (isLifetime || new Date() <= expiresAt);
                 });
             } else if (status === 'expired') {
                 filtered = allStores.filter(s => {
+                    const isLifetime = s.isLifetime === true || s.isLifetime === 'true' || s.plan === 'lifetime';
                     const expiresAt = new Date(s.expiresAt || s.createdAt);
-                    return s.status === 'blocked' || new Date() > expiresAt;
+                    return s.status === 'blocked' || (!isLifetime && new Date() > expiresAt);
                 });
             }
             renderStores(filtered);
@@ -998,8 +1002,9 @@
                         const rStores = allStores.filter(s => s.resellerId === reseller.id);
                         const totalStoresCount = rStores.length;
                         const activeStoresCount = rStores.filter(s => {
+                            const isLifetime = s.isLifetime === true || s.isLifetime === 'true' || s.plan === 'lifetime';
                             const expiresAt = new Date(s.expiresAt || s.createdAt);
-                            return s.status !== 'blocked' && new Date() <= expiresAt;
+                            return s.status !== 'blocked' && (isLifetime || new Date() <= expiresAt);
                         }).length;
 
                         const card = document.createElement('div');
@@ -1060,8 +1065,9 @@
                 const id = data.id;
                 const whatsappClean = data.w ? data.w.replace(/\D/g, '') : '';
                 const isDuplicate = whatsappCounts[whatsappClean] > 1;
+                const isLifetime = data.isLifetime === true || data.isLifetime === 'true' || data.plan === 'lifetime';
                 const expiresAt = new Date(data.expiresAt || data.createdAt);
-                const isExpired = new Date() > expiresAt;
+                const isExpired = isLifetime ? false : new Date() > expiresAt;
                 
                 let statusBadge = '';
                 let statusColor = '';
@@ -1151,11 +1157,19 @@
                         ${data.clicks || 0}
                     </td>
                     <td class="px-6 py-5">
-                        <div class="text-xs font-bold ${isExpired ? 'text-red-500' : 'text-slate-600'}">
-                            ${expiresAt.toLocaleDateString('pt-BR')}
-                        </div>
-                        <div class="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-50 border border-blue-100 rounded-lg text-[9px] text-blue-600 font-black uppercase tracking-widest mt-1">
-                            <i data-lucide="key" class="w-2.5 h-2.5"></i> ${data.password || 'SEM SENHA'}
+                        ${isLifetime ? `
+                            <div class="inline-flex items-center gap-1 bg-purple-100 text-purple-700 px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest">
+                                <i data-lucide="infinity" class="w-3.5 h-3.5 animate-pulse"></i> Vitalício
+                            </div>
+                        ` : `
+                            <div class="text-xs font-bold ${isExpired ? 'text-red-500' : 'text-slate-600'}">
+                                ${expiresAt.toLocaleDateString('pt-BR')}
+                            </div>
+                        `}
+                        <div class="block">
+                            <div class="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-50 border border-blue-100 rounded-lg text-[9px] text-blue-600 font-black uppercase tracking-widest mt-1">
+                                <i data-lucide="key" class="w-2.5 h-2.5"></i> ${data.password || 'SEM SENHA'}
+                            </div>
                         </div>
                         <div class="text-[8px] text-slate-400 font-medium uppercase tracking-widest block mt-0.5">ID: ${id}</div>
                     </td>
@@ -1176,6 +1190,9 @@
                             </button>
                             <button onclick="activateStore('${id}', '${data.expiresAt}')" title="Ativar +30 dias" class="p-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors">
                                 <i data-lucide="calendar-plus" size="16"></i>
+                            </button>
+                            <button onclick="toggleLifetime('${id}', ${isLifetime})" title="${isLifetime ? 'Remover Vitalício' : 'Tornar Vitalício'}" class="p-2 ${isLifetime ? 'bg-purple-600 text-white hover:bg-purple-700' : 'bg-purple-50 text-purple-600 hover:bg-purple-100'} rounded-lg transition-colors">
+                                <i data-lucide="infinity" size="16"></i>
                             </button>
                             <button onclick="togglePlan('${id}', '${plan}')" title="Ciclar Plano (Free > Basic > Premium)" class="p-2 ${planColorClass} rounded-lg hover:shadow-md transition-all">
                                 <i data-lucide="${planIconAction}" size="16" class="${plan === 'free' ? '' : 'fill-current'}"></i>
@@ -1237,7 +1254,9 @@
                         </div>
                         <div class="bg-slate-50/50 p-3 rounded-2xl border border-slate-100">
                             <div class="text-slate-400 uppercase font-black text-[9px] tracking-widest mb-1.5">Expiração</div>
-                            <div class="font-black ${isExpired ? 'text-red-500' : 'text-slate-800'}">${expiresAt.toLocaleDateString('pt-BR')}</div>
+                            <div class="font-black ${isExpired ? 'text-red-500' : 'text-slate-800'}">
+                                ${isLifetime ? '<span class="text-purple-600 font-extrabold flex items-center gap-1"><i data-lucide="infinity" class="w-3.5 h-3.5 inline"></i> Vitalício</span>' : expiresAt.toLocaleDateString('pt-BR')}
+                            </div>
                         </div>
                         <div class="bg-blue-50/50 p-3 rounded-2xl border border-blue-100 shadow-sm">
                             <div class="text-blue-400 uppercase font-black text-[9px] tracking-widest mb-1.5">Senha de Acesso</div>
@@ -1249,11 +1268,16 @@
 
                     <div class="space-y-3 pt-2">
                         <div class="flex items-center gap-2 w-full">
+                            <button onclick="toggleLifetime('${id}', ${isLifetime})" class="flex-1 py-3 ${isLifetime ? 'bg-purple-600 text-white shadow-purple-100/30 shadow-md' : 'bg-purple-50 text-purple-600 border border-purple-100'} rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
+                                <i data-lucide="infinity" class="w-3.5 h-3.5"></i> ${isLifetime ? 'Expira' : 'Vitalício'}
+                            </button>
                             <button onclick="activateStore('${id}', '${data.expiresAt}')" class="flex-1 py-3 bg-green-500 text-white rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all shadow-md shadow-green-100/50">
                                 <i data-lucide="calendar-plus" class="w-3.5 h-3.5"></i> Ativar
                             </button>
-                            <button onclick="togglePlan('${id}', '${plan}')" class="flex-1 py-3 bg-slate-900 text-white rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
-                                 <i data-lucide="${planIconAction}" class="w-3.5 h-3.5 ${plan === 'free' ? '' : 'fill-current'}"></i> Plano
+                        </div>
+                        <div class="flex items-center gap-2 w-full">
+                            <button onclick="togglePlan('${id}', '${plan}')" class="w-full py-3 bg-slate-900 text-white rounded-xl font-black uppercase text-[10px] tracking-widest flex items-center justify-center gap-2 active:scale-95 transition-all">
+                                 <i data-lucide="${planIconAction}" class="w-3.5 h-3.5 ${plan === 'free' ? '' : 'fill-current'}"></i> Escolher Plano
                             </button>
                         </div>
                         <div class="flex items-center gap-2 w-full">
@@ -1307,6 +1331,7 @@
                 
                 await window.fs.updateDoc(window.fs.doc(window.db, "stores", id), {
                     status: "active",
+                    isLifetime: false, // If manually activating for 30 days, clear lifetime
                     expiresAt: newExpires.toISOString()
                 });
                 
@@ -1314,6 +1339,22 @@
                 loadStores();
             } catch (error) {
                 alert("Erro ao atualizar status.");
+            }
+        }
+
+        async function toggleLifetime(id, currentIsLifetime) {
+            const action = currentIsLifetime ? "REMOVER o status vitalício desta loja" : "tornar esta loja VITALÍCIA (nunca expira)";
+            if (!confirm(`Deseja ${action}?`)) return;
+            
+            try {
+                await window.fs.updateDoc(window.fs.doc(window.db, "stores", id), {
+                    isLifetime: !currentIsLifetime,
+                    status: currentIsLifetime ? "trial" : "active"
+                });
+                alert("Status vitalício atualizado com sucesso!");
+                loadStores();
+            } catch (error) {
+                alert("Erro ao atualizar status vitalício: " + error.message);
             }
         }
 

@@ -28,5 +28,10 @@ service cloud.firestore {
       // Allow all operations on resellers
       allow read, write: if true;
     }
+
+    match /configs/{configId} {
+      // Allow all operations on global configs
+      allow read, write: if true;
+    }
   }
 }

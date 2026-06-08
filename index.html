@@ -813,6 +813,17 @@
                             <span class="inline-block text-[10px] font-black uppercase tracking-wider bg-[#25D366]/10 text-[#25D366] px-3 py-1 rounded-lg border border-[#25D366]/20">
                                 SEM MENSALIDADES - ACESSO PARA SEMPRE!
                             </span>
+                            
+                            <!-- Contador de Vagas (Comportamento de Escassez Dinâmico) -->
+                            <div id="vagas-contador-container" class="hidden mt-4 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-center sm:text-left shadow-lg">
+                                <div class="flex items-center justify-center sm:justify-start gap-2 text-red-500">
+                                    <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0"></span>
+                                    <span class="text-[10px] font-black uppercase tracking-wider">
+                                        ÚLTIMAS <span id="vagas-numero" class="text-white text-xs font-black px-1.5 bg-red-600 rounded">15</span> VAGAS NO PLANO VITALÍCIO!
+                                    </span>
+                                </div>
+                                <span class="block text-[8px] text-slate-400 font-extrabold uppercase mt-1 tracking-wider">Depois, será cobrado mensalidade de R$ 39,90!</span>
+                            </div>
                         </div>
 
                         <div class="py-6 border-y border-white/5 space-y-1 text-center sm:text-left">
@@ -1138,8 +1149,39 @@
             document.getElementById('first-access-msg').classList.add('hidden');
         }
 
+        async function loadVagasContador() {
+            try {
+                let attempts = 0;
+                while ((!window.db || !window.firebaseUtils) && attempts < 100) {
+                    await new Promise(r => setTimeout(r, 100));
+                    attempts++;
+                }
+                if (!window.db || !window.firebaseUtils) return;
+
+                const { doc, getDoc } = window.firebaseUtils;
+                const docSnap = await getDoc(doc(window.db, "configs", "global"));
+                let vagas = 15; // default fallback amount
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.vagas_vitalicias !== undefined) {
+                        vagas = parseInt(data.vagas_vitalicias, 10);
+                    }
+                }
+
+                const numEl = document.getElementById('vagas-numero');
+                const containerEl = document.getElementById('vagas-contador-container');
+                if (numEl && containerEl) {
+                    numEl.innerText = vagas;
+                    containerEl.classList.remove('hidden');
+                }
+            } catch (err) {
+                console.warn("Erro ao buscar vagas_vitalicias:", err);
+            }
+        }
+
         window.onload = () => {
             if (window.lucide) lucide.createIcons();
+            loadVagasContador();
         };
     </script>
 </body>

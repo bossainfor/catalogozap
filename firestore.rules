@@ -33,5 +33,13 @@ service cloud.firestore {
       // Allow all operations on global configs
       allow read, write: if true;
     }
+
+    match /configs/global {
+      allow read, write: if true;
+    }
+
+    match /configs/{document=**} {
+      allow read, write: if true;
+    }
   }
 }

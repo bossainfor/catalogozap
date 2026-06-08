@@ -815,14 +815,23 @@
                             </span>
                             
                             <!-- Contador de Vagas (Comportamento de Escassez Dinâmico) -->
-                            <div id="vagas-contador-container" class="hidden mt-4 p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-center sm:text-left shadow-lg">
-                                <div class="flex items-center justify-center sm:justify-start gap-2 text-red-500">
-                                    <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse shrink-0"></span>
-                                    <span class="text-[10px] font-black uppercase tracking-wider">
-                                        ÚLTIMAS <span id="vagas-numero" class="text-white text-xs font-black px-1.5 bg-red-600 rounded">15</span> VAGAS NO PLANO VITALÍCIO!
-                                    </span>
+                            <div id="vagas-contador-container" class="hidden mt-5 p-5 sm:p-6 rounded-3xl bg-red-950/40 border-2 border-red-500/30 text-center sm:text-left shadow-2xl shadow-red-500/10 hover:border-red-500/50 transition-all duration-300">
+                                <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+                                    <div class="relative flex items-center justify-center shrink-0 mt-0.5">
+                                        <span class="absolute inline-flex h-4.5 w-4.5 rounded-full bg-red-500 opacity-75 animate-ping"></span>
+                                        <span class="relative inline-flex rounded-full h-4 w-4 bg-red-600 shadow-lg"></span>
+                                    </div>
+                                    <div class="space-y-2 text-center sm:text-left">
+                                        <div class="text-xs sm:text-sm font-black uppercase tracking-wider text-red-400 flex flex-wrap items-center justify-center sm:justify-start gap-1">
+                                            ATENÇÃO! RESTAM APENAS 
+                                            <span id="vagas-numero" class="mx-1 px-3 py-1 text-sm sm:text-base text-white bg-red-600 rounded-lg font-black inline-block shadow-lg shadow-red-600/30 transform hover:scale-105 transition-all">15</span> 
+                                            VAGAS DISPONÍVEIS!
+                                        </div>
+                                        <div class="text-[11px] sm:text-xs text-slate-300 font-extrabold uppercase tracking-widest leading-relaxed">
+                                            Após o término deste lote vitalício, será cobrada mensalidade recorrente de <span class="text-red-400 font-extrabold text-xs">R$ 39,90/mês</span>.
+                                        </div>
+                                    </div>
                                 </div>
-                                <span class="block text-[8px] text-slate-400 font-extrabold uppercase mt-1 tracking-wider">Depois, será cobrado mensalidade de R$ 39,90!</span>
                             </div>
                         </div>
 

@@ -17,11 +17,16 @@ service cloud.firestore {
       // In a real app, these would be protected by Firebase Auth + Rules
       allow create, update: if true;
       allow delete: if true;
+    }
 
-      // Allow anyone to read and write reviews
-      match /reviews/{reviewId} {
-        allow read, write: if true;
-      }
+    // Allow anyone to read and write reviews in a flat collection
+    match /reviews/{reviewId} {
+      allow read, write: if true;
+    }
+
+    // Allow anyone to read and write nested reviews explicitly
+    match /stores/{storeId}/reviews/{reviewId} {
+      allow read, write: if true;
     }
 
     match /trial_history/{whatsapp} {

@@ -21,7 +21,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, updateDoc, increment, collection, addDoc, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -41,7 +41,7 @@
         signInAnonymously(auth).catch(err => console.error("Erro no login anônimo:", err));
 
         window.db = db;
-        window.firebaseUtils = { doc, getDoc, updateDoc, increment };
+        window.firebaseUtils = { doc, getDoc, updateDoc, increment, collection, addDoc, getDocs, query, where, orderBy };
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
@@ -108,15 +108,19 @@
             
             <!-- Coluna de Informações -->
             <div class="flex flex-col flex-1 min-h-0 bg-white dark:bg-slate-800 relative">
-                <div class="p-5 sm:p-6 border-b border-slate-50 dark:border-slate-700 md:flex items-center justify-between hidden">
-                    <div class="flex items-center gap-2">
-                        <div class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
-                        <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Especificações</h3>
+                <!-- Cabeçalho com Abas -->
+                <div class="p-3 sm:p-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800 shrink-0">
+                    <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-900/60 p-1 rounded-xl">
+                        <button id="modal-tab-details" onclick="switchProductModalTab('details')" class="px-4 py-2 text-xs sm:text-sm font-black uppercase tracking-wider rounded-lg transition-all text-white bg-orange-500">Detalhes</button>
+                        <button id="modal-tab-reviews" onclick="switchProductModalTab('reviews')" class="px-4 py-2 text-xs sm:text-sm font-bold uppercase tracking-wider rounded-lg transition-all text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white flex items-center gap-1.5">
+                            Avaliações <span id="modal-reviews-count" class="text-[10px] bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded-full text-slate-700 dark:text-slate-300">0</span>
+                        </button>
                     </div>
                     <button onclick="closeModal()" class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-all active-scale dark:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
                 </div>
                 
-                <div class="p-6 sm:p-10 lg:p-12 overflow-y-auto min-h-0 flex-1 custom-scrollbar">
+                <!-- Painel de Detalhes -->
+                <div id="modal-tab-details-content" class="p-6 sm:p-10 lg:p-12 overflow-y-auto min-h-0 flex-1 custom-scrollbar">
                     <div id="modal-badge-container" class="mb-4"></div>
                     <h2 id="modal-title" class="text-3xl lg:text-4xl font-black uppercase italic tracking-tighter mb-4 dark:text-white leading-none"></h2>
                     <div class="flex items-baseline gap-3 mb-6">
@@ -128,6 +132,68 @@
                     <!-- Variações -->
                     <div id="variations-container" class="space-y-8">
                         <!-- Gerado via JS -->
+                    </div>
+                </div>
+
+                <!-- Painel de Avaliações -->
+                <div id="modal-tab-reviews-content" class="p-6 sm:p-10 lg:p-12 overflow-y-auto min-h-0 flex-1 custom-scrollbar hidden">
+                    <!-- Resumo das Avaliações -->
+                    <div class="flex flex-col items-center justify-center p-6 bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-100 dark:border-slate-800/80 mb-6 text-center">
+                        <div class="text-4xl font-black text-slate-900 dark:text-white flex items-baseline gap-2 font-outfit">
+                            <span id="reviews-avg-rating">0.0</span>
+                            <span class="text-xs text-slate-400 font-bold uppercase">/ 5.0</span>
+                        </div>
+                        <div id="reviews-avg-stars" class="flex gap-1 my-3 text-amber-400">
+                            <!-- Estrelas dinâmicas -->
+                        </div>
+                        <p id="reviews-total-text" class="text-xs text-slate-400 font-bold uppercase tracking-wider">0 avaliações</p>
+                    </div>
+
+                    <!-- Lista de Avaliações -->
+                    <div id="reviews-list" class="space-y-4 mb-8">
+                        <!-- Preenchido via JS -->
+                    </div>
+
+                    <!-- Botão para Deixar Avaliação -->
+                    <div class="text-center">
+                        <button id="btn-toggle-review-form" onclick="toggleReviewForm()" class="text-xs sm:text-sm font-black uppercase italic tracking-widest transition-all hover:opacity-80 active-scale flex items-center gap-2 mx-auto" style="color: #25D366;">
+                            <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                            Deixar avaliação
+                        </button>
+                    </div>
+
+                    <!-- Formulário de Avaliação (Escondido por padrão) -->
+                    <div id="review-form-container" class="hidden mt-6 p-5 border border-slate-100 dark:border-slate-800 rounded-2xl bg-slate-50 dark:bg-slate-900/60 space-y-4 text-left">
+                        <h4 class="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-800 dark:text-white">Sua Avaliação</h4>
+                        
+                        <!-- Seleção de Estrelas -->
+                        <div>
+                            <p class="text-xs font-bold text-slate-400 mb-1.5 uppercase">Nota:</p>
+                            <div class="flex gap-2 text-3xl text-slate-300 dark:text-slate-600">
+                                <button type="button" onclick="setReviewRating(1)" class="star-btn hover:scale-110 transition-transform"><i data-lucide="star" class="w-6 h-6"></i></button>
+                                <button type="button" onclick="setReviewRating(2)" class="star-btn hover:scale-110 transition-transform"><i data-lucide="star" class="w-6 h-6"></i></button>
+                                <button type="button" onclick="setReviewRating(3)" class="star-btn hover:scale-110 transition-transform"><i data-lucide="star" class="w-6 h-6"></i></button>
+                                <button type="button" onclick="setReviewRating(4)" class="star-btn hover:scale-110 transition-transform"><i data-lucide="star" class="w-6 h-6"></i></button>
+                                <button type="button" onclick="setReviewRating(5)" class="star-btn hover:scale-110 transition-transform"><i data-lucide="star" class="w-6 h-6"></i></button>
+                            </div>
+                        </div>
+
+                        <!-- Nome do Cliente -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase">Seu Nome:</label>
+                            <input type="text" id="review-author-name" placeholder="Ex: Maria Silva" class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white">
+                        </div>
+
+                        <!-- Comentário / Descrição -->
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 mb-1.5 uppercase">Sua Opinião (pequena descrição):</label>
+                            <textarea id="review-comment" rows="3" placeholder="O que achou do produto? Detalhes sobre qualidade, tamanho, etc." class="w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs sm:text-sm font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 text-slate-900 dark:text-white"></textarea>
+                        </div>
+
+                        <!-- Enviar -->
+                        <button onclick="submitReview()" id="btn-submit-review" class="w-full py-4 text-white text-xs font-black uppercase tracking-widest rounded-xl transition-all active-scale" style="background-color: #25D366;">
+                            Enviar Avaliação
+                        </button>
                     </div>
                 </div>
 
@@ -426,6 +492,12 @@
                 }
             };
 
+            // Inicializar abas e buscar contagem de avaliações
+            window.currentProductId = productId;
+            window.currentReviewRating = 0;
+            window.switchProductModalTab('details');
+            window.updateReviewCountBadge(productId);
+
             modal.classList.add('open');
             overlay.classList.add('open');
             document.body.style.overflow = 'hidden'; // Previne scroll do fundo no mobile
@@ -442,6 +514,273 @@
                     document.getElementById('modal-media-container').innerHTML = '';
                 }
             }, 300);
+        }
+
+        window.switchProductModalTab = function(tab) {
+            const detailsTab = document.getElementById('modal-tab-details');
+            const reviewsTab = document.getElementById('modal-tab-reviews');
+            const detailsContent = document.getElementById('modal-tab-details-content');
+            const reviewsContent = document.getElementById('modal-tab-reviews-content');
+            
+            if (!detailsTab || !reviewsTab || !detailsContent || !reviewsContent) return;
+
+            if (tab === 'details') {
+                detailsContent.classList.remove('hidden');
+                reviewsContent.classList.add('hidden');
+                
+                detailsTab.style.backgroundColor = storeData ? storeData.primaryColor : '#f97316';
+                detailsTab.style.color = '#ffffff';
+                detailsTab.classList.remove('text-slate-500', 'dark:text-slate-400');
+                
+                reviewsTab.style.backgroundColor = 'transparent';
+                reviewsTab.style.color = '';
+                reviewsTab.classList.add('text-slate-500', 'dark:text-slate-400');
+            } else {
+                detailsContent.classList.add('hidden');
+                reviewsContent.classList.remove('hidden');
+                
+                reviewsTab.style.backgroundColor = storeData ? storeData.primaryColor : '#f97316';
+                reviewsTab.style.color = '#ffffff';
+                reviewsTab.classList.remove('text-slate-500', 'dark:text-slate-400');
+                
+                detailsTab.style.backgroundColor = 'transparent';
+                detailsTab.style.color = '';
+                detailsTab.classList.add('text-slate-500', 'dark:text-slate-400');
+                
+                // Carregar avaliações do Firestore
+                window.loadReviews(window.currentProductId);
+            }
+            setTimeout(() => lucide.createIcons(), 50);
+        }
+
+        window.updateReviewCountBadge = async function(productId) {
+            try {
+                const { collection, getDocs, query, where } = window.firebaseUtils;
+                const urlParams = new URLSearchParams(window.location.search);
+                const storeId = urlParams.get('id');
+                if (!storeId) return;
+                
+                const reviewsRef = collection(window.db, "stores", storeId, "reviews");
+                const q = query(reviewsRef, where("productId", "==", productId));
+                const querySnapshot = await getDocs(q);
+                
+                const count = querySnapshot.size;
+                const badge = document.getElementById('modal-reviews-count');
+                if (badge) badge.innerText = count;
+            } catch (e) {
+                console.error("Erro ao buscar contagem de avaliações:", e);
+            }
+        }
+
+        window.loadReviews = async function(productId) {
+            const reviewsList = document.getElementById('reviews-list');
+            if (!reviewsList) return;
+            reviewsList.innerHTML = '<div class="flex justify-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div></div>';
+            
+            try {
+                const { collection, getDocs, query, where } = window.firebaseUtils;
+                const urlParams = new URLSearchParams(window.location.search);
+                const storeId = urlParams.get('id');
+                if (!storeId) return;
+                
+                const reviewsRef = collection(window.db, "stores", storeId, "reviews");
+                const q = query(reviewsRef, where("productId", "==", productId));
+                const querySnapshot = await getDocs(q);
+                
+                const reviews = [];
+                querySnapshot.forEach((doc) => {
+                    reviews.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Ordenar por data decrescente
+                reviews.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                
+                // Atualizar badge do header
+                const badge = document.getElementById('modal-reviews-count');
+                if (badge) badge.innerText = reviews.length;
+                
+                renderReviewsUI(reviews);
+            } catch (e) {
+                console.error("Erro ao carregar avaliações:", e);
+                reviewsList.innerHTML = '<p class="text-center text-xs text-red-500 py-4 font-bold">Erro ao carregar avaliações.</p>';
+            }
+        }
+
+        function renderReviewsUI(reviews) {
+            const avgRatingElem = document.getElementById('reviews-avg-rating');
+            const avgStarsElem = document.getElementById('reviews-avg-stars');
+            const totalTextElem = document.getElementById('reviews-total-text');
+            const reviewsList = document.getElementById('reviews-list');
+            
+            if (!reviewsList) return;
+
+            const totalReviews = reviews.length;
+            let avgRating = 0;
+            if (totalReviews > 0) {
+                const sum = reviews.reduce((acc, r) => acc + (r.rating || 0), 0);
+                avgRating = (sum / totalReviews).toFixed(1);
+            } else {
+                avgRating = "0.0";
+            }
+            
+            if (avgRatingElem) avgRatingElem.innerText = avgRating;
+            
+            let starsHTML = '';
+            const roundedAvg = Math.round(parseFloat(avgRating));
+            for (let i = 1; i <= 5; i++) {
+                if (i <= roundedAvg) {
+                    starsHTML += '<i data-lucide="star" class="w-5 h-5 text-amber-400 fill-amber-400"></i>';
+                } else {
+                    starsHTML += '<i data-lucide="star" class="w-5 h-5 text-slate-300 dark:text-slate-600 fill-none"></i>';
+                }
+            }
+            if (avgStarsElem) avgStarsElem.innerHTML = starsHTML;
+            if (totalTextElem) totalTextElem.innerText = `${totalReviews} ${totalReviews === 1 ? 'avaliação' : 'avaliações'}`;
+            
+            if (totalReviews === 0) {
+                reviewsList.innerHTML = `
+                    <div class="text-center py-10 text-slate-400 dark:text-slate-500">
+                        <p class="font-bold text-sm">Nenhuma avaliação ainda.</p>
+                        <p class="text-xs mt-1">Seja o primeiro a avaliar este produto!</p>
+                    </div>
+                `;
+            } else {
+                reviewsList.innerHTML = reviews.map(r => {
+                    let userStars = '';
+                    for (let i = 1; i <= 5; i++) {
+                        if (i <= (r.rating || 0)) {
+                            userStars += '<i data-lucide="star" class="w-3.5 h-3.5 text-amber-400 fill-amber-400"></i>';
+                        } else {
+                            userStars += '<i data-lucide="star" class="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 fill-none"></i>';
+                        }
+                    }
+                    
+                    const dateStr = r.createdAt ? new Date(r.createdAt).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'Recente';
+                    
+                    return `
+                        <div class="p-4 border border-slate-100 dark:border-slate-800 rounded-2xl bg-slate-50/50 dark:bg-slate-900/40 text-left">
+                            <div class="flex justify-between items-start gap-2 mb-2">
+                                <div>
+                                    <p class="font-black text-sm text-slate-800 dark:text-white">${escapeHTML(r.name || 'Cliente Satisfeito')}</p>
+                                    <div class="flex gap-0.5 mt-1">${userStars}</div>
+                                </div>
+                                <span class="text-[10px] text-slate-400 font-bold">${dateStr}</span>
+                            </div>
+                            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed font-medium mt-1">
+                                ${escapeHTML(r.comment || 'Sem comentário.')}
+                            </p>
+                        </div>
+                    `;
+                }).join('');
+            }
+            setTimeout(() => lucide.createIcons(), 50);
+        }
+
+        window.toggleReviewForm = function() {
+            const form = document.getElementById('review-form-container');
+            if (form) form.classList.toggle('hidden');
+            setTimeout(() => lucide.createIcons(), 50);
+        }
+
+        window.setReviewRating = function(rating) {
+            window.currentReviewRating = rating;
+            const starBtns = document.querySelectorAll('.star-btn i');
+            starBtns.forEach((icon, i) => {
+                if (i < rating) {
+                    icon.classList.add('text-amber-400', 'fill-amber-400');
+                    icon.classList.remove('text-slate-300', 'dark:text-slate-600', 'fill-none');
+                } else {
+                    icon.classList.remove('text-amber-400', 'fill-amber-400');
+                    icon.classList.add('text-slate-300', 'dark:text-slate-600', 'fill-none');
+                }
+            });
+        }
+
+        window.submitReview = async function() {
+            const nameInput = document.getElementById('review-author-name');
+            const commentInput = document.getElementById('review-comment');
+            
+            if (!nameInput || !commentInput) return;
+
+            const rating = window.currentReviewRating || 0;
+            const name = nameInput.value.trim();
+            const comment = commentInput.value.trim();
+            
+            if (rating < 1 || rating > 5) {
+                alert('Por favor, escolha uma nota de 1 a 5 estrelas.');
+                return;
+            }
+            if (!name) {
+                alert('Por favor, informe o seu nome.');
+                return;
+            }
+            if (!comment) {
+                alert('Por favor, escreva o seu comentário.');
+                return;
+            }
+            
+            const submitBtn = document.getElementById('btn-submit-review');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerText = 'Enviando...';
+            }
+            
+            try {
+                const { collection, addDoc } = window.firebaseUtils;
+                const urlParams = new URLSearchParams(window.location.search);
+                const storeId = urlParams.get('id');
+                const productId = window.currentProductId;
+                
+                const reviewData = {
+                    productId: productId,
+                    name: name,
+                    rating: rating,
+                    comment: comment,
+                    createdAt: Date.now()
+                };
+                
+                const reviewsRef = collection(window.db, "stores", storeId, "reviews");
+                await addDoc(reviewsRef, reviewData);
+                
+                // Limpar campos
+                nameInput.value = '';
+                commentInput.value = '';
+                window.currentReviewRating = 0;
+                
+                const starBtns = document.querySelectorAll('.star-btn i');
+                starBtns.forEach((icon) => {
+                    icon.classList.remove('text-amber-400', 'fill-amber-400');
+                    icon.classList.add('text-slate-300', 'dark:text-slate-600', 'fill-none');
+                });
+                
+                const formContainer = document.getElementById('review-form-container');
+                if (formContainer) formContainer.classList.add('hidden');
+                
+                // Recarregar avaliações
+                await window.loadReviews(productId);
+                
+                alert('Avaliação enviada com sucesso! Obrigado pelo seu feedback.');
+            } catch (e) {
+                console.error("Erro ao enviar avaliação:", e);
+                alert('Ocorreu um erro ao enviar a avaliação. Tente novamente.');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = 'Enviar Avaliação';
+                }
+            }
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, 
+                tag => ({
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    "'": '&#39;',
+                    '"': '&quot;'
+                }[tag] || tag)
+            );
         }
 
         function updateDots(swiperId) {

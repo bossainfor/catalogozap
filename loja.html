@@ -555,6 +555,14 @@
 
         window.updateReviewCountBadge = async function(productId) {
             try {
+                // Aguarda se o Firebase ainda não estiver inicializado
+                let attempts = 0;
+                while ((!window.firebaseUtils || !window.db) && attempts < 50) {
+                    await new Promise(r => setTimeout(r, 100));
+                    attempts++;
+                }
+                if (!window.firebaseUtils || !window.db) return;
+
                 const { collection, getDocs, query, where } = window.firebaseUtils;
                 const urlParams = new URLSearchParams(window.location.search);
                 const storeId = urlParams.get('id');
@@ -578,6 +586,17 @@
             reviewsList.innerHTML = '<div class="flex justify-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div></div>';
             
             try {
+                // Aguarda se o Firebase ainda não estiver inicializado
+                let attempts = 0;
+                while ((!window.firebaseUtils || !window.db) && attempts < 50) {
+                    await new Promise(r => setTimeout(r, 100));
+                    attempts++;
+                }
+                if (!window.firebaseUtils || !window.db) {
+                    reviewsList.innerHTML = '<p class="text-center text-xs text-red-500 py-4 font-bold">Erro: Firebase não inicializado.</p>';
+                    return;
+                }
+
                 const { collection, getDocs, query, where } = window.firebaseUtils;
                 const urlParams = new URLSearchParams(window.location.search);
                 const storeId = urlParams.get('id');
@@ -602,7 +621,7 @@
                 renderReviewsUI(reviews);
             } catch (e) {
                 console.error("Erro ao carregar avaliações:", e);
-                reviewsList.innerHTML = '<p class="text-center text-xs text-red-500 py-4 font-bold">Erro ao carregar avaliações.</p>';
+                reviewsList.innerHTML = `<p class="text-center text-xs text-red-500 py-4 font-bold">Erro ao carregar avaliações: ${e.message || e}</p>`;
             }
         }
 
@@ -684,7 +703,7 @@
 
         window.setReviewRating = function(rating) {
             window.currentReviewRating = rating;
-            const starBtns = document.querySelectorAll('.star-btn i');
+            const starBtns = document.querySelectorAll('.star-btn svg, .star-btn i');
             starBtns.forEach((icon, i) => {
                 if (i < rating) {
                     icon.classList.add('text-amber-400', 'fill-amber-400');
@@ -747,7 +766,7 @@
                 commentInput.value = '';
                 window.currentReviewRating = 0;
                 
-                const starBtns = document.querySelectorAll('.star-btn i');
+                const starBtns = document.querySelectorAll('.star-btn svg, .star-btn i');
                 starBtns.forEach((icon) => {
                     icon.classList.remove('text-amber-400', 'fill-amber-400');
                     icon.classList.add('text-slate-300', 'dark:text-slate-600', 'fill-none');
@@ -762,7 +781,7 @@
                 alert('Avaliação enviada com sucesso! Obrigado pelo seu feedback.');
             } catch (e) {
                 console.error("Erro ao enviar avaliação:", e);
-                alert('Ocorreu um erro ao enviar a avaliação. Tente novamente.');
+                alert('Ocorreu um erro ao enviar a avaliação: ' + (e.message || e));
             } finally {
                 if (submitBtn) {
                     submitBtn.disabled = false;

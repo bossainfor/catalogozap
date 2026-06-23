@@ -648,9 +648,9 @@
             const roundedAvg = Math.round(parseFloat(avgRating));
             for (let i = 1; i <= 5; i++) {
                 if (i <= roundedAvg) {
-                    starsHTML += '<i data-lucide="star" class="w-5 h-5 text-amber-400 fill-current"></i>';
+                    starsHTML += '<i data-lucide="star" class="w-5 h-5 text-amber-400 fill-amber-400"></i>';
                 } else {
-                    starsHTML += '<i data-lucide="star" class="w-5 h-5 text-slate-300 dark:text-slate-600"></i>';
+                    starsHTML += '<i data-lucide="star" class="w-5 h-5 text-slate-300 dark:text-slate-600 fill-none"></i>';
                 }
             }
             if (avgStarsElem) avgStarsElem.innerHTML = starsHTML;
@@ -668,9 +668,9 @@
                     let userStars = '';
                     for (let i = 1; i <= 5; i++) {
                         if (i <= (r.rating || 0)) {
-                            userStars += '<i data-lucide="star" class="w-3.5 h-3.5 text-amber-400 fill-current"></i>';
+                            userStars += '<i data-lucide="star" class="w-3.5 h-3.5 text-amber-400 fill-amber-400"></i>';
                         } else {
-                            userStars += '<i data-lucide="star" class="w-3.5 h-3.5 text-slate-300 dark:text-slate-600"></i>';
+                            userStars += '<i data-lucide="star" class="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 fill-none"></i>';
                         }
                     }
                     
@@ -706,13 +706,11 @@
             const starBtns = document.querySelectorAll('.star-btn svg, .star-btn i');
             starBtns.forEach((icon, i) => {
                 if (i < rating) {
-                    icon.setAttribute('fill', '#fbbf24');
-                    icon.setAttribute('stroke', '#fbbf24');
-                    icon.classList.add('text-amber-400');
+                    icon.classList.add('text-amber-400', 'fill-amber-400');
+                    icon.classList.remove('text-slate-300', 'dark:text-slate-600', 'fill-none');
                 } else {
-                    icon.setAttribute('fill', 'none');
-                    icon.setAttribute('stroke', 'currentColor');
-                    icon.classList.remove('text-amber-400');
+                    icon.classList.remove('text-amber-400', 'fill-amber-400');
+                    icon.classList.add('text-slate-300', 'dark:text-slate-600', 'fill-none');
                 }
             });
         }
@@ -770,9 +768,8 @@
                 
                 const starBtns = document.querySelectorAll('.star-btn svg, .star-btn i');
                 starBtns.forEach((icon) => {
-                    icon.setAttribute('fill', 'none');
-                    icon.setAttribute('stroke', 'currentColor');
-                    icon.classList.remove('text-amber-400');
+                    icon.classList.remove('text-amber-400', 'fill-amber-400');
+                    icon.classList.add('text-slate-300', 'dark:text-slate-600', 'fill-none');
                 });
                 
                 const formContainer = document.getElementById('review-form-container');

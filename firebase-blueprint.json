@@ -20,6 +20,7 @@
         "px": { "type": "string", "description": "PIX Key" },
         "cf": { "type": "number", "description": "Credit card surcharge percentage" },
         "mxi": { "type": "integer", "description": "Maximum allowed credit card installments" },
+        "dxi": { "type": "integer", "description": "Fixed/Selected number of direct installments" },
         "cn": { "type": "string", "description": "Owner Contact Name" },
         "bm": { "type": "boolean", "description": "Bar Mode Enabled" },
         "tr": { "type": "integer", "description": "Table Range (Max number of tables)" },

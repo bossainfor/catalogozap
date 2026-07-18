@@ -244,6 +244,13 @@
 
         window.setPaymentMethod = function(method) {
             selectedPaymentMethod = method;
+            if (method === 'card') {
+                selectedInstallment = storeData && storeData.mxi ? parseInt(storeData.mxi) : 10;
+            } else if (method === 'direct') {
+                selectedInstallment = storeData && storeData.dxi ? parseInt(storeData.dxi) : 3;
+            } else {
+                selectedInstallment = 1;
+            }
             updateCartUI();
         }
 
@@ -1065,6 +1072,7 @@
                     appLink: data.al || '',
                     cf: data.cf || 0,
                     mxi: data.mxi !== undefined ? parseInt(data.mxi) : 10,
+                    dxi: data.dxi !== undefined ? parseInt(data.dxi) : 3,
                     pb: data.pb || [],
                     resellerWhatsapp: data.resellerWhatsapp || '',
                     products: (data.p || []).map(p => {
@@ -1219,9 +1227,16 @@
 
                 // Cálculo da taxa do cartão progressive
                 const maxInstallments = storeData.mxi ? parseInt(storeData.mxi) : 10;
-                if (selectedInstallment > maxInstallments) {
+                const directInstallments = storeData.dxi ? parseInt(storeData.dxi) : 3;
+
+                if (selectedPaymentMethod === 'card') {
                     selectedInstallment = maxInstallments;
+                } else if (selectedPaymentMethod === 'direct') {
+                    selectedInstallment = directInstallments;
+                } else {
+                    selectedInstallment = 1;
                 }
+
                 const cardFeePercentage = storeData.cf ? parseFloat(storeData.cf) : 0;
                 let activeFeePercentage = 0;
                 if (selectedPaymentMethod === 'card') {
@@ -1252,23 +1267,23 @@
                 `;
 
                 if (selectedPaymentMethod === 'card') {
-                    let installmentOptions = '';
-                    for (let i = 1; i <= maxInstallments; i++) {
-                        let feeForThisOption = 0;
-                        if (i >= 4) {
-                            feeForThisOption = cardFeePercentage + (i - 4) * 1.5;
-                        }
-                        const totalForThisOption = feeForThisOption > 0 ? (grandTotal * (1 + feeForThisOption / 100)) : grandTotal;
-                        const valPerInstallment = totalForThisOption / i;
-                        installmentOptions += `<option value="${i}" ${selectedInstallment === i ? 'selected' : ''}>${i}x de ${formatCurrency(valPerInstallment)} ${feeForThisOption > 0 ? `(+${feeForThisOption.toFixed(1)}% juros)` : '(Sem juros)'}</option>`;
+                    const i = maxInstallments;
+                    let feeForThisOption = 0;
+                    if (i >= 4) {
+                        feeForThisOption = cardFeePercentage + (i - 4) * 1.5;
                     }
+                    const totalForThisOption = feeForThisOption > 0 ? (grandTotal * (1 + feeForThisOption / 100)) : grandTotal;
+                    const valPerInstallment = totalForThisOption / i;
 
                     paymentMethodHTML += `
                         <div class="space-y-2 mb-4 animate-fade-in text-left">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Selecione as Parcelas</label>
-                            <select onchange="window.setInstallment(this.value)" class="w-full px-4 py-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 font-bold text-sm outline-none dark:text-white">
-                                ${installmentOptions}
-                            </select>
+                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Valor do Parcelamento no Cartão</label>
+                            <div class="w-full px-4 py-3.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200/50 dark:border-slate-700 font-black text-sm text-slate-800 dark:text-white flex justify-between items-center">
+                                <span>${i}x de ${formatCurrency(valPerInstallment)}</span>
+                                <span class="text-[9px] uppercase tracking-wider px-2 py-0.5 bg-orange-100 dark:bg-orange-950 text-orange-600 dark:text-orange-400 rounded-md font-bold">
+                                    ${feeForThisOption > 0 ? `+${feeForThisOption.toFixed(1)}% juros` : 'Sem juros'}
+                                </span>
+                            </div>
                             <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-700/60 flex flex-col md:flex-row items-center justify-between gap-3">
                                 <div class="space-y-0.5 text-left">
                                     <h5 class="text-[10px] font-black uppercase text-slate-700 dark:text-white">Pagamento por Link de Cartão</h5>
@@ -1281,18 +1296,16 @@
                 }
 
                 if (selectedPaymentMethod === 'direct') {
-                    let installmentOptions = '';
-                    for (let i = 1; i <= maxInstallments; i++) {
-                        const valPerInstallment = grandTotal / i;
-                        installmentOptions += `<option value="${i}" ${selectedInstallment === i ? 'selected' : ''}>${i}x de ${formatCurrency(valPerInstallment)} (Sem juros)</option>`;
-                    }
+                    const i = directInstallments;
+                    const valPerInstallment = grandTotal / i;
 
                     paymentMethodHTML += `
                         <div class="space-y-2 mb-4 animate-fade-in text-left">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Selecione as Parcelas (Direto/Sem Cartão)</label>
-                            <select onchange="window.setInstallment(this.value)" class="w-full px-4 py-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 font-bold text-sm outline-none dark:text-white">
-                                ${installmentOptions}
-                            </select>
+                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Valor do Parcelamento Direto (Sem Cartão)</label>
+                            <div class="w-full px-4 py-3.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200/50 dark:border-slate-700 font-black text-sm text-slate-800 dark:text-white flex justify-between items-center">
+                                <span>${i}x de ${formatCurrency(valPerInstallment)}</span>
+                                <span class="text-[9px] uppercase tracking-wider px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-md font-bold">Sem juros</span>
+                            </div>
                             <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-700/60 flex flex-col md:flex-row items-center justify-between gap-3">
                                 <div class="space-y-0.5 text-left">
                                     <h5 class="text-[10px] font-black uppercase text-slate-700 dark:text-white">Parcelamento na Palavra / Direto</h5>
@@ -1386,9 +1399,16 @@
 
             const cardFeePercentage = storeData.cf ? parseFloat(storeData.cf) : 0;
             const maxInstallments = storeData.mxi ? parseInt(storeData.mxi) : 10;
-            if (selectedInstallment > maxInstallments) {
+            const directInstallments = storeData.dxi ? parseInt(storeData.dxi) : 3;
+
+            if (selectedPaymentMethod === 'card') {
                 selectedInstallment = maxInstallments;
+            } else if (selectedPaymentMethod === 'direct') {
+                selectedInstallment = directInstallments;
+            } else {
+                selectedInstallment = 1;
             }
+
             let activeFee = 0;
             if (selectedPaymentMethod === 'card') {
                 if (selectedInstallment >= 4) {

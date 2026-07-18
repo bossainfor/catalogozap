@@ -18,6 +18,8 @@
         "imf": { "type": "string", "enum": ["vertical", "quadrado"], "description": "Product Image Format" },
         "lg": { "type": "string", "description": "Store Logo URL" },
         "px": { "type": "string", "description": "PIX Key" },
+        "cf": { "type": "number", "description": "Credit card surcharge percentage" },
+        "mxi": { "type": "integer", "description": "Maximum allowed credit card installments" },
         "cn": { "type": "string", "description": "Owner Contact Name" },
         "bm": { "type": "boolean", "description": "Bar Mode Enabled" },
         "tr": { "type": "integer", "description": "Table Range (Max number of tables)" },

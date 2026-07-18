@@ -248,17 +248,17 @@
                         </div>
 
                         <div class="space-y-4">
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                                 <div class="space-y-2">
                                     <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Chave PIX (Para pedidos)</label>
                                     <input type="text" id="pix-key" oninput="window.saveDraft()" placeholder="E-mail, Celular ou CPF" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold shadow-sm">
                                 </div>
                                 <div class="space-y-2">
                                     <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Acréscimo Cartão % (A partir de 4x)</label>
-                                    <input type="number" id="card-fee" oninput="window.saveDraft()" min="0" max="100" step="0.1" placeholder="Ex: 5 para somar 5% no cartão" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold shadow-sm">
+                                    <input type="number" id="card-fee" oninput="window.saveDraft()" min="0" max="100" step="0.1" placeholder="Ex: 5 para somar 5%" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold shadow-sm">
                                 </div>
                                 <div class="space-y-2">
-                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Máximo de Parcelas</label>
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Parcelas no Cartão</label>
                                     <select id="max-installments" onchange="window.saveDraft()" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold shadow-sm text-sm h-[58px]">
                                         <option value="1">1x (À vista)</option>
                                         <option value="2">2x</option>
@@ -270,6 +270,23 @@
                                         <option value="8">8x</option>
                                         <option value="9">9x</option>
                                         <option value="10" selected>10x</option>
+                                        <option value="11">11x</option>
+                                        <option value="12">12x</option>
+                                    </select>
+                                </div>
+                                <div class="space-y-2">
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Parcelas no Direto</label>
+                                    <select id="direct-installments" onchange="window.saveDraft()" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold shadow-sm text-sm h-[58px]">
+                                        <option value="1">1x (À vista)</option>
+                                        <option value="2">2x</option>
+                                        <option value="3" selected>3x</option>
+                                        <option value="4">4x</option>
+                                        <option value="5">5x</option>
+                                        <option value="6">6x</option>
+                                        <option value="7">7x</option>
+                                        <option value="8">8x</option>
+                                        <option value="9">9x</option>
+                                        <option value="10">10x</option>
                                         <option value="11">11x</option>
                                         <option value="12">12x</option>
                                     </select>
@@ -585,6 +602,7 @@
                 pixKey: document.getElementById('pix-key').value,
                 cardFee: document.getElementById('card-fee').value,
                 maxInstallments: document.getElementById('max-installments').value,
+                directInstallments: document.getElementById('direct-installments').value,
                 shippingZones: window.shippingZones,
                 promotionalBanners: window.promotionalBanners,
                 products: window.products.map(p => ({
@@ -679,6 +697,7 @@
                 document.getElementById('pix-key').value = draft.pixKey || '';
                 document.getElementById('card-fee').value = draft.cardFee || '';
                 document.getElementById('max-installments').value = draft.maxInstallments || '10';
+                document.getElementById('direct-installments').value = draft.directInstallments || '3';
                 window.shippingZones = draft.shippingZones || [];
                 window.promotionalBanners = draft.promotionalBanners || [];
                 window.renderPromoBanners();
@@ -1664,16 +1683,18 @@
             if (bannerImage) data.bi = bannerImage;
             data.hb = document.getElementById('hide-banner-bg').checked;
             
-            // Novos campos: Logo, PIX, Taxa do Cartão e Parcelas Máximas
+            // Novos campos: Logo, PIX, Taxa do Cartão, Parcelas Máximas, Parcelas Direto
             const logoVal = document.getElementById('store-logo').value;
             const pixVal = document.getElementById('pix-key').value;
             const cardFeeVal = document.getElementById('card-fee').value;
             const maxInstallmentsVal = document.getElementById('max-installments').value;
+            const directInstallmentsVal = document.getElementById('direct-installments').value;
             const paymentBadgeVal = document.getElementById('payment-badge-image').value;
             if (logoVal) data.lg = logoVal;
             if (pixVal) data.px = pixVal;
             if (cardFeeVal) data.cf = parseFloat(cardFeeVal);
             if (maxInstallmentsVal) data.mxi = parseInt(maxInstallmentsVal);
+            if (directInstallmentsVal) data.dxi = parseInt(directInstallmentsVal);
             if (paymentBadgeVal) data.pmb = paymentBadgeVal;
             
             // Adicional: Carrossel de Banners Promocionais
@@ -2100,6 +2121,7 @@
                     if (data.px) document.getElementById('pix-key').value = data.px;
                     if (data.cf) document.getElementById('card-fee').value = data.cf;
                     document.getElementById('max-installments').value = data.mxi || '10';
+                    document.getElementById('direct-installments').value = data.dxi || '3';
                     if (data.pmb) document.getElementById('payment-badge-image').value = data.pmb;
                     if (data.sub) document.getElementById('store-subtitle').value = data.sub;
                     document.getElementById('hide-banner-bg').checked = data.hb || false;
@@ -2138,6 +2160,7 @@
                     document.getElementById('hide-banner-bg').checked = data.hb || false;
                     document.getElementById('payment-badge-image').value = data.pmb || '';
                     document.getElementById('max-installments').value = data.mxi || '10';
+                    document.getElementById('direct-installments').value = data.dxi || '3';
                     window.updateBannerPreview(data.bi);
                     window.updateLogoPreview(data.lg);
                     window.updatePaymentBadgePreview(data.pmb || '');

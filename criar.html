@@ -2236,10 +2236,21 @@
         window.loadFromFirebase = async function(forcedId = null) {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
-                const storeId = forcedId || urlParams.get('edit') || urlParams.get('id');
+                let storeId = forcedId || urlParams.get('edit') || urlParams.get('id');
+                
+                if (!storeId) {
+                    storeId = localStorage.getItem('lastStoreId');
+                }
+                
                 if (!storeId) {
                     // Sem ID de edição: permite criar/editar o catálogo normalmente
                     return;
+                }
+
+                if (!urlParams.get('edit') && !urlParams.get('id')) {
+                    const newUrl = new URL(window.location.href);
+                    newUrl.searchParams.set('edit', storeId);
+                    window.history.replaceState({}, '', newUrl.toString());
                 }
 
                 // Aguarda o Firebase inicializar
@@ -2286,8 +2297,27 @@
                     
                     const data = docSnap.data();
                     window.storePlan = data.plan || 'free';
-                    window.vendors = data.v || [];
-                    window.shippingZones = data.sh || [];
+
+                    // Carrega Vendedores (suporta array ou objeto Firestore)
+                    let rawV = data.v || data.vendors || [];
+                    if (rawV && typeof rawV === 'object' && !Array.isArray(rawV)) {
+                        rawV = Object.values(rawV);
+                    }
+                    window.vendors = (rawV || []).map(v => ({
+                        name: v.name || v.n || '',
+                        code: v.code || v.c || '',
+                        clicks: v.clicks || 0
+                    }));
+
+                    // Carrega Taxas de Entrega / Bairros (suporta array ou objeto Firestore)
+                    let rawSH = data.sh || data.shippingZones || data.zones || [];
+                    if (rawSH && typeof rawSH === 'object' && !Array.isArray(rawSH)) {
+                        rawSH = Object.values(rawSH);
+                    }
+                    window.shippingZones = (rawSH || []).map(s => ({
+                        neighborhood: s.neighborhood || s.n || s.bairro || '',
+                        price: s.price || s.p || s.valor || ''
+                    }));
                     
                     const statsCont = document.getElementById('stats-container');
                     const clicksEl = document.getElementById('total-clicks');
@@ -2297,56 +2327,63 @@
                     }
                     
                     // Preenche todos os campos com os dados oficiais do banco de dados Firebase
-                    document.getElementById('owner-name').value = data.cn || '';
-                    document.getElementById('store-name').value = data.n || '';
-                    document.getElementById('store-subtitle').value = data.sub || '';
-                    document.getElementById('whatsapp').value = data.w || '';
-                    document.getElementById('address').value = data.a || '';
-                    document.getElementById('instagram').value = data.ig || '';
-                    document.getElementById('facebook').value = data.fb || '';
-                    document.getElementById('website').value = data.ws || '';
+                    document.getElementById('owner-name').value = data.cn || data.ownerName || '';
+                    document.getElementById('store-name').value = data.n || data.name || '';
+                    document.getElementById('store-subtitle').value = data.sub || data.subtitle || '';
+                    document.getElementById('whatsapp').value = data.w || data.whatsapp || '';
+                    document.getElementById('address').value = data.a || data.address || '';
+                    document.getElementById('instagram').value = data.ig || data.instagram || '';
+                    document.getElementById('facebook').value = data.fb || data.facebook || '';
+                    document.getElementById('website').value = data.ws || data.website || '';
                     document.getElementById('password').value = data.password || '';
-                    document.getElementById('primary-color').value = data.c ? '#' + data.c : '#f97316';
-                    document.getElementById('secondary-color').value = data.b ? '#' + data.b : '#0f172a';
-                    document.getElementById('banner-image').value = data.bi || '';
+                    document.getElementById('primary-color').value = data.c ? (data.c.startsWith('#') ? data.c : '#' + data.c) : '#f97316';
+                    document.getElementById('secondary-color').value = data.b ? (data.b.startsWith('#') ? data.b : '#' + data.b) : '#0f172a';
+                    document.getElementById('banner-image').value = data.bi || data.bannerImage || '';
                     document.getElementById('hide-banner-bg').checked = data.hb || false;
-                    document.getElementById('store-logo').value = data.lg || '';
-                    document.getElementById('pix-key').value = data.px || '';
-                    document.getElementById('card-fee').value = data.cf || '';
-                    document.getElementById('max-installments').value = data.mxi || '10';
-                    document.getElementById('direct-installments').value = data.dxi || '3';
-                    document.getElementById('payment-badge-image').value = data.pmb || '';
+                    document.getElementById('store-logo').value = data.lg || data.logo || '';
+                    document.getElementById('pix-key').value = data.px || data.pixKey || '';
+                    document.getElementById('card-fee').value = data.cf !== undefined ? data.cf : '';
+                    document.getElementById('max-installments').value = data.mxi !== undefined ? data.mxi : '10';
+                    document.getElementById('direct-installments').value = data.dxi !== undefined ? data.dxi : '3';
+                    document.getElementById('payment-badge-image').value = data.pmb || data.paymentBadgeImage || '';
 
-                    window.updateBannerPreview(data.bi || '');
-                    window.updateLogoPreview(data.lg || '');
-                    window.updatePaymentBadgePreview(data.pmb || '');
-                    document.getElementById('niche').value = data.t || 'loja';
-                    document.getElementById('image-format').value = data.imf || 'vertical';
+                    window.updateBannerPreview(data.bi || data.bannerImage || '');
+                    window.updateLogoPreview(data.lg || data.logo || '');
+                    window.updatePaymentBadgePreview(data.pmb || data.paymentBadgeImage || '');
+                    document.getElementById('niche').value = data.t || data.type || 'loja';
+                    document.getElementById('image-format').value = data.imf || data.imageFormat || 'vertical';
                     if (data.oh) window.setOperatingHoursInForm(data.oh);
                     
-                    if (data.p && data.p.length > 0) {
-                        window.products = data.p.map(p => ({
+                    // Carrega Produtos do Banco de Dados (suporta array ou objeto Firestore e aliases de propriedades)
+                    let rawProducts = data.p || data.products || data.items || [];
+                    if (rawProducts && typeof rawProducts === 'object' && !Array.isArray(rawProducts)) {
+                        rawProducts = Object.values(rawProducts);
+                    }
+
+                    if (rawProducts && rawProducts.length > 0) {
+                        window.products = rawProducts.map(p => ({
                             id: p.id || Math.random().toString(36).substr(2, 9),
-                            name: p.n,
-                            price: p.p,
-                            wholesalePrice: p.wp || '',
-                            wholesaleMinQty: p.wq || '',
-                            image: p.i,
+                            name: p.n !== undefined ? p.n : (p.name !== undefined ? p.name : (p.nome !== undefined ? p.nome : (p.title !== undefined ? p.title : ''))),
+                            price: p.p !== undefined ? p.p : (p.price !== undefined ? p.price : ''),
+                            wholesalePrice: p.wp || p.wholesalePrice || '',
+                            wholesaleMinQty: p.wq || p.wholesaleMinQty || '',
+                            image: p.i || p.image || '',
                             i2: p.i2 || '',
                             i3: p.i3 || '',
                             i4: p.i4 || '',
                             i5: p.i5 || '',
                             i6: p.i6 || '',
-                            videoUrl: p.v || '',
-                            category: p.cat || '',
-                            description: p.d || '',
-                            available: p.av !== false,
+                            videoUrl: p.v || p.videoUrl || '',
+                            category: p.cat || p.category || '',
+                            description: p.d || p.description || '',
+                            available: p.av !== false && p.available !== false,
                             vars: p.vars || '',
                             sh_sizes: p.sh_sizes || '',
                             sh_colors: p.sh_colors || '',
                             f: p.f || false,
-                            affiliateLink: p.al || ''
+                            affiliateLink: p.al || p.affiliateLink || ''
                         }));
+
                         // Normalização retroativa de categorias no carregamento
                         const tempCategories = {};
                         window.products.forEach(p => {
@@ -2359,16 +2396,18 @@
                                 p.category = tempCategories[key];
                             }
                         });
-                    } else {
-                        window.products = [];
                     }
 
                     // Carrega os Banners Promocionais salvos do Firebase
-                    if (data.pb && Array.isArray(data.pb)) {
-                        window.promotionalBanners = data.pb.map(b => ({
+                    let rawPB = data.pb || data.promotionalBanners || [];
+                    if (rawPB && typeof rawPB === 'object' && !Array.isArray(rawPB)) {
+                        rawPB = Object.values(rawPB);
+                    }
+                    if (rawPB && rawPB.length > 0) {
+                        window.promotionalBanners = rawPB.map(b => ({
                             id: b.id || Math.random().toString(36).substr(2, 9),
-                            i: b.i || '',
-                            al: b.al || ''
+                            i: b.i || b.image || '',
+                            al: b.al || b.link || b.affiliateLink || ''
                         }));
                     } else {
                         window.promotionalBanners = [];
@@ -2380,7 +2419,7 @@
                     window.renderShippingZones();
 
                     localStorage.setItem('lastStoreId', storeId);
-                    if (data.n) localStorage.setItem('lastStoreName', data.n);
+                    if (data.n || data.name) localStorage.setItem('lastStoreName', data.n || data.name);
                     window.saveDraft();
                 } else {
                     console.log("Loja não encontrada em stores para o ID:", storeId);

@@ -2296,34 +2296,7 @@
                         clicksEl.innerText = data.clicks || 0;
                     }
                     
-                    if (data.lg) document.getElementById('store-logo').value = data.lg;
-                    if (data.px) document.getElementById('pix-key').value = data.px;
-                    if (data.cf) document.getElementById('card-fee').value = data.cf;
-                    document.getElementById('max-installments').value = data.mxi || '10';
-                    document.getElementById('direct-installments').value = data.dxi || '3';
-                    if (data.pmb) document.getElementById('payment-badge-image').value = data.pmb;
-                    if (data.sub) document.getElementById('store-subtitle').value = data.sub;
-                    document.getElementById('hide-banner-bg').checked = data.hb || false;
-                    
-                    // Verifica se o rascunho local é mais recente que o dado do servidor
-                    if (!forcedId) {
-                        const draftStr = localStorage.getItem('catalog_draft');
-                        if (draftStr) {
-                            try {
-                                const draft = JSON.parse(draftStr);
-                                if (draft.storeId === storeId && draft.lastUpdated) {
-                                    const serverUpdate = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
-                                    if (draft.lastUpdated > serverUpdate) {
-                                        console.log("Usando rascunho local mais recente");
-                                        if (window.lucide) lucide.createIcons();
-                                        return;
-                                    }
-                                }
-                            } catch (e) { console.error("Erro ao comparar rascunho:", e); }
-                        }
-                    }
-
-                    // Preenche os campos se não usou rascunho
+                    // Preenche todos os campos com os dados oficiais do banco de dados Firebase
                     document.getElementById('owner-name').value = data.cn || '';
                     document.getElementById('store-name').value = data.n || '';
                     document.getElementById('store-subtitle').value = data.sub || '';
@@ -2337,11 +2310,15 @@
                     document.getElementById('secondary-color').value = data.b ? '#' + data.b : '#0f172a';
                     document.getElementById('banner-image').value = data.bi || '';
                     document.getElementById('hide-banner-bg').checked = data.hb || false;
-                    document.getElementById('payment-badge-image').value = data.pmb || '';
+                    document.getElementById('store-logo').value = data.lg || '';
+                    document.getElementById('pix-key').value = data.px || '';
+                    document.getElementById('card-fee').value = data.cf || '';
                     document.getElementById('max-installments').value = data.mxi || '10';
                     document.getElementById('direct-installments').value = data.dxi || '3';
-                    window.updateBannerPreview(data.bi);
-                    window.updateLogoPreview(data.lg);
+                    document.getElementById('payment-badge-image').value = data.pmb || '';
+
+                    window.updateBannerPreview(data.bi || '');
+                    window.updateLogoPreview(data.lg || '');
                     window.updatePaymentBadgePreview(data.pmb || '');
                     document.getElementById('niche').value = data.t || 'loja';
                     document.getElementById('image-format').value = data.imf || 'vertical';
@@ -2383,9 +2360,9 @@
                             }
                         });
                     } else {
-                        // Se a loja existe mas não tem produtos salvos, mantém o padrão ou limpa
-                        // window.products = [{ id: Date.now().toString(), name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', description: '' }];
+                        window.products = [];
                     }
+
                     // Carrega os Banners Promocionais salvos do Firebase
                     if (data.pb && Array.isArray(data.pb)) {
                         window.promotionalBanners = data.pb.map(b => ({
@@ -2396,10 +2373,15 @@
                     } else {
                         window.promotionalBanners = [];
                     }
-                    window.renderPromoBanners();
 
+                    window.renderPromoBanners();
                     window.renderProducts();
                     window.renderVendors();
+                    window.renderShippingZones();
+
+                    localStorage.setItem('lastStoreId', storeId);
+                    if (data.n) localStorage.setItem('lastStoreName', data.n);
+                    window.saveDraft();
                 } else {
                     console.log("Loja não encontrada em stores para o ID:", storeId);
                 }

@@ -372,16 +372,20 @@
 
                 <!-- NOVO SEÇÃO HORÁRIO DE FUNCIONAMENTO & RECEBIMENTO DE PEDIDOS -->
                 <section class="space-y-6 border-t border-slate-200/60 pt-6">
-                    <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center justify-between gap-3 mb-2">
                         <div class="space-y-0.5 min-w-0">
                             <h3 class="font-black uppercase italic tracking-widest text-sm text-orange-600 flex items-center gap-1.5">
                                 <i data-lucide="clock" class="w-4 h-4"></i> Horário de Funcionamento & Recebimento de Pedidos
                             </h3>
                             <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Defina quando seu catálogo aceita pedidos e quando deve ficar oculto o botão de fazer pedido</p>
                         </div>
+                        <button type="button" onclick="window.toggleOperatingHoursCollapse()" id="oh-collapse-btn" class="bg-orange-50 hover:bg-orange-100 text-orange-700 px-3.5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shrink-0 border border-orange-200/80 active-scale shadow-sm cursor-pointer select-none">
+                            <i data-lucide="chevron-up" id="oh-collapse-icon" class="w-4 h-4"></i>
+                            <span id="oh-collapse-text">Recolher</span>
+                        </button>
                     </div>
 
-                    <div class="bg-slate-50 p-5 sm:p-6 rounded-[2rem] border border-slate-200/80 space-y-4">
+                    <div id="oh-card-body" class="bg-slate-50 p-5 sm:p-6 rounded-[2rem] border border-slate-200/80 space-y-4">
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div class="space-y-2">
                                 <label class="text-xs font-bold text-slate-600 uppercase tracking-widest">Modo de Funcionamento</label>
@@ -402,6 +406,13 @@
                             <div id="oh-days-container" class="space-y-2.5">
                                 <!-- Os 7 dias da semana serão renderizados dinamicamente pelo JS -->
                             </div>
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-200/60 flex justify-end">
+                            <button type="button" onclick="window.toggleOperatingHoursCollapse()" class="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black uppercase text-xs tracking-wider transition-all flex items-center gap-1.5 active-scale shadow-sm cursor-pointer">
+                                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                <span>Concluir e Recolher</span>
+                            </button>
                         </div>
                     </div>
                 </section>
@@ -700,6 +711,25 @@
         }
 
         // FUNÇÕES DO HORÁRIO DE FUNCIONAMENTO
+        window.toggleOperatingHoursCollapse = function() {
+            const body = document.getElementById('oh-card-body');
+            const icon = document.getElementById('oh-collapse-icon');
+            const text = document.getElementById('oh-collapse-text');
+            if (!body) return;
+
+            const isHidden = body.classList.contains('hidden');
+            if (isHidden) {
+                body.classList.remove('hidden');
+                if (text) text.innerText = 'Recolher';
+                if (icon) icon.setAttribute('data-lucide', 'chevron-up');
+            } else {
+                body.classList.add('hidden');
+                if (text) text.innerText = 'Expandir';
+                if (icon) icon.setAttribute('data-lucide', 'chevron-down');
+            }
+            if (window.lucide) lucide.createIcons();
+        };
+
         window.initOperatingHoursUI = function() {
             const container = document.getElementById('oh-days-container');
             if (!container) return;

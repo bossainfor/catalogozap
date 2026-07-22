@@ -883,12 +883,16 @@
                 if (draft.products && Array.isArray(draft.products) && draft.products.length > 0) {
                     window.products = draft.products.map(p => ({
                         ...p,
+                        id: p.id || Math.random().toString(36).substr(2, 9),
+                        name: p.name !== undefined && p.name !== null ? String(p.name) : (p.n !== undefined && p.n !== null ? String(p.n) : (p.nome !== undefined && p.nome !== null ? String(p.nome) : (p.title !== undefined && p.title !== null ? String(p.title) : ''))),
+                        price: p.price !== undefined && p.price !== null ? String(p.price) : (p.p !== undefined && p.p !== null ? String(p.p) : (p.preco !== undefined && p.preco !== null ? String(p.preco) : '')),
+                        image: p.image || p.i || p.imagem || '',
                         i2: p.i2 || '',
                         i3: p.i3 || '',
                         i4: p.i4 || '',
                         i5: p.i5 || '',
                         i6: p.i6 || '',
-                        videoUrl: p.videoUrl || ''
+                        videoUrl: p.videoUrl || p.v || ''
                     }));
                 }
             } catch (e) {
@@ -1886,31 +1890,35 @@
             data.t = document.getElementById('niche').value;
             data.imf = document.getElementById('image-format').value;
             
-            const validProducts = window.products.filter(p => p.name);
-            if (validProducts.length > 0) {
-                data.p = validProducts.map(p => {
-                    const item = { id: p.id, n: p.name };
-                    if (p.price) item.p = p.price;
-                    if (p.image) item.i = p.image;
-                    if (p.i2) item.i2 = p.i2;
-                    if (p.i3) item.i3 = p.i3;
-                    if (p.i4) item.i4 = p.i4;
-                    if (p.i5) item.i5 = p.i5;
-                    if (p.i6) item.i6 = p.i6;
-                    if (p.videoUrl) item.v = p.videoUrl;
-                    if (p.description) item.d = p.description;
-                    if (p.category) item.cat = p.category;
-                    if (p.wholesalePrice) item.wp = p.wholesalePrice;
-                    if (p.wholesaleMinQty) item.wq = parseInt(p.wholesaleMinQty);
-                    if (p.available === false) item.av = false;
-                    if (p.vars) item.vars = p.vars;
-                    if (p.sh_sizes) item.sh_sizes = p.sh_sizes;
-                    if (p.sh_colors) item.sh_colors = p.sh_colors;
-                    if (p.f) item.f = true;
-                    if (p.affiliateLink) item.al = p.affiliateLink;
-                    return item;
-                });
-            }
+            const validProducts = (window.products || []).filter(p => {
+                const name = p.name !== undefined && p.name !== null ? String(p.name) : (p.n || p.nome || p.title || '');
+                return name.trim() !== '';
+            });
+            data.p = validProducts.map(p => {
+                const name = p.name !== undefined && p.name !== null ? String(p.name) : (p.n || p.nome || p.title || '');
+                const price = p.price !== undefined && p.price !== null ? String(p.price) : (p.p || p.preco || p.valor || '');
+                const image = p.image || p.i || p.imagem || '';
+                const item = { id: p.id || Math.random().toString(36).substr(2, 9), n: name };
+                if (price) item.p = price;
+                if (image) item.i = image;
+                if (p.i2) item.i2 = p.i2;
+                if (p.i3) item.i3 = p.i3;
+                if (p.i4) item.i4 = p.i4;
+                if (p.i5) item.i5 = p.i5;
+                if (p.i6) item.i6 = p.i6;
+                if (p.videoUrl || p.v) item.v = p.videoUrl || p.v;
+                if (p.description || p.d) item.d = p.description || p.d;
+                if (p.category || p.cat) item.cat = p.category || p.cat;
+                if (p.wholesalePrice || p.wp) item.wp = p.wholesalePrice || p.wp;
+                if (p.wholesaleMinQty || p.wq) item.wq = parseInt(p.wholesaleMinQty || p.wq);
+                if (p.available === false || p.av === false) item.av = false;
+                if (p.vars) item.vars = p.vars;
+                if (p.sh_sizes) item.sh_sizes = p.sh_sizes;
+                if (p.sh_colors) item.sh_colors = p.sh_colors;
+                if (p.f) item.f = true;
+                if (p.affiliateLink || p.al) item.al = p.affiliateLink || p.al;
+                return item;
+            });
 
             // Preserva o plano e vendedores (com cliques integrados)
             data.plan = window.storePlan;
@@ -2354,35 +2362,77 @@
                     document.getElementById('image-format').value = data.imf || data.imageFormat || 'vertical';
                     if (data.oh) window.setOperatingHoursInForm(data.oh);
                     
-                    // Carrega Produtos do Banco de Dados (suporta array ou objeto Firestore e aliases de propriedades)
-                    let rawProducts = data.p || data.products || data.items || [];
+                    // Carrega Produtos do Banco de Dados (suporta array, objeto Firestore, JSON string e aliases de propriedades)
+                    let rawProducts = data.p || data.products || data.items || data.produtos || data.catalogo || data.itens || data.list || [];
+                    if (typeof rawProducts === 'string') {
+                        try {
+                            rawProducts = JSON.parse(rawProducts);
+                        } catch(e) {
+                            rawProducts = [];
+                        }
+                    }
                     if (rawProducts && typeof rawProducts === 'object' && !Array.isArray(rawProducts)) {
                         rawProducts = Object.values(rawProducts);
                     }
+                    if (!Array.isArray(rawProducts)) {
+                        rawProducts = [];
+                    }
 
-                    if (rawProducts && rawProducts.length > 0) {
-                        window.products = rawProducts.map(p => ({
-                            id: p.id || Math.random().toString(36).substr(2, 9),
-                            name: p.n !== undefined ? p.n : (p.name !== undefined ? p.name : (p.nome !== undefined ? p.nome : (p.title !== undefined ? p.title : ''))),
-                            price: p.p !== undefined ? p.p : (p.price !== undefined ? p.price : ''),
-                            wholesalePrice: p.wp || p.wholesalePrice || '',
-                            wholesaleMinQty: p.wq || p.wholesaleMinQty || '',
-                            image: p.i || p.image || '',
-                            i2: p.i2 || '',
-                            i3: p.i3 || '',
-                            i4: p.i4 || '',
-                            i5: p.i5 || '',
-                            i6: p.i6 || '',
-                            videoUrl: p.v || p.videoUrl || '',
-                            category: p.cat || p.category || '',
-                            description: p.d || p.description || '',
-                            available: p.av !== false && p.available !== false,
-                            vars: p.vars || '',
-                            sh_sizes: p.sh_sizes || '',
-                            sh_colors: p.sh_colors || '',
-                            f: p.f || false,
-                            affiliateLink: p.al || p.affiliateLink || ''
-                        }));
+                    if (rawProducts.length > 0) {
+                        window.products = rawProducts.map(p => {
+                            if (!p || typeof p !== 'object') return null;
+
+                            const nameVal = p.n !== undefined && p.n !== null ? String(p.n) :
+                                           (p.name !== undefined && p.name !== null ? String(p.name) :
+                                           (p.nome !== undefined && p.nome !== null ? String(p.nome) :
+                                           (p.title !== undefined && p.title !== null ? String(p.title) :
+                                           (p.titulo !== undefined && p.titulo !== null ? String(p.titulo) : ''))));
+                                           
+                            const priceVal = p.p !== undefined && p.p !== null ? String(p.p) :
+                                            (p.price !== undefined && p.price !== null ? String(p.price) :
+                                            (p.preco !== undefined && p.preco !== null ? String(p.preco) :
+                                            (p.valor !== undefined && p.valor !== null ? String(p.valor) : '')));
+
+                            const imageVal = p.i !== undefined && p.i !== null ? String(p.i) :
+                                            (p.image !== undefined && p.image !== null ? String(p.image) :
+                                            (p.imagem !== undefined && p.imagem !== null ? String(p.imagem) :
+                                            (p.img !== undefined && p.img !== null ? String(p.img) : '')));
+
+                            const categoryVal = p.cat !== undefined && p.cat !== null ? String(p.cat) :
+                                               (p.category !== undefined && p.category !== null ? String(p.category) :
+                                               (p.categoria !== undefined && p.categoria !== null ? String(p.categoria) : ''));
+
+                            const descriptionVal = p.d !== undefined && p.d !== null ? String(p.d) :
+                                                  (p.description !== undefined && p.description !== null ? String(p.description) :
+                                                  (p.descricao !== undefined && p.descricao !== null ? String(p.descricao) : ''));
+
+                            const videoVal = p.v !== undefined && p.v !== null ? String(p.v) :
+                                            (p.videoUrl !== undefined && p.videoUrl !== null ? String(p.videoUrl) :
+                                            (p.video !== undefined && p.video !== null ? String(p.video) : ''));
+
+                            return {
+                                id: p.id || Math.random().toString(36).substr(2, 9),
+                                name: nameVal,
+                                price: priceVal,
+                                wholesalePrice: p.wp !== undefined && p.wp !== null ? String(p.wp) : (p.wholesalePrice || ''),
+                                wholesaleMinQty: p.wq !== undefined && p.wq !== null ? String(p.wq) : (p.wholesaleMinQty || ''),
+                                image: imageVal,
+                                i2: p.i2 || p.image2 || p.img2 || '',
+                                i3: p.i3 || p.image3 || p.img3 || '',
+                                i4: p.i4 || p.image4 || p.img4 || '',
+                                i5: p.i5 || p.image5 || p.img5 || '',
+                                i6: p.i6 || p.image6 || p.img6 || '',
+                                videoUrl: videoVal,
+                                category: categoryVal,
+                                description: descriptionVal,
+                                available: p.av !== false && p.available !== false && p.disponivel !== false,
+                                vars: p.vars || p.variacoes || p.variations || '',
+                                sh_sizes: p.sh_sizes || p.sizes || p.tamanhos || '',
+                                sh_colors: p.sh_colors || p.colors || p.cores || '',
+                                f: p.f === true || p.featured === true || p.destaque === true,
+                                affiliateLink: p.al || p.affiliateLink || p.link || ''
+                            };
+                        }).filter(Boolean);
 
                         // Normalização retroativa de categorias no carregamento
                         const tempCategories = {};

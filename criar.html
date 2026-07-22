@@ -1912,31 +1912,29 @@
             data.t = document.getElementById('niche').value;
             data.imf = document.getElementById('image-format').value;
             
-            const validProducts = window.products.filter(p => p.name);
-            if (validProducts.length > 0) {
-                data.p = validProducts.map(p => {
-                    const item = { id: p.id, n: p.name };
-                    if (p.price) item.p = p.price;
-                    if (p.image) item.i = p.image;
-                    if (p.i2) item.i2 = p.i2;
-                    if (p.i3) item.i3 = p.i3;
-                    if (p.i4) item.i4 = p.i4;
-                    if (p.i5) item.i5 = p.i5;
-                    if (p.i6) item.i6 = p.i6;
-                    if (p.videoUrl) item.v = p.videoUrl;
-                    if (p.description) item.d = p.description;
-                    if (p.category) item.cat = p.category;
-                    if (p.wholesalePrice) item.wp = p.wholesalePrice;
-                    if (p.wholesaleMinQty) item.wq = parseInt(p.wholesaleMinQty);
-                    if (p.available === false) item.av = false;
-                    if (p.vars) item.vars = p.vars;
-                    if (p.sh_sizes) item.sh_sizes = p.sh_sizes;
-                    if (p.sh_colors) item.sh_colors = p.sh_colors;
-                    if (p.f) item.f = true;
-                    if (p.affiliateLink) item.al = p.affiliateLink;
-                    return item;
-                });
-            }
+            const validProducts = window.products.filter(p => (p.name && p.name.trim()) || p.price || p.image || p.category || p.description);
+            data.p = validProducts.map(p => {
+                const item = { id: p.id || Math.random().toString(36).substr(2, 9), n: p.name || '' };
+                if (p.price) item.p = p.price;
+                if (p.image) item.i = p.image;
+                if (p.i2) item.i2 = p.i2;
+                if (p.i3) item.i3 = p.i3;
+                if (p.i4) item.i4 = p.i4;
+                if (p.i5) item.i5 = p.i5;
+                if (p.i6) item.i6 = p.i6;
+                if (p.videoUrl) item.v = p.videoUrl;
+                if (p.description) item.d = p.description;
+                if (p.category) item.cat = p.category;
+                if (p.wholesalePrice) item.wp = p.wholesalePrice;
+                if (p.wholesaleMinQty) item.wq = parseInt(p.wholesaleMinQty);
+                if (p.available === false) item.av = false;
+                if (p.vars) item.vars = p.vars;
+                if (p.sh_sizes) item.sh_sizes = p.sh_sizes;
+                if (p.sh_colors) item.sh_colors = p.sh_colors;
+                if (p.f) item.f = true;
+                if (p.affiliateLink) item.al = p.affiliateLink;
+                return item;
+            });
 
             // Preserva o plano e vendedores (com cliques integrados)
             data.plan = window.storePlan;
@@ -2350,28 +2348,29 @@
                     document.getElementById('image-format').value = data.imf || 'vertical';
                     if (data.oh) window.setOperatingHoursInForm(data.oh);
                     
-                    if (data.p && data.p.length > 0) {
-                        window.products = data.p.map(p => ({
+                    const rawProducts = data.p || data.products || data.items || [];
+                    if (Array.isArray(rawProducts) && rawProducts.length > 0) {
+                        window.products = rawProducts.map(p => ({
                             id: p.id || Math.random().toString(36).substr(2, 9),
-                            name: p.n !== undefined ? p.n : (p.name || ''),
-                            price: p.p !== undefined ? p.p : (p.price || ''),
-                            wholesalePrice: p.wp !== undefined ? p.wp : (p.wholesalePrice || ''),
-                            wholesaleMinQty: p.wq !== undefined ? p.wq : (p.wholesaleMinQty || ''),
-                            image: p.i !== undefined ? p.i : (p.image || ''),
-                            i2: p.i2 || '',
-                            i3: p.i3 || '',
-                            i4: p.i4 || '',
-                            i5: p.i5 || '',
-                            i6: p.i6 || '',
-                            videoUrl: p.v !== undefined ? p.v : (p.videoUrl || ''),
-                            category: p.cat !== undefined ? p.cat : (p.category || ''),
-                            description: p.d !== undefined ? p.d : (p.description || ''),
+                            name: (p.n !== undefined && p.n !== null && p.n !== '') ? p.n : (p.name || ''),
+                            price: (p.p !== undefined && p.p !== null && p.p !== '') ? p.p : (p.price || ''),
+                            wholesalePrice: (p.wp !== undefined && p.wp !== null && p.wp !== '') ? p.wp : (p.wholesalePrice || ''),
+                            wholesaleMinQty: (p.wq !== undefined && p.wq !== null && p.wq !== '') ? p.wq : (p.wholesaleMinQty || ''),
+                            image: (p.i !== undefined && p.i !== null && p.i !== '') ? p.i : (p.image || ''),
+                            i2: p.i2 || p.image2 || '',
+                            i3: p.i3 || p.image3 || '',
+                            i4: p.i4 || p.image4 || '',
+                            i5: p.i5 || p.image5 || '',
+                            i6: p.i6 || p.image6 || '',
+                            videoUrl: (p.v !== undefined && p.v !== null && p.v !== '') ? p.v : (p.videoUrl || ''),
+                            category: (p.cat !== undefined && p.cat !== null && p.cat !== '') ? p.cat : (p.category || ''),
+                            description: (p.d !== undefined && p.d !== null && p.d !== '') ? p.d : (p.description || ''),
                             available: p.av !== false && p.available !== false,
                             vars: p.vars || '',
                             sh_sizes: p.sh_sizes || '',
                             sh_colors: p.sh_colors || '',
-                            f: p.f || false,
-                            affiliateLink: p.al !== undefined ? p.al : (p.affiliateLink || '')
+                            f: p.f || p.featured || false,
+                            affiliateLink: (p.al !== undefined && p.al !== null && p.al !== '') ? p.al : (p.affiliateLink || '')
                         }));
                         // Normalização retroativa de categorias no carregamento
                         const tempCategories = {};

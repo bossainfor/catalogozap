@@ -241,10 +241,15 @@
         let selectedShippingZone = null;
         let selectedPaymentMethod = 'pix';
         let selectedInstallment = 1;
+        let cashChangeVal = '';
 
         window.setPaymentMethod = function(method) {
             selectedPaymentMethod = method;
             updateCartUI();
+        }
+
+        window.setCashChange = function(val) {
+            cashChangeVal = val;
         }
 
         window.setInstallment = function(inst) {
@@ -1374,18 +1379,28 @@
                 let paymentMethodHTML = `
                     <div class="space-y-2 mb-4 text-left">
                         <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Forma de Pagamento</label>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button onclick="window.setPaymentMethod('pix')" class="py-3 px-3 rounded-xl border-2 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all ${selectedPaymentMethod === 'pix' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white' : 'bg-slate-50 text-slate-700 border-slate-100 hover:border-slate-200 dark:bg-slate-700 dark:border-slate-600 dark:text-white'}" id="pay-btn-pix">
-                                <i data-lucide="qr-code" class="w-4 h-4"></i> PIX
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <button onclick="window.setPaymentMethod('pix')" class="py-2.5 px-2 rounded-xl border-2 font-black text-[11px] sm:text-xs uppercase tracking-wider flex items-center justify-center gap-1 transition-all cursor-pointer ${selectedPaymentMethod === 'pix' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white shadow-sm' : 'bg-slate-50 text-slate-700 border-slate-100 hover:border-slate-200 dark:bg-slate-700 dark:border-slate-600 dark:text-white'}" id="pay-btn-pix">
+                                <i data-lucide="qr-code" class="w-3.5 h-3.5 shrink-0"></i> <span>PIX</span>
                             </button>
-                            <button onclick="window.setPaymentMethod('card')" class="py-3 px-3 rounded-xl border-2 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all ${selectedPaymentMethod === 'card' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white' : 'bg-slate-50 text-slate-700 border-slate-100 hover:border-slate-200 dark:bg-slate-700 dark:border-slate-600 dark:text-white'}" id="pay-btn-card">
-                                <i data-lucide="credit-card" class="w-4 h-4"></i> Cartão
+                            <button onclick="window.setPaymentMethod('card')" class="py-2.5 px-2 rounded-xl border-2 font-black text-[11px] sm:text-xs uppercase tracking-wider flex items-center justify-center gap-1 transition-all cursor-pointer ${selectedPaymentMethod === 'card' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white shadow-sm' : 'bg-slate-50 text-slate-700 border-slate-100 hover:border-slate-200 dark:bg-slate-700 dark:border-slate-600 dark:text-white'}" id="pay-btn-card">
+                                <i data-lucide="credit-card" class="w-3.5 h-3.5 shrink-0"></i> <span>Cartão</span>
+                            </button>
+                            <button onclick="window.setPaymentMethod('cash')" class="py-2.5 px-2 rounded-xl border-2 font-black text-[11px] sm:text-xs uppercase tracking-wider flex items-center justify-center gap-1 transition-all cursor-pointer ${selectedPaymentMethod === 'cash' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white shadow-sm' : 'bg-slate-50 text-slate-700 border-slate-100 hover:border-slate-200 dark:bg-slate-700 dark:border-slate-600 dark:text-white'}" id="pay-btn-cash">
+                                <i data-lucide="banknote" class="w-3.5 h-3.5 shrink-0"></i> <span>Dinheiro</span>
                             </button>
                         </div>
                     </div>
                 `;
 
-                if (selectedPaymentMethod === 'card') {
+                if (selectedPaymentMethod === 'cash') {
+                    paymentMethodHTML += `
+                        <div class="space-y-2 mb-4 animate-fade-in text-left">
+                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Precisa de Troco? (Opcional)</label>
+                            <input type="text" placeholder="Ex: Troco para R$ 100,00 ou Sem troco" value="${cashChangeVal}" oninput="window.setCashChange(this.value)" class="w-full px-4 py-2.5 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-xs outline-none dark:text-white focus:border-orange-500">
+                        </div>
+                    `;
+                } else if (selectedPaymentMethod === 'card') {
                     let installmentOptions = '';
                     for (let i = 1; i <= 10; i++) {
                         let feeForThisOption = 0;
@@ -1522,6 +1537,14 @@
                     message += `\n*Chave PIX:* ${storeData.pixKey}`;
                 }
                 message += `\n\n*Total: ${formatCurrency(finalTotal)}*`;
+            } else if (selectedPaymentMethod === 'cash') {
+                message += `\n\n*Forma de Pagamento:* Dinheiro 💵`;
+                if (cashChangeVal && cashChangeVal.trim()) {
+                    message += `\n*Troco:* ${cashChangeVal.trim()}`;
+                } else {
+                    message += `\n*Troco:* Não precisa de troco`;
+                }
+                message += `\n\n*Total em Dinheiro: ${formatCurrency(finalTotal)}*`;
             } else {
                 const installmentValue = finalTotal / selectedInstallment;
                 message += `\n\n*Forma de Pagamento:* Cartão de Crédito 💳`;

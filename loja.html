@@ -246,8 +246,6 @@
             selectedPaymentMethod = method;
             if (method === 'card') {
                 selectedInstallment = storeData && storeData.mxi ? parseInt(storeData.mxi) : 10;
-            } else if (method === 'direct') {
-                selectedInstallment = storeData && storeData.dxi ? parseInt(storeData.dxi) : 3;
             } else {
                 selectedInstallment = 1;
             }
@@ -1228,12 +1226,13 @@
 
                 // Cálculo da taxa do cartão progressive
                 const maxInstallments = storeData.mxi ? parseInt(storeData.mxi) : 10;
-                const directInstallments = storeData.dxi ? parseInt(storeData.dxi) : 3;
+
+                if (selectedPaymentMethod === 'direct') {
+                    selectedPaymentMethod = 'pix';
+                }
 
                 if (selectedPaymentMethod === 'card') {
                     selectedInstallment = maxInstallments;
-                } else if (selectedPaymentMethod === 'direct') {
-                    selectedInstallment = directInstallments;
                 } else {
                     selectedInstallment = 1;
                 }
@@ -1250,7 +1249,7 @@
                 let paymentMethodHTML = `
                     <div class="space-y-2 mb-4 text-left">
                         <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Forma de Pagamento</label>
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-3 gap-2">
                             <button onclick="window.setPaymentMethod('pix')" class="py-3 px-2 rounded-xl border-2 font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 transition-all ${selectedPaymentMethod === 'pix' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white' : 'bg-slate-50 text-slate-700 border-slate-100 hover:border-slate-200 dark:bg-slate-700 dark:border-slate-600 dark:text-white'}" id="pay-btn-pix">
                                 <i data-lucide="qr-code" class="w-3.5 h-3.5"></i> PIX
                             </button>
@@ -1259,9 +1258,6 @@
                             </button>
                             <button onclick="window.setPaymentMethod('cash')" class="py-3 px-2 rounded-xl border-2 font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 transition-all ${selectedPaymentMethod === 'cash' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white' : 'bg-slate-50 text-slate-700 border-slate-100 hover:border-slate-200 dark:bg-slate-700 dark:border-slate-600 dark:text-white'}" id="pay-btn-cash">
                                 <i data-lucide="banknote" class="w-3.5 h-3.5"></i> Dinheiro
-                            </button>
-                            <button onclick="window.setPaymentMethod('direct')" class="py-3 px-2 rounded-xl border-2 font-black text-[10px] uppercase tracking-wider flex items-center justify-center gap-1 transition-all ${selectedPaymentMethod === 'direct' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white' : 'bg-slate-50 text-slate-700 border-slate-100 hover:border-slate-200 dark:bg-slate-700 dark:border-slate-600 dark:text-white'}" id="pay-btn-direct">
-                                <i data-lucide="calendar" class="w-3.5 h-3.5"></i> Parcelado
                             </button>
                         </div>
                     </div>
@@ -1291,28 +1287,6 @@
                                     <p class="text-[8px] text-slate-400 font-bold uppercase tracking-wide leading-none">Cobre de forma simples parcelado!</p>
                                 </div>
                                 <img src="https://i0.wp.com/imprensa24h.com.br/wp-content/uploads/2023/03/bandeiras-de-cartoes-de-credito-png-e-vetor.png?fit=1920%2C1080&ssl=1" alt="Bandeiras de Cartão" class="h-6 w-auto object-contain bg-white px-2 py-0.5 rounded border border-slate-100 shadow-sm" referrerpolicy="no-referrer">
-                            </div>
-                        </div>
-                    `;
-                }
-
-                if (selectedPaymentMethod === 'direct') {
-                    const i = directInstallments;
-                    const valPerInstallment = grandTotal / i;
-
-                    paymentMethodHTML += `
-                        <div class="space-y-2 mb-4 animate-fade-in text-left">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Valor do Parcelamento Direto (Sem Cartão)</label>
-                            <div class="w-full px-4 py-3.5 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200/50 dark:border-slate-700 font-black text-sm text-slate-800 dark:text-white flex justify-between items-center">
-                                <span>${i}x de ${formatCurrency(valPerInstallment)}</span>
-                                <span class="text-[9px] uppercase tracking-wider px-2 py-0.5 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-md font-bold">Sem juros</span>
-                            </div>
-                            <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-700/60 flex flex-col md:flex-row items-center justify-between gap-3">
-                                <div class="space-y-0.5 text-left">
-                                    <h5 class="text-[10px] font-black uppercase text-slate-700 dark:text-white">Parcelamento na Palavra / Direto</h5>
-                                    <p class="text-[8px] text-slate-400 font-bold uppercase tracking-wide leading-none">Sem cartão! Acerto direto com o estabelecimento.</p>
-                                </div>
-                                <i data-lucide="handshake" class="w-6 h-6 text-slate-400"></i>
                             </div>
                         </div>
                     `;
@@ -1565,12 +1539,9 @@
 
             const cardFeePercentage = storeData.cf ? parseFloat(storeData.cf) : 0;
             const maxInstallments = storeData.mxi ? parseInt(storeData.mxi) : 10;
-            const directInstallments = storeData.dxi ? parseInt(storeData.dxi) : 3;
 
             if (selectedPaymentMethod === 'card') {
                 selectedInstallment = maxInstallments;
-            } else if (selectedPaymentMethod === 'direct') {
-                selectedInstallment = directInstallments;
             } else {
                 selectedInstallment = 1;
             }
@@ -1592,12 +1563,6 @@
             } else if (selectedPaymentMethod === 'cash') {
                 message += `\n\n*Forma de Pagamento:* Dinheiro 💵`;
                 message += `\n\n*Total: ${formatCurrency(finalTotal)}*`;
-            } else if (selectedPaymentMethod === 'direct') {
-                const installmentValue = finalTotal / selectedInstallment;
-                message += `\n\n*Forma de Pagamento:* Parcelado Direto (Crediário / Na Palavra) 🗓️`;
-                message += `\n*Opção Selecionada:* ${selectedInstallment}x de ${formatCurrency(installmentValue)} *[Sem Juros]*`;
-                message += `\n\n*Total Parcelado: ${formatCurrency(finalTotal)}*`;
-                message += `\n\n_(Acerto e datas combinadas diretamente com o estabelecimento)_`;
             } else {
                 const installmentValue = finalTotal / selectedInstallment;
                 message += `\n\n*Forma de Pagamento:* Cartão de Crédito 💳`;

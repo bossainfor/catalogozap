@@ -844,6 +844,15 @@
                     if (str !== '') return str;
                 }
             }
+            const objKeys = Object.keys(obj);
+            for (const key of keys) {
+                const lowerKey = key.toLowerCase();
+                const matchedKey = objKeys.find(k => k.toLowerCase() === lowerKey);
+                if (matchedKey && obj[matchedKey] !== undefined && obj[matchedKey] !== null) {
+                    const str = String(obj[matchedKey]).trim();
+                    if (str !== '') return str;
+                }
+            }
             return '';
         };
 
@@ -2376,25 +2385,48 @@
                     if (data.oh) window.setOperatingHoursInForm(data.oh);
                     
                     // Carrega Produtos do Banco de Dados (suporta múltiplos nomes de campos, estruturas legadas, subcoleções e formatos JSON/map)
-                    let rawProducts = data.p || data.products || data.items || data.produtos || data.catalogo || data.itens || data.list || data.prods || data.materiais || data.catalog || data.produtos_lista || data.itemsList || data.product_list || data.materiais_lista || (data.data && (data.data.p || data.data.products || data.data.items || data.data.produtos)) || [];
+                    let rawProducts = data.p || data.products || data.items || data.produtos || data.catalogo || data.itens || data.list || data.prods || data.materiais || data.catalog || data.produtos_lista || data.itemsList || data.product_list || data.materiais_lista || data.productsList || data.lista || data.lista_produtos || data.listaProdutos || data.itens_lista || data.itensLista || data.catalog_items || data.catalogItems || data.store_products || data.storeProducts || data.prod || data.prods_lista || data.mat || data.materiais_catalog || data.myProducts || data.meusProdutos || data.meus_produtos || data.items_data || data.products_data || (data.data && (data.data.p || data.data.products || data.data.items || data.data.produtos || data.data.materiais || data.data.catalogo)) || null;
 
                     if (typeof rawProducts === 'string') {
                         try {
                             rawProducts = JSON.parse(rawProducts);
                         } catch(e) {
-                            rawProducts = [];
+                            rawProducts = null;
                         }
                     }
+
                     if (rawProducts && typeof rawProducts === 'object' && !Array.isArray(rawProducts)) {
                         rawProducts = Object.values(rawProducts);
                     }
+
+                    if (!rawProducts || !Array.isArray(rawProducts) || rawProducts.length === 0) {
+                        // Varre todas as chaves do documento para encontrar qualquer array ou mapa de produtos
+                        for (const key in data) {
+                            if (!data[key] || ['v', 'sh', 'pb', 'oh', 'createdAt', 'lastResetMonth', 'clicks', 'status', 'plan'].includes(key)) continue;
+                            let val = data[key];
+                            if (typeof val === 'string') {
+                                try { val = JSON.parse(val); } catch(e) {}
+                            }
+                            if (Array.isArray(val) && val.length > 0) {
+                                rawProducts = val;
+                                break;
+                            } else if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
+                                const vals = Object.values(val);
+                                if (vals.length > 0 && typeof vals[0] === 'object') {
+                                    rawProducts = vals;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
                     if (!Array.isArray(rawProducts)) {
                         rawProducts = [];
                     }
 
                     // Se não encontrou no documento principal, verifica subcoleções no Firestore (ex: stores/{storeId}/products)
                     if (rawProducts.length === 0 && window.firebaseUtils && window.db) {
-                        const subCols = ['products', 'items', 'produtos', 'catalogo', 'materiais', 'itens', 'prods'];
+                        const subCols = ['products', 'items', 'produtos', 'catalogo', 'materiais', 'itens', 'prods', 'catalog', 'lista'];
                         for (const subCol of subCols) {
                             try {
                                 const { collection, getDocs } = window.firebaseUtils;
@@ -2419,17 +2451,35 @@
 
                     if (rawProducts.length > 0) {
                         const parsedProducts = rawProducts.map((p, pIdx) => {
+                            if (typeof p === 'string') {
+                                const trimmed = p.trim();
+                                if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+                                    try { p = JSON.parse(trimmed); } catch(e) { p = { name: trimmed }; }
+                                } else {
+                                    p = { name: trimmed };
+                                }
+                            }
                             if (!p || typeof p !== 'object') return null;
 
-                            const nameVal = window.getNonEmptyField(p, ['name', 'n', 'nome', 'title', 'titulo', 'material', 'item', 'produto', 'label', 'descricao_curta', 'descricaoCurta']);
-                            const priceVal = window.getNonEmptyField(p, ['price', 'p', 'preco', 'valor', 'val', 'v_unit', 'priceValue']);
-                            const imageVal = window.getNonEmptyField(p, ['image', 'i', 'imagem', 'img', 'foto', 'picture', 'url', 'imageUrl']);
-                            const categoryVal = window.getNonEmptyField(p, ['category', 'cat', 'categoria', 'grupo', 'tipo', 'catName']);
-                            const descriptionVal = window.getNonEmptyField(p, ['description', 'd', 'descricao', 'detalhes', 'obs', 'info']);
-                            const videoVal = window.getNonEmptyField(p, ['videoUrl', 'v', 'video', 'linkVideo', 'urlVideo']);
+                            const nameVal = window.getNonEmptyField(p, ['name', 'n', 'nome', 'title', 'titulo', 'material', 'item', 'produto', 'label', 'descricao_curta', 'descricaoCurta', 'mat', 'prod', 'artigo', 'servico', 'corte', 'carne']);
+                            const priceVal = window.getNonEmptyField(p, ['price', 'p', 'preco', 'valor', 'val', 'v_unit', 'priceValue', 'pr', 'v', 'custo']);
+                            const imageVal = window.getNonEmptyField(p, ['image', 'i', 'imagem', 'img', 'foto', 'picture', 'url', 'imageUrl', 'src', 'pic', 'photo', 'capa']);
+                            const categoryVal = window.getNonEmptyField(p, ['category', 'cat', 'categoria', 'grupo', 'tipo', 'catName', 'c', 'especialidade', 'setor']);
+                            const descriptionVal = window.getNonEmptyField(p, ['description', 'd', 'descricao', 'detalhes', 'obs', 'info', 'desc', 'observacao']);
+                            const videoVal = window.getNonEmptyField(p, ['videoUrl', 'v', 'video', 'linkVideo', 'urlVideo', 'video_url', 'media']);
 
-                            // Garante um nome visível se houver qualquer outro campo do produto
-                            const finalName = nameVal || (categoryVal ? `${categoryVal} #${pIdx + 1}` : `Item Cadastrado #${pIdx + 1}`);
+                            let finalName = nameVal;
+                            if (!finalName) {
+                                for (const k in p) {
+                                    if (typeof p[k] === 'string' && p[k].trim() !== '' && !p[k].startsWith('http') && !p[k].startsWith('data:')) {
+                                        finalName = p[k].trim();
+                                        break;
+                                    }
+                                }
+                            }
+                            if (!finalName) {
+                                finalName = categoryVal ? `${categoryVal} #${pIdx + 1}` : `Item Cadastrado #${pIdx + 1}`;
+                            }
 
                             return {
                                 id: p.id || Math.random().toString(36).substr(2, 9),

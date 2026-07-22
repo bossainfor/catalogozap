@@ -38,7 +38,7 @@
         const auth = getAuth(app);
 
         // Login anônimo para garantir acesso ao Storage se as regras forem restritivas
-        signInAnonymously(auth).catch(err => console.error("Erro no login anônimo:", err));
+        signInAnonymously(auth).catch(() => {});
 
         window.db = db;
         window.firebaseUtils = { doc, getDoc, updateDoc, increment, collection, addDoc, getDocs, query, where, orderBy };
@@ -1065,6 +1065,7 @@
                     appLink: data.al || '',
                     cf: data.cf || 0,
                     pb: data.pb || [],
+                    oh: data.oh || { mode: '24h' },
                     resellerWhatsapp: data.resellerWhatsapp || '',
                     products: (data.p || []).map(p => {
                         return {
@@ -1098,6 +1099,150 @@
                 return null; 
             }
         }
+
+        window.checkStoreOperatingStatus = function(oh) {
+            if (!oh || !oh.mode || oh.mode === '24h') {
+                return {
+                    isOpen: true,
+                    is24h: true,
+                    statusText: 'Aberto 24 Horas',
+                    badgeClass: 'bg-emerald-500/90 text-white border-emerald-400/30',
+                    dotClass: 'bg-emerald-300 animate-pulse',
+                    todayText: 'Atendimento 24 Horas'
+                };
+            }
+
+            const now = new Date();
+            const currentDay = now.getDay(); // 0: Dom, 1: Seg, ..., 6: Sáb
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+            const DAYS_MAP = {
+                0: 'Domingo',
+                1: 'Segunda-feira',
+                2: 'Terça-feira',
+                3: 'Quarta-feira',
+                4: 'Quinta-feira',
+                5: 'Sexta-feira',
+                6: 'Sábado'
+            };
+
+            const dayConfig = oh.days ? (oh.days[currentDay] || oh.days[String(currentDay)]) : null;
+
+            if (!dayConfig || !dayConfig.active) {
+                return {
+                    isOpen: false,
+                    is24h: false,
+                    statusText: `Fechado Hoje (${DAYS_MAP[currentDay]})`,
+                    badgeClass: 'bg-red-500/90 text-white border-red-400/30',
+                    dotClass: 'bg-red-300',
+                    todayText: `${DAYS_MAP[currentDay]}: Fechado`
+                };
+            }
+
+            const parseTime = (tStr) => {
+                if (!tStr) return 0;
+                const [h, m] = tStr.split(':').map(Number);
+                return (h || 0) * 60 + (m || 0);
+            };
+
+            const startMins = parseTime(dayConfig.start);
+            const endMins = parseTime(dayConfig.end);
+
+            let isOpen = false;
+            if (endMins > startMins) {
+                isOpen = currentMinutes >= startMins && currentMinutes < endMins;
+            } else if (endMins < startMins) {
+                // Virada de noite (ex: 18:00 às 02:00)
+                isOpen = currentMinutes >= startMins || currentMinutes < endMins;
+            } else {
+                isOpen = true; // 00:00 às 00:00 = 24h nesse dia
+            }
+
+            if (isOpen) {
+                return {
+                    isOpen: true,
+                    is24h: false,
+                    statusText: `Aberto agora (${dayConfig.start} às ${dayConfig.end})`,
+                    badgeClass: 'bg-emerald-500/90 text-white border-emerald-400/30',
+                    dotClass: 'bg-emerald-300 animate-pulse',
+                    todayText: `${DAYS_MAP[currentDay]}: ${dayConfig.start} às ${dayConfig.end}`
+                };
+            } else {
+                return {
+                    isOpen: false,
+                    is24h: false,
+                    statusText: `Fechado agora (Abre às ${dayConfig.start})`,
+                    badgeClass: 'bg-red-500/90 text-white border-red-400/30',
+                    dotClass: 'bg-red-300',
+                    todayText: `${DAYS_MAP[currentDay]}: ${dayConfig.start} às ${dayConfig.end}`
+                };
+            }
+        };
+
+        window.openOperatingHoursModal = function() {
+            let modal = document.getElementById('oh-modal');
+            if (modal) modal.remove();
+
+            const oh = storeData ? storeData.oh : null;
+            const currentDay = new Date().getDay();
+            const DAYS_LIST = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+
+            let rowsHTML = '';
+            if (!oh || !oh.mode || oh.mode === '24h') {
+                rowsHTML = `
+                    <div class="bg-emerald-50 dark:bg-emerald-950/40 p-4 rounded-2xl border border-emerald-200 dark:border-emerald-800 text-center space-y-1">
+                        <span class="text-xs font-black uppercase text-emerald-600 dark:text-emerald-400 tracking-wider block">ABERTO 24 HORAS</span>
+                        <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Nosso catálogo aceita pedidos 24 horas por dia, 7 dias por semana!</p>
+                    </div>
+                `;
+            } else {
+                rowsHTML = DAYS_LIST.map((dayName, idx) => {
+                    const isToday = idx === currentDay;
+                    const dayConfig = oh.days ? (oh.days[idx] || oh.days[String(idx)]) : null;
+                    const isActive = dayConfig && dayConfig.active;
+                    const timeText = isActive ? `${dayConfig.start} às ${dayConfig.end}` : 'Fechado';
+
+                    return `
+                        <div class="flex items-center justify-between p-3.5 rounded-2xl border ${isToday ? 'bg-orange-50 dark:bg-orange-950/40 border-orange-300 dark:border-orange-700' : 'bg-slate-50 dark:bg-slate-800 border-slate-100 dark:border-slate-700/60'}">
+                            <div class="flex items-center gap-2">
+                                ${isToday ? '<span class="w-2 h-2 rounded-full bg-orange-500 animate-ping shrink-0"></span>' : ''}
+                                <span class="text-xs font-black uppercase tracking-wider ${isToday ? 'text-orange-600 dark:text-orange-400' : 'text-slate-800 dark:text-slate-200'}">${dayName} ${isToday ? '(Hoje)' : ''}</span>
+                            </div>
+                            <span class="text-xs font-bold ${isActive ? 'text-slate-700 dark:text-slate-300' : 'text-red-500 font-black'}">${timeText}</span>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            modal = document.createElement('div');
+            modal.id = 'oh-modal';
+            modal.className = 'fixed inset-0 z-[2000] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-fade-in';
+            modal.innerHTML = `
+                <div class="bg-white dark:bg-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-100 dark:border-slate-700 space-y-5 animate-scale-up">
+                    <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-700 pb-4">
+                        <div class="flex items-center gap-2 text-orange-500">
+                            <i data-lucide="clock" class="w-5 h-5"></i>
+                            <h3 class="font-black uppercase italic tracking-wider text-sm text-slate-800 dark:text-white">Horário de Funcionamento</h3>
+                        </div>
+                        <button onclick="document.getElementById('oh-modal').remove()" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <div class="space-y-2 max-h-[60vh] overflow-y-auto pr-1">
+                        ${rowsHTML}
+                    </div>
+
+                    <div class="pt-2">
+                        <button onclick="document.getElementById('oh-modal').remove()" class="w-full py-3.5 bg-orange-500 hover:bg-orange-600 text-white font-black uppercase text-xs tracking-wider rounded-2xl shadow-lg active-scale transition-all cursor-pointer">
+                            Entendi, Fechar
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            if (window.lucide) lucide.createIcons();
+        };
 
         function formatCurrency(value) {
             const valStr = String(value || '').trim();
@@ -1300,7 +1445,13 @@
                             <span class="text-xl font-black tracking-tighter dark:text-white">${formatCurrency(totalToDisplay)}</span>
                         </div>
                     </div>
-                    <button onclick="checkout()" class="w-full py-4 text-white font-black uppercase italic tracking-widest text-sm rounded-2xl shadow-lg transition-all active:scale-95" style="background-color: ${storeData.primaryColor}">Finalizar no WhatsApp</button>
+                    ${window.checkStoreOperatingStatus(storeData.oh).isOpen ? `
+                        <button onclick="checkout()" class="w-full py-4 text-white font-black uppercase italic tracking-widest text-sm rounded-2xl shadow-lg transition-all active:scale-95 cursor-pointer" style="background-color: ${storeData.primaryColor}">Finalizar no WhatsApp</button>
+                    ` : `
+                        <button onclick="window.openOperatingHoursModal()" class="w-full py-4 bg-red-500 hover:bg-red-600 text-white font-black uppercase italic tracking-widest text-xs rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
+                            <i data-lucide="clock" class="w-4 h-4"></i> Fechado no Momento (Ver Horários)
+                        </button>
+                    `}
                 `;
             }
             lucide.createIcons();
@@ -1321,6 +1472,13 @@
         }
 
         function checkout() {
+            const opStatus = window.checkStoreOperatingStatus(storeData.oh);
+            if (!opStatus.isOpen) {
+                alert("Nossa loja está fechada no momento e não estamos aceitando pedidos agora.\n\nConsulte nossos horários de funcionamento.");
+                window.openOperatingHoursModal();
+                return;
+            }
+
             let message = `*Novo Pedido - ${storeData.name}*\n\n`;
             
             // Adiciona vendedor se existir
@@ -2057,6 +2215,22 @@
                 `;
             }
 
+            const opStatus = window.checkStoreOperatingStatus(storeData.oh);
+            const statusBadgeHTML = `
+                <button onclick="window.openOperatingHoursModal()" type="button" class="inline-flex items-center gap-2 ${opStatus.badgeClass} px-4 py-2 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest backdrop-blur-md border shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer select-none">
+                    <span class="w-2 h-2 rounded-full ${opStatus.dotClass} shrink-0"></span>
+                    <span>${opStatus.statusText}</span>
+                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 opacity-80"></i>
+                </button>
+            `;
+            const closedBannerHTML = !opStatus.isOpen ? `
+                <div class="bg-red-600 text-white py-3 px-4 text-center text-xs font-black uppercase tracking-wider flex flex-wrap items-center justify-center gap-2 shadow-md relative z-30">
+                    <i data-lucide="clock-3" class="w-4 h-4 shrink-0"></i>
+                    <span>FECHADO NO MOMENTO - Não estamos aceitando pedidos agora. Você pode navegar pelo catálogo!</span>
+                    <button onclick="window.openOperatingHoursModal()" class="ml-1 bg-white/20 hover:bg-white/30 text-white px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border border-white/20 transition-all cursor-pointer">Ver Horários</button>
+                </div>
+            ` : '';
+
             app.innerHTML = `
                 ${mesaBanner}
                 <div class="min-h-screen bg-white dark:bg-slate-900 flex flex-col">
@@ -2066,14 +2240,13 @@
                             <i data-lucide="moon" class="dark:hidden w-6 h-6"></i>
                         </button>
                         
-                        
-                        
                         ${(storeData.bannerImage && !storeData.hideBannerBg && storeData.bannerImage !== storeData.logo) ? `<img src="${proxyImg(storeData.bannerImage)}" class="absolute inset-0 w-full h-full object-cover opacity-30 z-0" referrerpolicy="no-referrer">` : ''}
                         ${logoHTML}
                         <div class="relative z-10">
                             <h1 class="text-4xl sm:text-6xl md:text-7xl font-black italic uppercase tracking-tighter filter drop-shadow-md leading-[0.9]" style="text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.9), -2px -2px 10px rgba(0, 0, 0, 0.9), 2px -2px 10px rgba(0, 0, 0, 0.9), -2px 2px 10px rgba(0, 0, 0, 0.9);">${storeData.name}</h1>
                             ${storeData.subtitle ? `<div class="mt-4 mb-4"><span class="text-[11px] sm:text-xs font-black uppercase tracking-[0.2em] text-white bg-black/40 border border-white/10 inline-flex px-5 py-2.5 rounded-2xl backdrop-blur-md shadow-sm select-none">${storeData.subtitle}</span></div>` : ''}
-                            <div class="flex flex-wrap justify-center gap-3 relative z-10">
+                            <div class="flex flex-wrap justify-center gap-3 relative z-10 mt-3">
+                                ${statusBadgeHTML}
                                 ${!isAffiliate ? `
                                 <div class="inline-flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest backdrop-blur-md border border-white/10 text-white" style="text-shadow: 1px 1px 3px rgba(0, 0, 0, 1);">
                                     <i data-lucide="smartphone" class="w-3.5 h-3.5"></i> Pedidos via WhatsApp
@@ -2088,6 +2261,8 @@
                             </div>
                         </div>
                     </div>
+
+                    ${closedBannerHTML}
 
                     ${promoBannersHTML}
 

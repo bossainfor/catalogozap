@@ -836,6 +836,17 @@
             window.setOperatingHoursMode(mode);
         };
 
+        window.getNonEmptyField = function(obj, keys) {
+            if (!obj || typeof obj !== 'object') return '';
+            for (const key of keys) {
+                if (obj[key] !== undefined && obj[key] !== null) {
+                    const str = String(obj[key]).trim();
+                    if (str !== '') return str;
+                }
+            }
+            return '';
+        };
+
         window.loadDraft = function() {
             window.initOperatingHoursUI();
             const urlParams = new URLSearchParams(window.location.search);
@@ -884,15 +895,17 @@
                     window.products = draft.products.map(p => ({
                         ...p,
                         id: p.id || Math.random().toString(36).substr(2, 9),
-                        name: p.name !== undefined && p.name !== null ? String(p.name) : (p.n !== undefined && p.n !== null ? String(p.n) : (p.nome !== undefined && p.nome !== null ? String(p.nome) : (p.title !== undefined && p.title !== null ? String(p.title) : ''))),
-                        price: p.price !== undefined && p.price !== null ? String(p.price) : (p.p !== undefined && p.p !== null ? String(p.p) : (p.preco !== undefined && p.preco !== null ? String(p.preco) : '')),
-                        image: p.image || p.i || p.imagem || '',
-                        i2: p.i2 || '',
-                        i3: p.i3 || '',
-                        i4: p.i4 || '',
-                        i5: p.i5 || '',
-                        i6: p.i6 || '',
-                        videoUrl: p.videoUrl || p.v || ''
+                        name: window.getNonEmptyField(p, ['name', 'n', 'nome', 'title', 'titulo', 'material', 'item', 'produto', 'label', 'descricao_curta']),
+                        price: window.getNonEmptyField(p, ['price', 'p', 'preco', 'valor', 'val', 'v_unit', 'priceValue']),
+                        image: window.getNonEmptyField(p, ['image', 'i', 'imagem', 'img', 'foto', 'picture', 'url', 'imageUrl']),
+                        i2: p.i2 || p.image2 || p.img2 || p.foto2 || '',
+                        i3: p.i3 || p.image3 || p.img3 || p.foto3 || '',
+                        i4: p.i4 || p.image4 || p.img4 || p.foto4 || '',
+                        i5: p.i5 || p.image5 || p.img5 || p.foto5 || '',
+                        i6: p.i6 || p.image6 || p.img6 || p.foto6 || '',
+                        videoUrl: window.getNonEmptyField(p, ['videoUrl', 'v', 'video', 'linkVideo', 'urlVideo']),
+                        category: window.getNonEmptyField(p, ['category', 'cat', 'categoria', 'grupo', 'tipo']),
+                        description: window.getNonEmptyField(p, ['description', 'd', 'descricao', 'detalhes', 'obs'])
                     }));
                 }
             } catch (e) {
@@ -2362,8 +2375,9 @@
                     document.getElementById('image-format').value = data.imf || data.imageFormat || 'vertical';
                     if (data.oh) window.setOperatingHoursInForm(data.oh);
                     
-                    // Carrega Produtos do Banco de Dados (suporta array, objeto Firestore, JSON string e aliases de propriedades)
-                    let rawProducts = data.p || data.products || data.items || data.produtos || data.catalogo || data.itens || data.list || [];
+                    // Carrega Produtos do Banco de Dados (suporta múltiplos nomes de campos, estruturas legadas, subcoleções e formatos JSON/map)
+                    let rawProducts = data.p || data.products || data.items || data.produtos || data.catalogo || data.itens || data.list || data.prods || data.materiais || data.catalog || data.produtos_lista || data.itemsList || data.product_list || data.materiais_lista || (data.data && (data.data.p || data.data.products || data.data.items || data.data.produtos)) || [];
+
                     if (typeof rawProducts === 'string') {
                         try {
                             rawProducts = JSON.parse(rawProducts);
@@ -2378,61 +2392,72 @@
                         rawProducts = [];
                     }
 
+                    // Se não encontrou no documento principal, verifica subcoleções no Firestore (ex: stores/{storeId}/products)
+                    if (rawProducts.length === 0 && window.firebaseUtils && window.db) {
+                        const subCols = ['products', 'items', 'produtos', 'catalogo', 'materiais', 'itens', 'prods'];
+                        for (const subCol of subCols) {
+                            try {
+                                const { collection, getDocs } = window.firebaseUtils;
+                                const subSnap = await getDocs(collection(window.db, "stores", storeId, subCol));
+                                if (subSnap && !subSnap.empty) {
+                                    const subItems = [];
+                                    subSnap.forEach(subDoc => {
+                                        if (subDoc.exists()) {
+                                            subItems.push({ id: subDoc.id, ...subDoc.data() });
+                                        }
+                                    });
+                                    if (subItems.length > 0) {
+                                        rawProducts = subItems;
+                                        break;
+                                    }
+                                }
+                            } catch(eSub) {
+                                console.log("Subcoleção não encontrada:", subCol);
+                            }
+                        }
+                    }
+
                     if (rawProducts.length > 0) {
-                        window.products = rawProducts.map(p => {
+                        const parsedProducts = rawProducts.map((p, pIdx) => {
                             if (!p || typeof p !== 'object') return null;
 
-                            const nameVal = p.n !== undefined && p.n !== null ? String(p.n) :
-                                           (p.name !== undefined && p.name !== null ? String(p.name) :
-                                           (p.nome !== undefined && p.nome !== null ? String(p.nome) :
-                                           (p.title !== undefined && p.title !== null ? String(p.title) :
-                                           (p.titulo !== undefined && p.titulo !== null ? String(p.titulo) : ''))));
-                                           
-                            const priceVal = p.p !== undefined && p.p !== null ? String(p.p) :
-                                            (p.price !== undefined && p.price !== null ? String(p.price) :
-                                            (p.preco !== undefined && p.preco !== null ? String(p.preco) :
-                                            (p.valor !== undefined && p.valor !== null ? String(p.valor) : '')));
+                            const nameVal = window.getNonEmptyField(p, ['name', 'n', 'nome', 'title', 'titulo', 'material', 'item', 'produto', 'label', 'descricao_curta', 'descricaoCurta']);
+                            const priceVal = window.getNonEmptyField(p, ['price', 'p', 'preco', 'valor', 'val', 'v_unit', 'priceValue']);
+                            const imageVal = window.getNonEmptyField(p, ['image', 'i', 'imagem', 'img', 'foto', 'picture', 'url', 'imageUrl']);
+                            const categoryVal = window.getNonEmptyField(p, ['category', 'cat', 'categoria', 'grupo', 'tipo', 'catName']);
+                            const descriptionVal = window.getNonEmptyField(p, ['description', 'd', 'descricao', 'detalhes', 'obs', 'info']);
+                            const videoVal = window.getNonEmptyField(p, ['videoUrl', 'v', 'video', 'linkVideo', 'urlVideo']);
 
-                            const imageVal = p.i !== undefined && p.i !== null ? String(p.i) :
-                                            (p.image !== undefined && p.image !== null ? String(p.image) :
-                                            (p.imagem !== undefined && p.imagem !== null ? String(p.imagem) :
-                                            (p.img !== undefined && p.img !== null ? String(p.img) : '')));
-
-                            const categoryVal = p.cat !== undefined && p.cat !== null ? String(p.cat) :
-                                               (p.category !== undefined && p.category !== null ? String(p.category) :
-                                               (p.categoria !== undefined && p.categoria !== null ? String(p.categoria) : ''));
-
-                            const descriptionVal = p.d !== undefined && p.d !== null ? String(p.d) :
-                                                  (p.description !== undefined && p.description !== null ? String(p.description) :
-                                                  (p.descricao !== undefined && p.descricao !== null ? String(p.descricao) : ''));
-
-                            const videoVal = p.v !== undefined && p.v !== null ? String(p.v) :
-                                            (p.videoUrl !== undefined && p.videoUrl !== null ? String(p.videoUrl) :
-                                            (p.video !== undefined && p.video !== null ? String(p.video) : ''));
+                            // Garante um nome visível se houver qualquer outro campo do produto
+                            const finalName = nameVal || (categoryVal ? `${categoryVal} #${pIdx + 1}` : `Item Cadastrado #${pIdx + 1}`);
 
                             return {
                                 id: p.id || Math.random().toString(36).substr(2, 9),
-                                name: nameVal,
+                                name: finalName,
                                 price: priceVal,
-                                wholesalePrice: p.wp !== undefined && p.wp !== null ? String(p.wp) : (p.wholesalePrice || ''),
-                                wholesaleMinQty: p.wq !== undefined && p.wq !== null ? String(p.wq) : (p.wholesaleMinQty || ''),
+                                wholesalePrice: p.wp !== undefined && p.wp !== null && String(p.wp).trim() !== '' ? String(p.wp) : (p.wholesalePrice || p.precoAtacado || ''),
+                                wholesaleMinQty: p.wq !== undefined && p.wq !== null && String(p.wq).trim() !== '' ? String(p.wq) : (p.wholesaleMinQty || p.qtdAtacado || ''),
                                 image: imageVal,
-                                i2: p.i2 || p.image2 || p.img2 || '',
-                                i3: p.i3 || p.image3 || p.img3 || '',
-                                i4: p.i4 || p.image4 || p.img4 || '',
-                                i5: p.i5 || p.image5 || p.img5 || '',
-                                i6: p.i6 || p.image6 || p.img6 || '',
+                                i2: p.i2 || p.image2 || p.img2 || p.foto2 || '',
+                                i3: p.i3 || p.image3 || p.img3 || p.foto3 || '',
+                                i4: p.i4 || p.image4 || p.img4 || p.foto4 || '',
+                                i5: p.i5 || p.image5 || p.img5 || p.foto5 || '',
+                                i6: p.i6 || p.image6 || p.img6 || p.foto6 || '',
                                 videoUrl: videoVal,
                                 category: categoryVal,
                                 description: descriptionVal,
-                                available: p.av !== false && p.available !== false && p.disponivel !== false,
+                                available: p.av !== false && p.available !== false && p.disponivel !== false && p.ativo !== false,
                                 vars: p.vars || p.variacoes || p.variations || '',
                                 sh_sizes: p.sh_sizes || p.sizes || p.tamanhos || '',
                                 sh_colors: p.sh_colors || p.colors || p.cores || '',
                                 f: p.f === true || p.featured === true || p.destaque === true,
-                                affiliateLink: p.al || p.affiliateLink || p.link || ''
+                                affiliateLink: p.al || p.affiliateLink || p.link || p.urlAffiliate || ''
                             };
                         }).filter(Boolean);
+
+                        if (parsedProducts.length > 0) {
+                            window.products = parsedProducts;
+                        }
 
                         // Normalização retroativa de categorias no carregamento
                         const tempCategories = {};

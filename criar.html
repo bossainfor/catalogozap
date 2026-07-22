@@ -836,26 +836,6 @@
             window.setOperatingHoursMode(mode);
         };
 
-        window.getNonEmptyField = function(obj, keys) {
-            if (!obj || typeof obj !== 'object') return '';
-            for (const key of keys) {
-                if (obj[key] !== undefined && obj[key] !== null) {
-                    const str = String(obj[key]).trim();
-                    if (str !== '') return str;
-                }
-            }
-            const objKeys = Object.keys(obj);
-            for (const key of keys) {
-                const lowerKey = key.toLowerCase();
-                const matchedKey = objKeys.find(k => k.toLowerCase() === lowerKey);
-                if (matchedKey && obj[matchedKey] !== undefined && obj[matchedKey] !== null) {
-                    const str = String(obj[matchedKey]).trim();
-                    if (str !== '') return str;
-                }
-            }
-            return '';
-        };
-
         window.loadDraft = function() {
             window.initOperatingHoursUI();
             const urlParams = new URLSearchParams(window.location.search);
@@ -903,18 +883,12 @@
                 if (draft.products && Array.isArray(draft.products) && draft.products.length > 0) {
                     window.products = draft.products.map(p => ({
                         ...p,
-                        id: p.id || Math.random().toString(36).substr(2, 9),
-                        name: window.getNonEmptyField(p, ['name', 'n', 'nome', 'title', 'titulo', 'material', 'item', 'produto', 'label', 'descricao_curta']),
-                        price: window.getNonEmptyField(p, ['price', 'p', 'preco', 'valor', 'val', 'v_unit', 'priceValue']),
-                        image: window.getNonEmptyField(p, ['image', 'i', 'imagem', 'img', 'foto', 'picture', 'url', 'imageUrl']),
-                        i2: p.i2 || p.image2 || p.img2 || p.foto2 || '',
-                        i3: p.i3 || p.image3 || p.img3 || p.foto3 || '',
-                        i4: p.i4 || p.image4 || p.img4 || p.foto4 || '',
-                        i5: p.i5 || p.image5 || p.img5 || p.foto5 || '',
-                        i6: p.i6 || p.image6 || p.img6 || p.foto6 || '',
-                        videoUrl: window.getNonEmptyField(p, ['videoUrl', 'v', 'video', 'linkVideo', 'urlVideo']),
-                        category: window.getNonEmptyField(p, ['category', 'cat', 'categoria', 'grupo', 'tipo']),
-                        description: window.getNonEmptyField(p, ['description', 'd', 'descricao', 'detalhes', 'obs'])
+                        i2: p.i2 || '',
+                        i3: p.i3 || '',
+                        i4: p.i4 || '',
+                        i5: p.i5 || '',
+                        i6: p.i6 || '',
+                        videoUrl: p.videoUrl || ''
                     }));
                 }
             } catch (e) {
@@ -1677,8 +1651,13 @@
 
         window.checkWhatsApp = async function(val) {
             const whatsappClean = val.replace(/\D/g, '');
+            const matchMsg = document.getElementById('whatsapp-match-msg');
+            const btn = document.getElementById('main-action-btn');
+            const btnText = document.getElementById('btn-text');
+            const btnIcon = document.getElementById('btn-icon');
+
             if (whatsappClean.length < 10) {
-                document.getElementById('whatsapp-match-msg').classList.add('hidden');
+                if (matchMsg) matchMsg.classList.add('hidden');
                 return;
             }
 
@@ -1697,6 +1676,7 @@
                 const { doc, getDoc, deleteDoc } = window.firebaseUtils;
                 
                 let hasValidStore = false;
+                let targetStoreId = null;
                 let phoneVariants = [whatsappClean];
                 let prefix55 = '55' + whatsappClean;
                 let suffixNo55 = whatsappClean.startsWith('55') ? whatsappClean.substring(2) : whatsappClean;
@@ -1707,12 +1687,13 @@
                     const historySnap = await getDoc(doc(window.db, "trial_history", phoneItem));
                     if (historySnap.exists()) {
                         const historyData = historySnap.data();
-                        const targetStoreId = historyData.storeId;
+                        const idFound = historyData.storeId;
                         
                         // Verifica se de fato a loja existe na coleção stores
-                        const storeSnap = await getDoc(doc(window.db, "stores", targetStoreId));
+                        const storeSnap = await getDoc(doc(window.db, "stores", idFound));
                         if (storeSnap.exists()) {
                             hasValidStore = true;
+                            targetStoreId = idFound;
                             window.existingStoreId = targetStoreId;
                             break;
                         } else {
@@ -1724,24 +1705,43 @@
                     }
                 }
 
-                if (hasValidStore) {
-                    // Mostra mensagem de loja encontrada avisando para logar acima
-                    matchMsg.classList.remove('hidden');
+                if (hasValidStore && targetStoreId) {
+                    // Carrega automaticamente os dados e produtos salvos da loja no editor!
+                    await window.loadFromFirebase(targetStoreId);
 
-                    // Muda para modo ATUALIZAR (ainda permite tentar atualizar se a pessoa preencher tudo, mas o login é o ideal)
-                    btn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
-                    btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
-                    if (btnText) btnText.innerText = "Atualizar Meu Catálogo";
+                    // Atualiza a URL sem recarregar a página
+                    if (window.history && window.history.replaceState) {
+                        window.history.replaceState({}, '', `criar.html?edit=${targetStoreId}`);
+                    }
+
+                    if (matchMsg) {
+                        matchMsg.classList.remove('hidden');
+                        matchMsg.innerHTML = `
+                            <div class="p-3 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-xl my-2">
+                                <p class="text-[11px] font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-wide flex items-center gap-1.5">
+                                    <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i> Sua loja foi encontrada e carregada!
+                                </p>
+                                <p class="text-[10px] text-emerald-800 dark:text-emerald-200 mt-1 font-bold">Carregamos seus ${window.products ? window.products.length : 0} produto(s) e dados salvos para você visualizar e editar sem duplicar.</p>
+                            </div>
+                        `;
+                    }
+
+                    if (btn) {
+                        btn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+                        btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    }
+                    if (btnText) btnText.innerText = "Atualizar Minha Página";
                     if (btnIcon) btnIcon.setAttribute('data-lucide', 'refresh-cw');
 
-                    // Preenche o campo de login para facilitar
-                    document.getElementById('login-whatsapp').value = whatsappClean;
+                    const loginPhone = document.getElementById('login-whatsapp');
+                    if (loginPhone) loginPhone.value = whatsappClean;
                 } else {
                     window.existingStoreId = null;
-                    matchMsg.classList.add('hidden');
-                    // Volta para modo GERAR
-                    btn.classList.add('bg-slate-900', 'hover:bg-slate-800');
-                    btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    if (matchMsg) matchMsg.classList.add('hidden');
+                    if (btn) {
+                        btn.classList.add('bg-slate-900', 'hover:bg-slate-800');
+                        btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+                    }
                     if (btnText) btnText.innerText = "Gerar Minha Página";
                     if (btnIcon) btnIcon.setAttribute('data-lucide', 'smartphone');
                 }
@@ -1912,35 +1912,31 @@
             data.t = document.getElementById('niche').value;
             data.imf = document.getElementById('image-format').value;
             
-            const validProducts = (window.products || []).filter(p => {
-                const name = p.name !== undefined && p.name !== null ? String(p.name) : (p.n || p.nome || p.title || '');
-                return name.trim() !== '';
-            });
-            data.p = validProducts.map(p => {
-                const name = p.name !== undefined && p.name !== null ? String(p.name) : (p.n || p.nome || p.title || '');
-                const price = p.price !== undefined && p.price !== null ? String(p.price) : (p.p || p.preco || p.valor || '');
-                const image = p.image || p.i || p.imagem || '';
-                const item = { id: p.id || Math.random().toString(36).substr(2, 9), n: name };
-                if (price) item.p = price;
-                if (image) item.i = image;
-                if (p.i2) item.i2 = p.i2;
-                if (p.i3) item.i3 = p.i3;
-                if (p.i4) item.i4 = p.i4;
-                if (p.i5) item.i5 = p.i5;
-                if (p.i6) item.i6 = p.i6;
-                if (p.videoUrl || p.v) item.v = p.videoUrl || p.v;
-                if (p.description || p.d) item.d = p.description || p.d;
-                if (p.category || p.cat) item.cat = p.category || p.cat;
-                if (p.wholesalePrice || p.wp) item.wp = p.wholesalePrice || p.wp;
-                if (p.wholesaleMinQty || p.wq) item.wq = parseInt(p.wholesaleMinQty || p.wq);
-                if (p.available === false || p.av === false) item.av = false;
-                if (p.vars) item.vars = p.vars;
-                if (p.sh_sizes) item.sh_sizes = p.sh_sizes;
-                if (p.sh_colors) item.sh_colors = p.sh_colors;
-                if (p.f) item.f = true;
-                if (p.affiliateLink || p.al) item.al = p.affiliateLink || p.al;
-                return item;
-            });
+            const validProducts = window.products.filter(p => p.name);
+            if (validProducts.length > 0) {
+                data.p = validProducts.map(p => {
+                    const item = { id: p.id, n: p.name };
+                    if (p.price) item.p = p.price;
+                    if (p.image) item.i = p.image;
+                    if (p.i2) item.i2 = p.i2;
+                    if (p.i3) item.i3 = p.i3;
+                    if (p.i4) item.i4 = p.i4;
+                    if (p.i5) item.i5 = p.i5;
+                    if (p.i6) item.i6 = p.i6;
+                    if (p.videoUrl) item.v = p.videoUrl;
+                    if (p.description) item.d = p.description;
+                    if (p.category) item.cat = p.category;
+                    if (p.wholesalePrice) item.wp = p.wholesalePrice;
+                    if (p.wholesaleMinQty) item.wq = parseInt(p.wholesaleMinQty);
+                    if (p.available === false) item.av = false;
+                    if (p.vars) item.vars = p.vars;
+                    if (p.sh_sizes) item.sh_sizes = p.sh_sizes;
+                    if (p.sh_colors) item.sh_colors = p.sh_colors;
+                    if (p.f) item.f = true;
+                    if (p.affiliateLink) item.al = p.affiliateLink;
+                    return item;
+                });
+            }
 
             // Preserva o plano e vendedores (com cliques integrados)
             data.plan = window.storePlan;
@@ -2266,21 +2262,10 @@
         window.loadFromFirebase = async function(forcedId = null) {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
-                let storeId = forcedId || urlParams.get('edit') || urlParams.get('id');
-                
-                if (!storeId) {
-                    storeId = localStorage.getItem('lastStoreId');
-                }
-                
+                const storeId = forcedId || urlParams.get('edit') || urlParams.get('id');
                 if (!storeId) {
                     // Sem ID de edição: permite criar/editar o catálogo normalmente
                     return;
-                }
-
-                if (!urlParams.get('edit') && !urlParams.get('id')) {
-                    const newUrl = new URL(window.location.href);
-                    newUrl.searchParams.set('edit', storeId);
-                    window.history.replaceState({}, '', newUrl.toString());
                 }
 
                 // Aguarda o Firebase inicializar
@@ -2327,27 +2312,8 @@
                     
                     const data = docSnap.data();
                     window.storePlan = data.plan || 'free';
-
-                    // Carrega Vendedores (suporta array ou objeto Firestore)
-                    let rawV = data.v || data.vendors || [];
-                    if (rawV && typeof rawV === 'object' && !Array.isArray(rawV)) {
-                        rawV = Object.values(rawV);
-                    }
-                    window.vendors = (rawV || []).map(v => ({
-                        name: v.name || v.n || '',
-                        code: v.code || v.c || '',
-                        clicks: v.clicks || 0
-                    }));
-
-                    // Carrega Taxas de Entrega / Bairros (suporta array ou objeto Firestore)
-                    let rawSH = data.sh || data.shippingZones || data.zones || [];
-                    if (rawSH && typeof rawSH === 'object' && !Array.isArray(rawSH)) {
-                        rawSH = Object.values(rawSH);
-                    }
-                    window.shippingZones = (rawSH || []).map(s => ({
-                        neighborhood: s.neighborhood || s.n || s.bairro || '',
-                        price: s.price || s.p || s.valor || ''
-                    }));
+                    window.vendors = data.v || [];
+                    window.shippingZones = data.sh || [];
                     
                     const statsCont = document.getElementById('stats-container');
                     const clicksEl = document.getElementById('total-clicks');
@@ -2357,158 +2323,56 @@
                     }
                     
                     // Preenche todos os campos com os dados oficiais do banco de dados Firebase
-                    document.getElementById('owner-name').value = data.cn || data.ownerName || '';
-                    document.getElementById('store-name').value = data.n || data.name || '';
-                    document.getElementById('store-subtitle').value = data.sub || data.subtitle || '';
-                    document.getElementById('whatsapp').value = data.w || data.whatsapp || '';
-                    document.getElementById('address').value = data.a || data.address || '';
-                    document.getElementById('instagram').value = data.ig || data.instagram || '';
-                    document.getElementById('facebook').value = data.fb || data.facebook || '';
-                    document.getElementById('website').value = data.ws || data.website || '';
+                    document.getElementById('owner-name').value = data.cn || '';
+                    document.getElementById('store-name').value = data.n || '';
+                    document.getElementById('store-subtitle').value = data.sub || '';
+                    document.getElementById('whatsapp').value = data.w || '';
+                    document.getElementById('address').value = data.a || '';
+                    document.getElementById('instagram').value = data.ig || '';
+                    document.getElementById('facebook').value = data.fb || '';
+                    document.getElementById('website').value = data.ws || '';
                     document.getElementById('password').value = data.password || '';
-                    document.getElementById('primary-color').value = data.c ? (data.c.startsWith('#') ? data.c : '#' + data.c) : '#f97316';
-                    document.getElementById('secondary-color').value = data.b ? (data.b.startsWith('#') ? data.b : '#' + data.b) : '#0f172a';
-                    document.getElementById('banner-image').value = data.bi || data.bannerImage || '';
+                    document.getElementById('primary-color').value = data.c ? '#' + data.c : '#f97316';
+                    document.getElementById('secondary-color').value = data.b ? '#' + data.b : '#0f172a';
+                    document.getElementById('banner-image').value = data.bi || '';
                     document.getElementById('hide-banner-bg').checked = data.hb || false;
-                    document.getElementById('store-logo').value = data.lg || data.logo || '';
-                    document.getElementById('pix-key').value = data.px || data.pixKey || '';
-                    document.getElementById('card-fee').value = data.cf !== undefined ? data.cf : '';
-                    document.getElementById('max-installments').value = data.mxi !== undefined ? data.mxi : '10';
-                    document.getElementById('direct-installments').value = data.dxi !== undefined ? data.dxi : '3';
-                    document.getElementById('payment-badge-image').value = data.pmb || data.paymentBadgeImage || '';
+                    document.getElementById('store-logo').value = data.lg || '';
+                    document.getElementById('pix-key').value = data.px || '';
+                    document.getElementById('card-fee').value = data.cf || '';
+                    document.getElementById('max-installments').value = data.mxi || '10';
+                    document.getElementById('direct-installments').value = data.dxi || '3';
+                    document.getElementById('payment-badge-image').value = data.pmb || '';
 
-                    window.updateBannerPreview(data.bi || data.bannerImage || '');
-                    window.updateLogoPreview(data.lg || data.logo || '');
-                    window.updatePaymentBadgePreview(data.pmb || data.paymentBadgeImage || '');
-                    document.getElementById('niche').value = data.t || data.type || 'loja';
-                    document.getElementById('image-format').value = data.imf || data.imageFormat || 'vertical';
+                    window.updateBannerPreview(data.bi || '');
+                    window.updateLogoPreview(data.lg || '');
+                    window.updatePaymentBadgePreview(data.pmb || '');
+                    document.getElementById('niche').value = data.t || 'loja';
+                    document.getElementById('image-format').value = data.imf || 'vertical';
                     if (data.oh) window.setOperatingHoursInForm(data.oh);
                     
-                    // Carrega Produtos do Banco de Dados (suporta múltiplos nomes de campos, estruturas legadas, subcoleções e formatos JSON/map)
-                    let rawProducts = data.p || data.products || data.items || data.produtos || data.catalogo || data.itens || data.list || data.prods || data.materiais || data.catalog || data.produtos_lista || data.itemsList || data.product_list || data.materiais_lista || data.productsList || data.lista || data.lista_produtos || data.listaProdutos || data.itens_lista || data.itensLista || data.catalog_items || data.catalogItems || data.store_products || data.storeProducts || data.prod || data.prods_lista || data.mat || data.materiais_catalog || data.myProducts || data.meusProdutos || data.meus_produtos || data.items_data || data.products_data || (data.data && (data.data.p || data.data.products || data.data.items || data.data.produtos || data.data.materiais || data.data.catalogo)) || null;
-
-                    if (typeof rawProducts === 'string') {
-                        try {
-                            rawProducts = JSON.parse(rawProducts);
-                        } catch(e) {
-                            rawProducts = null;
-                        }
-                    }
-
-                    if (rawProducts && typeof rawProducts === 'object' && !Array.isArray(rawProducts)) {
-                        rawProducts = Object.values(rawProducts);
-                    }
-
-                    if (!rawProducts || !Array.isArray(rawProducts) || rawProducts.length === 0) {
-                        // Varre todas as chaves do documento para encontrar qualquer array ou mapa de produtos
-                        for (const key in data) {
-                            if (!data[key] || ['v', 'sh', 'pb', 'oh', 'createdAt', 'lastResetMonth', 'clicks', 'status', 'plan'].includes(key)) continue;
-                            let val = data[key];
-                            if (typeof val === 'string') {
-                                try { val = JSON.parse(val); } catch(e) {}
-                            }
-                            if (Array.isArray(val) && val.length > 0) {
-                                rawProducts = val;
-                                break;
-                            } else if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
-                                const vals = Object.values(val);
-                                if (vals.length > 0 && typeof vals[0] === 'object') {
-                                    rawProducts = vals;
-                                    break;
-                                }
-                            }
-                        }
-                    }
-
-                    if (!Array.isArray(rawProducts)) {
-                        rawProducts = [];
-                    }
-
-                    // Se não encontrou no documento principal, verifica subcoleções no Firestore (ex: stores/{storeId}/products)
-                    if (rawProducts.length === 0 && window.firebaseUtils && window.db) {
-                        const subCols = ['products', 'items', 'produtos', 'catalogo', 'materiais', 'itens', 'prods', 'catalog', 'lista'];
-                        for (const subCol of subCols) {
-                            try {
-                                const { collection, getDocs } = window.firebaseUtils;
-                                const subSnap = await getDocs(collection(window.db, "stores", storeId, subCol));
-                                if (subSnap && !subSnap.empty) {
-                                    const subItems = [];
-                                    subSnap.forEach(subDoc => {
-                                        if (subDoc.exists()) {
-                                            subItems.push({ id: subDoc.id, ...subDoc.data() });
-                                        }
-                                    });
-                                    if (subItems.length > 0) {
-                                        rawProducts = subItems;
-                                        break;
-                                    }
-                                }
-                            } catch(eSub) {
-                                console.log("Subcoleção não encontrada:", subCol);
-                            }
-                        }
-                    }
-
-                    if (rawProducts.length > 0) {
-                        const parsedProducts = rawProducts.map((p, pIdx) => {
-                            if (typeof p === 'string') {
-                                const trimmed = p.trim();
-                                if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-                                    try { p = JSON.parse(trimmed); } catch(e) { p = { name: trimmed }; }
-                                } else {
-                                    p = { name: trimmed };
-                                }
-                            }
-                            if (!p || typeof p !== 'object') return null;
-
-                            const nameVal = window.getNonEmptyField(p, ['name', 'n', 'nome', 'title', 'titulo', 'material', 'item', 'produto', 'label', 'descricao_curta', 'descricaoCurta', 'mat', 'prod', 'artigo', 'servico', 'corte', 'carne']);
-                            const priceVal = window.getNonEmptyField(p, ['price', 'p', 'preco', 'valor', 'val', 'v_unit', 'priceValue', 'pr', 'v', 'custo']);
-                            const imageVal = window.getNonEmptyField(p, ['image', 'i', 'imagem', 'img', 'foto', 'picture', 'url', 'imageUrl', 'src', 'pic', 'photo', 'capa']);
-                            const categoryVal = window.getNonEmptyField(p, ['category', 'cat', 'categoria', 'grupo', 'tipo', 'catName', 'c', 'especialidade', 'setor']);
-                            const descriptionVal = window.getNonEmptyField(p, ['description', 'd', 'descricao', 'detalhes', 'obs', 'info', 'desc', 'observacao']);
-                            const videoVal = window.getNonEmptyField(p, ['videoUrl', 'v', 'video', 'linkVideo', 'urlVideo', 'video_url', 'media']);
-
-                            let finalName = nameVal;
-                            if (!finalName) {
-                                for (const k in p) {
-                                    if (typeof p[k] === 'string' && p[k].trim() !== '' && !p[k].startsWith('http') && !p[k].startsWith('data:')) {
-                                        finalName = p[k].trim();
-                                        break;
-                                    }
-                                }
-                            }
-                            if (!finalName) {
-                                finalName = categoryVal ? `${categoryVal} #${pIdx + 1}` : `Item Cadastrado #${pIdx + 1}`;
-                            }
-
-                            return {
-                                id: p.id || Math.random().toString(36).substr(2, 9),
-                                name: finalName,
-                                price: priceVal,
-                                wholesalePrice: p.wp !== undefined && p.wp !== null && String(p.wp).trim() !== '' ? String(p.wp) : (p.wholesalePrice || p.precoAtacado || ''),
-                                wholesaleMinQty: p.wq !== undefined && p.wq !== null && String(p.wq).trim() !== '' ? String(p.wq) : (p.wholesaleMinQty || p.qtdAtacado || ''),
-                                image: imageVal,
-                                i2: p.i2 || p.image2 || p.img2 || p.foto2 || '',
-                                i3: p.i3 || p.image3 || p.img3 || p.foto3 || '',
-                                i4: p.i4 || p.image4 || p.img4 || p.foto4 || '',
-                                i5: p.i5 || p.image5 || p.img5 || p.foto5 || '',
-                                i6: p.i6 || p.image6 || p.img6 || p.foto6 || '',
-                                videoUrl: videoVal,
-                                category: categoryVal,
-                                description: descriptionVal,
-                                available: p.av !== false && p.available !== false && p.disponivel !== false && p.ativo !== false,
-                                vars: p.vars || p.variacoes || p.variations || '',
-                                sh_sizes: p.sh_sizes || p.sizes || p.tamanhos || '',
-                                sh_colors: p.sh_colors || p.colors || p.cores || '',
-                                f: p.f === true || p.featured === true || p.destaque === true,
-                                affiliateLink: p.al || p.affiliateLink || p.link || p.urlAffiliate || ''
-                            };
-                        }).filter(Boolean);
-
-                        if (parsedProducts.length > 0) {
-                            window.products = parsedProducts;
-                        }
-
+                    if (data.p && data.p.length > 0) {
+                        window.products = data.p.map(p => ({
+                            id: p.id || Math.random().toString(36).substr(2, 9),
+                            name: p.n !== undefined ? p.n : (p.name || ''),
+                            price: p.p !== undefined ? p.p : (p.price || ''),
+                            wholesalePrice: p.wp !== undefined ? p.wp : (p.wholesalePrice || ''),
+                            wholesaleMinQty: p.wq !== undefined ? p.wq : (p.wholesaleMinQty || ''),
+                            image: p.i !== undefined ? p.i : (p.image || ''),
+                            i2: p.i2 || '',
+                            i3: p.i3 || '',
+                            i4: p.i4 || '',
+                            i5: p.i5 || '',
+                            i6: p.i6 || '',
+                            videoUrl: p.v !== undefined ? p.v : (p.videoUrl || ''),
+                            category: p.cat !== undefined ? p.cat : (p.category || ''),
+                            description: p.d !== undefined ? p.d : (p.description || ''),
+                            available: p.av !== false && p.available !== false,
+                            vars: p.vars || '',
+                            sh_sizes: p.sh_sizes || '',
+                            sh_colors: p.sh_colors || '',
+                            f: p.f || false,
+                            affiliateLink: p.al !== undefined ? p.al : (p.affiliateLink || '')
+                        }));
                         // Normalização retroativa de categorias no carregamento
                         const tempCategories = {};
                         window.products.forEach(p => {
@@ -2521,18 +2385,21 @@
                                 p.category = tempCategories[key];
                             }
                         });
+                        // Auto-expandir o primeiro produto para o cliente ver imediatamente
+                        if (window.products.length > 0 && window.expandedProducts) {
+                            window.expandedProducts.add(window.products[0].id);
+                        }
+                    } else {
+                        window.products = [];
+                        window.addProduct();
                     }
 
                     // Carrega os Banners Promocionais salvos do Firebase
-                    let rawPB = data.pb || data.promotionalBanners || [];
-                    if (rawPB && typeof rawPB === 'object' && !Array.isArray(rawPB)) {
-                        rawPB = Object.values(rawPB);
-                    }
-                    if (rawPB && rawPB.length > 0) {
-                        window.promotionalBanners = rawPB.map(b => ({
+                    if (data.pb && Array.isArray(data.pb)) {
+                        window.promotionalBanners = data.pb.map(b => ({
                             id: b.id || Math.random().toString(36).substr(2, 9),
-                            i: b.i || b.image || '',
-                            al: b.al || b.link || b.affiliateLink || ''
+                            i: b.i || '',
+                            al: b.al || ''
                         }));
                     } else {
                         window.promotionalBanners = [];
@@ -2544,7 +2411,7 @@
                     window.renderShippingZones();
 
                     localStorage.setItem('lastStoreId', storeId);
-                    if (data.n || data.name) localStorage.setItem('lastStoreName', data.n || data.name);
+                    if (data.n) localStorage.setItem('lastStoreName', data.n);
                     window.saveDraft();
                 } else {
                     console.log("Loja não encontrada em stores para o ID:", storeId);

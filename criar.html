@@ -370,6 +370,42 @@
                     </div>
                 </section>
 
+                <!-- NOVO SEÇÃO HORÁRIO DE FUNCIONAMENTO & RECEBIMENTO DE PEDIDOS -->
+                <section class="space-y-6 border-t border-slate-200/60 pt-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="space-y-0.5 min-w-0">
+                            <h3 class="font-black uppercase italic tracking-widest text-sm text-orange-600 flex items-center gap-1.5">
+                                <i data-lucide="clock" class="w-4 h-4"></i> Horário de Funcionamento & Recebimento de Pedidos
+                            </h3>
+                            <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Defina quando seu catálogo aceita pedidos e quando deve ficar oculto o botão de fazer pedido</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 p-5 sm:p-6 rounded-[2rem] border border-slate-200/80 space-y-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="space-y-2">
+                                <label class="text-xs font-bold text-slate-600 uppercase tracking-widest">Modo de Funcionamento</label>
+                                <select id="oh-mode" onchange="window.toggleOperatingHoursMode(); window.saveDraft()" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-slate-200 focus:border-orange-500 outline-none transition-all font-bold text-sm">
+                                    <option value="24h">Aberto 24 Horas (Sempre Aceita Pedidos)</option>
+                                    <option value="schedule">Horário Personalizado (Dias e Horários)</option>
+                                </select>
+                            </div>
+                            <div id="oh-shortcut-container" class="hidden flex items-end">
+                                <button type="button" onclick="window.applyStandardHours()" class="w-full py-4 px-4 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-2xl font-black uppercase text-[10px] tracking-wider transition-all border border-orange-200 flex items-center justify-center gap-1.5 active-scale shadow-sm">
+                                    <i data-lucide="zap" class="w-3.5 h-3.5"></i> Replicar Seg a Sáb (08:00 às 22:00)
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="oh-schedule-details" class="hidden space-y-3 pt-2">
+                            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Marque os dias de funcionamento e os horários de abertura e fechamento:</p>
+                            <div id="oh-days-container" class="space-y-2.5">
+                                <!-- Os 7 dias da semana serão renderizados dinamicamente pelo JS -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
                 <!-- NOVO CARROSSEL DE BANNERS PROMOCIONAIS -->
                 <section class="space-y-6 border-t border-slate-200/60 pt-6">
                     <div class="flex items-center justify-between mb-2">
@@ -605,6 +641,7 @@
                 directInstallments: document.getElementById('direct-installments').value,
                 shippingZones: window.shippingZones,
                 promotionalBanners: window.promotionalBanners,
+                oh: window.getOperatingHoursFromForm(),
                 products: window.products.map(p => ({
                     ...p,
                     i2: p.i2 || '',
@@ -662,7 +699,121 @@
             }
         }
 
+        // FUNÇÕES DO HORÁRIO DE FUNCIONAMENTO
+        window.initOperatingHoursUI = function() {
+            const container = document.getElementById('oh-days-container');
+            if (!container) return;
+
+            const daysNames = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+            container.innerHTML = daysNames.map((dayName, i) => `
+                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-white rounded-2xl border border-slate-200/80 shadow-sm">
+                    <div class="flex items-center gap-3 w-full sm:w-48">
+                        <label class="relative inline-flex items-center cursor-pointer select-none shrink-0">
+                            <input type="checkbox" id="oh-day-active-${i}" onchange="window.toggleDayActive(${i}); window.saveDraft()" class="sr-only peer" ${i !== 0 ? 'checked' : ''}>
+                            <div class="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+                        </label>
+                        <span class="font-bold text-xs uppercase tracking-tight text-slate-800">${dayName}</span>
+                    </div>
+                    <div id="oh-day-times-${i}" class="flex items-center gap-2 w-full sm:w-auto">
+                        <div class="flex items-center gap-1.5 flex-1 sm:w-32">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Abre:</span>
+                            <input type="time" id="oh-day-start-${i}" value="08:00" onchange="window.saveDraft()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs outline-none focus:border-orange-500 w-full">
+                        </div>
+                        <span class="text-slate-300 font-black">-</span>
+                        <div class="flex items-center gap-1.5 flex-1 sm:w-32">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase">Fecha:</span>
+                            <input type="time" id="oh-day-end-${i}" value="22:00" onchange="window.saveDraft()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs outline-none focus:border-orange-500 w-full">
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        };
+
+        window.toggleOperatingHoursMode = function() {
+            const mode = document.getElementById('oh-mode')?.value || '24h';
+            const details = document.getElementById('oh-schedule-details');
+            const shortcut = document.getElementById('oh-shortcut-container');
+            if (mode === 'schedule') {
+                if (details) details.classList.remove('hidden');
+                if (shortcut) shortcut.classList.remove('hidden');
+            } else {
+                if (details) details.classList.add('hidden');
+                if (shortcut) shortcut.classList.add('hidden');
+            }
+        };
+
+        window.toggleDayActive = function(dayIndex) {
+            const active = document.getElementById(`oh-day-active-${dayIndex}`)?.checked;
+            const timesContainer = document.getElementById(`oh-day-times-${dayIndex}`);
+            if (timesContainer) {
+                if (active) {
+                    timesContainer.classList.remove('opacity-40', 'pointer-events-none');
+                } else {
+                    timesContainer.classList.add('opacity-40', 'pointer-events-none');
+                }
+            }
+        };
+
+        window.applyStandardHours = function() {
+            for (let i = 0; i <= 6; i++) {
+                const activeCheck = document.getElementById(`oh-day-active-${i}`);
+                const startInput = document.getElementById(`oh-day-start-${i}`);
+                const endInput = document.getElementById(`oh-day-end-${i}`);
+                
+                if (i === 0) { // Domingo
+                    if (activeCheck) activeCheck.checked = false;
+                } else { // Segunda a Sábado
+                    if (activeCheck) activeCheck.checked = true;
+                    if (startInput) startInput.value = '08:00';
+                    if (endInput) endInput.value = '22:00';
+                }
+                window.toggleDayActive(i);
+            }
+            window.saveDraft();
+            alert("Horários de Segunda a Sábado (08:00 às 22:00) aplicados com sucesso!");
+        };
+
+        window.getOperatingHoursFromForm = function() {
+            const mode = document.getElementById('oh-mode')?.value || '24h';
+            if (mode === '24h') {
+                return { mode: '24h' };
+            }
+            const days = {};
+            for (let i = 0; i <= 6; i++) {
+                const active = document.getElementById(`oh-day-active-${i}`)?.checked || false;
+                const start = document.getElementById(`oh-day-start-${i}`)?.value || '08:00';
+                const end = document.getElementById(`oh-day-end-${i}`)?.value || '22:00';
+                days[i] = { active, start, end };
+            }
+            return { mode: 'schedule', days };
+        };
+
+        window.setOperatingHoursInForm = function(ohData) {
+            if (!ohData) {
+                ohData = { mode: '24h' };
+            }
+            const mode = ohData.mode || '24h';
+            const modeSelect = document.getElementById('oh-mode');
+            if (modeSelect) modeSelect.value = mode;
+
+            if (ohData.days) {
+                for (let i = 0; i <= 6; i++) {
+                    const dayConf = ohData.days[i] || ohData.days[String(i)] || { active: i !== 0, start: '08:00', end: '22:00' };
+                    const activeCheck = document.getElementById(`oh-day-active-${i}`);
+                    const startInput = document.getElementById(`oh-day-start-${i}`);
+                    const endInput = document.getElementById(`oh-day-end-${i}`);
+
+                    if (activeCheck) activeCheck.checked = dayConf.active !== false;
+                    if (startInput) startInput.value = dayConf.start || '08:00';
+                    if (endInput) endInput.value = dayConf.end || '22:00';
+                    window.toggleDayActive(i);
+                }
+            }
+            window.toggleOperatingHoursMode();
+        };
+
         window.loadDraft = function() {
+            window.initOperatingHoursUI();
             const urlParams = new URLSearchParams(window.location.search);
             const currentStoreId = urlParams.get('edit') || urlParams.get('id');
 
@@ -700,6 +851,7 @@
                 document.getElementById('direct-installments').value = draft.directInstallments || '3';
                 window.shippingZones = draft.shippingZones || [];
                 window.promotionalBanners = draft.promotionalBanners || [];
+                if (draft.oh) window.setOperatingHoursInForm(draft.oh);
                 window.renderPromoBanners();
                 window.updateBannerPreview(draft.bannerImage);
                 window.updateLogoPreview(draft.storeLogo);
@@ -1697,12 +1849,13 @@
             if (directInstallmentsVal) data.dxi = parseInt(directInstallmentsVal);
             if (paymentBadgeVal) data.pmb = paymentBadgeVal;
             
-            // Adicional: Carrossel de Banners Promocionais
+            // Adicional: Carrossel de Banners Promocionais & Horário de Funcionamento
             data.pb = (window.promotionalBanners || []).map(b => ({
                 id: b.id,
                 i: b.i || '',
                 al: b.al || ''
             }));
+            data.oh = window.getOperatingHoursFromForm();
             
             data.c = document.getElementById('primary-color').value.replace('#', '');
             data.b = document.getElementById('secondary-color').value.replace('#', '');
@@ -2166,6 +2319,7 @@
                     window.updatePaymentBadgePreview(data.pmb || '');
                     document.getElementById('niche').value = data.t || 'loja';
                     document.getElementById('image-format').value = data.imf || 'vertical';
+                    if (data.oh) window.setOperatingHoursInForm(data.oh);
                     
                     if (data.p && data.p.length > 0) {
                         window.products = data.p.map(p => ({

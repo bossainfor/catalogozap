@@ -1074,6 +1074,7 @@
                     mxi: data.mxi !== undefined ? parseInt(data.mxi) : 10,
                     dxi: data.dxi !== undefined ? parseInt(data.dxi) : 3,
                     pb: data.pb || [],
+                    oh: data.oh || { mode: '24h' },
                     resellerWhatsapp: data.resellerWhatsapp || '',
                     products: (data.p || []).map(p => {
                         return {
@@ -1348,7 +1349,20 @@
                             <span class="text-xl font-black tracking-tighter dark:text-white">${formatCurrency(totalToDisplay)}</span>
                         </div>
                     </div>
-                    <button onclick="checkout()" class="w-full py-4 text-white font-black uppercase italic tracking-widest text-sm rounded-2xl shadow-lg transition-all active:scale-95" style="background-color: ${storeData.primaryColor}">Finalizar no WhatsApp</button>
+                    ${(() => {
+                        const statusInfo = window.checkStoreOperatingStatus(storeData.oh);
+                        if (!statusInfo.isOpen) {
+                            return `
+                                <button onclick="checkout()" class="w-full py-4 text-white font-black uppercase italic tracking-widest text-sm rounded-2xl shadow-lg transition-all active:scale-95 bg-red-600 hover:bg-red-700 flex items-center justify-center gap-2">
+                                    <i data-lucide="clock" class="w-4 h-4"></i>
+                                    <span>Fechado no Momento</span>
+                                </button>
+                            `;
+                        }
+                        return `
+                            <button onclick="checkout()" class="w-full py-4 text-white font-black uppercase italic tracking-widest text-sm rounded-2xl shadow-lg transition-all active:scale-95" style="background-color: ${storeData.primaryColor}">Finalizar no WhatsApp</button>
+                        `;
+                    })()}
                 `;
             }
             lucide.createIcons();
@@ -1368,7 +1382,145 @@
             renderStore();
         }
 
+        window.checkStoreOperatingStatus = function(oh) {
+            if (!oh || oh.mode === '24h') {
+                return {
+                    isOpen: true,
+                    is24h: true,
+                    text: 'Aberto 24 Horas',
+                    todayName: '',
+                    hoursText: '24 Horas'
+                };
+            }
+
+            const now = new Date();
+            const currentDay = now.getDay(); // 0 = Domingo, 1 = Segunda...
+            const daysNames = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+            const todayName = daysNames[currentDay];
+
+            const dayConfig = oh.days ? (oh.days[currentDay] || oh.days[String(currentDay)]) : null;
+
+            if (!dayConfig || !dayConfig.active) {
+                return {
+                    isOpen: false,
+                    is24h: false,
+                    text: `Fechado (${todayName})`,
+                    todayName: todayName,
+                    hoursText: 'Fechado hoje'
+                };
+            }
+
+            const start = dayConfig.start || '08:00';
+            const end = dayConfig.end || '22:00';
+
+            const [startH, startM] = start.split(':').map(Number);
+            const [endH, endM] = end.split(':').map(Number);
+
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const startMinutes = startH * 60 + startM;
+            let endMinutes = endH * 60 + endM;
+
+            let isOpen = false;
+            if (endMinutes <= startMinutes) {
+                isOpen = currentMinutes >= startMinutes || currentMinutes <= endMinutes;
+            } else {
+                isOpen = currentMinutes >= startMinutes && currentMinutes <= endMinutes;
+            }
+
+            const hoursText = `${start} às ${end}`;
+
+            return {
+                isOpen: isOpen,
+                is24h: false,
+                text: isOpen ? `Aberto agora (${hoursText})` : `Fechado agora (Abre às ${start})`,
+                todayName: todayName,
+                hoursText: hoursText
+            };
+        };
+
+        window.openOperatingHoursModal = function() {
+            let modal = document.getElementById('oh-modal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'oh-modal';
+                modal.className = 'fixed inset-0 z-[100] bg-black/60 backdrop-blur-md flex items-center justify-center p-4 transition-all animate-fade-in';
+                document.body.appendChild(modal);
+            }
+
+            const oh = window.storeData?.oh || { mode: '24h' };
+            const daysNames = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+            const currentDay = new Date().getDay();
+            const status = window.checkStoreOperatingStatus(oh);
+
+            let contentHTML = '';
+            if (!oh || oh.mode === '24h') {
+                contentHTML = `
+                    <div class="p-6 text-center space-y-3">
+                        <div class="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto text-2xl font-black">
+                            <i data-lucide="clock" class="w-8 h-8"></i>
+                        </div>
+                        <h3 class="text-xl font-black uppercase italic dark:text-white">Aberto 24 Horas</h3>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Este estabelecimento aceita pedidos a qualquer hora do dia ou da noite!</p>
+                    </div>
+                `;
+            } else {
+                contentHTML = `
+                    <div class="space-y-2.5 my-4">
+                        ${daysNames.map((dName, idx) => {
+                            const isToday = idx === currentDay;
+                            const dayConf = oh.days ? (oh.days[idx] || oh.days[String(idx)]) : null;
+                            const isActive = dayConf && dayConf.active;
+                            const timeStr = isActive ? `${dayConf.start || '08:00'} às ${dayConf.end || '22:00'}` : 'Fechado';
+
+                            return `
+                                <div class="flex items-center justify-between p-3 rounded-2xl border transition-all ${isToday ? 'bg-orange-50 dark:bg-orange-950/40 border-orange-300 dark:border-orange-700 font-black' : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800'}">
+                                    <div class="flex items-center gap-2">
+                                        ${isToday ? '<span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>' : ''}
+                                        <span class="text-xs uppercase tracking-tight ${isToday ? 'text-orange-600 dark:text-orange-400 font-black' : 'text-slate-700 dark:text-slate-300 font-bold'}">${dName} ${isToday ? '(Hoje)' : ''}</span>
+                                    </div>
+                                    <span class="text-xs ${isActive ? 'text-slate-900 dark:text-white font-black' : 'text-red-500 font-bold uppercase text-[10px]'}">${timeStr}</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+
+            modal.innerHTML = `
+                <div class="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 dark:border-slate-800 relative animate-scale-up">
+                    <button onclick="document.getElementById('oh-modal').remove()" class="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-full bg-slate-100 dark:bg-slate-800 transition-all">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+
+                    <div class="flex items-center gap-3 mb-2">
+                        <div class="p-3 bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 rounded-2xl">
+                            <i data-lucide="clock" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-black uppercase italic dark:text-white tracking-tight">Horários de Atendimento</h3>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">${status.text}</p>
+                        </div>
+                    </div>
+
+                    ${contentHTML}
+
+                    <button onclick="document.getElementById('oh-modal').remove()" class="w-full py-3.5 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 text-white font-black uppercase tracking-widest rounded-2xl text-xs transition-all active-scale mt-2">
+                        Entendi
+                    </button>
+                </div>
+            `;
+
+            if (window.lucide) lucide.createIcons();
+        };
+
         function checkout() {
+            const statusInfo = window.checkStoreOperatingStatus(storeData.oh);
+            if (!statusInfo.isOpen) {
+                alert(`O estabelecimento está FECHADO no momento e não está aceitando novos pedidos.\n\nStatus: ${statusInfo.text}\n\nPor favor, retorne no nosso horário de funcionamento para concluir o seu pedido!`);
+                window.openOperatingHoursModal();
+                return;
+            }
+
             let message = `*Novo Pedido - ${storeData.name}*\n\n`;
             
             // Adiciona vendedor se existir
@@ -1797,6 +1949,7 @@
             document.title = storeData.name;
 
             // Lógica de Botão por Nicho
+            const statusInfo = window.checkStoreOperatingStatus(storeData.oh);
             const isService = ['servicos', 'serviços', 'portfolio', 'orcamento', 'clinica', 'salao', 'barbearia'].includes(storeData.type);
             const isAffiliate = storeData.type === 'afiliados';
             const isClinica = storeData.type === 'clinica';
@@ -2142,6 +2295,12 @@
                             <h1 class="text-4xl sm:text-6xl md:text-7xl font-black italic uppercase tracking-tighter filter drop-shadow-md leading-[0.9]" style="text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.9), -2px -2px 10px rgba(0, 0, 0, 0.9), 2px -2px 10px rgba(0, 0, 0, 0.9), -2px 2px 10px rgba(0, 0, 0, 0.9);">${storeData.name}</h1>
                             ${storeData.subtitle ? `<div class="mt-4 mb-4"><span class="text-[11px] sm:text-xs font-black uppercase tracking-[0.2em] text-white bg-black/40 border border-white/10 inline-flex px-5 py-2.5 rounded-2xl backdrop-blur-md shadow-sm select-none">${storeData.subtitle}</span></div>` : ''}
                             <div class="flex flex-wrap justify-center gap-3 relative z-10">
+                                <button onclick="window.openOperatingHoursModal()" class="inline-flex items-center gap-2 ${statusInfo.isOpen ? 'bg-emerald-500/25 border-emerald-400/40 text-emerald-100' : 'bg-red-500/25 border-red-400/40 text-red-100'} px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest backdrop-blur-md border shadow-lg hover:scale-105 active:scale-95 transition-all cursor-pointer select-none">
+                                    <span class="w-2.5 h-2.5 rounded-full ${statusInfo.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-red-500'}"></span>
+                                    <span>${statusInfo.text}</span>
+                                    <i data-lucide="info" class="w-3.5 h-3.5 ml-0.5 opacity-80"></i>
+                                </button>
+
                                 ${!isAffiliate ? `
                                 <div class="inline-flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest backdrop-blur-md border border-white/10 text-white" style="text-shadow: 1px 1px 3px rgba(0, 0, 0, 1);">
                                     <i data-lucide="smartphone" class="w-3.5 h-3.5"></i> Pedidos via WhatsApp
@@ -2158,6 +2317,25 @@
                     </div>
 
                     ${promoBannersHTML}
+
+                    ${!statusInfo.isOpen ? `
+                    <div class="max-w-6xl mx-auto px-4 sm:px-6 mt-4 mb-2 w-full">
+                        <div class="p-4 bg-red-50 dark:bg-red-950/60 border-2 border-red-200 dark:border-red-800 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-red-700 dark:text-red-300 shadow-sm">
+                            <div class="flex items-center gap-3">
+                                <div class="p-2.5 bg-red-100 dark:bg-red-900/50 rounded-xl shrink-0 text-red-600 dark:text-red-400">
+                                    <i data-lucide="clock" class="w-6 h-6"></i>
+                                </div>
+                                <div>
+                                    <h4 class="font-black text-xs uppercase tracking-wider">Fechado no Momento</h4>
+                                    <p class="text-[11px] font-medium opacity-90">Não estamos aceitando novos pedidos agora. Sinta-se à vontade para visualizar nossos produtos!</p>
+                                </div>
+                            </div>
+                            <button onclick="window.openOperatingHoursModal()" class="w-full sm:w-auto px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-[10px] uppercase tracking-wider transition-all shrink-0 active-scale shadow-md">
+                                Ver Horários
+                            </button>
+                        </div>
+                    </div>
+                    ` : ''}
 
                     ${featuredHTML}
 

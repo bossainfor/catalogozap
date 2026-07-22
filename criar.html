@@ -52,8 +52,32 @@
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900">
-    <!-- BLOCK OVERLAY FOR RESTRICTED DIRECT SIGNDOWN (DESABILITADO) -->
-    <div id="block-overlay" class="hidden" style="display: none !important;"></div>
+    <!-- BLOCK OVERLAY FOR RESTRICTED DIRECT SIGNDOWN -->
+    <div id="block-overlay" class="fixed inset-0 bg-slate-900/95 backdrop-blur-md z-[200] hidden items-center justify-center p-4">
+        <div class="bg-white w-full max-w-xl rounded-[2.5rem] p-10 border border-slate-100 shadow-2xl text-center space-y-6">
+            <div class="h-16 w-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto border border-red-100 shadow-sm">
+                <i data-lucide="shield-alert" class="w-8 h-8"></i>
+            </div>
+            <div class="space-y-2">
+                <h3 class="text-2xl font-black italic uppercase tracking-tighter text-slate-900">Acesso Restrito</h3>
+                <p class="text-[10px] text-red-500 uppercase font-black tracking-wider">Criação de novos catálogos de teste suspensa</p>
+            </div>
+            <p class="text-slate-600 text-sm font-medium leading-relaxed">
+                A criação direta de novas páginas de demonstração/teste foi desabilitada nesta área para evitar abusos no sistema.
+                <br><br>
+                Se você deseja criar um catálogo profissional ou iniciar um teste gratuito, por favor <strong>solicite o seu link exclusivo de criação</strong> com o seu revendedor especialista ou fale com nosso suporte.
+            </p>
+            
+            <div class="flex flex-col gap-3 pt-2">
+                <a href="index.html" class="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-widest text-xs rounded-2xl shadow-lg transition-all active-scale text-center flex items-center justify-center gap-2">
+                    <i data-lucide="home" class="w-4 h-4"></i> Ir para a Página Inicial
+                </a>
+                <a href="https://api.whatsapp.com/send?phone=5585992862177&text=Olá! Desejo criar meu catálogo profissional e preciso de um link exclusivo de parceiro." target="_blank" class="w-full py-4 bg-[#25D366] hover:bg-[#128C7E] text-white font-black uppercase tracking-widest text-xs rounded-2xl shadow-lg transition-all active-scale text-center flex items-center justify-center gap-2">
+                    <i data-lucide="message-square" class="w-4 h-4"></i> Solicitar Link no WhatsApp
+                </a>
+            </div>
+        </div>
+    </div>
     <!-- MODAL DE VÍDEO -->
     <div id="video-modal" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-[100] hidden items-center justify-center p-4" onclick="closeTutorial()">
         <div class="bg-slate-800 w-full max-w-4xl rounded-[2.5rem] overflow-hidden shadow-2xl relative border border-white/10" onclick="event.stopPropagation()">
@@ -224,31 +248,14 @@
                         </div>
 
                         <div class="space-y-4">
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div class="space-y-2">
                                     <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Chave PIX (Para pedidos)</label>
                                     <input type="text" id="pix-key" oninput="window.saveDraft()" placeholder="E-mail, Celular ou CPF" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold shadow-sm">
                                 </div>
                                 <div class="space-y-2">
-                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Acréscimo Cartão % (A partir de 4x)</label>
-                                    <input type="number" id="card-fee" oninput="window.saveDraft()" min="0" max="100" step="0.1" placeholder="Ex: 5 para somar 5%" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold shadow-sm">
-                                </div>
-                                <div class="space-y-2">
-                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Parcelas no Cartão</label>
-                                    <select id="max-installments" onchange="window.saveDraft()" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold shadow-sm text-sm h-[58px]">
-                                        <option value="1">1x (À vista)</option>
-                                        <option value="2">2x</option>
-                                        <option value="3">3x</option>
-                                        <option value="4">4x</option>
-                                        <option value="5">5x</option>
-                                        <option value="6">6x</option>
-                                        <option value="7">7x</option>
-                                        <option value="8">8x</option>
-                                        <option value="9">9x</option>
-                                        <option value="10" selected>10x</option>
-                                        <option value="11">11x</option>
-                                        <option value="12">12x</option>
-                                    </select>
+                                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Acréscimo Cartão de Crédito % (A partir de 4x)</label>
+                                    <input type="number" id="card-fee" oninput="window.saveDraft()" min="0" max="100" step="0.1" placeholder="Ex: 5 para somar 5% no cartão" class="w-full px-5 py-4 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 focus:bg-white outline-none transition-all font-bold shadow-sm">
                                 </div>
                             </div>
                             <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200/60 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -325,59 +332,6 @@
                                     <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
                                 </label>
                             </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- NOVO SEÇÃO HORÁRIO DE FUNCIONAMENTO & RECEBIMENTO DE PEDIDOS -->
-                <section class="space-y-6 border-t border-slate-200/60 pt-6">
-                    <div class="flex items-center justify-between gap-3 mb-2">
-                        <div class="space-y-0.5 min-w-0">
-                            <h3 class="font-black uppercase italic tracking-widest text-sm text-orange-600 flex items-center gap-1.5">
-                                <i data-lucide="clock" class="w-4 h-4"></i> Horário de Funcionamento & Recebimento de Pedidos
-                            </h3>
-                            <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Defina quando seu catálogo aceita pedidos e quando deve ficar oculto o botão de fazer pedido</p>
-                        </div>
-                        <button type="button" onclick="window.toggleOperatingHoursCollapse()" id="oh-collapse-btn" class="bg-orange-50 hover:bg-orange-100 text-orange-700 px-3.5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shrink-0 border border-orange-200/80 active-scale shadow-sm cursor-pointer select-none">
-                            <i data-lucide="chevron-up" id="oh-collapse-icon" class="w-4 h-4"></i>
-                            <span id="oh-collapse-text">Recolher</span>
-                        </button>
-                    </div>
-
-                    <div id="oh-card-body" class="bg-slate-50 p-5 sm:p-6 rounded-[2rem] border border-slate-200/80 space-y-4">
-                        <div class="space-y-2">
-                            <label class="text-xs font-bold text-slate-600 uppercase tracking-widest block">Selecione o Modo de Funcionamento</label>
-                            <input type="hidden" id="oh-mode" value="24h">
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                <button type="button" id="oh-btn-24h" onclick="window.setOperatingHoursMode('24h')" class="p-4 rounded-2xl border-2 transition-all flex items-center justify-center gap-2.5 font-black text-xs sm:text-sm uppercase tracking-wider active-scale cursor-pointer bg-orange-500 text-white border-orange-500 shadow-md">
-                                    <i data-lucide="clock" class="w-5 h-5 shrink-0"></i>
-                                    <span>Aberto 24 Horas</span>
-                                </button>
-                                <button type="button" id="oh-btn-schedule" onclick="window.setOperatingHoursMode('schedule')" class="p-4 rounded-2xl border-2 transition-all flex items-center justify-center gap-2.5 font-black text-xs sm:text-sm uppercase tracking-wider active-scale cursor-pointer bg-white text-slate-700 border-slate-200/80 hover:border-orange-300">
-                                    <i data-lucide="calendar" class="w-5 h-5 shrink-0"></i>
-                                    <span>Horário Personalizado</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div id="oh-shortcut-container" class="hidden pt-1">
-                            <button type="button" onclick="window.applyStandardHours()" class="w-full py-3.5 px-4 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-2xl font-black uppercase text-[10px] tracking-wider transition-all border border-orange-200 flex items-center justify-center gap-1.5 active-scale shadow-sm">
-                                <i data-lucide="zap" class="w-3.5 h-3.5"></i> Replicar Seg a Sáb (08:00 às 22:00)
-                            </button>
-                        </div>
-
-                        <div id="oh-schedule-details" class="hidden space-y-3 pt-2">
-                            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Marque os dias de funcionamento e os horários de abertura e fechamento:</p>
-                            <div id="oh-days-container" class="space-y-2.5">
-                                <!-- Os 7 dias da semana serão renderizados dinamicamente pelo JS -->
-                            </div>
-                        </div>
-
-                        <div class="pt-3 border-t border-slate-200/60 flex justify-end">
-                            <button type="button" onclick="window.toggleOperatingHoursCollapse()" class="px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-black uppercase text-xs tracking-wider transition-all flex items-center gap-1.5 active-scale shadow-sm cursor-pointer">
-                                <i data-lucide="check-circle" class="w-4 h-4"></i>
-                                <span>Concluir e Recolher</span>
-                            </button>
                         </div>
                     </div>
                 </section>
@@ -613,11 +567,8 @@
                 paymentBadgeImage: document.getElementById('payment-badge-image').value,
                 pixKey: document.getElementById('pix-key').value,
                 cardFee: document.getElementById('card-fee').value,
-                maxInstallments: document.getElementById('max-installments').value,
-                directInstallments: document.getElementById('direct-installments').value,
                 shippingZones: window.shippingZones,
                 promotionalBanners: window.promotionalBanners,
-                oh: window.getOperatingHoursFromForm(),
                 products: window.products.map(p => ({
                     ...p,
                     i2: p.i2 || '',
@@ -675,169 +626,7 @@
             }
         }
 
-        // FUNÇÕES DO HORÁRIO DE FUNCIONAMENTO
-        window.toggleOperatingHoursCollapse = function() {
-            const body = document.getElementById('oh-card-body');
-            const icon = document.getElementById('oh-collapse-icon');
-            const text = document.getElementById('oh-collapse-text');
-            if (!body) return;
-
-            const isHidden = body.classList.contains('hidden');
-            if (isHidden) {
-                body.classList.remove('hidden');
-                if (text) text.innerText = 'Recolher';
-                if (icon) icon.setAttribute('data-lucide', 'chevron-up');
-            } else {
-                body.classList.add('hidden');
-                if (text) text.innerText = 'Expandir';
-                if (icon) icon.setAttribute('data-lucide', 'chevron-down');
-            }
-            if (window.lucide) lucide.createIcons();
-        };
-
-        window.initOperatingHoursUI = function() {
-            const container = document.getElementById('oh-days-container');
-            if (!container) return;
-
-            const daysNames = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
-            container.innerHTML = daysNames.map((dayName, i) => `
-                <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 bg-white rounded-2xl border border-slate-200/80 shadow-sm">
-                    <div class="flex items-center gap-3 w-full sm:w-48">
-                        <label class="relative inline-flex items-center cursor-pointer select-none shrink-0">
-                            <input type="checkbox" id="oh-day-active-${i}" onchange="window.toggleDayActive(${i}); window.saveDraft()" class="sr-only peer" ${i !== 0 ? 'checked' : ''}>
-                            <div class="w-10 h-5 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
-                        </label>
-                        <span class="font-bold text-xs uppercase tracking-tight text-slate-800">${dayName}</span>
-                    </div>
-                    <div id="oh-day-times-${i}" class="flex items-center gap-2 w-full sm:w-auto">
-                        <div class="flex items-center gap-1.5 flex-1 sm:w-32">
-                            <span class="text-[10px] font-bold text-slate-400 uppercase">Abre:</span>
-                            <input type="time" id="oh-day-start-${i}" value="08:00" onchange="window.saveDraft()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs outline-none focus:border-orange-500 w-full">
-                        </div>
-                        <span class="text-slate-300 font-black">-</span>
-                        <div class="flex items-center gap-1.5 flex-1 sm:w-32">
-                            <span class="text-[10px] font-bold text-slate-400 uppercase">Fecha:</span>
-                            <input type="time" id="oh-day-end-${i}" value="22:00" onchange="window.saveDraft()" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-xs outline-none focus:border-orange-500 w-full">
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        };
-
-        window.setOperatingHoursMode = function(mode) {
-            const hiddenMode = document.getElementById('oh-mode');
-            if (hiddenMode) hiddenMode.value = mode;
-
-            const btn24 = document.getElementById('oh-btn-24h');
-            const btnSch = document.getElementById('oh-btn-schedule');
-            const details = document.getElementById('oh-schedule-details');
-            const shortcut = document.getElementById('oh-shortcut-container');
-
-            if (mode === '24h') {
-                if (btn24) {
-                    btn24.className = "p-4 rounded-2xl border-2 transition-all flex items-center justify-center gap-2.5 font-black text-xs sm:text-sm uppercase tracking-wider active-scale cursor-pointer bg-orange-500 text-white border-orange-500 shadow-md";
-                }
-                if (btnSch) {
-                    btnSch.className = "p-4 rounded-2xl border-2 transition-all flex items-center justify-center gap-2.5 font-black text-xs sm:text-sm uppercase tracking-wider active-scale cursor-pointer bg-white text-slate-700 border-slate-200/80 hover:border-orange-300";
-                }
-                if (details) details.classList.add('hidden');
-                if (shortcut) shortcut.classList.add('hidden');
-            } else {
-                if (btn24) {
-                    btn24.className = "p-4 rounded-2xl border-2 transition-all flex items-center justify-center gap-2.5 font-black text-xs sm:text-sm uppercase tracking-wider active-scale cursor-pointer bg-white text-slate-700 border-slate-200/80 hover:border-orange-300";
-                }
-                if (btnSch) {
-                    btnSch.className = "p-4 rounded-2xl border-2 transition-all flex items-center justify-center gap-2.5 font-black text-xs sm:text-sm uppercase tracking-wider active-scale cursor-pointer bg-orange-500 text-white border-orange-500 shadow-md";
-                }
-                if (details) details.classList.remove('hidden');
-                if (shortcut) shortcut.classList.remove('hidden');
-            }
-            if (window.lucide) lucide.createIcons();
-            window.saveDraft();
-        };
-
-        window.toggleOperatingHoursMode = function() {
-            const mode = document.getElementById('oh-mode')?.value || '24h';
-            window.setOperatingHoursMode(mode);
-        };
-
-        window.toggleDayActive = function(dayIndex, autoSwitchMode = true) {
-            const active = document.getElementById(`oh-day-active-${dayIndex}`)?.checked;
-            const timesContainer = document.getElementById(`oh-day-times-${dayIndex}`);
-            if (timesContainer) {
-                if (active) {
-                    timesContainer.classList.remove('opacity-40', 'pointer-events-none');
-                } else {
-                    timesContainer.classList.add('opacity-40', 'pointer-events-none');
-                }
-            }
-            if (autoSwitchMode) {
-                const currentMode = document.getElementById('oh-mode')?.value;
-                if (currentMode === '24h') {
-                    window.setOperatingHoursMode('schedule');
-                }
-            }
-        };
-
-        window.applyStandardHours = function() {
-            window.setOperatingHoursMode('schedule');
-            for (let i = 0; i <= 6; i++) {
-                const activeCheck = document.getElementById(`oh-day-active-${i}`);
-                const startInput = document.getElementById(`oh-day-start-${i}`);
-                const endInput = document.getElementById(`oh-day-end-${i}`);
-                
-                if (i === 0) { // Domingo
-                    if (activeCheck) activeCheck.checked = false;
-                } else { // Segunda a Sábado
-                    if (activeCheck) activeCheck.checked = true;
-                    if (startInput) startInput.value = '08:00';
-                    if (endInput) endInput.value = '22:00';
-                }
-                window.toggleDayActive(i, false);
-            }
-            window.saveDraft();
-            alert("Horários de Segunda a Sábado (08:00 às 22:00) aplicados com sucesso!");
-        };
-
-        window.getOperatingHoursFromForm = function() {
-            const mode = document.getElementById('oh-mode')?.value || '24h';
-            if (mode === '24h') {
-                return { mode: '24h' };
-            }
-            const days = {};
-            for (let i = 0; i <= 6; i++) {
-                const active = document.getElementById(`oh-day-active-${i}`)?.checked || false;
-                const start = document.getElementById(`oh-day-start-${i}`)?.value || '08:00';
-                const end = document.getElementById(`oh-day-end-${i}`)?.value || '22:00';
-                days[i] = { active, start, end };
-            }
-            return { mode: 'schedule', days };
-        };
-
-        window.setOperatingHoursInForm = function(ohData) {
-            if (!ohData) {
-                ohData = { mode: '24h' };
-            }
-            const mode = ohData.mode || '24h';
-
-            if (ohData.days) {
-                for (let i = 0; i <= 6; i++) {
-                    const dayConf = ohData.days[i] || ohData.days[String(i)] || { active: i !== 0, start: '08:00', end: '22:00' };
-                    const activeCheck = document.getElementById(`oh-day-active-${i}`);
-                    const startInput = document.getElementById(`oh-day-start-${i}`);
-                    const endInput = document.getElementById(`oh-day-end-${i}`);
-
-                    if (activeCheck) activeCheck.checked = dayConf.active !== false;
-                    if (startInput) startInput.value = dayConf.start || '08:00';
-                    if (endInput) endInput.value = dayConf.end || '22:00';
-                    window.toggleDayActive(i, false);
-                }
-            }
-            window.setOperatingHoursMode(mode);
-        };
-
         window.loadDraft = function() {
-            window.initOperatingHoursUI();
             const urlParams = new URLSearchParams(window.location.search);
             const currentStoreId = urlParams.get('edit') || urlParams.get('id');
 
@@ -871,11 +660,8 @@
                 document.getElementById('payment-badge-image').value = draft.paymentBadgeImage || '';
                 document.getElementById('pix-key').value = draft.pixKey || '';
                 document.getElementById('card-fee').value = draft.cardFee || '';
-                document.getElementById('max-installments').value = draft.maxInstallments || '10';
-                document.getElementById('direct-installments').value = draft.directInstallments || '3';
                 window.shippingZones = draft.shippingZones || [];
                 window.promotionalBanners = draft.promotionalBanners || [];
-                if (draft.oh) window.setOperatingHoursInForm(draft.oh);
                 window.renderPromoBanners();
                 window.updateBannerPreview(draft.bannerImage);
                 window.updateLogoPreview(draft.storeLogo);
@@ -1651,13 +1437,8 @@
 
         window.checkWhatsApp = async function(val) {
             const whatsappClean = val.replace(/\D/g, '');
-            const matchMsg = document.getElementById('whatsapp-match-msg');
-            const btn = document.getElementById('main-action-btn');
-            const btnText = document.getElementById('btn-text');
-            const btnIcon = document.getElementById('btn-icon');
-
             if (whatsappClean.length < 10) {
-                if (matchMsg) matchMsg.classList.add('hidden');
+                document.getElementById('whatsapp-match-msg').classList.add('hidden');
                 return;
             }
 
@@ -1676,7 +1457,6 @@
                 const { doc, getDoc, deleteDoc } = window.firebaseUtils;
                 
                 let hasValidStore = false;
-                let targetStoreId = null;
                 let phoneVariants = [whatsappClean];
                 let prefix55 = '55' + whatsappClean;
                 let suffixNo55 = whatsappClean.startsWith('55') ? whatsappClean.substring(2) : whatsappClean;
@@ -1687,13 +1467,12 @@
                     const historySnap = await getDoc(doc(window.db, "trial_history", phoneItem));
                     if (historySnap.exists()) {
                         const historyData = historySnap.data();
-                        const idFound = historyData.storeId;
+                        const targetStoreId = historyData.storeId;
                         
                         // Verifica se de fato a loja existe na coleção stores
-                        const storeSnap = await getDoc(doc(window.db, "stores", idFound));
+                        const storeSnap = await getDoc(doc(window.db, "stores", targetStoreId));
                         if (storeSnap.exists()) {
                             hasValidStore = true;
-                            targetStoreId = idFound;
                             window.existingStoreId = targetStoreId;
                             break;
                         } else {
@@ -1705,43 +1484,24 @@
                     }
                 }
 
-                if (hasValidStore && targetStoreId) {
-                    // Carrega automaticamente os dados e produtos salvos da loja no editor!
-                    await window.loadFromFirebase(targetStoreId);
+                if (hasValidStore) {
+                    // Mostra mensagem de loja encontrada avisando para logar acima
+                    matchMsg.classList.remove('hidden');
 
-                    // Atualiza a URL sem recarregar a página
-                    if (window.history && window.history.replaceState) {
-                        window.history.replaceState({}, '', `criar.html?edit=${targetStoreId}`);
-                    }
-
-                    if (matchMsg) {
-                        matchMsg.classList.remove('hidden');
-                        matchMsg.innerHTML = `
-                            <div class="p-3 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 rounded-xl my-2">
-                                <p class="text-[11px] font-black text-emerald-700 dark:text-emerald-300 uppercase tracking-wide flex items-center gap-1.5">
-                                    <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600"></i> Sua loja foi encontrada e carregada!
-                                </p>
-                                <p class="text-[10px] text-emerald-800 dark:text-emerald-200 mt-1 font-bold">Carregamos seus ${window.products ? window.products.length : 0} produto(s) e dados salvos para você visualizar e editar sem duplicar.</p>
-                            </div>
-                        `;
-                    }
-
-                    if (btn) {
-                        btn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
-                        btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
-                    }
-                    if (btnText) btnText.innerText = "Atualizar Minha Página";
+                    // Muda para modo ATUALIZAR (ainda permite tentar atualizar se a pessoa preencher tudo, mas o login é o ideal)
+                    btn.classList.remove('bg-slate-900', 'hover:bg-slate-800');
+                    btn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+                    if (btnText) btnText.innerText = "Atualizar Meu Catálogo";
                     if (btnIcon) btnIcon.setAttribute('data-lucide', 'refresh-cw');
 
-                    const loginPhone = document.getElementById('login-whatsapp');
-                    if (loginPhone) loginPhone.value = whatsappClean;
+                    // Preenche o campo de login para facilitar
+                    document.getElementById('login-whatsapp').value = whatsappClean;
                 } else {
                     window.existingStoreId = null;
-                    if (matchMsg) matchMsg.classList.add('hidden');
-                    if (btn) {
-                        btn.classList.add('bg-slate-900', 'hover:bg-slate-800');
-                        btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
-                    }
+                    matchMsg.classList.add('hidden');
+                    // Volta para modo GERAR
+                    btn.classList.add('bg-slate-900', 'hover:bg-slate-800');
+                    btn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
                     if (btnText) btnText.innerText = "Gerar Minha Página";
                     if (btnIcon) btnIcon.setAttribute('data-lucide', 'smartphone');
                 }
@@ -1885,56 +1645,53 @@
             if (bannerImage) data.bi = bannerImage;
             data.hb = document.getElementById('hide-banner-bg').checked;
             
-            // Novos campos: Logo, PIX, Taxa do Cartão, Parcelas Máximas, Parcelas Direto
+            // Novos campos: Logo, PIX e Taxa do Cartão
             const logoVal = document.getElementById('store-logo').value;
             const pixVal = document.getElementById('pix-key').value;
             const cardFeeVal = document.getElementById('card-fee').value;
-            const maxInstallmentsVal = document.getElementById('max-installments').value;
-            const directInstallmentsVal = document.getElementById('direct-installments').value;
             const paymentBadgeVal = document.getElementById('payment-badge-image').value;
             if (logoVal) data.lg = logoVal;
             if (pixVal) data.px = pixVal;
             if (cardFeeVal) data.cf = parseFloat(cardFeeVal);
-            if (maxInstallmentsVal) data.mxi = parseInt(maxInstallmentsVal);
-            if (directInstallmentsVal) data.dxi = parseInt(directInstallmentsVal);
             if (paymentBadgeVal) data.pmb = paymentBadgeVal;
             
-            // Adicional: Carrossel de Banners Promocionais & Horário de Funcionamento
+            // Adicional: Carrossel de Banners Promocionais
             data.pb = (window.promotionalBanners || []).map(b => ({
                 id: b.id,
                 i: b.i || '',
                 al: b.al || ''
             }));
-            data.oh = window.getOperatingHoursFromForm();
             
             data.c = document.getElementById('primary-color').value.replace('#', '');
             data.b = document.getElementById('secondary-color').value.replace('#', '');
             data.t = document.getElementById('niche').value;
             data.imf = document.getElementById('image-format').value;
             
-            const validProducts = window.products.filter(p => (p.name && p.name.trim()) || p.price || p.image || p.category || p.description);
-            data.p = validProducts.map(p => {
-                const item = { id: p.id || Math.random().toString(36).substr(2, 9), n: p.name || '' };
-                if (p.price) item.p = p.price;
-                if (p.image) item.i = p.image;
-                if (p.i2) item.i2 = p.i2;
-                if (p.i3) item.i3 = p.i3;
-                if (p.i4) item.i4 = p.i4;
-                if (p.i5) item.i5 = p.i5;
-                if (p.i6) item.i6 = p.i6;
-                if (p.videoUrl) item.v = p.videoUrl;
-                if (p.description) item.d = p.description;
-                if (p.category) item.cat = p.category;
-                if (p.wholesalePrice) item.wp = p.wholesalePrice;
-                if (p.wholesaleMinQty) item.wq = parseInt(p.wholesaleMinQty);
-                if (p.available === false) item.av = false;
-                if (p.vars) item.vars = p.vars;
-                if (p.sh_sizes) item.sh_sizes = p.sh_sizes;
-                if (p.sh_colors) item.sh_colors = p.sh_colors;
-                if (p.f) item.f = true;
-                if (p.affiliateLink) item.al = p.affiliateLink;
-                return item;
-            });
+            const validProducts = window.products.filter(p => p.name);
+            if (validProducts.length > 0) {
+                data.p = validProducts.map(p => {
+                    const item = { id: p.id, n: p.name };
+                    if (p.price) item.p = p.price;
+                    if (p.image) item.i = p.image;
+                    if (p.i2) item.i2 = p.i2;
+                    if (p.i3) item.i3 = p.i3;
+                    if (p.i4) item.i4 = p.i4;
+                    if (p.i5) item.i5 = p.i5;
+                    if (p.i6) item.i6 = p.i6;
+                    if (p.videoUrl) item.v = p.videoUrl;
+                    if (p.description) item.d = p.description;
+                    if (p.category) item.cat = p.category;
+                    if (p.wholesalePrice) item.wp = p.wholesalePrice;
+                    if (p.wholesaleMinQty) item.wq = parseInt(p.wholesaleMinQty);
+                    if (p.available === false) item.av = false;
+                    if (p.vars) item.vars = p.vars;
+                    if (p.sh_sizes) item.sh_sizes = p.sh_sizes;
+                    if (p.sh_colors) item.sh_colors = p.sh_colors;
+                    if (p.f) item.f = true;
+                    if (p.affiliateLink) item.al = p.affiliateLink;
+                    return item;
+                });
+            }
 
             // Preserva o plano e vendedores (com cliques integrados)
             data.plan = window.storePlan;
@@ -2251,9 +2008,10 @@
         window.showBlockOverlay = function() {
             const overlay = document.getElementById('block-overlay');
             if (overlay) {
-                overlay.classList.add('hidden');
-                overlay.classList.remove('flex');
-                document.body.style.overflow = 'auto';
+                overlay.classList.remove('hidden');
+                overlay.classList.add('flex');
+                document.body.style.overflow = 'hidden';
+                if (window.lucide) lucide.createIcons();
             }
         }
 
@@ -2262,7 +2020,7 @@
                 const urlParams = new URLSearchParams(window.location.search);
                 const storeId = forcedId || urlParams.get('edit') || urlParams.get('id');
                 if (!storeId) {
-                    // Sem ID de edição: permite criar/editar o catálogo normalmente
+                    window.showBlockOverlay();
                     return;
                 }
 
@@ -2284,10 +2042,7 @@
                     console.error("Erro ao carregar url de video global:", errG);
                 }
 
-                let docSnap = await getDoc(doc(window.db, "stores", storeId));
-                if (!docSnap.exists() && typeof storeId === 'string') {
-                    docSnap = await getDoc(doc(window.db, "stores", storeId.trim().toLowerCase()));
-                }
+                const docSnap = await getDoc(doc(window.db, "stores", storeId));
 
                 if (docSnap.exists()) {
                     // Exibe botões de ações logadas (Ver Loja e Sair)
@@ -2320,7 +2075,32 @@
                         clicksEl.innerText = data.clicks || 0;
                     }
                     
-                    // Preenche todos os campos com os dados oficiais do banco de dados Firebase
+                    if (data.lg) document.getElementById('store-logo').value = data.lg;
+                    if (data.px) document.getElementById('pix-key').value = data.px;
+                    if (data.cf) document.getElementById('card-fee').value = data.cf;
+                    if (data.pmb) document.getElementById('payment-badge-image').value = data.pmb;
+                    if (data.sub) document.getElementById('store-subtitle').value = data.sub;
+                    document.getElementById('hide-banner-bg').checked = data.hb || false;
+                    
+                    // Verifica se o rascunho local é mais recente que o dado do servidor
+                    if (!forcedId) {
+                        const draftStr = localStorage.getItem('catalog_draft');
+                        if (draftStr) {
+                            try {
+                                const draft = JSON.parse(draftStr);
+                                if (draft.storeId === storeId && draft.lastUpdated) {
+                                    const serverUpdate = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
+                                    if (draft.lastUpdated > serverUpdate) {
+                                        console.log("Usando rascunho local mais recente");
+                                        if (window.lucide) lucide.createIcons();
+                                        return;
+                                    }
+                                }
+                            } catch (e) { console.error("Erro ao comparar rascunho:", e); }
+                        }
+                    }
+
+                    // Preenche os campos se não usou rascunho
                     document.getElementById('owner-name').value = data.cn || '';
                     document.getElementById('store-name').value = data.n || '';
                     document.getElementById('store-subtitle').value = data.sub || '';
@@ -2334,43 +2114,35 @@
                     document.getElementById('secondary-color').value = data.b ? '#' + data.b : '#0f172a';
                     document.getElementById('banner-image').value = data.bi || '';
                     document.getElementById('hide-banner-bg').checked = data.hb || false;
-                    document.getElementById('store-logo').value = data.lg || '';
-                    document.getElementById('pix-key').value = data.px || '';
-                    document.getElementById('card-fee').value = data.cf || '';
-                    document.getElementById('max-installments').value = data.mxi || '10';
-                    document.getElementById('direct-installments').value = data.dxi || '3';
                     document.getElementById('payment-badge-image').value = data.pmb || '';
-
-                    window.updateBannerPreview(data.bi || '');
-                    window.updateLogoPreview(data.lg || '');
+                    window.updateBannerPreview(data.bi);
+                    window.updateLogoPreview(data.lg);
                     window.updatePaymentBadgePreview(data.pmb || '');
                     document.getElementById('niche').value = data.t || 'loja';
                     document.getElementById('image-format').value = data.imf || 'vertical';
-                    if (data.oh) window.setOperatingHoursInForm(data.oh);
                     
-                    const rawProducts = data.p || data.products || data.items || [];
-                    if (Array.isArray(rawProducts) && rawProducts.length > 0) {
-                        window.products = rawProducts.map(p => ({
+                    if (data.p && data.p.length > 0) {
+                        window.products = data.p.map(p => ({
                             id: p.id || Math.random().toString(36).substr(2, 9),
-                            name: (p.n !== undefined && p.n !== null && p.n !== '') ? p.n : (p.name || ''),
-                            price: (p.p !== undefined && p.p !== null && p.p !== '') ? p.p : (p.price || ''),
-                            wholesalePrice: (p.wp !== undefined && p.wp !== null && p.wp !== '') ? p.wp : (p.wholesalePrice || ''),
-                            wholesaleMinQty: (p.wq !== undefined && p.wq !== null && p.wq !== '') ? p.wq : (p.wholesaleMinQty || ''),
-                            image: (p.i !== undefined && p.i !== null && p.i !== '') ? p.i : (p.image || ''),
-                            i2: p.i2 || p.image2 || '',
-                            i3: p.i3 || p.image3 || '',
-                            i4: p.i4 || p.image4 || '',
-                            i5: p.i5 || p.image5 || '',
-                            i6: p.i6 || p.image6 || '',
-                            videoUrl: (p.v !== undefined && p.v !== null && p.v !== '') ? p.v : (p.videoUrl || ''),
-                            category: (p.cat !== undefined && p.cat !== null && p.cat !== '') ? p.cat : (p.category || ''),
-                            description: (p.d !== undefined && p.d !== null && p.d !== '') ? p.d : (p.description || ''),
-                            available: p.av !== false && p.available !== false,
+                            name: p.n,
+                            price: p.p,
+                            wholesalePrice: p.wp || '',
+                            wholesaleMinQty: p.wq || '',
+                            image: p.i,
+                            i2: p.i2 || '',
+                            i3: p.i3 || '',
+                            i4: p.i4 || '',
+                            i5: p.i5 || '',
+                            i6: p.i6 || '',
+                            videoUrl: p.v || '',
+                            category: p.cat || '',
+                            description: p.d || '',
+                            available: p.av !== false,
                             vars: p.vars || '',
                             sh_sizes: p.sh_sizes || '',
                             sh_colors: p.sh_colors || '',
-                            f: p.f || p.featured || false,
-                            affiliateLink: (p.al !== undefined && p.al !== null && p.al !== '') ? p.al : (p.affiliateLink || '')
+                            f: p.f || false,
+                            affiliateLink: p.al || ''
                         }));
                         // Normalização retroativa de categorias no carregamento
                         const tempCategories = {};
@@ -2384,15 +2156,10 @@
                                 p.category = tempCategories[key];
                             }
                         });
-                        // Auto-expandir o primeiro produto para o cliente ver imediatamente
-                        if (window.products.length > 0 && window.expandedProducts) {
-                            window.expandedProducts.add(window.products[0].id);
-                        }
                     } else {
-                        window.products = [];
-                        window.addProduct();
+                        // Se a loja existe mas não tem produtos salvos, mantém o padrão ou limpa
+                        // window.products = [{ id: Date.now().toString(), name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', description: '' }];
                     }
-
                     // Carrega os Banners Promocionais salvos do Firebase
                     if (data.pb && Array.isArray(data.pb)) {
                         window.promotionalBanners = data.pb.map(b => ({
@@ -2403,20 +2170,16 @@
                     } else {
                         window.promotionalBanners = [];
                     }
-
                     window.renderPromoBanners();
+
                     window.renderProducts();
                     window.renderVendors();
-                    window.renderShippingZones();
-
-                    localStorage.setItem('lastStoreId', storeId);
-                    if (data.n) localStorage.setItem('lastStoreName', data.n);
-                    window.saveDraft();
                 } else {
-                    console.log("Loja não encontrada em stores para o ID:", storeId);
+                    window.showBlockOverlay();
                 }
             } catch (e) { 
-                console.error("Erro ao carregar dados do Firebase:", e); 
+                console.error("Erro ao carregar dados:", e); 
+                window.showBlockOverlay();
             }
         }
 

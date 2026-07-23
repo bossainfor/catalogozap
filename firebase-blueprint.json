@@ -18,7 +18,6 @@
         "imf": { "type": "string", "enum": ["vertical", "quadrado"], "description": "Product Image Format" },
         "lg": { "type": "string", "description": "Store Logo URL" },
         "px": { "type": "string", "description": "PIX Key" },
-        "oh": { "type": "object", "description": "Operating Hours Configuration" },
         "cn": { "type": "string", "description": "Owner Contact Name" },
         "bm": { "type": "boolean", "description": "Bar Mode Enabled" },
         "tr": { "type": "integer", "description": "Table Range (Max number of tables)" },

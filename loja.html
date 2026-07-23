@@ -241,11 +241,170 @@
         let selectedShippingZone = null;
         let selectedPaymentMethod = 'pix';
         let selectedInstallment = 1;
+        window.cashChangeValue = '';
+
+        window.setCashChange = function(val) {
+            window.cashChangeValue = val;
+        };
 
         window.setPaymentMethod = function(method) {
             selectedPaymentMethod = method;
             updateCartUI();
         }
+
+        window.checkStoreOperatingStatus = function(oh) {
+            if (!oh || !oh.mode || oh.mode === '24h') {
+                return {
+                    isOpen: true,
+                    is24h: true,
+                    statusText: "Aberto 24 Horas",
+                    badgeClass: "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60",
+                    dotClass: "bg-emerald-500",
+                    todayText: "Aberto 24 Horas"
+                };
+            }
+
+            const now = new Date();
+            const currentDay = now.getDay().toString(); // 0 = Sun, 1 = Mon, ..., 6 = Sat
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+            const todayConf = (oh.days && oh.days[currentDay]) ? oh.days[currentDay] : null;
+
+            if (!todayConf || !todayConf.active) {
+                return {
+                    isOpen: false,
+                    is24h: false,
+                    statusText: "Fechado Hoje",
+                    badgeClass: "bg-red-50 text-red-600 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800/60",
+                    dotClass: "bg-red-500",
+                    todayText: "Fechado Hoje"
+                };
+            }
+
+            const [startH, startM] = (todayConf.start || "08:00").split(':').map(Number);
+            const [endH, endM] = (todayConf.end || "22:00").split(':').map(Number);
+            const startMins = startH * 60 + startM;
+            const endMins = endH * 60 + endM;
+
+            let isOpen = false;
+            if (endMins > startMins) {
+                isOpen = currentMinutes >= startMins && currentMinutes < endMins;
+            } else {
+                isOpen = currentMinutes >= startMins || currentMinutes < endMins;
+            }
+
+            const todayText = `Hoje: ${todayConf.start} às ${todayConf.end}`;
+
+            if (isOpen) {
+                return {
+                    isOpen: true,
+                    is24h: false,
+                    statusText: `Aberto agora (${todayConf.start} às ${todayConf.end})`,
+                    badgeClass: "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60",
+                    dotClass: "bg-emerald-500",
+                    todayText: todayText
+                };
+            } else {
+                return {
+                    isOpen: false,
+                    is24h: false,
+                    statusText: `Fechado agora (Abre às ${todayConf.start})`,
+                    badgeClass: "bg-red-50 text-red-600 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800/60",
+                    dotClass: "bg-red-500",
+                    todayText: todayText
+                };
+            }
+        };
+
+        window.openOperatingHoursModal = function() {
+            const oldModal = document.getElementById('oh-schedule-modal');
+            if (oldModal) oldModal.remove();
+
+            const modal = document.createElement('div');
+            modal.id = 'oh-schedule-modal';
+            modal.className = 'fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[1100] flex items-center justify-center p-4 sm:p-6';
+
+            const oh = (storeData && storeData.oh) ? storeData.oh : { mode: '24h' };
+            const statusInfo = window.checkStoreOperatingStatus(oh);
+
+            const DAYS_LIST = [
+                { id: '1', name: 'Segunda-feira' },
+                { id: '2', name: 'Terça-feira' },
+                { id: '3', name: 'Quarta-feira' },
+                { id: '4', name: 'Quinta-feira' },
+                { id: '5', name: 'Sexta-feira' },
+                { id: '6', name: 'Sábado' },
+                { id: '0', name: 'Domingo' }
+            ];
+
+            let scheduleHTML = '';
+            if (!oh || !oh.mode || oh.mode === '24h') {
+                scheduleHTML = `
+                    <div class="p-6 text-center space-y-3">
+                        <div class="w-12 h-12 bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                            <i data-lucide="clock" class="w-6 h-6"></i>
+                        </div>
+                        <h4 class="font-black uppercase italic tracking-tight text-slate-800 dark:text-white text-base">Aberto 24 Horas por Dia</h4>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Este catálogo aceita pedidos e solicitações a qualquer momento!</p>
+                    </div>
+                `;
+            } else {
+                const now = new Date();
+                const currentDayStr = now.getDay().toString();
+
+                scheduleHTML = `
+                    <div class="p-4 space-y-2">
+                        ${DAYS_LIST.map(d => {
+                            const conf = (oh.days && oh.days[d.id]) ? oh.days[d.id] : null;
+                            const isToday = d.id === currentDayStr;
+                            const active = conf && conf.active;
+
+                            return `
+                                <div class="p-3 rounded-xl border ${isToday ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/20' : 'border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50'} flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        ${isToday ? '<span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>' : ''}
+                                        <span class="font-bold text-xs uppercase ${isToday ? 'text-orange-600 dark:text-orange-400 font-black' : 'text-slate-700 dark:text-slate-300'}">${d.name} ${isToday ? '(Hoje)' : ''}</span>
+                                    </div>
+                                    <span class="text-xs font-black ${active ? 'text-slate-800 dark:text-white' : 'text-red-500'}">
+                                        ${active ? `${conf.start || '08:00'} às ${conf.end || '22:00'}` : 'Fechado'}
+                                    </span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+
+            modal.innerHTML = `
+                <div class="bg-white dark:bg-slate-800 w-full max-w-sm rounded-2xl sm:rounded-[2rem] shadow-2xl overflow-hidden flex flex-col border border-slate-100 dark:border-slate-700 max-h-[85vh] text-left">
+                    <div class="p-5 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between shrink-0">
+                        <div class="flex items-center gap-2.5">
+                            <div class="p-2 bg-orange-50 dark:bg-orange-950/40 text-orange-600 rounded-xl">
+                                <i data-lucide="clock" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-white">Horários de Atendimento</h3>
+                                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">${statusInfo.statusText}</p>
+                            </div>
+                        </div>
+                        <button onclick="document.getElementById('oh-schedule-modal').remove()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-all text-slate-400 hover:text-slate-700 dark:hover:text-white">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    <div class="overflow-y-auto flex-1">
+                        ${scheduleHTML}
+                    </div>
+                    <div class="p-4 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+                        <button onclick="document.getElementById('oh-schedule-modal').remove()" class="w-full py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black uppercase italic tracking-widest text-xs rounded-xl transition-all active-scale">
+                            Entendi
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+            if (window.lucide) setTimeout(() => lucide.createIcons(), 50);
+        };
 
         window.setInstallment = function(inst) {
             selectedInstallment = parseInt(inst);
@@ -1066,6 +1225,7 @@
                     cf: data.cf || 0,
                     pb: data.pb || [],
                     resellerWhatsapp: data.resellerWhatsapp || '',
+                    oh: data.oh || { mode: '24h' },
                     products: (data.p || []).map(p => {
                         return {
                             id: p.id || Math.random().toString(36).substr(2, 9),
@@ -1229,12 +1389,15 @@
                 let paymentMethodHTML = `
                     <div class="space-y-2 mb-4 text-left">
                         <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Forma de Pagamento</label>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button onclick="window.setPaymentMethod('pix')" class="py-3 px-3 rounded-xl border-2 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all ${selectedPaymentMethod === 'pix' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white' : 'bg-slate-50 text-slate-700 border-slate-100 hover:border-slate-200 dark:bg-slate-700 dark:border-slate-600 dark:text-white'}" id="pay-btn-pix">
-                                <i data-lucide="qr-code" class="w-4 h-4"></i> PIX
+                        <div class="grid grid-cols-3 gap-1.5">
+                            <button onclick="window.setPaymentMethod('pix')" class="py-2.5 px-2 rounded-xl border-2 font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1 transition-all ${selectedPaymentMethod === 'pix' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white' : 'bg-slate-50 text-slate-700 border-slate-100 hover:border-slate-200 dark:bg-slate-700 dark:border-slate-600 dark:text-white'}" id="pay-btn-pix">
+                                <i data-lucide="qr-code" class="w-3.5 h-3.5"></i> PIX
                             </button>
-                            <button onclick="window.setPaymentMethod('card')" class="py-3 px-3 rounded-xl border-2 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all ${selectedPaymentMethod === 'card' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white' : 'bg-slate-50 text-slate-700 border-slate-100 hover:border-slate-200 dark:bg-slate-700 dark:border-slate-600 dark:text-white'}" id="pay-btn-card">
-                                <i data-lucide="credit-card" class="w-4 h-4"></i> Cartão
+                            <button onclick="window.setPaymentMethod('card')" class="py-2.5 px-2 rounded-xl border-2 font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1 transition-all ${selectedPaymentMethod === 'card' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white' : 'bg-slate-50 text-slate-700 border-slate-100 hover:border-slate-200 dark:bg-slate-700 dark:border-slate-600 dark:text-white'}" id="pay-btn-card">
+                                <i data-lucide="credit-card" class="w-3.5 h-3.5"></i> Cartão
+                            </button>
+                            <button onclick="window.setPaymentMethod('cash')" class="py-2.5 px-2 rounded-xl border-2 font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1 transition-all ${selectedPaymentMethod === 'cash' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white' : 'bg-slate-50 text-slate-700 border-slate-100 hover:border-slate-200 dark:bg-slate-700 dark:border-slate-600 dark:text-white'}" id="pay-btn-cash">
+                                <i data-lucide="banknote" class="w-3.5 h-3.5"></i> Dinheiro
                             </button>
                         </div>
                     </div>
@@ -1267,7 +1430,24 @@
                             </div>
                         </div>
                     `;
+                } else if (selectedPaymentMethod === 'cash') {
+                    paymentMethodHTML += `
+                        <div class="space-y-1.5 mb-4 animate-fade-in text-left">
+                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Precisa de Troco? (Opcional)</label>
+                            <input type="text" id="cash-change-input" placeholder="Ex: Troco para R$ 100,00 ou Não precisa de troco" value="${window.cashChangeValue || ''}" oninput="window.setCashChange(this.value)" class="w-full px-4 py-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-xs outline-none dark:text-white placeholder:text-slate-400 focus:border-slate-400 transition-all">
+                        </div>
+                    `;
                 }
+
+                const ohStatus = window.checkStoreOperatingStatus(storeData.oh);
+                const checkoutBtnHTML = ohStatus.isOpen ? `
+                    <button onclick="checkout()" class="w-full py-4 text-white font-black uppercase italic tracking-widest text-sm rounded-2xl shadow-lg transition-all active:scale-95" style="background-color: ${storeData.primaryColor}">Finalizar no WhatsApp</button>
+                ` : `
+                    <button onclick="window.openOperatingHoursModal()" class="w-full py-4 bg-red-600 text-white font-black uppercase italic tracking-widest text-sm rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2">
+                        <i data-lucide="lock" class="w-4 h-4"></i>
+                        <span>Fechado no Momento (Ver Horários)</span>
+                    </button>
+                `;
 
                 footerContainer.innerHTML = `
                     ${shippingHTML}
@@ -1300,7 +1480,7 @@
                             <span class="text-xl font-black tracking-tighter dark:text-white">${formatCurrency(totalToDisplay)}</span>
                         </div>
                     </div>
-                    <button onclick="checkout()" class="w-full py-4 text-white font-black uppercase italic tracking-widest text-sm rounded-2xl shadow-lg transition-all active:scale-95" style="background-color: ${storeData.primaryColor}">Finalizar no WhatsApp</button>
+                    ${checkoutBtnHTML}
                 `;
             }
             lucide.createIcons();
@@ -1321,6 +1501,13 @@
         }
 
         function checkout() {
+            const ohStatus = window.checkStoreOperatingStatus(storeData.oh);
+            if (!ohStatus.isOpen) {
+                alert("Nossa loja está fechada no momento e não estamos aceitando pedidos agora.\n\nConsulte nossos horários de funcionamento.");
+                window.openOperatingHoursModal();
+                return;
+            }
+
             let message = `*Novo Pedido - ${storeData.name}*\n\n`;
             
             // Adiciona vendedor se existir
@@ -1364,6 +1551,14 @@
                     message += `\n*Chave PIX:* ${storeData.pixKey}`;
                 }
                 message += `\n\n*Total: ${formatCurrency(finalTotal)}*`;
+            } else if (selectedPaymentMethod === 'cash') {
+                message += `\n\n*Forma de Pagamento:* Dinheiro 💵`;
+                if (window.cashChangeValue && window.cashChangeValue.trim() !== '') {
+                    message += `\n*Troco:* ${window.cashChangeValue.trim()}`;
+                } else {
+                    message += `\n*Troco:* Não precisa de troco`;
+                }
+                message += `\n\n*Total em Dinheiro: ${formatCurrency(finalTotal)}*`;
             } else {
                 const installmentValue = finalTotal / selectedInstallment;
                 message += `\n\n*Forma de Pagamento:* Cartão de Crédito 💳`;
@@ -2057,8 +2252,16 @@
                 `;
             }
 
+            const ohStatus = window.checkStoreOperatingStatus(storeData.oh);
+
             app.innerHTML = `
                 ${mesaBanner}
+                ${!ohStatus.isOpen ? `
+                <div onclick="window.openOperatingHoursModal()" class="bg-red-600 hover:bg-red-700 text-white py-3 px-4 text-center font-black uppercase tracking-wider text-[11px] sm:text-xs z-30 relative cursor-pointer shadow-md transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="clock" class="w-4 h-4 animate-pulse"></i>
+                    <span>FECHADO NO MOMENTO - Não estamos aceitando pedidos agora. Clique aqui para ver os horários!</span>
+                </div>
+                ` : ''}
                 <div class="min-h-screen bg-white dark:bg-slate-900 flex flex-col">
                     <div class="relative pt-20 pb-12 sm:pt-28 sm:pb-20 px-6 text-center" style="background-color: ${storeData.secondaryColor}; color: #ffffff">
                         <button onclick="toggleTheme()" class="absolute top-4 left-4 z-50 bg-white/20 p-3 rounded-full backdrop-blur-md hover:bg-white/30 transition-all active-scale">
@@ -2074,6 +2277,11 @@
                             <h1 class="text-4xl sm:text-6xl md:text-7xl font-black italic uppercase tracking-tighter filter drop-shadow-md leading-[0.9]" style="text-shadow: 2px 2px 10px rgba(0, 0, 0, 0.9), -2px -2px 10px rgba(0, 0, 0, 0.9), 2px -2px 10px rgba(0, 0, 0, 0.9), -2px 2px 10px rgba(0, 0, 0, 0.9);">${storeData.name}</h1>
                             ${storeData.subtitle ? `<div class="mt-4 mb-4"><span class="text-[11px] sm:text-xs font-black uppercase tracking-[0.2em] text-white bg-black/40 border border-white/10 inline-flex px-5 py-2.5 rounded-2xl backdrop-blur-md shadow-sm select-none">${storeData.subtitle}</span></div>` : ''}
                             <div class="flex flex-wrap justify-center gap-3 relative z-10">
+                                <button onclick="window.openOperatingHoursModal()" class="inline-flex items-center gap-2 ${ohStatus.badgeClass} px-4 py-2 rounded-full text-[10px] sm:text-xs font-black uppercase tracking-widest backdrop-blur-md border shadow-sm cursor-pointer transition-all active-scale select-none">
+                                    <span class="w-2.5 h-2.5 rounded-full ${ohStatus.dotClass} animate-pulse shrink-0"></span>
+                                    <span>${ohStatus.statusText}</span>
+                                    <i data-lucide="chevron-right" class="w-3.5 h-3.5 opacity-60"></i>
+                                </button>
                                 ${!isAffiliate ? `
                                 <div class="inline-flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full text-[10px] sm:text-xs font-bold uppercase tracking-widest backdrop-blur-md border border-white/10 text-white" style="text-shadow: 1px 1px 3px rgba(0, 0, 0, 1);">
                                     <i data-lucide="smartphone" class="w-3.5 h-3.5"></i> Pedidos via WhatsApp

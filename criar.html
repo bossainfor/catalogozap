@@ -437,17 +437,57 @@
                         </div>
 
                         <!-- ABAS DE IMPORTAÇÃO -->
-                        <div class="flex border-b border-purple-400/20 gap-2">
-                            <button type="button" id="tab-import-link-btn" onclick="window.switchImportTab('link')" class="pb-2.5 px-3 text-xs font-black uppercase italic tracking-wider border-b-2 border-purple-400 text-purple-200 flex items-center gap-1.5 transition-all">
-                                <i data-lucide="link" class="w-3.5 h-3.5"></i> 1. Por Link (URL)
+                        <div class="flex border-b border-purple-400/20 gap-1.5 sm:gap-2 overflow-x-auto pb-1">
+                            <button type="button" id="tab-import-bookmark-btn" onclick="window.switchImportTab('bookmark')" class="pb-2.5 px-3 text-xs font-black uppercase italic tracking-wider border-b-2 border-amber-400 text-amber-300 flex items-center gap-1.5 transition-all shrink-0">
+                                <i data-lucide="bookmark" class="w-3.5 h-3.5 text-amber-400"></i> ⭐ Marcador 1-Clique (Sem Bloqueio)
                             </button>
-                            <button type="button" id="tab-import-paste-btn" onclick="window.switchImportTab('paste')" class="pb-2.5 px-3 text-xs font-black uppercase italic tracking-wider border-b-2 border-transparent text-purple-300/60 hover:text-purple-200 flex items-center gap-1.5 transition-all">
-                                <i data-lucide="file-text" class="w-3.5 h-3.5"></i> 2. Copiar e Colar Texto (IA - 100% Funciona)
+                            <button type="button" id="tab-import-paste-btn" onclick="window.switchImportTab('paste')" class="pb-2.5 px-3 text-xs font-black uppercase italic tracking-wider border-b-2 border-transparent text-purple-300/60 hover:text-purple-200 flex items-center gap-1.5 transition-all shrink-0">
+                                <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Copiar e Colar Texto (IA)
+                            </button>
+                            <button type="button" id="tab-import-link-btn" onclick="window.switchImportTab('link')" class="pb-2.5 px-3 text-xs font-black uppercase italic tracking-wider border-b-2 border-transparent text-purple-300/60 hover:text-purple-200 flex items-center gap-1.5 transition-all shrink-0">
+                                <i data-lucide="link" class="w-3.5 h-3.5"></i> Por Link Direto
                             </button>
                         </div>
 
+                        <!-- TAB MARCADOR (BOOKMARKLET) - A FORMA MAIS FÁCIL E SEM BLOQUEIOS -->
+                        <div id="tab-import-bookmark-content" class="space-y-3 pt-1">
+                            <div class="bg-amber-950/40 border border-amber-400/30 p-4 rounded-2xl space-y-3 text-amber-100 text-xs">
+                                <div class="flex items-center gap-2 font-black text-amber-300 uppercase italic text-sm">
+                                    <i data-lucide="sparkles" class="w-4 h-4 text-amber-400"></i> O Método do Marcador (Nunca Bloqueia)
+                                </div>
+                                <p class="text-amber-100/90 leading-relaxed font-medium">
+                                    Sites como Anota AI e Goomer utilizam proteção do Cloudflare que bloqueia servidores externos. Com este <strong>Marcador de 1-Clique</strong>, a extração roda dentro do seu próprio navegador em 2 segundos!
+                                </p>
+
+                                <div class="p-3 bg-slate-900/80 rounded-xl border border-amber-400/20 flex flex-col sm:flex-row items-center justify-between gap-3">
+                                    <div>
+                                        <span class="text-[10px] uppercase font-bold text-amber-300/80 block">Passo 1: Arraste o botão para a barra de favoritos do navegador</span>
+                                        <span class="text-xs text-white font-semibold">Se a barra estiver oculta no Chrome/Edge, pressione <kbd class="px-1 py-0.5 bg-slate-800 rounded font-mono text-[10px]">Ctrl + Shift + B</kbd></span>
+                                    </div>
+                                    <a id="bookmarklet-btn-link" href="javascript:(async function(){try{var n=document.createElement('div');n.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#1e1b4b;color:#fff;padding:20px;border-radius:16px;border:2px solid #a855f7;box-shadow:0 10px 30px rgba(0,0,0,0.5);font-family:sans-serif;max-width:380px;';n.innerHTML='<h3 style=\'margin:0 0 8px;font-size:16px;color:#c084fc;\'>⏳ Extraindo Cardápio...</h3><p style=\'margin:0;font-size:12px;color:#e2e8f0;\'>Aguarde alguns segundos...</p>';document.body.appendChild(n);var cleanParts=location.pathname.split('/').filter(Boolean);var slug=cleanParts[cleanParts.length-1];var prods=[];if(slug&&slug!=='loja'){var endpoints=['https://api-cdn.anota.ai/v2/catalog/'+slug,'https://api.anota.ai/v2/catalog/'+slug,'https://api.anota.ai/v1/store/'+slug];for(var ep of endpoints){try{var res=await fetch(ep);if(res.ok){var data=await res.json();var cats=data?.data?.categories||data?.data?.catalog||data?.categories||(Array.isArray(data?.data)?data.data:[]);if(Array.isArray(cats)&&cats.length>0){for(var c of cats){var catName=c.title||c.name||'Geral';var items=c.items||c.products||[];for(var item of items){if(item.title||item.name){var price=item.price||item.value||(item.prices&&item.prices[0]?item.prices[0].price:'0');prods.push({name:(item.title||item.name||'').trim(),price:String(price),description:(item.description||item.details||'').trim(),category:catName,image:item.image||item.photo||item.avatar||(item.images&&item.images[0])||''});}}}if(prods.length>0)break;}}}catch(e){}}}if(prods.length>0){var jsonStr=JSON.stringify(prods);await navigator.clipboard.writeText(jsonStr);n.style.borderColor='#22c55e';n.innerHTML='<h3 style=\'margin:0 0 8px;font-size:16px;color:#4ade80;\'>🎉 '+prods.length+' Produtos Copiados!</h3><p style=\'margin:0 0 12px;font-size:12px;color:#e2e8f0;\'>Os produtos foram copiados para a sua área de transferência!</p><p style=\'margin:0;font-size:11px;color:#cbd5e1;background:#0f172a;padding:8px;border-radius:8px;\'><strong>Próximo passo:</strong> Volte ao CatálogoZap na aba <b>Copiar e Colar Texto (IA)</b> e cole com <b>Ctrl+V</b>!</p>';}else{var pageText=document.body.innerText;await navigator.clipboard.writeText(pageText);n.style.borderColor='#eab308';n.innerHTML='<h3 style=\'margin:0 0 8px;font-size:16px;color:#fde047;\'>📋 Texto Copiado!</h3><p style=\'margin:0 0 12px;font-size:12px;color:#e2e8f0;\'>O texto do cardápio foi copiado!</p><p style=\'margin:0;font-size:11px;color:#cbd5e1;background:#0f172a;padding:8px;border-radius:8px;\'><strong>Próximo passo:</strong> Volte ao CatálogoZap na aba <b>Copiar e Colar Texto (IA)</b> e cole com <b>Ctrl+V</b>!</p>';}setTimeout(function(){if(n)n.remove();},15000);}catch(err){alert('Pressione Ctrl+A e depois Ctrl+C na página do cardápio e cole no CatálogoZap!');}})();" 
+                                       onclick="event.preventDefault(); window.copyBookmarkletScript();"
+                                       class="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-400 text-slate-950 font-black text-xs uppercase italic tracking-wider shadow-lg shadow-amber-400/20 hover:scale-105 active:scale-95 transition-all cursor-grab shrink-0"
+                                       title="Clique para copiar ou arraste para os Favoritos do seu navegador">
+                                       <i data-lucide="bookmark-plus" class="w-4 h-4"></i>
+                                       <span>📌 Extrator Zap</span>
+                                    </a>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] pt-1">
+                                    <div class="bg-slate-900/60 p-2.5 rounded-xl border border-white/5">
+                                        <strong class="text-amber-300 block mb-0.5">Passo 2: Abra o Cardápio</strong>
+                                        Abra o link da sua loja no Anota AI / Goomer / Site no navegador.
+                                    </div>
+                                    <div class="bg-slate-900/60 p-2.5 rounded-xl border border-white/5">
+                                        <strong class="text-amber-300 block mb-0.5">Passo 3: Clique no Marcador e Cole</strong>
+                                        Clique no marcador <strong>📌 Extrator Zap</strong>. Em seguida, volte aqui na aba <strong>"Copiar e Colar Texto (IA)"</strong> e cole com <kbd class="px-1 py-0.5 bg-slate-800 rounded font-mono text-[9px]">Ctrl + V</kbd>!
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- TAB 1: POR LINK -->
-                        <div id="tab-import-link-content" class="space-y-3 pt-1">
+                        <div id="tab-import-link-content" class="hidden space-y-3 pt-1">
                             <div class="flex flex-col sm:flex-row gap-2.5">
                                 <div class="relative flex-1">
                                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-purple-300">
@@ -1072,31 +1112,143 @@
             return null;
         };
 
+        window.copyBookmarkletScript = function() {
+            const btnLink = document.getElementById('bookmarklet-btn-link');
+            if (btnLink && btnLink.href) {
+                navigator.clipboard.writeText(btnLink.href).then(() => {
+                    alert("✅ Código do Marcador copiado!\n\nPara usar no navegador:\n1. Crie um novo Favorito/Marcador no seu navegador.\n2. Cole este código no campo de URL do marcador.\n3. Quando estiver na página do seu cardápio, clique no marcador para extrair!");
+                }).catch(() => {
+                    alert("Para adicionar ao favoritos, basta arrastar o botão amarelo '📌 Extrator Zap' para a sua barra de marcadores no topo do navegador!");
+                });
+            }
+        };
+
         window.switchImportTab = function(tab) {
             const linkContent = document.getElementById('tab-import-link-content');
             const pasteContent = document.getElementById('tab-import-paste-content');
+            const bookmarkContent = document.getElementById('tab-import-bookmark-content');
+
             const linkBtn = document.getElementById('tab-import-link-btn');
             const pasteBtn = document.getElementById('tab-import-paste-btn');
+            const bookmarkBtn = document.getElementById('tab-import-bookmark-btn');
 
-            if (tab === 'paste') {
-                if (linkContent) linkContent.classList.add('hidden');
+            // Reset visibilidades
+            if (linkContent) linkContent.classList.add('hidden');
+            if (pasteContent) pasteContent.classList.add('hidden');
+            if (bookmarkContent) bookmarkContent.classList.add('hidden');
+
+            const inactiveBtnClass = "pb-2.5 px-3 text-xs font-black uppercase italic tracking-wider border-b-2 border-transparent text-purple-300/60 hover:text-purple-200 flex items-center gap-1.5 transition-all shrink-0";
+
+            if (linkBtn) linkBtn.className = inactiveBtnClass;
+            if (pasteBtn) pasteBtn.className = inactiveBtnClass;
+            if (bookmarkBtn) bookmarkBtn.className = inactiveBtnClass;
+
+            if (tab === 'bookmark') {
+                if (bookmarkContent) bookmarkContent.classList.remove('hidden');
+                if (bookmarkBtn) bookmarkBtn.className = "pb-2.5 px-3 text-xs font-black uppercase italic tracking-wider border-b-2 border-amber-400 text-amber-300 flex items-center gap-1.5 transition-all shrink-0";
+            } else if (tab === 'paste') {
                 if (pasteContent) pasteContent.classList.remove('hidden');
-                if (linkBtn) {
-                    linkBtn.className = "pb-2.5 px-3 text-xs font-black uppercase italic tracking-wider border-b-2 border-transparent text-purple-300/60 hover:text-purple-200 flex items-center gap-1.5 transition-all";
-                }
-                if (pasteBtn) {
-                    pasteBtn.className = "pb-2.5 px-3 text-xs font-black uppercase italic tracking-wider border-b-2 border-purple-400 text-purple-200 flex items-center gap-1.5 transition-all";
-                }
+                if (pasteBtn) pasteBtn.className = "pb-2.5 px-3 text-xs font-black uppercase italic tracking-wider border-b-2 border-purple-400 text-purple-200 flex items-center gap-1.5 transition-all shrink-0";
             } else {
-                if (pasteContent) pasteContent.classList.add('hidden');
                 if (linkContent) linkContent.classList.remove('hidden');
-                if (pasteBtn) {
-                    pasteBtn.className = "pb-2.5 px-3 text-xs font-black uppercase italic tracking-wider border-b-2 border-transparent text-purple-300/60 hover:text-purple-200 flex items-center gap-1.5 transition-all";
+                if (linkBtn) linkBtn.className = "pb-2.5 px-3 text-xs font-black uppercase italic tracking-wider border-b-2 border-purple-400 text-purple-200 flex items-center gap-1.5 transition-all shrink-0";
+            }
+        };
+
+        window.parsePastedTextLocally = function(content) {
+            if (!content || typeof content !== 'string') return [];
+            
+            // 1. Se for um JSON direto (ex: do Marcador ou exportado)
+            const trimmed = content.trim();
+            if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+                try {
+                    const parsed = JSON.parse(trimmed);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        return parsed.map((p, idx) => ({
+                            id: String(Date.now() + idx + Math.floor(Math.random() * 10000)),
+                            name: String(p.name || p.title || 'Produto').trim(),
+                            price: String(p.price || p.value || '0,00').replace('R$', '').trim(),
+                            description: String(p.description || p.details || '').trim(),
+                            category: String(p.category || 'Geral').trim(),
+                            image: p.image || p.photo || '',
+                            available: true,
+                            f: false,
+                            vars: '',
+                            wholesalePrice: '',
+                            wholesaleMinQty: ''
+                        }));
+                    }
+                } catch (e) {}
+            }
+
+            // 2. Parser inteligente de texto colado
+            const rawLines = content.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+            const ignoreWords = ['início', 'inicio', 'pedidos', 'promos', 'carrinho', 'mudar endereço', 'produto para maiores de 18 anos', 'observações', 'adicionar', 'detalhes do produto', 'aberto até', 'pedido min', 'min.'];
+            
+            let currentCategory = "Geral";
+            const products = [];
+            let pendingName = "";
+            
+            for (let i = 0; i < rawLines.length; i++) {
+                const line = rawLines[i];
+                const lower = line.toLowerCase();
+                
+                if (ignoreWords.some(w => lower === w || lower.startsWith('aberto até') || lower.startsWith('pedido min'))) {
+                    continue;
                 }
-                if (linkBtn) {
-                    linkBtn.className = "pb-2.5 px-3 text-xs font-black uppercase italic tracking-wider border-b-2 border-purple-400 text-purple-200 flex items-center gap-1.5 transition-all";
+
+                // Procura padrões de preço (ex: R$ 23,90, 23,90, R$23.90)
+                const priceMatch = line.match(/(?:R\$\s*)?(\d{1,4}[.,]\d{2})/i);
+                
+                if (priceMatch) {
+                    let priceVal = priceMatch[1].replace('.', ',');
+                    let name = pendingName || "Item de Cardápio";
+                    
+                    const lineWithoutPrice = line.replace(priceMatch[0], '').replace(/^[-:\s]+|[-:\s]+$/g, '').trim();
+                    if (lineWithoutPrice.length > 2) {
+                        name = lineWithoutPrice;
+                    }
+
+                    let description = "";
+                    if (i + 1 < rawLines.length) {
+                        const nextLine = rawLines[i + 1];
+                        const nextLower = nextLine.toLowerCase();
+                        const isNextPrice = /(?:R\$\s*)?(\d{1,4}[.,]\d{2})/i.test(nextLine);
+                        const isNextIgnore = ignoreWords.some(w => nextLower === w);
+                        
+                        if (!isNextPrice && !isNextIgnore && nextLine.length > 3 && !nextLine.includes('R$')) {
+                            description = nextLine;
+                            i++;
+                        }
+                    }
+
+                    if (name && name.length > 1) {
+                        products.push({
+                            id: String(Date.now() + products.length + Math.floor(Math.random() * 10000)),
+                            name: name,
+                            price: priceVal,
+                            description: description,
+                            category: currentCategory,
+                            image: '',
+                            available: true,
+                            f: false,
+                            vars: '',
+                            wholesalePrice: '',
+                            wholesaleMinQty: ''
+                        });
+                    }
+                    pendingName = "";
+                } else {
+                    if (line.length < 45 && !line.includes('http') && !line.includes('<')) {
+                        if (pendingName) {
+                            currentCategory = pendingName;
+                        }
+                        pendingName = line;
+                    }
                 }
             }
+
+            return products;
         };
 
         window.importPastedCatalog = async function() {
@@ -1122,15 +1274,21 @@
             btn.disabled = true;
             btn.classList.add('opacity-75', 'cursor-not-allowed');
             const originalBtnHtml = btn.innerHTML;
-            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Analisando com IA...</span>`;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Analisando...</span>`;
             if (window.lucide) window.lucide.createIcons();
 
             if (statusEl) {
                 statusEl.className = "p-4 rounded-2xl text-xs font-bold bg-purple-500/20 text-purple-200 border border-purple-500/30 block";
-                statusEl.innerHTML = `<div class="flex items-center gap-2"><i data-lucide="sparkles" class="w-4 h-4 text-purple-300 animate-pulse"></i> Inteligência Artificial processando seu texto para identificar itens, preços, categorias e descrições... Aguarde um instante.</div>`;
+                statusEl.innerHTML = `<div class="flex items-center gap-2"><i data-lucide="sparkles" class="w-4 h-4 text-purple-300 animate-pulse"></i> Processando seu texto para extrair produtos e valores...</div>`;
                 if (window.lucide) window.lucide.createIcons();
             }
 
+            let newItems = [];
+
+            // 1. Tenta extração local instantânea
+            const localParsed = window.parsePastedTextLocally(content);
+
+            // 2. Tenta extração via IA no servidor
             try {
                 const response = await fetch('/api/parse-pasted-catalog', {
                     method: 'POST',
@@ -1138,61 +1296,72 @@
                     body: JSON.stringify({ content })
                 });
 
-                const data = await response.json();
-
-                if (!response.ok || !data.success) {
-                    throw new Error(data.error || "Não foi possível extrair produtos do texto fornecido.");
+                const rawText = await response.text();
+                let data = null;
+                try {
+                    data = JSON.parse(rawText);
+                } catch(e) {
+                    console.warn("Resposta não-JSON do servidor de IA, utilizando fallback local...");
                 }
 
-                if (!data.products || data.products.length === 0) {
-                    throw new Error("Nenhum produto foi detectado. Certifique-se de ter copiado o texto do cardápio com nomes e preços.");
+                if (data && data.success && Array.isArray(data.products) && data.products.length > 0) {
+                    newItems = data.products;
                 }
-
-                const newItems = data.products;
-
-                if (mode === 'replace') {
-                    window.products = newItems;
-                } else {
-                    window.products = [...window.products, ...newItems];
-                }
-
-                window.renderProducts();
-                window.saveDraft();
-                if (typeof window.updateCategoriesDatalist === 'function') window.updateCategoriesDatalist();
-
-                if (statusEl) {
-                    statusEl.className = "p-4 rounded-2xl text-xs font-bold bg-emerald-500/20 text-emerald-200 border border-emerald-500/30 block";
-                    statusEl.innerHTML = `
-                        <div class="space-y-1">
-                            <div class="flex items-center gap-2 text-emerald-300 font-black text-sm">
-                                <i data-lucide="check-circle-2" class="w-5 h-5"></i> 
-                                Incrível! IA extraiu e cadastrou ${newItems.length} produtos do texto colado!
-                            </div>
-                            <p class="text-purple-200/90 text-xs font-normal">
-                                Todos os itens foram organizados em categorias com valores formatados.
-                                Se desejar desfazer, clique em <strong>"Restaurar Anterior"</strong> no topo da lista.
-                            </p>
-                        </div>
-                    `;
-                    if (window.lucide) window.lucide.createIcons();
-                }
-
-                alert(`Incrível! A Inteligência Artificial identificou e cadastrou ${newItems.length} produtos do seu cardápio!`);
-
             } catch (err) {
-                console.error("Erro no ParsePastedCatalog:", err);
+                console.warn("Erro ao comunicar com servidor de IA, usando fallback local:", err);
+            }
+
+            // Fallback: se a API não retornou nada, usa o parser de texto local
+            if (newItems.length === 0 && localParsed && localParsed.length > 0) {
+                newItems = localParsed;
+            }
+
+            if (newItems.length === 0) {
                 if (statusEl) {
                     statusEl.className = "p-4 rounded-2xl text-xs font-bold bg-red-500/20 text-red-200 border border-red-500/30 block";
-                    statusEl.innerHTML = `<div class="flex items-center gap-2"><i data-lucide="alert-circle" class="w-4 h-4"></i> ${err.message || 'Erro ao analisar o texto'}</div>`;
+                    statusEl.innerHTML = `<div class="flex items-center gap-2"><i data-lucide="alert-circle" class="w-4 h-4"></i> Nenhum produto com preço R$ foi identificado no texto. Certifique-se de ter copiado o texto contendo nomes e preços dos itens.</div>`;
                     if (window.lucide) window.lucide.createIcons();
                 }
-                alert(`Erro: ${err.message || 'Não foi possível extrair do texto.'}`);
-            } finally {
+                alert("Nenhum produto foi detectado. Verifique se o texto colado contém nomes e preços (ex: R$ 10,00).");
                 btn.disabled = false;
                 btn.classList.remove('opacity-75', 'cursor-not-allowed');
                 btn.innerHTML = originalBtnHtml;
                 if (window.lucide) window.lucide.createIcons();
+                return;
             }
+
+            if (mode === 'replace') {
+                window.products = newItems;
+            } else {
+                window.products = [...window.products, ...newItems];
+            }
+
+            window.renderProducts();
+            window.saveDraft();
+            if (typeof window.updateCategoriesDatalist === 'function') window.updateCategoriesDatalist();
+
+            if (statusEl) {
+                statusEl.className = "p-4 rounded-2xl text-xs font-bold bg-emerald-500/20 text-emerald-200 border border-emerald-500/30 block";
+                statusEl.innerHTML = `
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2 text-emerald-300 font-black text-sm">
+                            <i data-lucide="check-circle-2" class="w-5 h-5"></i> 
+                            Sucesso! ${newItems.length} produtos identificados e cadastrados no catálogo!
+                        </div>
+                        <p class="text-purple-200/90 text-xs font-normal">
+                            Todos os itens foram cadastrados com sucesso. Se desejar desfazer, clique em <strong>"Restaurar Anterior"</strong> no topo.
+                        </p>
+                    </div>
+                `;
+                if (window.lucide) window.lucide.createIcons();
+            }
+
+            alert(`Incrível! ${newItems.length} produtos foram identificados e cadastrados com sucesso!`);
+
+            btn.disabled = false;
+            btn.classList.remove('opacity-75', 'cursor-not-allowed');
+            btn.innerHTML = originalBtnHtml;
+            if (window.lucide) window.lucide.createIcons();
         };
 
         window.importExternalCatalog = async function() {

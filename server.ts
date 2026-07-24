@@ -269,7 +269,13 @@ app.post("/api/parse-pasted-catalog", async (req, res) => {
       const { GoogleGenAI } = await import("@google/genai");
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-      const prompt = `Analise o texto ou código HTML de cardápio/catálogo de loja colado abaixo e extraia TODOS os produtos/itens com seus nomes, preços, descrições e categorias.
+      const prompt = `Analise o texto ou código HTML de cardápio/catálogo de loja colado abaixo e extraia TODOS os produtos/itens legítimos com seus nomes, preços, descrições, categorias e URLs de imagens (se houver).
+
+Regras de Filtragem Importantes:
+1. DESCARTE botões e textos de interface como "Início", "Carrinho", "Observações", "20%", "10%", "Pedido Mínimo", "Aberto até", "Ver Detalhes", "Adicionar".
+2. Agrupe os produtos por suas respectivas categorias (ex: "Bebidas", "Churrasco", "Pizzas", "Destaques").
+3. O preço deve ser apenas o número no formato com vírgula (ex: "6,90", "23,90").
+4. Se houver links de imagens (URLs http/https), inclua no campo "image".
 
 Instrução estrita: Retorne APENAS um array JSON com os objetos encontrados, sem qualquer texto adicional ou blocos de código além do JSON.
 
@@ -280,13 +286,13 @@ Exemplo de saída esperada:
     "price": "12,00",
     "description": "Gelada 2L pet",
     "category": "Bebidas",
-    "image": ""
+    "image": "https://cdn.exemplo.com/coca.jpg"
   },
   {
-    "name": "Pizza Calabresa Grande",
-    "price": "45,00",
-    "description": "Molho de tomate, mussarela e calabresa fatiada com cebola",
-    "category": "Pizzas",
+    "name": "Cerveja Spaten Puro Malte 350ml",
+    "price": "6,90",
+    "description": "Lata 350ml gelada",
+    "category": "Bebidas",
     "image": ""
   }
 ]

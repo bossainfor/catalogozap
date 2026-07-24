@@ -245,10 +245,31 @@ app.post("/api/parse-pasted-catalog", async (req, res) => {
 
     console.log(`[ParsePastedCatalog] Processando texto colado com tamanho: ${content.length} caracteres`);
 
-    const { GoogleGenAI } = await import("@google/genai");
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    let parsed: any[] | null = null;
 
-    const prompt = `Analise o texto ou código HTML de cardápio/catálogo de loja colado abaixo e extraia TODOS os produtos/itens com seus nomes, preços, descrições e categorias.
+    // Se o conteúdo já for um JSON válido de produtos (ex: copiado pelo Marcador)
+    const trimmed = content.trim();
+    if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+      try {
+        const directJson = JSON.parse(trimmed);
+        if (Array.isArray(directJson) && directJson.length > 0 && directJson[0].name) {
+          console.log(`[ParsePastedCatalog] Detectado JSON direto do Marcador com ${directJson.length} itens!`);
+          parsed = directJson;
+        }
+      } catch (e) {
+        // Não é JSON puro, prossegue para IA Gemini
+      }
+    }
+
+    if (!parsed) {
+      if (!process.env.GEMINI_API_KEY) {
+        return res.status(500).json({ success: false, error: "Chave Gemini de IA não configurada no servidor." });
+      }
+
+      const { GoogleGenAI } = await import("@google/genai");
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+      const prompt = `Analise o texto ou código HTML de cardápio/catálogo de loja colado abaixo e extraia TODOS os produtos/itens com seus nomes, preços, descrições e categorias.
 
 Instrução estrita: Retorne APENAS um array JSON com os objetos encontrados, sem qualquer texto adicional ou blocos de código além do JSON.
 
@@ -273,18 +294,20 @@ Exemplo de saída esperada:
 Conteúdo do Cardápio:
 ${content.substring(0, 100000)}`;
 
-    const aiRes = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-    });
+      const aiRes = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+      });
 
-    const text = aiRes.text || "";
-    const jsonMatch = text.match(/\[[\s\S]*\]/);
-    if (!jsonMatch) {
-      return res.status(400).json({ success: false, error: "Não foi possível reconhecer produtos no texto colado. Verifique se copiou nomes e valores do cardápio." });
+      const text = aiRes.text || "";
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) {
+        return res.status(400).json({ success: false, error: "Não foi possível reconhecer produtos no texto colado. Verifique se copiou nomes e valores do cardápio." });
+      }
+
+      parsed = JSON.parse(jsonMatch[0]);
     }
 
-    const parsed = JSON.parse(jsonMatch[0]);
     if (!Array.isArray(parsed) || parsed.length === 0) {
       return res.status(400).json({ success: false, error: "Nenhum produto foi detectado no texto fornecido." });
     }

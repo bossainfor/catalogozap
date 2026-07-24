@@ -425,44 +425,70 @@
                         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                             <div class="space-y-1">
                                 <span class="bg-purple-500/20 text-purple-300 border border-purple-400/30 text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-wider inline-flex items-center gap-1.5">
-                                    <i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-300"></i> Importador de Cardápio / Catálogo
+                                    <i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-300"></i> Importador Inteligente com IA
                                 </span>
                                 <h4 class="text-lg sm:text-xl font-black italic uppercase tracking-tight text-white flex items-center gap-2">
-                                    Importar por Link (Anota AI, Goomer, Site, etc)
+                                    Importar Cardápio (Anota AI, Goomer, iFood, etc)
                                 </h4>
                                 <p class="text-xs text-purple-200/80 font-medium">
-                                    Cole o link do seu cardápio do Anota AI, Goomer, WhatsApp ou site e extraia todos os itens com preços, fotos e descrições automaticamente!
+                                    Importe por link ou simplesmente cole o texto do seu cardápio e nossa Inteligência Artificial cadastra tudo com preços e descrições!
                                 </p>
                             </div>
                         </div>
 
-                        <div class="space-y-3 pt-1">
+                        <!-- ABAS DE IMPORTAÇÃO -->
+                        <div class="flex border-b border-purple-400/20 gap-2">
+                            <button type="button" id="tab-import-link-btn" onclick="window.switchImportTab('link')" class="pb-2.5 px-3 text-xs font-black uppercase italic tracking-wider border-b-2 border-purple-400 text-purple-200 flex items-center gap-1.5 transition-all">
+                                <i data-lucide="link" class="w-3.5 h-3.5"></i> 1. Por Link (URL)
+                            </button>
+                            <button type="button" id="tab-import-paste-btn" onclick="window.switchImportTab('paste')" class="pb-2.5 px-3 text-xs font-black uppercase italic tracking-wider border-b-2 border-transparent text-purple-300/60 hover:text-purple-200 flex items-center gap-1.5 transition-all">
+                                <i data-lucide="file-text" class="w-3.5 h-3.5"></i> 2. Copiar e Colar Texto (IA - 100% Funciona)
+                            </button>
+                        </div>
+
+                        <!-- TAB 1: POR LINK -->
+                        <div id="tab-import-link-content" class="space-y-3 pt-1">
                             <div class="flex flex-col sm:flex-row gap-2.5">
                                 <div class="relative flex-1">
                                     <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-purple-300">
                                         <i data-lucide="link" class="w-4 h-4"></i>
                                     </div>
-                                    <input type="url" id="import-catalog-url" placeholder="Ex: https://menu.anota.ai/sualoja ou link do seu cardápio" class="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white/10 border border-purple-400/30 text-white placeholder-purple-300/60 focus:bg-white/20 focus:border-purple-300 outline-none text-xs sm:text-sm font-bold transition-all">
+                                    <input type="url" id="import-catalog-url" placeholder="Ex: https://pedido.anota.ai/loja/sualoja" class="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white/10 border border-purple-400/30 text-white placeholder-purple-300/60 focus:bg-white/20 focus:border-purple-300 outline-none text-xs sm:text-sm font-bold transition-all">
                                 </div>
                                 <button type="button" id="import-catalog-btn" onclick="window.importExternalCatalog()" class="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white font-black px-6 py-3.5 rounded-2xl text-xs uppercase italic tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20 active-scale shrink-0">
                                     <i data-lucide="wand2" class="w-4 h-4"></i>
-                                    <span>Extrair e Importar</span>
+                                    <span>Extrair por Link</span>
                                 </button>
                             </div>
+                        </div>
 
-                            <div class="flex flex-wrap items-center justify-between gap-3 text-[11px] text-purple-200/90 font-semibold pt-1 border-t border-white/10">
-                                <div class="flex items-center gap-4">
-                                    <label class="flex items-center gap-2 cursor-pointer select-none">
-                                        <input type="radio" name="import_mode" value="replace" checked class="accent-purple-400 w-4 h-4">
-                                        <span>Substituir catálogo atual</span>
-                                    </label>
-                                    <label class="flex items-center gap-2 cursor-pointer select-none">
-                                        <input type="radio" name="import_mode" value="append" class="accent-purple-400 w-4 h-4">
-                                        <span>Adicionar aos itens existentes</span>
-                                    </label>
-                                </div>
-                                <span class="text-purple-300/70 text-[10px]">Pode restaurar os produtos anteriores a qualquer momento</span>
+                        <!-- TAB 2: POR TEXTO COLADO (IA GEMINI) -->
+                        <div id="tab-import-paste-content" class="hidden space-y-3 pt-1">
+                            <div class="bg-purple-900/30 border border-purple-400/20 p-3 rounded-xl text-[11px] text-purple-200/90 leading-relaxed">
+                                💡 <strong>Dica fácil para Anota AI / Goomer:</strong> Abra a página do seu cardápio no navegador, pressione <kbd class="px-1.5 py-0.5 bg-purple-950 rounded border border-purple-400/30 font-mono text-[10px]">Ctrl + A</kbd> (Selecionar Tudo) e <kbd class="px-1.5 py-0.5 bg-purple-950 rounded border border-purple-400/30 font-mono text-[10px]">Ctrl + C</kbd> (Copiar). Depois cole no campo abaixo e a IA extrairá todos os itens!
                             </div>
+                            <textarea id="import-catalog-pasted-text" rows="5" placeholder="Cole aqui o texto ou HTML do seu cardápio com nomes, preços e descrições..." class="w-full p-4 rounded-2xl bg-white/10 border border-purple-400/30 text-white placeholder-purple-300/60 focus:bg-white/20 focus:border-purple-300 outline-none text-xs font-mono transition-all resize-y"></textarea>
+                            <div class="flex justify-end">
+                                <button type="button" id="import-pasted-btn" onclick="window.importPastedCatalog()" class="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 font-black px-6 py-3.5 rounded-2xl text-xs uppercase italic tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active-scale w-full sm:w-auto">
+                                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                                    <span>Extrair Itens com IA</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- OPÇÕES DE SUBSTITUIR OU ADICIONAR -->
+                        <div class="flex flex-wrap items-center justify-between gap-3 text-[11px] text-purple-200/90 font-semibold pt-2 border-t border-white/10">
+                            <div class="flex items-center gap-4">
+                                <label class="flex items-center gap-2 cursor-pointer select-none">
+                                    <input type="radio" name="import_mode" value="replace" checked class="accent-purple-400 w-4 h-4">
+                                    <span>Substituir catálogo atual</span>
+                                </label>
+                                <label class="flex items-center gap-2 cursor-pointer select-none">
+                                    <input type="radio" name="import_mode" value="append" class="accent-purple-400 w-4 h-4">
+                                    <span>Adicionar aos itens existentes</span>
+                                </label>
+                            </div>
+                            <span class="text-purple-300/70 text-[10px]">Você pode restaurar o catálogo anterior a qualquer momento</span>
                         </div>
 
                         <!-- Status Feedback -->
@@ -1046,6 +1072,129 @@
             return null;
         };
 
+        window.switchImportTab = function(tab) {
+            const linkContent = document.getElementById('tab-import-link-content');
+            const pasteContent = document.getElementById('tab-import-paste-content');
+            const linkBtn = document.getElementById('tab-import-link-btn');
+            const pasteBtn = document.getElementById('tab-import-paste-btn');
+
+            if (tab === 'paste') {
+                if (linkContent) linkContent.classList.add('hidden');
+                if (pasteContent) pasteContent.classList.remove('hidden');
+                if (linkBtn) {
+                    linkBtn.className = "pb-2.5 px-3 text-xs font-black uppercase italic tracking-wider border-b-2 border-transparent text-purple-300/60 hover:text-purple-200 flex items-center gap-1.5 transition-all";
+                }
+                if (pasteBtn) {
+                    pasteBtn.className = "pb-2.5 px-3 text-xs font-black uppercase italic tracking-wider border-b-2 border-purple-400 text-purple-200 flex items-center gap-1.5 transition-all";
+                }
+            } else {
+                if (pasteContent) pasteContent.classList.add('hidden');
+                if (linkContent) linkContent.classList.remove('hidden');
+                if (pasteBtn) {
+                    pasteBtn.className = "pb-2.5 px-3 text-xs font-black uppercase italic tracking-wider border-b-2 border-transparent text-purple-300/60 hover:text-purple-200 flex items-center gap-1.5 transition-all";
+                }
+                if (linkBtn) {
+                    linkBtn.className = "pb-2.5 px-3 text-xs font-black uppercase italic tracking-wider border-b-2 border-purple-400 text-purple-200 flex items-center gap-1.5 transition-all";
+                }
+            }
+        };
+
+        window.importPastedCatalog = async function() {
+            const textarea = document.getElementById('import-catalog-pasted-text');
+            const btn = document.getElementById('import-pasted-btn');
+            const statusEl = document.getElementById('import-catalog-status');
+            const restoreBtn = document.getElementById('restore-catalog-btn');
+
+            if (!textarea || !textarea.value.trim() || textarea.value.trim().length < 5) {
+                alert("Por favor, cole o texto ou HTML do seu cardápio com nomes e preços antes de clicar em extrair.");
+                if (textarea) textarea.focus();
+                return;
+            }
+
+            const content = textarea.value.trim();
+            const modeRadio = document.querySelector('input[name="import_mode"]:checked');
+            const mode = modeRadio ? modeRadio.value : 'replace';
+
+            window.productsBackup = JSON.parse(JSON.stringify(window.products));
+            localStorage.setItem('catalog_products_backup', JSON.stringify(window.productsBackup));
+            if (restoreBtn) restoreBtn.classList.remove('hidden');
+
+            btn.disabled = true;
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
+            const originalBtnHtml = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Analisando com IA...</span>`;
+            if (window.lucide) window.lucide.createIcons();
+
+            if (statusEl) {
+                statusEl.className = "p-4 rounded-2xl text-xs font-bold bg-purple-500/20 text-purple-200 border border-purple-500/30 block";
+                statusEl.innerHTML = `<div class="flex items-center gap-2"><i data-lucide="sparkles" class="w-4 h-4 text-purple-300 animate-pulse"></i> Inteligência Artificial processando seu texto para identificar itens, preços, categorias e descrições... Aguarde um instante.</div>`;
+                if (window.lucide) window.lucide.createIcons();
+            }
+
+            try {
+                const response = await fetch('/api/parse-pasted-catalog', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || "Não foi possível extrair produtos do texto fornecido.");
+                }
+
+                if (!data.products || data.products.length === 0) {
+                    throw new Error("Nenhum produto foi detectado. Certifique-se de ter copiado o texto do cardápio com nomes e preços.");
+                }
+
+                const newItems = data.products;
+
+                if (mode === 'replace') {
+                    window.products = newItems;
+                } else {
+                    window.products = [...window.products, ...newItems];
+                }
+
+                window.renderProducts();
+                window.saveDraft();
+                if (typeof window.updateCategoriesDatalist === 'function') window.updateCategoriesDatalist();
+
+                if (statusEl) {
+                    statusEl.className = "p-4 rounded-2xl text-xs font-bold bg-emerald-500/20 text-emerald-200 border border-emerald-500/30 block";
+                    statusEl.innerHTML = `
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2 text-emerald-300 font-black text-sm">
+                                <i data-lucide="check-circle-2" class="w-5 h-5"></i> 
+                                Incrível! IA extraiu e cadastrou ${newItems.length} produtos do texto colado!
+                            </div>
+                            <p class="text-purple-200/90 text-xs font-normal">
+                                Todos os itens foram organizados em categorias com valores formatados.
+                                Se desejar desfazer, clique em <strong>"Restaurar Anterior"</strong> no topo da lista.
+                            </p>
+                        </div>
+                    `;
+                    if (window.lucide) window.lucide.createIcons();
+                }
+
+                alert(`Incrível! A Inteligência Artificial identificou e cadastrou ${newItems.length} produtos do seu cardápio!`);
+
+            } catch (err) {
+                console.error("Erro no ParsePastedCatalog:", err);
+                if (statusEl) {
+                    statusEl.className = "p-4 rounded-2xl text-xs font-bold bg-red-500/20 text-red-200 border border-red-500/30 block";
+                    statusEl.innerHTML = `<div class="flex items-center gap-2"><i data-lucide="alert-circle" class="w-4 h-4"></i> ${err.message || 'Erro ao analisar o texto'}</div>`;
+                    if (window.lucide) window.lucide.createIcons();
+                }
+                alert(`Erro: ${err.message || 'Não foi possível extrair do texto.'}`);
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-75', 'cursor-not-allowed');
+                btn.innerHTML = originalBtnHtml;
+                if (window.lucide) window.lucide.createIcons();
+            }
+        };
+
         window.importExternalCatalog = async function() {
             const urlInput = document.getElementById('import-catalog-url');
             const btn = document.getElementById('import-catalog-btn');
@@ -1080,6 +1229,7 @@
             }
 
             let newItems = [];
+            let cloudflareNotice = false;
 
             try {
                 // Tenta importar pelo servidor
@@ -1094,11 +1244,13 @@
                 try {
                     data = JSON.parse(rawText);
                 } catch (jsonErr) {
-                    console.warn("Servidor retornou resposta não-JSON (possivelmente HTML). Ativando fallback...");
+                    console.warn("Servidor retornou resposta não-JSON. Ativando fallback...");
                 }
 
                 if (data && data.success && Array.isArray(data.products) && data.products.length > 0) {
                     newItems = data.products;
+                } else if (data && data.cloudflareBlocked) {
+                    cloudflareNotice = true;
                 }
             } catch (serverErr) {
                 console.warn("Erro ao comunicar com o servidor de importação:", serverErr);
@@ -1107,7 +1259,7 @@
             // Fallback direto no navegador para Anota AI se o servidor não retornou produtos
             if (newItems.length === 0 && url.includes("anota.ai")) {
                 if (statusEl) {
-                    statusEl.innerHTML = `<div class="flex items-center gap-2"><i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Buscando produtos diretamente via API do Anota AI...</div>`;
+                    statusEl.innerHTML = `<div class="flex items-center gap-2"><i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Buscando produtos via API Anota AI...</div>`;
                     if (window.lucide) window.lucide.createIcons();
                 }
                 const clientExtracted = await window.extractAnotaAiClientSide(url);
@@ -1118,7 +1270,28 @@
 
             try {
                 if (newItems.length === 0) {
-                    throw new Error("Não foi possível extrair produtos automaticamente deste link. Verifique se o link está público e correto (ex: https://pedido.anota.ai/loja/caribe-delivery-de-bebidas).");
+                    if (statusEl) {
+                        statusEl.className = "p-4 rounded-2xl text-xs font-bold bg-amber-500/20 text-amber-200 border border-amber-500/30 block";
+                        statusEl.innerHTML = `
+                            <div class="space-y-2">
+                                <div class="flex items-center gap-2 text-amber-300 font-black text-sm">
+                                    <i data-lucide="shield-alert" class="w-5 h-5"></i>
+                                    Proteção do Site (Cloudflare) Detectada
+                                </div>
+                                <p class="text-amber-100/90 text-xs font-normal">
+                                    Este link da Anota AI possui firewall/Cloudflare que bloqueia conexões automáticas externas por link.
+                                </p>
+                                <div class="bg-amber-950/60 p-3 rounded-xl border border-amber-400/30 text-xs font-bold text-amber-200">
+                                    👉 <strong>Solução rápida em 5 segundos:</strong><br>
+                                    1. Abra o link <a href="${url}" target="_blank" class="underline text-white font-black">${url}</a> no seu navegador.<br>
+                                    2. Pressione <kbd class="px-1 py-0.5 bg-slate-800 rounded text-[10px]">Ctrl + A</kbd> (Selecionar Tudo) e <kbd class="px-1 py-0.5 bg-slate-800 rounded text-[10px]">Ctrl + C</kbd> (Copiar).<br>
+                                    3. Clique na aba <button type="button" onclick="window.switchImportTab('paste')" class="underline text-emerald-300 font-black">"Copiar e Colar Texto (IA)"</button> aqui ao lado, cole e clique em Extrair!
+                                </div>
+                            </div>
+                        `;
+                        if (window.lucide) window.lucide.createIcons();
+                    }
+                    return;
                 }
 
                 if (mode === 'replace') {

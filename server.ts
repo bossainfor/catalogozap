@@ -45,19 +45,37 @@ app.post("/api/import-catalog", async (req, res) => {
 
     console.log(`[ImportCatalog] Tentando extrair de: ${targetUrl}`);
 
-    const response = await fetch(targetUrl, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,application/json,*/*;q=0.8",
-        "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7"
+    const fetchHtml = async (fetchUrl: string) => {
+      try {
+        const response = await fetch(fetchUrl, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,application/json,*/*;q=0.8",
+            "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7"
+          }
+        });
+        if (!response.ok) return null;
+        return await response.text();
+      } catch (e) {
+        return null;
       }
-    });
+    };
 
-    if (!response.ok) {
-      return res.status(400).json({ error: `Não foi possível acessar a URL informada. Status HTTP: ${response.status}` });
+    let htmlOrJson = await fetchHtml(targetUrl);
+
+    // Se direct fetch falhou ou caiu no Cloudflare
+    const isCloudflare = !htmlOrJson || htmlOrJson.includes("Cloudflare") || htmlOrJson.includes("Attention Required!") || htmlOrJson.includes("cf-browser-verification");
+
+    if (isCloudflare) {
+      console.log(`[ImportCatalog] Direct fetch bloqueado por Cloudflare em ${targetUrl}. Tentando proxies...`);
+      // Tenta via proxy public
+      const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+      const proxyHtml = await fetchHtml(proxyUrl);
+      if (proxyHtml && !proxyHtml.includes("Cloudflare") && !proxyHtml.includes("Attention Required!")) {
+        htmlOrJson = proxyHtml;
+      }
     }
 
-    const htmlOrJson = await response.text();
     let extractedProducts: Array<{
       name: string;
       price: string | number;
@@ -66,17 +84,19 @@ app.post("/api/import-catalog", async (req, res) => {
       image?: string;
     }> = [];
 
-    // Estratégia 1: Anota AI API direta
-    if (targetUrl.includes("anota.ai") || htmlOrJson.includes("anota.ai") || htmlOrJson.includes("Anota AI")) {
+    // Estratégia 1: Anota AI API
+    if (targetUrl.includes("anota.ai") || (htmlOrJson && (htmlOrJson.includes("anota.ai") || htmlOrJson.includes("Anota AI")))) {
       const cleanParts = targetUrl.split("?")[0].split("/").filter(Boolean);
-      const slug = cleanParts[cleanParts.length - 1];
-      if (slug && slug !== "anota.ai" && slug !== "menu.anota.ai" && slug !== "pedindo.anota.ai" && slug !== "loja") {
+      let slug = cleanParts[cleanParts.length - 1];
+      if (slug === "loja" && cleanParts.length > 1) {
+        slug = cleanParts[cleanParts.length - 1];
+      }
+      
+      if (slug && slug !== "anota.ai" && slug !== "menu.anota.ai" && slug !== "pedindo.anota.ai" && slug !== "pedido.anota.ai" && slug !== "loja") {
         const anotaEndpoints = [
           `https://api-cdn.anota.ai/v2/catalog/${slug}`,
           `https://api.anota.ai/v2/catalog/${slug}`,
-          `https://api.anota.ai/v1/store/${slug}`,
-          `https://api.anota.ai/v1/catalog/slug/${slug}`,
-          `https://api-cdn.anota.ai/v1/menu/${slug}`
+          `https://api.anota.ai/v1/store/${slug}`
         ];
 
         for (const apiUrl of anotaEndpoints) {
@@ -120,80 +140,8 @@ app.post("/api/import-catalog", async (req, res) => {
       }
     }
 
-    // Estratégia 1.5: JSON-LD (Schema.org / Menu / ItemList)
-    if (extractedProducts.length === 0) {
-      try {
-        const ldMatches = htmlOrJson.matchAll(/<script\s+type=["']application\/ld\+json["']>([\s\S]*?)<\/script>/gi);
-        for (const match of ldMatches) {
-          if (match[1]) {
-            const ldData = JSON.parse(match[1]);
-            const items = Array.isArray(ldData) ? ldData : [ldData];
-            for (const item of items) {
-              if (item['@type'] === 'Menu' || item['@type'] === 'ItemList' || item['@type'] === 'Restaurant') {
-                const elements = item.hasMenuItem || item.itemListElement || item.hasMenuSection || item.menu || [];
-                for (const el of elements) {
-                  if (el.hasMenuItem) {
-                    for (const mi of el.hasMenuItem) {
-                      extractedProducts.push({
-                        name: mi.name || "",
-                        price: mi.offers?.price || mi.price || "",
-                        description: mi.description || "",
-                        category: el.name || "Geral",
-                        image: mi.image || ""
-                      });
-                    }
-                  } else if (el['@type'] === 'MenuItem' || el['@type'] === 'Product') {
-                    extractedProducts.push({
-                      name: el.name || "",
-                      price: el.offers?.price || el.price || "",
-                      description: el.description || "",
-                      category: item.name || "Geral",
-                      image: el.image || ""
-                    });
-                  }
-                }
-              }
-            }
-          }
-        }
-      } catch (e) {
-        console.warn("[ImportCatalog] Erro no JSON-LD:", e);
-      }
-    }
-
-    // Estratégia 2: Extracao de __NEXT_DATA__ ou window.__INITIAL_STATE__
-    if (extractedProducts.length === 0) {
-      try {
-        const match = htmlOrJson.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
-        if (match && match[1]) {
-          const nextData = JSON.parse(match[1]);
-          const pageProps = nextData?.props?.pageProps;
-          if (pageProps) {
-            const catalog = pageProps.catalog || pageProps.menu || pageProps.categories || pageProps.initialData || pageProps.storeData?.catalog;
-            if (Array.isArray(catalog)) {
-              for (const cat of catalog) {
-                const catName = cat.name || cat.title || cat.category || "Geral";
-                const items = cat.items || cat.products || cat.dishes || [];
-                for (const item of items) {
-                  extractedProducts.push({
-                    name: item.name || item.title || "",
-                    price: item.price || item.unitPrice || item.value || "",
-                    description: item.description || item.details || "",
-                    category: catName,
-                    image: item.image || item.imageUrl || item.photo || item.url || ""
-                  });
-                }
-              }
-            }
-          }
-        }
-      } catch (e) {
-        console.warn("[ImportCatalog] Erro ao analisar __NEXT_DATA__:", e);
-      }
-    }
-
-    // Estratégia 3: Gemini AI para parsing inteligente de HTML
-    if (extractedProducts.length === 0 && process.env.GEMINI_API_KEY) {
+    // Estratégia 2: Gemini AI para parsing inteligente de HTML/Texto se obtivemos HTML válido
+    if (extractedProducts.length === 0 && htmlOrJson && !htmlOrJson.includes("Attention Required!") && process.env.GEMINI_API_KEY) {
       try {
         const { GoogleGenAI } = await import("@google/genai");
         const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -238,37 +186,6 @@ ${cleanedHtml}`;
       }
     }
 
-    // Estratégia 4: Parser Heurístico Regex de Linhas de Preço
-    if (extractedProducts.length === 0) {
-      const priceRegex = /(?:R\$\s*)?(\d{1,4}[.,]\d{2})/g;
-      const lines = htmlOrJson
-        .replace(/<[^>]+>/g, "\n")
-        .split("\n")
-        .map(l => l.trim())
-        .filter(Boolean);
-
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        if (priceRegex.test(line) && line.length < 100) {
-          const match = line.match(/(?:R\$\s*)?(\d{1,4}[.,]\d{2})/);
-          if (match) {
-            const priceVal = match[1];
-            let name = line.replace(/(?:R\$\s*)?(\d{1,4}[.,]\d{2})/, "").trim();
-            if (!name && i > 0) name = lines[i - 1];
-            if (name && name.length > 2 && name.length < 80 && !name.toLowerCase().includes("subtotal")) {
-              extractedProducts.push({
-                name: name,
-                price: priceVal,
-                description: (lines[i + 1] && lines[i + 1].length > 8 && lines[i + 1].length < 180) ? lines[i + 1] : "",
-                category: "Produtos Importados",
-                image: ""
-              });
-            }
-          }
-        }
-      }
-    }
-
     // Tratar e formatar produtos
     const finalProducts = extractedProducts
       .filter(p => p.name && p.name.trim().length > 1)
@@ -294,6 +211,14 @@ ${cleanedHtml}`;
 
     console.log(`[ImportCatalog] Total de produtos extraídos: ${finalProducts.length}`);
 
+    if (finalProducts.length === 0 && isCloudflare) {
+      return res.status(200).json({
+        success: false,
+        cloudflareBlocked: true,
+        error: "Este site utiliza proteção da Cloudflare que impede a leitura direta por link. Por favor, utilize a aba 'Copiar e Colar Texto/HTML' para colar o texto do cardápio e a Inteligência Artificial extrairá tudo instantaneamente!"
+      });
+    }
+
     return res.json({
       success: true,
       count: finalProducts.length,
@@ -302,7 +227,99 @@ ${cleanedHtml}`;
 
   } catch (err: any) {
     console.error("[ImportCatalog] Erro inesperado:", err);
-    return res.status(500).json({ error: "Erro interno ao processar a importação: " + (err?.message || err) });
+    return res.status(500).json({ success: false, error: "Erro interno ao processar a importação: " + (err?.message || err) });
+  }
+});
+
+// Endpoint para Importar / Extrair Catálogo via Texto Colado com IA Gemini
+app.post("/api/parse-pasted-catalog", async (req, res) => {
+  try {
+    const { content } = req.body;
+    if (!content || typeof content !== "string" || content.trim().length < 5) {
+      return res.status(400).json({ success: false, error: "Cole o texto ou HTML do seu cardápio antes de extrair." });
+    }
+
+    if (!process.env.GEMINI_API_KEY) {
+      return res.status(500).json({ success: false, error: "Chave Gemini de IA não configurada no servidor." });
+    }
+
+    console.log(`[ParsePastedCatalog] Processando texto colado com tamanho: ${content.length} caracteres`);
+
+    const { GoogleGenAI } = await import("@google/genai");
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+    const prompt = `Analise o texto ou código HTML de cardápio/catálogo de loja colado abaixo e extraia TODOS os produtos/itens com seus nomes, preços, descrições e categorias.
+
+Instrução estrita: Retorne APENAS um array JSON com os objetos encontrados, sem qualquer texto adicional ou blocos de código além do JSON.
+
+Exemplo de saída esperada:
+[
+  {
+    "name": "Coca-Cola 2 Litros",
+    "price": "12,00",
+    "description": "Gelada 2L pet",
+    "category": "Bebidas",
+    "image": ""
+  },
+  {
+    "name": "Pizza Calabresa Grande",
+    "price": "45,00",
+    "description": "Molho de tomate, mussarela e calabresa fatiada com cebola",
+    "category": "Pizzas",
+    "image": ""
+  }
+]
+
+Conteúdo do Cardápio:
+${content.substring(0, 100000)}`;
+
+    const aiRes = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+
+    const text = aiRes.text || "";
+    const jsonMatch = text.match(/\[[\s\S]*\]/);
+    if (!jsonMatch) {
+      return res.status(400).json({ success: false, error: "Não foi possível reconhecer produtos no texto colado. Verifique se copiou nomes e valores do cardápio." });
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      return res.status(400).json({ success: false, error: "Nenhum produto foi detectado no texto fornecido." });
+    }
+
+    const finalProducts = parsed
+      .filter((p: any) => p.name && String(p.name).trim().length > 1)
+      .map((p: any, idx: number) => {
+        let rawPrice = String(p.price || "").replace("R$", "").trim();
+        if (!isNaN(Number(rawPrice)) && rawPrice !== "") {
+          rawPrice = Number(rawPrice).toFixed(2).replace(".", ",");
+        }
+        return {
+          id: String(Date.now() + idx + Math.floor(Math.random() * 10000)),
+          name: String(p.name).trim(),
+          price: rawPrice,
+          description: (p.description || "").trim(),
+          category: (p.category || "Geral").trim(),
+          image: p.image || "",
+          available: true,
+          f: false,
+          vars: "",
+          wholesalePrice: "",
+          wholesaleMinQty: ""
+        };
+      });
+
+    return res.json({
+      success: true,
+      count: finalProducts.length,
+      products: finalProducts
+    });
+
+  } catch (err: any) {
+    console.error("[ParsePastedCatalog] Erro:", err);
+    return res.status(500).json({ success: false, error: "Erro ao analisar o texto com IA: " + (err?.message || err) });
   }
 });
 

@@ -985,6 +985,67 @@
             }
         };
 
+        window.extractAnotaAiClientSide = async function(targetUrl) {
+            try {
+                let cleanParts = targetUrl.split("?")[0].split("/").filter(Boolean);
+                let slug = cleanParts[cleanParts.length - 1];
+                if (!slug || slug === "anota.ai" || slug === "menu.anota.ai" || slug === "pedido.anota.ai" || slug === "loja") {
+                    return null;
+                }
+
+                const apiUrls = [
+                    `https://api-cdn.anota.ai/v2/catalog/${slug}`,
+                    `https://api.anota.ai/v2/catalog/${slug}`,
+                    `https://api.anota.ai/v1/store/${slug}`
+                ];
+
+                for (const apiUrl of apiUrls) {
+                    try {
+                        const res = await fetch(apiUrl);
+                        if (res.ok) {
+                            const apiData = await res.json();
+                            const categories = apiData?.data?.categories || apiData?.data?.catalog || apiData?.categories || (Array.isArray(apiData?.data) ? apiData.data : []);
+                            const extracted = [];
+                            if (Array.isArray(categories)) {
+                                for (const cat of categories) {
+                                    const catName = cat.title || cat.name || "Geral";
+                                    const items = cat.items || cat.products || [];
+                                    for (const item of items) {
+                                        if (item.title || item.name) {
+                                            let rawPrice = item.price || item.value || (item.prices && item.prices[0] ? item.prices[0].price : "0");
+                                            rawPrice = String(rawPrice).replace("R$", "").trim();
+                                            if (!isNaN(Number(rawPrice)) && rawPrice !== "") {
+                                                rawPrice = Number(rawPrice).toFixed(2).replace(".", ",");
+                                            }
+                                            extracted.push({
+                                                id: String(Date.now() + Math.floor(Math.random() * 100000)),
+                                                name: (item.title || item.name || "").trim(),
+                                                price: rawPrice,
+                                                description: (item.description || item.details || "").trim(),
+                                                category: catName,
+                                                image: item.image || item.photo || item.avatar || (item.images && item.images[0]) || "",
+                                                available: true,
+                                                f: false,
+                                                vars: "",
+                                                wholesalePrice: "",
+                                                wholesaleMinQty: ""
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                            if (extracted.length > 0) return extracted;
+                        }
+                    } catch (e) {
+                        console.warn("Client fallback Anota AI attempt failed:", e);
+                    }
+                }
+            } catch (err) {
+                console.warn("Client fallback Anota AI error:", err);
+            }
+            return null;
+        };
+
         window.importExternalCatalog = async function() {
             const urlInput = document.getElementById('import-catalog-url');
             const btn = document.getElementById('import-catalog-btn');
@@ -1018,24 +1079,47 @@
                 if (window.lucide) window.lucide.createIcons();
             }
 
+            let newItems = [];
+
             try {
+                // Tenta importar pelo servidor
                 const response = await fetch('/api/import-catalog', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ url })
                 });
 
-                const data = await response.json();
-
-                if (!response.ok || !data.success) {
-                    throw new Error(data.error || "Não foi possível extrair produtos deste link.");
+                const rawText = await response.text();
+                let data = null;
+                try {
+                    data = JSON.parse(rawText);
+                } catch (jsonErr) {
+                    console.warn("Servidor retornou resposta não-JSON (possivelmente HTML). Ativando fallback...");
                 }
 
-                if (!data.products || data.products.length === 0) {
-                    throw new Error("Nenhum produto foi encontrado no link fornecido. Verifique se o link está correto e público.");
+                if (data && data.success && Array.isArray(data.products) && data.products.length > 0) {
+                    newItems = data.products;
                 }
+            } catch (serverErr) {
+                console.warn("Erro ao comunicar com o servidor de importação:", serverErr);
+            }
 
-                const newItems = data.products;
+            // Fallback direto no navegador para Anota AI se o servidor não retornou produtos
+            if (newItems.length === 0 && url.includes("anota.ai")) {
+                if (statusEl) {
+                    statusEl.innerHTML = `<div class="flex items-center gap-2"><i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Buscando produtos diretamente via API do Anota AI...</div>`;
+                    if (window.lucide) window.lucide.createIcons();
+                }
+                const clientExtracted = await window.extractAnotaAiClientSide(url);
+                if (clientExtracted && clientExtracted.length > 0) {
+                    newItems = clientExtracted;
+                }
+            }
+
+            try {
+                if (newItems.length === 0) {
+                    throw new Error("Não foi possível extrair produtos automaticamente deste link. Verifique se o link está público e correto (ex: https://pedido.anota.ai/loja/caribe-delivery-de-bebidas).");
+                }
 
                 if (mode === 'replace') {
                     window.products = newItems;
@@ -1067,7 +1151,7 @@
                 alert(`Sucesso! Foram extraídos e carregados ${newItems.length} produtos do seu cardápio!`);
 
             } catch (err) {
-                console.error("Erro na importação:", err);
+                console.error("Erro final na importação:", err);
                 if (statusEl) {
                     statusEl.className = "p-4 rounded-2xl text-xs font-bold bg-red-500/20 text-red-200 border border-red-500/30 block";
                     statusEl.innerHTML = `<div class="flex items-center gap-2"><i data-lucide="alert-circle" class="w-4 h-4"></i> ${err.message || 'Erro ao importar catálogo'}</div>`;

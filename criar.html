@@ -464,8 +464,8 @@
                                         <span class="text-[10px] uppercase font-bold text-amber-300/80 block">Passo 1: Arraste o botão para a barra de favoritos do navegador</span>
                                         <span class="text-xs text-white font-semibold">Se a barra estiver oculta no Chrome/Edge, pressione <kbd class="px-1 py-0.5 bg-slate-800 rounded font-mono text-[10px]">Ctrl + Shift + B</kbd></span>
                                     </div>
-                                    <a id="bookmarklet-btn-link" href="javascript:(async function(){try{var n=document.createElement('div');n.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#1e1b4b;color:#fff;padding:20px;border-radius:16px;border:2px solid #a855f7;box-shadow:0 10px 30px rgba(0,0,0,0.5);font-family:sans-serif;max-width:380px;';n.innerHTML='<h3 style=\'margin:0 0 8px;font-size:16px;color:#c084fc;\'>⏳ Extraindo Cardápio...</h3><p style=\'margin:0;font-size:12px;color:#e2e8f0;\'>Aguarde alguns segundos...</p>';document.body.appendChild(n);var cleanParts=location.pathname.split('/').filter(Boolean);var slug=cleanParts[cleanParts.length-1];var prods=[];if(slug&&slug!=='loja'){var endpoints=['https://api-cdn.anota.ai/v2/catalog/'+slug,'https://api.anota.ai/v2/catalog/'+slug,'https://api.anota.ai/v1/store/'+slug];for(var ep of endpoints){try{var res=await fetch(ep);if(res.ok){var data=await res.json();var cats=data?.data?.categories||data?.data?.catalog||data?.categories||(Array.isArray(data?.data)?data.data:[]);if(Array.isArray(cats)&&cats.length>0){for(var c of cats){var catName=c.title||c.name||'Geral';var items=c.items||c.products||[];for(var item of items){if(item.title||item.name){var price=item.price||item.value||(item.prices&&item.prices[0]?item.prices[0].price:'0');prods.push({name:(item.title||item.name||'').trim(),price:String(price),description:(item.description||item.details||'').trim(),category:catName,image:item.image||item.photo||item.avatar||(item.images&&item.images[0])||''});}}}if(prods.length>0)break;}}}catch(e){}}}if(prods.length>0){var jsonStr=JSON.stringify(prods);await navigator.clipboard.writeText(jsonStr);n.style.borderColor='#22c55e';n.innerHTML='<h3 style=\'margin:0 0 8px;font-size:16px;color:#4ade80;\'>🎉 '+prods.length+' Produtos Copiados!</h3><p style=\'margin:0 0 12px;font-size:12px;color:#e2e8f0;\'>Os produtos foram copiados para a sua área de transferência!</p><p style=\'margin:0;font-size:11px;color:#cbd5e1;background:#0f172a;padding:8px;border-radius:8px;\'><strong>Próximo passo:</strong> Volte ao CatálogoZap na aba <b>Copiar e Colar Texto (IA)</b> e cole com <b>Ctrl+V</b>!</p>';}else{var pageText=document.body.innerText;await navigator.clipboard.writeText(pageText);n.style.borderColor='#eab308';n.innerHTML='<h3 style=\'margin:0 0 8px;font-size:16px;color:#fde047;\'>📋 Texto Copiado!</h3><p style=\'margin:0 0 12px;font-size:12px;color:#e2e8f0;\'>O texto do cardápio foi copiado!</p><p style=\'margin:0;font-size:11px;color:#cbd5e1;background:#0f172a;padding:8px;border-radius:8px;\'><strong>Próximo passo:</strong> Volte ao CatálogoZap na aba <b>Copiar e Colar Texto (IA)</b> e cole com <b>Ctrl+V</b>!</p>';}setTimeout(function(){if(n)n.remove();},15000);}catch(err){alert('Pressione Ctrl+A e depois Ctrl+C na página do cardápio e cole no CatálogoZap!');}})();" 
-                                       onclick="event.preventDefault(); window.copyBookmarkletScript();"
+                                    <a id="bookmarklet-btn-link" href="#"
+                                       onclick="window.copyBookmarkletScript(event);"
                                        class="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-amber-400 text-slate-950 font-black text-xs uppercase italic tracking-wider shadow-lg shadow-amber-400/20 hover:scale-105 active:scale-95 transition-all cursor-grab shrink-0"
                                        title="Clique para copiar ou arraste para os Favoritos do seu navegador">
                                        <i data-lucide="bookmark-plus" class="w-4 h-4"></i>
@@ -1112,15 +1112,25 @@
             return null;
         };
 
-        window.copyBookmarkletScript = function() {
+        window.getBookmarkletScriptCode = function() {
+            return `javascript:(async function(){try{var n=document.createElement('div');n.style.cssText='position:fixed;top:20px;right:20px;z-index:999999;background:#1e1b4b;color:#fff;padding:20px;border-radius:16px;border:2px solid #a855f7;box-shadow:0 10px 30px rgba(0,0,0,0.5);font-family:sans-serif;max-width:380px;';n.innerHTML='<h3 style="margin:0 0 8px;font-size:16px;color:#c084fc;">⏳ Extraindo Cardápio e Fotos...</h3><p style="margin:0;font-size:12px;color:#e2e8f0;">Buscando produtos da página...</p>';document.body.appendChild(n);var prods=[];var cleanParts=location.pathname.split('/').filter(Boolean);var slug=cleanParts[cleanParts.length-1];if(slug&&slug!=='loja'){var endpoints=['https://api-cdn.anota.ai/v2/catalog/'+slug,'https://api.anota.ai/v2/catalog/'+slug,'https://api.anota.ai/v1/store/'+slug];for(var ep of endpoints){try{var res=await fetch(ep);if(res.ok){var data=await res.json();var cats=data?.data?.categories||data?.data?.catalog||data?.categories||(Array.isArray(data?.data)?data.data:[]);if(Array.isArray(cats)&&cats.length>0){for(var c of cats){var catName=c.title||c.name||'Geral';var items=c.items||c.products||[];for(var item of items){if(item.title||item.name){var price=item.price||item.value||(item.prices&&item.prices[0]?item.prices[0].price:'0');var img=item.image||item.photo||item.avatar||(item.images&&item.images[0])||'';if(img&&typeof img==='object')img=img.url||img.src||'';if(img&&!img.startsWith('http')&&img.length>3)img='https://cdn.anota.ai/'+img;prods.push({name:String(item.title||item.name).trim(),price:String(price),description:String(item.description||item.details||'').trim(),category:String(catName).trim(),image:String(img).trim()});}}}if(prods.length>0)break;}}}catch(e){}}}if(prods.length===0){var seenNames=new Set();var allDivs=Array.from(document.querySelectorAll('div, section, article, li, a'));allDivs.forEach(function(el){if(el.children.length>12)return;var txt=el.innerText||'';var priceMatch=txt.match(/(?:R\\$\\s*)?(\\d{1,4}[.,]\\d{2})/);if(!priceMatch||txt.length>250||txt.length<6)return;var hasSmallerChild=Array.from(el.children).some(function(c){var ctxt=c.innerText||'';return/(?:R\\$\\s*)?(\\d{1,4}[.,]\\d{2})/.test(ctxt)&&ctxt.length<250&&ctxt.length>6;});if(hasSmallerChild)return;var priceVal=priceMatch[1];var lines=txt.split('\\n').map(function(l){return l.trim();}).filter(Boolean);var name='';var desc='';for(var line of lines){if(line.includes('R$')||line.match(/^\\d+[.,]\\d{2}$/))continue;if(['adicionar','mais','menos','ver detalhes','promo','desconto','20%','10%','aberto até','pedido min'].includes(line.toLowerCase()))continue;if(!name&&line.length>=2)name=line;else if(!desc&&line.length>3)desc=line;}if(!name||name.length<2||seenNames.has(name.toLowerCase()))return;var imgUrl='';var imgEl=el.querySelector('img');if(imgEl&&imgEl.src&&!imgEl.src.includes('data:image')){imgUrl=imgEl.src;}else if(el.parentElement){var pImg=el.parentElement.querySelector('img');if(pImg&&pImg.src&&!pImg.src.includes('data:image'))imgUrl=pImg.src;}var catName='Geral';var p=el.parentElement;for(var depth=0;depth<5&&p;depth++){var header=p.querySelector('h2, h3, h4, .category-title, [class*="category"], [class*="title"]');if(header&&header.innerText&&header.innerText.length<40){catName=header.innerText.split('\\n')[0].trim();break;}p=p.parentElement;}seenNames.add(name.toLowerCase());prods.push({name:name,price:priceVal,description:desc,category:catName,image:imgUrl});});}if(prods.length>0){var jsonStr=JSON.stringify(prods);await navigator.clipboard.writeText(jsonStr);n.style.borderColor='#22c55e';n.innerHTML='<h3 style="margin:0 0 8px;font-size:16px;color:#4ade80;">🎉 '+prods.length+' Produtos Extraídos com Foto!</h3><p style="margin:0 0 12px;font-size:12px;color:#e2e8f0;">Nomes, preços, categorias e fotos copiados!</p><p style="margin:0;font-size:11px;color:#cbd5e1;background:#0f172a;padding:8px;border-radius:8px;"><strong>Próximo passo:</strong> Volte ao CatálogoZap, abra a aba <b>Copiar e Colar Texto (IA)</b> e cole com <b>Ctrl+V</b>!</p>';}else{var pageText=document.body.innerText;await navigator.clipboard.writeText(pageText);n.style.borderColor='#eab308';n.innerHTML='<h3 style="margin:0 0 8px;font-size:16px;color:#fde047;">📋 Texto Copiado!</h3><p style="margin:0 0 12px;font-size:12px;color:#e2e8f0;">O texto do cardápio foi copiado!</p><p style="margin:0;font-size:11px;color:#cbd5e1;background:#0f172a;padding:8px;border-radius:8px;"><strong>Próximo passo:</strong> Volte ao CatálogoZap na aba <b>Copiar e Colar Texto (IA)</b> e cole com <b>Ctrl+V</b>!</p>';}setTimeout(function(){if(n)n.remove();},15000);}catch(err){alert('Selecione o texto com Ctrl+A e Ctrl+C e cole no CatálogoZap!');}})();`;
+        };
+
+        window.initBookmarkletBtn = function() {
             const btnLink = document.getElementById('bookmarklet-btn-link');
-            if (btnLink && btnLink.href) {
-                navigator.clipboard.writeText(btnLink.href).then(() => {
-                    alert("✅ Código do Marcador copiado!\n\nPara usar no navegador:\n1. Crie um novo Favorito/Marcador no seu navegador.\n2. Cole este código no campo de URL do marcador.\n3. Quando estiver na página do seu cardápio, clique no marcador para extrair!");
-                }).catch(() => {
-                    alert("Para adicionar ao favoritos, basta arrastar o botão amarelo '📌 Extrator Zap' para a sua barra de marcadores no topo do navegador!");
-                });
+            if (btnLink) {
+                btnLink.href = window.getBookmarkletScriptCode();
             }
+        };
+
+        window.copyBookmarkletScript = function(e) {
+            if (e) e.preventDefault();
+            const code = window.getBookmarkletScriptCode();
+            navigator.clipboard.writeText(code).then(() => {
+                alert("✅ Marcador 📌 Extrator Zap configurado e copiado!\n\nPara usar no navegador:\n1. Arraste o botão amarelo '📌 Extrator Zap' para a sua barra de favoritos/marcadores.\n2. Ou crie um novo Favorito e cole o código no campo de URL.\n3. Na página do cardápio (Anota AI, Goomer, etc.), basta clicar nele para extrair produtos e fotos!");
+            }).catch(() => {
+                alert("Para adicionar aos favoritos, basta arrastar o botão amarelo '📌 Extrator Zap' para a sua barra de marcadores no topo do seu navegador!");
+            });
         };
 
         window.switchImportTab = function(tab) {
@@ -1146,6 +1156,7 @@
             if (tab === 'bookmark') {
                 if (bookmarkContent) bookmarkContent.classList.remove('hidden');
                 if (bookmarkBtn) bookmarkBtn.className = "pb-2.5 px-3 text-xs font-black uppercase italic tracking-wider border-b-2 border-amber-400 text-amber-300 flex items-center gap-1.5 transition-all shrink-0";
+                if (window.initBookmarkletBtn) window.initBookmarkletBtn();
             } else if (tab === 'paste') {
                 if (pasteContent) pasteContent.classList.remove('hidden');
                 if (pasteBtn) pasteBtn.className = "pb-2.5 px-3 text-xs font-black uppercase italic tracking-wider border-b-2 border-purple-400 text-purple-200 flex items-center gap-1.5 transition-all shrink-0";
@@ -1154,6 +1165,10 @@
                 if (linkBtn) linkBtn.className = "pb-2.5 px-3 text-xs font-black uppercase italic tracking-wider border-b-2 border-purple-400 text-purple-200 flex items-center gap-1.5 transition-all shrink-0";
             }
         };
+
+        setTimeout(() => {
+            if (window.initBookmarkletBtn) window.initBookmarkletBtn();
+        }, 300);
 
         window.parsePastedTextLocally = function(content) {
             if (!content || typeof content !== 'string') return [];
@@ -1176,14 +1191,19 @@
                             vars: '',
                             wholesalePrice: '',
                             wholesaleMinQty: ''
-                        }));
+                        })).filter(p => p.name.length > 1 && !['20%', '10%', '0%', 'pedido mín.', 'observações'].includes(p.name.toLowerCase()));
                     }
                 } catch (e) {}
             }
 
-            // 2. Parser inteligente de texto colado
+            // Para texto puro, retorna array vazio para forçar o envio para a Inteligência Artificial Gemini do servidor
+            return [];
+        };
+
+        window.parsePastedTextRegexFallback = function(content) {
+            if (!content || typeof content !== 'string') return [];
             const rawLines = content.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-            const ignoreWords = ['início', 'inicio', 'pedidos', 'promos', 'carrinho', 'mudar endereço', 'produto para maiores de 18 anos', 'observações', 'adicionar', 'detalhes do produto', 'aberto até', 'pedido min', 'min.'];
+            const ignoreWords = ['início', 'inicio', 'pedidos', 'promos', 'carrinho', 'mudar endereço', 'produto para maiores de 18 anos', 'observações', 'adicionar', 'detalhes do produto', 'aberto até', 'pedido min', 'min.', '20%', '10%', '0%'];
             
             let currentCategory = "Geral";
             const products = [];
@@ -1197,15 +1217,13 @@
                     continue;
                 }
 
-                // Procura padrões de preço (ex: R$ 23,90, 23,90, R$23.90)
                 const priceMatch = line.match(/(?:R\$\s*)?(\d{1,4}[.,]\d{2})/i);
-                
                 if (priceMatch) {
                     let priceVal = priceMatch[1].replace('.', ',');
                     let name = pendingName || "Item de Cardápio";
                     
                     const lineWithoutPrice = line.replace(priceMatch[0], '').replace(/^[-:\s]+|[-:\s]+$/g, '').trim();
-                    if (lineWithoutPrice.length > 2) {
+                    if (lineWithoutPrice.length > 2 && !ignoreWords.includes(lineWithoutPrice.toLowerCase())) {
                         name = lineWithoutPrice;
                     }
 
@@ -1222,7 +1240,7 @@
                         }
                     }
 
-                    if (name && name.length > 1) {
+                    if (name && name.length > 1 && !ignoreWords.includes(name.toLowerCase())) {
                         products.push({
                             id: String(Date.now() + products.length + Math.floor(Math.random() * 10000)),
                             name: name,
@@ -1239,7 +1257,7 @@
                     }
                     pendingName = "";
                 } else {
-                    if (line.length < 45 && !line.includes('http') && !line.includes('<')) {
+                    if (line.length < 40 && !line.includes('http') && !line.includes('<') && !ignoreWords.includes(lower)) {
                         if (pendingName) {
                             currentCategory = pendingName;
                         }
@@ -1285,35 +1303,38 @@
 
             let newItems = [];
 
-            // 1. Tenta extração local instantânea
+            // 1. Se for um JSON do Marcador/Exportado, usa diretamente
             const localParsed = window.parsePastedTextLocally(content);
-
-            // 2. Tenta extração via IA no servidor
-            try {
-                const response = await fetch('/api/parse-pasted-catalog', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content })
-                });
-
-                const rawText = await response.text();
-                let data = null;
-                try {
-                    data = JSON.parse(rawText);
-                } catch(e) {
-                    console.warn("Resposta não-JSON do servidor de IA, utilizando fallback local...");
-                }
-
-                if (data && data.success && Array.isArray(data.products) && data.products.length > 0) {
-                    newItems = data.products;
-                }
-            } catch (err) {
-                console.warn("Erro ao comunicar com servidor de IA, usando fallback local:", err);
-            }
-
-            // Fallback: se a API não retornou nada, usa o parser de texto local
-            if (newItems.length === 0 && localParsed && localParsed.length > 0) {
+            if (localParsed && localParsed.length > 0) {
                 newItems = localParsed;
+            } else {
+                // 2. Se for texto puro, envia para a Inteligência Artificial Gemini no servidor
+                try {
+                    const response = await fetch('/api/parse-pasted-catalog', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ content })
+                    });
+
+                    const rawText = await response.text();
+                    let data = null;
+                    try {
+                        data = JSON.parse(rawText);
+                    } catch(e) {
+                        console.warn("Resposta não-JSON do servidor de IA, utilizando fallback local...");
+                    }
+
+                    if (data && data.success && Array.isArray(data.products) && data.products.length > 0) {
+                        newItems = data.products;
+                    }
+                } catch (err) {
+                    console.warn("Erro ao comunicar com servidor de IA, usando fallback local:", err);
+                }
+
+                // 3. Fallback local por expressão regular se a IA falhar
+                if (newItems.length === 0) {
+                    newItems = window.parsePastedTextRegexFallback(content);
+                }
             }
 
             if (newItems.length === 0) {

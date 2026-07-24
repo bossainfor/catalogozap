@@ -30,6 +30,30 @@ function escapeHtml(text: string): string {
     .replace(/'/g, "&#039;");
 }
 
+function formatImageUrl(img: any): string {
+  if (!img) return "";
+  let url = "";
+  if (typeof img === "string") {
+    url = img.trim();
+  } else if (typeof img === "object" && img !== null) {
+    url = (img.url || img.src || img.path || img.avatar || "").trim();
+  }
+  if (!url || url === "[object Object]") return "";
+  if (url.startsWith("http://") || url.startsWith("https://") || url.startsWith("data:image")) {
+    return url;
+  }
+  return "https://cdn.anota.ai/" + url.replace(/^\//, "");
+}
+
+const ignoreJunkNames = ["início", "inicio", "pedidos", "promos", "carrinho", "mudar endereço", "observações", "adicionar", "detalhes do produto", "ver detalhes", "aberto até", "pedido min", "20%", "10%", "0%"];
+
+function isValidProductName(name: string): boolean {
+  if (!name || name.trim().length < 2) return false;
+  const lower = name.trim().toLowerCase();
+  if (ignoreJunkNames.some(j => lower === j || lower.startsWith("aberto até") || lower.startsWith("pedido min"))) return false;
+  return true;
+}
+
 // Endpoint para Importar / Extrair Catálogo Externo (Anota AI, Goomer, Cardápio Web, etc)
 app.post("/api/import-catalog", async (req, res) => {
   try {
@@ -188,7 +212,7 @@ ${cleanedHtml}`;
 
     // Tratar e formatar produtos
     const finalProducts = extractedProducts
-      .filter(p => p.name && p.name.trim().length > 1)
+      .filter(p => p.name && isValidProductName(String(p.name)))
       .map((p, idx) => {
         let rawPrice = String(p.price || "").replace("R$", "").trim();
         if (!isNaN(Number(rawPrice)) && rawPrice !== "") {
@@ -196,11 +220,11 @@ ${cleanedHtml}`;
         }
         return {
           id: String(Date.now() + idx + Math.floor(Math.random() * 10000)),
-          name: p.name.trim(),
+          name: String(p.name).trim(),
           price: rawPrice,
           description: (p.description || "").trim(),
           category: (p.category || "Geral").trim(),
-          image: p.image || "",
+          image: formatImageUrl(p.image),
           available: true,
           f: false,
           vars: "",
@@ -328,7 +352,7 @@ ${content.substring(0, 100000)}`;
     }
 
     const finalProducts = parsed
-      .filter((p: any) => p.name && String(p.name).trim().length > 1)
+      .filter((p: any) => p.name && isValidProductName(String(p.name)))
       .map((p: any, idx: number) => {
         let rawPrice = String(p.price || "").replace("R$", "").trim();
         if (!isNaN(Number(rawPrice)) && rawPrice !== "") {
@@ -340,7 +364,7 @@ ${content.substring(0, 100000)}`;
           price: rawPrice,
           description: (p.description || "").trim(),
           category: (p.category || "Geral").trim(),
-          image: p.image || "",
+          image: formatImageUrl(p.image),
           available: true,
           f: false,
           vars: "",

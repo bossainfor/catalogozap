@@ -70,38 +70,94 @@ app.post("/api/import-catalog", async (req, res) => {
     if (targetUrl.includes("anota.ai") || htmlOrJson.includes("anota.ai") || htmlOrJson.includes("Anota AI")) {
       const cleanParts = targetUrl.split("?")[0].split("/").filter(Boolean);
       const slug = cleanParts[cleanParts.length - 1];
-      if (slug && slug !== "anota.ai" && slug !== "menu.anota.ai" && slug !== "pedindo.anota.ai") {
-        try {
-          const apiUrl = `https://api.anota.ai/v2/catalog/${slug}`;
-          console.log(`[ImportCatalog] Buscando API Anota AI: ${apiUrl}`);
-          const apiRes = await fetch(apiUrl, {
-            headers: { 
-              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-              "Accept": "application/json"
+      if (slug && slug !== "anota.ai" && slug !== "menu.anota.ai" && slug !== "pedindo.anota.ai" && slug !== "loja") {
+        const anotaEndpoints = [
+          `https://api-cdn.anota.ai/v2/catalog/${slug}`,
+          `https://api.anota.ai/v2/catalog/${slug}`,
+          `https://api.anota.ai/v1/store/${slug}`,
+          `https://api.anota.ai/v1/catalog/slug/${slug}`,
+          `https://api-cdn.anota.ai/v1/menu/${slug}`
+        ];
+
+        for (const apiUrl of anotaEndpoints) {
+          try {
+            console.log(`[ImportCatalog] Buscando API Anota AI: ${apiUrl}`);
+            const apiRes = await fetch(apiUrl, {
+              headers: { 
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36",
+                "Accept": "application/json, text/plain, */*",
+                "Origin": "https://pedido.anota.ai",
+                "Referer": "https://pedido.anota.ai/"
+              }
+            });
+
+            if (apiRes.ok) {
+              const apiData = await apiRes.json();
+              const categories = apiData?.data?.categories || apiData?.data?.catalog || apiData?.categories || (Array.isArray(apiData?.data) ? apiData.data : []);
+              if (Array.isArray(categories)) {
+                for (const cat of categories) {
+                  const catName = cat.title || cat.name || "Geral";
+                  const items = cat.items || cat.products || [];
+                  for (const item of items) {
+                    if (item.title || item.name) {
+                      extractedProducts.push({
+                        name: item.title || item.name || "",
+                        price: item.price || item.value || (item.prices && item.prices[0] ? item.prices[0].price : ""),
+                        description: item.description || item.details || "",
+                        category: catName,
+                        image: item.image || item.photo || item.avatar || (item.images && item.images[0]) || ""
+                      });
+                    }
+                  }
+                }
+              }
+              if (extractedProducts.length > 0) break;
             }
-          });
-          if (apiRes.ok) {
-            const apiData = await apiRes.json();
-            const categories = apiData?.data?.categories || apiData?.data?.catalog || apiData?.categories || [];
-            if (Array.isArray(categories)) {
-              for (const cat of categories) {
-                const catName = cat.title || cat.name || "Geral";
-                const items = cat.items || cat.products || [];
-                for (const item of items) {
-                  extractedProducts.push({
-                    name: item.title || item.name || "",
-                    price: item.price || item.value || (item.prices && item.prices[0] ? item.prices[0].price : ""),
-                    description: item.description || item.details || "",
-                    category: catName,
-                    image: item.image || item.photo || item.avatar || (item.images && item.images[0]) || ""
-                  });
+          } catch (e) {
+            console.warn("[ImportCatalog] Erro na API do Anota AI:", e);
+          }
+        }
+      }
+    }
+
+    // Estratégia 1.5: JSON-LD (Schema.org / Menu / ItemList)
+    if (extractedProducts.length === 0) {
+      try {
+        const ldMatches = htmlOrJson.matchAll(/<script\s+type=["']application\/ld\+json["']>([\s\S]*?)<\/script>/gi);
+        for (const match of ldMatches) {
+          if (match[1]) {
+            const ldData = JSON.parse(match[1]);
+            const items = Array.isArray(ldData) ? ldData : [ldData];
+            for (const item of items) {
+              if (item['@type'] === 'Menu' || item['@type'] === 'ItemList' || item['@type'] === 'Restaurant') {
+                const elements = item.hasMenuItem || item.itemListElement || item.hasMenuSection || item.menu || [];
+                for (const el of elements) {
+                  if (el.hasMenuItem) {
+                    for (const mi of el.hasMenuItem) {
+                      extractedProducts.push({
+                        name: mi.name || "",
+                        price: mi.offers?.price || mi.price || "",
+                        description: mi.description || "",
+                        category: el.name || "Geral",
+                        image: mi.image || ""
+                      });
+                    }
+                  } else if (el['@type'] === 'MenuItem' || el['@type'] === 'Product') {
+                    extractedProducts.push({
+                      name: el.name || "",
+                      price: el.offers?.price || el.price || "",
+                      description: el.description || "",
+                      category: item.name || "Geral",
+                      image: el.image || ""
+                    });
+                  }
                 }
               }
             }
           }
-        } catch (e) {
-          console.warn("[ImportCatalog] Erro na API do Anota AI:", e);
         }
+      } catch (e) {
+        console.warn("[ImportCatalog] Erro no JSON-LD:", e);
       }
     }
 

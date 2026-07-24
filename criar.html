@@ -409,8 +409,66 @@
                 <section class="space-y-6">
                     <div class="flex items-center justify-between mb-2">
                         <h3 class="font-black uppercase italic tracking-widest text-sm text-orange-600">Itens do Catálogo</h3>
-                        <button type="button" onclick="window.addProduct()" class="bg-orange-600 text-white px-6 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest hover:bg-orange-700 active-scale shadow-lg shadow-orange-100">Adicionar Item</button>
+                        <div class="flex items-center gap-2">
+                            <button type="button" id="restore-catalog-btn" onclick="window.restorePreviousProducts()" class="hidden bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-4 py-3 rounded-xl text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 shadow-md active-scale">
+                                <i data-lucide="undo-2" class="w-4 h-4"></i>
+                                <span>Restaurar Anterior</span>
+                            </button>
+                            <button type="button" onclick="window.addProduct()" class="bg-orange-600 text-white px-6 py-3 rounded-xl text-xs font-black uppercase italic tracking-widest hover:bg-orange-700 active-scale shadow-lg shadow-orange-100">Adicionar Item</button>
+                        </div>
                     </div>
+
+                    <!-- CARD DE IMPORTAÇÃO AUTOMÁTICA DE CATÁLOGO / CARDÁPIO EXTERNO -->
+                    <div class="bg-gradient-to-br from-slate-900 via-indigo-950 to-purple-950 p-5 sm:p-6 rounded-[2rem] border border-purple-500/30 shadow-xl text-white space-y-4 relative overflow-hidden">
+                        <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                        
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div class="space-y-1">
+                                <span class="bg-purple-500/20 text-purple-300 border border-purple-400/30 text-[10px] font-black uppercase px-3 py-1 rounded-full tracking-wider inline-flex items-center gap-1.5">
+                                    <i data-lucide="sparkles" class="w-3.5 h-3.5 text-purple-300"></i> Importador de Cardápio / Catálogo
+                                </span>
+                                <h4 class="text-lg sm:text-xl font-black italic uppercase tracking-tight text-white flex items-center gap-2">
+                                    Importar por Link (Anota AI, Goomer, Site, etc)
+                                </h4>
+                                <p class="text-xs text-purple-200/80 font-medium">
+                                    Cole o link do seu cardápio do Anota AI, Goomer, WhatsApp ou site e extraia todos os itens com preços, fotos e descrições automaticamente!
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="space-y-3 pt-1">
+                            <div class="flex flex-col sm:flex-row gap-2.5">
+                                <div class="relative flex-1">
+                                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-purple-300">
+                                        <i data-lucide="link" class="w-4 h-4"></i>
+                                    </div>
+                                    <input type="url" id="import-catalog-url" placeholder="Ex: https://menu.anota.ai/sualoja ou link do seu cardápio" class="w-full pl-11 pr-4 py-3.5 rounded-2xl bg-white/10 border border-purple-400/30 text-white placeholder-purple-300/60 focus:bg-white/20 focus:border-purple-300 outline-none text-xs sm:text-sm font-bold transition-all">
+                                </div>
+                                <button type="button" id="import-catalog-btn" onclick="window.importExternalCatalog()" class="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white font-black px-6 py-3.5 rounded-2xl text-xs uppercase italic tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20 active-scale shrink-0">
+                                    <i data-lucide="wand2" class="w-4 h-4"></i>
+                                    <span>Extrair e Importar</span>
+                                </button>
+                            </div>
+
+                            <div class="flex flex-wrap items-center justify-between gap-3 text-[11px] text-purple-200/90 font-semibold pt-1 border-t border-white/10">
+                                <div class="flex items-center gap-4">
+                                    <label class="flex items-center gap-2 cursor-pointer select-none">
+                                        <input type="radio" name="import_mode" value="replace" checked class="accent-purple-400 w-4 h-4">
+                                        <span>Substituir catálogo atual</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 cursor-pointer select-none">
+                                        <input type="radio" name="import_mode" value="append" class="accent-purple-400 w-4 h-4">
+                                        <span>Adicionar aos itens existentes</span>
+                                    </label>
+                                </div>
+                                <span class="text-purple-300/70 text-[10px]">Pode restaurar os produtos anteriores a qualquer momento</span>
+                            </div>
+                        </div>
+
+                        <!-- Status Feedback -->
+                        <div id="import-catalog-status" class="hidden p-4 rounded-2xl text-xs font-bold transition-all"></div>
+                    </div>
+
                     <div id="products-list" class="space-y-4"></div>
                     <datalist id="categories-datalist"></datalist>
                 </section>
@@ -882,10 +940,147 @@
                         videoUrl: p.videoUrl || ''
                     }));
                 }
+                if (typeof window.checkBackupButton === 'function') {
+                    window.checkBackupButton();
+                }
             } catch (e) {
                 console.error("Erro ao carregar rascunho:", e);
             }
         }
+
+        window.productsBackup = null;
+
+        window.checkBackupButton = function() {
+            try {
+                const savedBackup = localStorage.getItem('catalog_products_backup');
+                if (savedBackup) {
+                    window.productsBackup = JSON.parse(savedBackup);
+                    const restoreBtn = document.getElementById('restore-catalog-btn');
+                    if (restoreBtn && Array.isArray(window.productsBackup) && window.productsBackup.length > 0) {
+                        restoreBtn.classList.remove('hidden');
+                    }
+                }
+            } catch(e) {}
+        };
+
+        window.restorePreviousProducts = function() {
+            if (!window.productsBackup || !Array.isArray(window.productsBackup)) {
+                alert("Nenhum backup de produtos anteriores encontrado.");
+                return;
+            }
+
+            if (confirm(`Deseja desfazer a importação e restaurar os ${window.productsBackup.length} produtos anteriores ao estado que estavam?`)) {
+                window.products = JSON.parse(JSON.stringify(window.productsBackup));
+                window.renderProducts();
+                window.saveDraft();
+                if (typeof window.updateCategoriesDatalist === 'function') window.updateCategoriesDatalist();
+
+                const statusEl = document.getElementById('import-catalog-status');
+                if (statusEl) {
+                    statusEl.className = "p-4 rounded-2xl text-xs font-bold bg-amber-500/20 text-amber-200 border border-amber-500/30 block";
+                    statusEl.innerHTML = `<div class="flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4"></i> Catálogo anterior restaurado com sucesso! (${window.products.length} itens)</div>`;
+                    if (window.lucide) window.lucide.createIcons();
+                }
+                alert("Catálogo anterior restaurado com sucesso!");
+            }
+        };
+
+        window.importExternalCatalog = async function() {
+            const urlInput = document.getElementById('import-catalog-url');
+            const btn = document.getElementById('import-catalog-btn');
+            const statusEl = document.getElementById('import-catalog-status');
+            const restoreBtn = document.getElementById('restore-catalog-btn');
+
+            if (!urlInput || !urlInput.value.trim()) {
+                alert("Por favor, cole o link do seu Anota AI ou cardápio digital antes de importar.");
+                if (urlInput) urlInput.focus();
+                return;
+            }
+
+            const url = urlInput.value.trim();
+            const modeRadio = document.querySelector('input[name="import_mode"]:checked');
+            const mode = modeRadio ? modeRadio.value : 'replace';
+
+            // Criar backup antes de alterar a lista atual
+            window.productsBackup = JSON.parse(JSON.stringify(window.products));
+            localStorage.setItem('catalog_products_backup', JSON.stringify(window.productsBackup));
+            if (restoreBtn) restoreBtn.classList.remove('hidden');
+
+            btn.disabled = true;
+            btn.classList.add('opacity-75', 'cursor-not-allowed');
+            const originalBtnHtml = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Extraindo Dados...</span>`;
+            if (window.lucide) window.lucide.createIcons();
+
+            if (statusEl) {
+                statusEl.className = "p-4 rounded-2xl text-xs font-bold bg-purple-500/20 text-purple-200 border border-purple-500/30 block";
+                statusEl.innerHTML = `<div class="flex items-center gap-2"><i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Conectando e extraindo produtos, valores e fotos do cardápio... Por favor aguarde.</div>`;
+                if (window.lucide) window.lucide.createIcons();
+            }
+
+            try {
+                const response = await fetch('/api/import-catalog', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.error || "Não foi possível extrair produtos deste link.");
+                }
+
+                if (!data.products || data.products.length === 0) {
+                    throw new Error("Nenhum produto foi encontrado no link fornecido. Verifique se o link está correto e público.");
+                }
+
+                const newItems = data.products;
+
+                if (mode === 'replace') {
+                    window.products = newItems;
+                } else {
+                    window.products = [...window.products, ...newItems];
+                }
+
+                window.renderProducts();
+                window.saveDraft();
+                if (typeof window.updateCategoriesDatalist === 'function') window.updateCategoriesDatalist();
+
+                if (statusEl) {
+                    statusEl.className = "p-4 rounded-2xl text-xs font-bold bg-emerald-500/20 text-emerald-200 border border-emerald-500/30 block";
+                    statusEl.innerHTML = `
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-2 text-emerald-300 font-black text-sm">
+                                <i data-lucide="check-circle-2" class="w-5 h-5"></i> 
+                                Sucesso! ${newItems.length} produtos importados do cardápio!
+                            </div>
+                            <p class="text-purple-200/90 text-xs font-normal">
+                                Seu catálogo agora possui ${window.products.length} itens cadastrados com nomes, preços e descrições.
+                                Se desejar desfazer, clique no botão amarelo <strong>"Restaurar Anterior"</strong> no topo da seção.
+                            </p>
+                        </div>
+                    `;
+                    if (window.lucide) window.lucide.createIcons();
+                }
+
+                alert(`Sucesso! Foram extraídos e carregados ${newItems.length} produtos do seu cardápio!`);
+
+            } catch (err) {
+                console.error("Erro na importação:", err);
+                if (statusEl) {
+                    statusEl.className = "p-4 rounded-2xl text-xs font-bold bg-red-500/20 text-red-200 border border-red-500/30 block";
+                    statusEl.innerHTML = `<div class="flex items-center gap-2"><i data-lucide="alert-circle" class="w-4 h-4"></i> ${err.message || 'Erro ao importar catálogo'}</div>`;
+                    if (window.lucide) window.lucide.createIcons();
+                }
+                alert(`Aviso: ${err.message || 'Falha ao extrair do link.'}`);
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-75', 'cursor-not-allowed');
+                btn.innerHTML = originalBtnHtml;
+                if (window.lucide) window.lucide.createIcons();
+            }
+        };
 
         window.clearDraft = function() {
             localStorage.removeItem('catalog_draft');

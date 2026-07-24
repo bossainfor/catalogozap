@@ -294,10 +294,19 @@ Exemplo de saída esperada:
 Conteúdo do Cardápio:
 ${content.substring(0, 100000)}`;
 
-      const aiRes = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt,
-      });
+      let aiRes;
+      try {
+        aiRes = await ai.models.generateContent({
+          model: "gemini-2.5-flash",
+          contents: prompt,
+        });
+      } catch (geminiErr: any) {
+        console.warn("[ParsePastedCatalog] gemini-2.5-flash falhou, tentando gemini-1.5-flash...", geminiErr?.message);
+        aiRes = await ai.models.generateContent({
+          model: "gemini-1.5-flash",
+          contents: prompt,
+        });
+      }
 
       const text = aiRes.text || "";
       const jsonMatch = text.match(/\[[\s\S]*\]/);
@@ -344,6 +353,15 @@ ${content.substring(0, 100000)}`;
     console.error("[ParsePastedCatalog] Erro:", err);
     return res.status(500).json({ success: false, error: "Erro ao analisar o texto com IA: " + (err?.message || err) });
   }
+});
+
+// Middleware de tratamento de erros global para rotas de API (garante resposta JSON sempre)
+app.use("/api", (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error("[API Error Middleware]:", err);
+  res.status(err.status || 500).json({
+    success: false,
+    error: err.message || "Erro no servidor ao processar a requisição de API."
+  });
 });
 
 // Serve Dynamic Metadata for tienda/store shares

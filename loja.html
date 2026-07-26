@@ -991,21 +991,20 @@
             });
         }
 
-        // Proxy de Imagem (Melhorado para Postimages e outros)
+        // Proxy de Imagem (Melhorado para Postimages, ImgBB, Anota.ai e outros)
         function proxyImg(url) {
             if (!url) return '';
-            let u = url.trim();
+            let u = String(url).trim();
+            if (!u) return '';
             
-            // Se for base64, retorna direto
-            if (u.startsWith('data:image')) return u;
+            // Se for base64 ou blob, retorna direto
+            if (u.startsWith('data:image') || u.startsWith('blob:')) return u;
             
             // Se for link do Firebase, não precisa de proxy
             if (u.includes('firebasestorage.')) return u;
             
             // Tratamento inteligente para Postimages
             if (u.includes('postimg.cc/')) {
-                // Se o cliente colou o link da página (ex: postimg.cc/65sF32Sj)
-                // Transformamos no link direto (ex: i.postimg.cc/65sF32Sj/image.jpg)
                 if (!u.includes('i.postimg.cc/')) {
                     const parts = u.split('/');
                     const id = parts[parts.length - 1];
@@ -1016,6 +1015,13 @@
             // Tratamento para ImgBB
             if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) {
                 u = u.replace('ibb.co/', 'i.ibb.co/') + '.png';
+            }
+
+            // Tratamento para Anota.ai / DeliveryDireto / Goomer / URLs externas que bloqueiam CORS ou hotlink
+            if (u.includes('anota.ai') || u.includes('deliverydireto') || u.includes('goomer')) {
+                if (!u.includes('weserv.nl') && !u.includes('wsrv.nl')) {
+                    return `https://images.weserv.nl/?url=${encodeURIComponent(u)}`;
+                }
             }
 
             if (!u.startsWith('http')) u = 'https://' + u;

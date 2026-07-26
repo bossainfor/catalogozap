@@ -1211,57 +1211,76 @@
                 }
 
                 console.log("Dados do Catálogo:", data);
+                
+                const pColor = String(data.c || data.primaryColor || 'f97316').trim();
+                const sColor = String(data.b || data.secondaryColor || '0f172a').trim();
+
+                const rawProducts = Array.isArray(data.p) && data.p.length > 0 ? data.p : (Array.isArray(data.products) ? data.products : (Array.isArray(data.produtos) ? data.produtos : []));
+
                 const result = {
-                    name: data.n,
+                    name: data.n || data.name || data.nome || 'Catálogo',
                     isResellerSuspended: resellerSuspended || false,
-                    whatsapp: data.w,
-                    address: data.a,
-                    instagram: data.ig,
-                    facebook: data.fb,
-                    website: data.ws,
-                    primaryColor: data.c.startsWith('#') ? data.c : '#' + data.c,
-                    secondaryColor: data.b.startsWith('#') ? data.b : '#' + data.b,
-                    bannerImage: data.bi,
+                    whatsapp: data.w || data.whatsapp || '',
+                    address: data.a || data.address || '',
+                    instagram: data.ig || data.instagram || '',
+                    facebook: data.fb || data.facebook || '',
+                    website: data.ws || data.website || '',
+                    primaryColor: pColor.startsWith('#') ? pColor : '#' + pColor,
+                    secondaryColor: sColor.startsWith('#') ? sColor : '#' + sColor,
+                    bannerImage: data.bi || data.bannerImage || '',
                     hideBannerBg: data.hb || false,
-                    type: data.t || 'loja',
-                    imageFormat: data.imf || 'vertical',
+                    type: data.t || data.type || 'loja',
+                    imageFormat: data.imf || data.imageFormat || 'vertical',
                     status: data.status || 'active',
                     expiresAt: data.expiresAt || data.createdAt,
-                    vendors: data.v || [],
-                    shippingZones: data.sh || [],
-                    logo: data.lg || '',
-                    subtitle: data.sub || '',
-                    paymentBadgeImage: data.pmb || '',
-                    pixKey: data.px || '',
-                    appLink: data.al || '',
-                    cf: data.cf || 0,
-                    pb: data.pb || [],
+                    vendors: data.v || data.vendors || [],
+                    shippingZones: data.sh || data.shippingZones || [],
+                    logo: data.lg || data.logo || '',
+                    subtitle: data.sub || data.subtitle || '',
+                    paymentBadgeImage: data.pmb || data.paymentBadgeImage || '',
+                    pixKey: data.px || data.pixKey || '',
+                    appLink: data.al || data.appLink || '',
+                    cf: data.cf || data.cardFee || 0,
+                    pb: data.pb || data.promotionalBanners || [],
                     resellerWhatsapp: data.resellerWhatsapp || '',
                     oh: data.oh || { mode: '24h' },
-                    products: (data.p || []).map(p => {
+                    products: rawProducts.map(p => {
+                        if (!p) return null;
+                        const pName = p.n !== undefined ? p.n : (p.name !== undefined ? p.name : (p.nome !== undefined ? p.nome : ''));
+                        const pPrice = p.p !== undefined ? p.p : (p.price !== undefined ? p.price : (p.preco !== undefined ? p.preco : ''));
+                        const pImage = p.i !== undefined ? p.i : (p.image !== undefined ? p.image : (p.imagem !== undefined ? p.imagem : ''));
+                        const pCategory = p.cat !== undefined ? p.cat : (p.category !== undefined ? p.category : (p.categoria !== undefined ? p.categoria : ''));
+                        const pDesc = p.d !== undefined ? p.d : (p.description !== undefined ? p.description : (p.descricao !== undefined ? p.descricao : ''));
+                        const pAv = p.av !== undefined ? p.av : (p.available !== undefined ? p.available : true);
+                        const pWp = p.wp !== undefined ? p.wp : (p.wholesalePrice !== undefined ? p.wholesalePrice : '');
+                        const pWq = p.wq !== undefined ? p.wq : (p.wholesaleMinQty !== undefined ? p.wholesaleMinQty : '');
+                        const pVars = p.vars !== undefined ? p.vars : (p.variations !== undefined ? p.variations : '');
+                        const pVideo = p.v !== undefined ? p.v : (p.videoUrl !== undefined ? p.videoUrl : '');
+                        const pAff = p.al !== undefined ? p.al : (p.affiliateLink !== undefined ? p.affiliateLink : '');
+
                         return {
                             id: p.id || Math.random().toString(36).substr(2, 9),
-                            name: p.n,
-                            price: p.p,
-                            wholesalePrice: p.wp || '',
-                            wholesaleMinQty: p.wq || '',
-                            image: p.i,
-                            i2: p.i2 || '',
-                            i3: p.i3 || '',
-                            i4: p.i4 || '',
-                            i5: p.i5 || '',
-                            i6: p.i6 || '',
-                            videoUrl: p.v || '',
-                            category: p.cat || '',
-                            description: p.d || '',
-                            available: p.av !== false,
-                            vars: p.vars || '',
+                            name: String(pName || 'Produto sem nome').trim(),
+                            price: pPrice,
+                            wholesalePrice: pWp,
+                            wholesaleMinQty: pWq,
+                            image: pImage,
+                            i2: p.i2 || p.image2 || '',
+                            i3: p.i3 || p.image3 || '',
+                            i4: p.i4 || p.image4 || '',
+                            i5: p.i5 || p.image5 || '',
+                            i6: p.i6 || p.image6 || '',
+                            videoUrl: pVideo,
+                            category: String(pCategory || 'Outros').trim(),
+                            description: String(pDesc || '').trim(),
+                            available: pAv !== false && pAv !== 'false',
+                            vars: Array.isArray(pVars) ? pVars.join(', ') : String(pVars || ''),
                             sh_sizes: p.sh_sizes || '',
                             sh_colors: p.sh_colors || '',
-                            f: p.f || false,
-                            affiliateLink: p.al || ''
+                            f: p.f !== undefined ? (p.f === true || p.f === 'true') : false,
+                            affiliateLink: pAff
                         };
-                    })
+                    }).filter(Boolean)
                 };
 
                 return result;
@@ -1946,7 +1965,7 @@
             const isAcougue = storeData.type === 'acougue';
             
             // Extrair Categorias Únicas
-            const categories = ['Todos', ...new Set(storeData.products.filter(p => p.category && p.available !== false).map(p => p.category))];
+            const categories = ['Todos', ...new Set((storeData.products || []).filter(p => p && p.category && p.available !== false).map(p => p.category))];
             const hasCategories = categories.length > 1;
 
             const logoHTML = storeData.logo ? `
@@ -1957,18 +1976,19 @@
                 </div>
             ` : '';
 
-            let filteredProducts = storeData.products.filter(p => p.available !== false);
+            let filteredProducts = (storeData.products || []).filter(p => p && p.available !== false);
             
             if (selectedCategory !== 'Todos') {
-                filteredProducts = filteredProducts.filter(p => p.category === selectedCategory);
+                filteredProducts = filteredProducts.filter(p => p && p.category === selectedCategory);
             }
             
             if (searchQuery) {
-                filteredProducts = filteredProducts.filter(p => 
-                    p.name.toLowerCase().includes(searchQuery) || 
-                    (p.description && p.description.toLowerCase().includes(searchQuery)) ||
-                    (p.category && p.category.toLowerCase().includes(searchQuery))
-                );
+                const queryClean = searchQuery.toLowerCase().trim();
+                filteredProducts = filteredProducts.filter(p => p && (
+                    (p.name && p.name.toLowerCase().includes(queryClean)) || 
+                    (p.description && p.description.toLowerCase().includes(queryClean)) ||
+                    (p.category && p.category.toLowerCase().includes(queryClean))
+                ));
             }
 
             const productsHTML = filteredProducts.length > 0 ? filteredProducts.map(p => {

@@ -433,6 +433,10 @@
                                 <i data-lucide="file-down" class="w-4 h-4"></i>
                                 <span>Exportar Produtos</span>
                             </button>
+                            <button type="button" onclick="window.deleteAllProducts()" class="bg-red-50 text-red-600 border border-red-200 px-4 py-2.5 rounded-xl text-xs font-black uppercase italic tracking-widest hover:bg-red-100 active-scale shadow-sm flex items-center gap-1.5 cursor-pointer" title="Excluir todos os produtos do catálogo">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                <span>Excluir Todos</span>
+                            </button>
                             <button type="button" onclick="window.addProduct()" class="bg-orange-600 text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase italic tracking-widest hover:bg-orange-700 active-scale shadow-lg shadow-orange-100 flex items-center gap-1.5 cursor-pointer">
                                 <i data-lucide="plus" class="w-4 h-4"></i>
                                 <span>+ Novo Produto</span>
@@ -1283,13 +1287,26 @@
                 alert("🔒 Limite atingido! No Plano FREE, ao atingir 5 produtos, as edições e remoções são bloqueadas para novas atualizações.\n\nFale com o suporte para subir para o Plano Profissional e liberar edições ilimitadas!");
                 return;
             }
-            if (window.products.length > 1) {
-                if (!confirm("Remover este item?")) return;
+            if (confirm("Remover este item?")) {
                 window.products = window.products.filter(p => p.id !== id);
                 window.renderProducts();
                 window.saveDraft();
             }
         }
+
+        window.deleteAllProducts = function() {
+            if (!window.products || window.products.length === 0) {
+                alert("Seu catálogo já está sem produtos.");
+                return;
+            }
+            if (confirm(`⚠️ TEM CERTEZA? Você irá excluir TODOS os ${window.products.length} produtos do seu catálogo!\n\nEsta ação não pode ser desfeita.`)) {
+                window.products = [];
+                window.expandedProducts.clear();
+                window.renderProducts();
+                if (typeof window.saveDraft === 'function') window.saveDraft();
+                alert("Todos os produtos foram excluídos com sucesso.");
+            }
+        };
 
         window.toggleProduct = function(id) {
             try {
@@ -1569,6 +1586,22 @@
                 const list = document.getElementById('products-list');
                 if (!list) return;
                 
+                if (!window.products || window.products.length === 0) {
+                    list.innerHTML = `
+                        <div class="bg-slate-50 border-2 border-dashed border-slate-200 rounded-[2rem] p-8 text-center space-y-3">
+                            <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center mx-auto">
+                                <i data-lucide="package-open" class="w-6 h-6"></i>
+                            </div>
+                            <p class="font-bold text-slate-600 text-sm">Nenhum produto cadastrado no momento.</p>
+                            <button type="button" onclick="window.addProduct()" class="inline-flex items-center gap-1.5 px-4 py-2 bg-orange-600 text-white rounded-xl text-xs font-black uppercase italic tracking-widest hover:bg-orange-700 transition-all active-scale cursor-pointer">
+                                <i data-lucide="plus" class="w-4 h-4"></i> Adicionar Produto
+                            </button>
+                        </div>
+                    `;
+                    if (window.lucide) lucide.createIcons();
+                    return;
+                }
+
                 const niche = document.getElementById('niche').value;
                 const isService = ['servicos', 'portfolio', 'clinica', 'salao', 'barbearia'].includes(niche);
                 const isAffiliate = niche === 'afiliados';

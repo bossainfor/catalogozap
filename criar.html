@@ -897,21 +897,20 @@
             datalist.innerHTML = categories.map(c => `<option value="${c}">`).join('');
         }
 
-        // Proxy de Imagem (Melhorado para Postimages e outros)
+        // Proxy de Imagem (Melhorado para Postimages, ImgBB, Anota.ai e outros)
         function proxyImg(url) {
             if (!url) return '';
-            let u = url.trim();
+            let u = String(url).trim();
+            if (!u) return '';
             
-            // Se for base64, retorna direto
-            if (u.startsWith('data:image')) return u;
+            // Se for base64 ou blob, retorna direto
+            if (u.startsWith('data:image') || u.startsWith('blob:')) return u;
             
             // Se for link do Firebase, não precisa de proxy
             if (u.includes('firebasestorage.')) return u;
             
             // Tratamento inteligente para Postimages
             if (u.includes('postimg.cc/')) {
-                // Se o cliente colou o link da página (ex: postimg.cc/65sF32Sj)
-                // Transformamos no link direto (ex: i.postimg.cc/65sF32Sj/image.jpg)
                 if (!u.includes('i.postimg.cc/')) {
                     const parts = u.split('/');
                     const id = parts[parts.length - 1];
@@ -922,6 +921,13 @@
             // Tratamento para ImgBB
             if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) {
                 u = u.replace('ibb.co/', 'i.ibb.co/') + '.png';
+            }
+
+            // Tratamento para Anota.ai / DeliveryDireto / Goomer / URLs externas que bloqueiam CORS ou hotlink
+            if (u.includes('anota.ai') || u.includes('deliverydireto') || u.includes('goomer')) {
+                if (!u.includes('weserv.nl') && !u.includes('wsrv.nl')) {
+                    return `https://images.weserv.nl/?url=${encodeURIComponent(u)}`;
+                }
             }
 
             if (!u.startsWith('http')) u = 'https://' + u;
@@ -3011,6 +3017,62 @@
                 .replace(/\s+/g, ' ');
         };
 
+        function formatImportPrice(val) {
+            if (val === undefined || val === null || val === '') return '';
+            if (typeof val === 'number') val = val.toString();
+            if (typeof val !== 'string') return '';
+            
+            let clean = val.replace(/R\$/gi, '').replace(/\$/g, '').trim();
+            if (!clean) return '';
+
+            if (clean.includes('.') && clean.includes(',')) {
+                clean = clean.replace(/\./g, '').replace(',', '.');
+            } else if (clean.includes(',')) {
+                clean = clean.replace(',', '.');
+            }
+            return clean;
+        }
+
+        function extractImportImages(item) {
+            let primary = '';
+            let extraImgs = ['', '', '', '', ''];
+
+            const arrayCandidates = item.images || item.imagens || item.photos || item.fotos || item.galeria || item.pictures;
+            if (Array.isArray(arrayCandidates) && arrayCandidates.length > 0) {
+                primary = String(arrayCandidates[0] || '').trim();
+                for (let i = 1; i < 6; i++) {
+                    if (arrayCandidates[i]) extraImgs[i - 1] = String(arrayCandidates[i]).trim();
+                }
+            }
+
+            if (!primary) {
+                primary = String(
+                    item.image || item.imagem || item.img || item.photo || item.foto || 
+                    item.url_imagem || item.imageUrl || item.urlImagem || item.picture || 
+                    item.img_url || item.url || ''
+                ).trim();
+            }
+
+            const i2 = String(item.i2 || item.image2 || item.imagem2 || item.foto2 || extraImgs[0] || '').trim();
+            const i3 = String(item.i3 || item.image3 || item.imagem3 || item.foto3 || extraImgs[1] || '').trim();
+            const i4 = String(item.i4 || item.image4 || item.imagem4 || item.foto4 || extraImgs[2] || '').trim();
+            const i5 = String(item.i5 || item.image5 || item.imagem5 || item.foto5 || extraImgs[3] || '').trim();
+            const i6 = String(item.i6 || item.image6 || item.imagem6 || item.foto6 || extraImgs[4] || '').trim();
+
+            return { image: primary, i2, i3, i4, i5, i6 };
+        }
+
+        function extractImportVars(item) {
+            let varsStr = '';
+            const candidate = item.variations || item.vars || item.variacoes || item.tamanhos || item.sizes;
+            if (Array.isArray(candidate)) {
+                varsStr = candidate.map(v => typeof v === 'object' ? (v.name || v.nome || v.title || JSON.stringify(v)) : String(v)).join(', ');
+            } else if (typeof candidate === 'string') {
+                varsStr = candidate;
+            }
+            return varsStr.trim();
+        }
+
         window.parseImportData = function() {
             const textarea = document.getElementById('import-json-textarea');
             const content = textarea ? textarea.value.trim() : '';
@@ -3025,6 +3087,10 @@
                 if (!Array.isArray(json)) {
                     if (json.products && Array.isArray(json.products)) json = json.products;
                     else if (json.produtos && Array.isArray(json.produtos)) json = json.produtos;
+                    else if (json.items && Array.isArray(json.items)) json = json.items;
+                    else if (json.itens && Array.isArray(json.itens)) json = json.itens;
+                    else if (json.data && Array.isArray(json.data)) json = json.data;
+                    else if (json.menu && Array.isArray(json.menu)) json = json.menu;
                     else if (typeof json === 'object') json = [json];
                     else throw new Error("Estrutura do JSON inválida. Esperado um Array de produtos.");
                 }
@@ -3034,35 +3100,38 @@
                     return;
                 }
 
-                // Normalização de itens do JSON importado
+                // Normalização de itens do JSON importado mantendo a ordem e alinhamento exatos de nome e imagem
                 window.parsedImportItems = json.map((item, index) => {
-                    let pVal = item.price !== undefined ? item.price : (item.preco !== undefined ? item.preco : '');
-                    if (typeof pVal === 'number') pVal = pVal.toString();
-                    if (typeof pVal === 'string') pVal = pVal.replace('R$', '').trim().replace(',', '.');
+                    const pVal = formatImportPrice(item.price !== undefined ? item.price : (item.preco !== undefined ? item.preco : (item.valor !== undefined ? item.valor : (item.val !== undefined ? item.val : ''))));
+                    const wVal = formatImportPrice(item.wholesalePrice !== undefined ? item.wholesalePrice : (item.priceAtacado !== undefined ? item.priceAtacado : (item.precoAtacado !== undefined ? item.precoAtacado : ''))));
 
-                    let wVal = item.wholesalePrice !== undefined ? item.wholesalePrice : (item.priceAtacado !== undefined ? item.priceAtacado : '');
-                    if (typeof wVal === 'number') wVal = wVal.toString();
-                    if (typeof wVal === 'string') wVal = wVal.replace('R$', '').trim().replace(',', '.');
+                    const imgs = extractImportImages(item);
+                    const varsStr = extractImportVars(item);
 
-                    let varsStr = '';
-                    if (Array.isArray(item.variations)) varsStr = item.variations.join(', ');
-                    else if (Array.isArray(item.vars)) varsStr = item.vars.join(', ');
-                    else if (typeof item.variations === 'string') varsStr = item.variations;
-                    else if (typeof item.vars === 'string') varsStr = item.vars;
+                    const rawName = item.name || item.nome || item.title || item.titulo || item.product_name || item.productName || item.item_name || 'Produto sem nome';
+                    const rawCat = item.category || item.categoria || item.cat || item.group || item.grupo || item.section || item.secao || item.category_name || item.nome_categoria || 'Outros';
+                    const rawDesc = item.description || item.descricao || item.desc || item.details || item.detalhes || item.info || '';
 
                     return {
                         id: item.id ? String(item.id).trim() : '',
-                        name: String(item.name || item.nome || 'Produto sem nome').trim(),
-                        price: pVal || '',
-                        category: String(item.category || item.categoria || 'Outros').trim() || 'Outros',
-                        description: String(item.description || item.descricao || '').trim(),
-                        image: String(item.image || item.imagem || '').trim(),
-                        badge: String(item.badge || item.selo || '').trim(),
-                        wholesalePrice: wVal || '',
-                        wholesaleMinQty: String(item.wholesaleMinQty || item.minWholesaleQty || item.qtdMinAtacado || '').trim(),
+                        name: String(rawName).trim(),
+                        price: pVal,
+                        category: String(rawCat).trim() || 'Outros',
+                        description: String(rawDesc).trim(),
+                        image: imgs.image,
+                        i2: imgs.i2,
+                        i3: imgs.i3,
+                        i4: imgs.i4,
+                        i5: imgs.i5,
+                        i6: imgs.i6,
+                        badge: String(item.badge || item.selo || item.tag || '').trim(),
+                        wholesalePrice: wVal,
+                        wholesaleMinQty: String(item.wholesaleMinQty || item.minWholesaleQty || item.qtdMinAtacado || item.quantidadeMinimaAtacado || '').trim(),
                         vars: varsStr,
-                        available: item.available !== undefined ? Boolean(item.available) : true,
-                        f: item.f !== undefined ? Boolean(item.f) : false,
+                        sh_sizes: String(item.sh_sizes || item.sizes || item.tamanhos || '').trim(),
+                        sh_colors: String(item.sh_colors || item.colors || item.cores || '').trim(),
+                        available: item.available !== undefined ? Boolean(item.available) : (item.disponivel !== undefined ? Boolean(item.disponivel) : true),
+                        f: item.f !== undefined ? Boolean(item.f) : (item.destaque !== undefined ? Boolean(item.destaque) : (item.featured !== undefined ? Boolean(item.featured) : false)),
                         selected: true
                     };
                 });
@@ -3086,6 +3155,7 @@
             let addCount = 0;
             let updateCount = 0;
             const categoryCounts = {};
+            const usedProductIds = new Set();
 
             const tbody = document.getElementById('import-preview-tbody');
             if (!tbody) return;
@@ -3098,14 +3168,31 @@
                 let matchNote = 'Novo';
 
                 if (mode === 'update') {
-                    const matched = existingList.find(p => {
-                        if (p.id && item.id && String(p.id).trim() === String(item.id).trim()) return true;
-                        const pClean = window.cleanStringForMatch(p.name);
-                        const itemClean = window.cleanStringForMatch(item.name);
-                        return pClean && itemClean && pClean === itemClean;
-                    });
+                    let matched = null;
+                    if (item.id) {
+                        matched = existingList.find(p => !usedProductIds.has(p.id) && String(p.id).trim() === String(item.id).trim());
+                    }
+                    if (!matched) {
+                        const itemCleanName = window.cleanStringForMatch(item.name);
+                        const itemCleanCat = window.cleanStringForMatch(item.category);
+                        matched = existingList.find(p => {
+                            if (usedProductIds.has(p.id)) return false;
+                            const pCleanName = window.cleanStringForMatch(p.name);
+                            const pCleanCat = window.cleanStringForMatch(p.category);
+                            return pCleanName && itemCleanName && pCleanName === itemCleanName && pCleanCat === itemCleanCat;
+                        });
+                    }
+                    if (!matched) {
+                        const itemCleanName = window.cleanStringForMatch(item.name);
+                        matched = existingList.find(p => {
+                            if (usedProductIds.has(p.id)) return false;
+                            const pCleanName = window.cleanStringForMatch(p.name);
+                            return pCleanName && itemCleanName && pCleanName === itemCleanName;
+                        });
+                    }
 
                     if (matched) {
+                        usedProductIds.add(matched.id);
                         matchAction = 'update';
                         matchNote = 'Atualizar';
                         updateCount++;
@@ -3129,7 +3216,7 @@
                     : (matchAction === 'replace' ? 'bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300' : 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300');
 
                 const imgDisplay = item.image 
-                    ? `<img src="${proxyImg(item.image)}" class="w-8 h-8 rounded-lg object-cover mx-auto" referrerpolicy="no-referrer">` 
+                    ? `<img src="${proxyImg(item.image)}" class="w-8 h-8 rounded-lg object-cover mx-auto" referrerpolicy="no-referrer" loading="lazy">` 
                     : `<div class="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-300 mx-auto"><i data-lucide="image" class="w-4 h-4"></i></div>`;
 
                 return `
@@ -3194,60 +3281,97 @@
                     return;
                 }
                 window.products = selectedItems.map((item, index) => ({
-                    id: item.id || (Date.now().toString() + '_' + index),
+                    id: item.id || ('prod_' + Date.now() + '_' + index + '_' + Math.random().toString(36).substring(2, 6)),
                     name: item.name,
                     price: item.price,
                     category: item.category,
                     description: item.description,
                     image: item.image,
-                    badge: item.badge,
-                    wholesalePrice: item.wholesalePrice,
-                    wholesaleMinQty: item.wholesaleMinQty,
-                    vars: item.vars,
-                    available: item.available,
-                    f: item.f
+                    i2: item.i2 || '',
+                    i3: item.i3 || '',
+                    i4: item.i4 || '',
+                    i5: item.i5 || '',
+                    i6: item.i6 || '',
+                    badge: item.badge || '',
+                    wholesalePrice: item.wholesalePrice || '',
+                    wholesaleMinQty: item.wholesaleMinQty || '',
+                    vars: item.vars || '',
+                    sh_sizes: item.sh_sizes || '',
+                    sh_colors: item.sh_colors || '',
+                    available: item.available !== undefined ? item.available : true,
+                    f: item.f !== undefined ? item.f : false
                 }));
             } else if (mode === 'update') {
                 let updatedCount = 0;
                 let addedCount = 0;
+                const updatedProductIds = new Set();
 
                 selectedItems.forEach((item, index) => {
-                    const matched = window.products.find(p => {
-                        if (p.id && item.id && String(p.id).trim() === String(item.id).trim()) return true;
-                        const pClean = window.cleanStringForMatch(p.name);
-                        const itemClean = window.cleanStringForMatch(item.name);
-                        return pClean && itemClean && pClean === itemClean;
-                    });
+                    let matched = null;
+                    if (item.id) {
+                        matched = window.products.find(p => !updatedProductIds.has(p.id) && String(p.id).trim() === String(item.id).trim());
+                    }
+                    if (!matched) {
+                        const itemCleanName = window.cleanStringForMatch(item.name);
+                        const itemCleanCat = window.cleanStringForMatch(item.category);
+                        matched = window.products.find(p => {
+                            if (updatedProductIds.has(p.id)) return false;
+                            const pCleanName = window.cleanStringForMatch(p.name);
+                            const pCleanCat = window.cleanStringForMatch(p.category);
+                            return pCleanName && itemCleanName && pCleanName === itemCleanName && pCleanCat === itemCleanCat;
+                        });
+                    }
+                    if (!matched) {
+                        const itemCleanName = window.cleanStringForMatch(item.name);
+                        matched = window.products.find(p => {
+                            if (updatedProductIds.has(p.id)) return false;
+                            const pCleanName = window.cleanStringForMatch(p.name);
+                            return pCleanName && itemCleanName && pCleanName === itemCleanName;
+                        });
+                    }
 
                     if (matched) {
-                        // Atualizar apenas os campos vindos do JSON, preservando os demais
+                        updatedProductIds.add(matched.id);
                         if (item.name) matched.name = item.name;
                         if (item.price !== '') matched.price = item.price;
                         if (item.category) matched.category = item.category;
                         if (item.description !== '') matched.description = item.description;
                         if (item.image !== '') matched.image = item.image;
+                        if (item.i2) matched.i2 = item.i2;
+                        if (item.i3) matched.i3 = item.i3;
+                        if (item.i4) matched.i4 = item.i4;
+                        if (item.i5) matched.i5 = item.i5;
+                        if (item.i6) matched.i6 = item.i6;
                         if (item.badge !== '') matched.badge = item.badge;
                         if (item.wholesalePrice !== '') matched.wholesalePrice = item.wholesalePrice;
                         if (item.wholesaleMinQty !== '') matched.wholesaleMinQty = item.wholesaleMinQty;
                         if (item.vars !== '') matched.vars = item.vars;
+                        if (item.sh_sizes !== '') matched.sh_sizes = item.sh_sizes;
+                        if (item.sh_colors !== '') matched.sh_colors = item.sh_colors;
                         if (item.available !== undefined) matched.available = item.available;
                         if (item.f !== undefined) matched.f = item.f;
                         updatedCount++;
                     } else {
-                        // Adicionar como novo produto
                         window.products.push({
-                            id: item.id || (Date.now().toString() + '_' + index),
+                            id: item.id || ('prod_' + Date.now() + '_' + index + '_' + Math.random().toString(36).substring(2, 6)),
                             name: item.name,
                             price: item.price,
                             category: item.category,
                             description: item.description,
                             image: item.image,
-                            badge: item.badge,
-                            wholesalePrice: item.wholesalePrice,
-                            wholesaleMinQty: item.wholesaleMinQty,
-                            vars: item.vars,
-                            available: item.available,
-                            f: item.f
+                            i2: item.i2 || '',
+                            i3: item.i3 || '',
+                            i4: item.i4 || '',
+                            i5: item.i5 || '',
+                            i6: item.i6 || '',
+                            badge: item.badge || '',
+                            wholesalePrice: item.wholesalePrice || '',
+                            wholesaleMinQty: item.wholesaleMinQty || '',
+                            vars: item.vars || '',
+                            sh_sizes: item.sh_sizes || '',
+                            sh_colors: item.sh_colors || '',
+                            available: item.available !== undefined ? item.available : true,
+                            f: item.f !== undefined ? item.f : false
                         });
                         addedCount++;
                     }
@@ -3258,18 +3382,25 @@
                 // Modo Adicionar ao Catálogo
                 selectedItems.forEach((item, index) => {
                     window.products.push({
-                        id: item.id || (Date.now().toString() + '_' + index),
+                        id: item.id || ('prod_' + Date.now() + '_' + index + '_' + Math.random().toString(36).substring(2, 6)),
                         name: item.name,
                         price: item.price,
                         category: item.category,
                         description: item.description,
                         image: item.image,
-                        badge: item.badge,
-                        wholesalePrice: item.wholesalePrice,
-                        wholesaleMinQty: item.wholesaleMinQty,
-                        vars: item.vars,
-                        available: item.available,
-                        f: item.f
+                        i2: item.i2 || '',
+                        i3: item.i3 || '',
+                        i4: item.i4 || '',
+                        i5: item.i5 || '',
+                        i6: item.i6 || '',
+                        badge: item.badge || '',
+                        wholesalePrice: item.wholesalePrice || '',
+                        wholesaleMinQty: item.wholesaleMinQty || '',
+                        vars: item.vars || '',
+                        sh_sizes: item.sh_sizes || '',
+                        sh_colors: item.sh_colors || '',
+                        available: item.available !== undefined ? item.available : true,
+                        f: item.f !== undefined ? item.f : false
                     });
                 });
 
@@ -3315,6 +3446,19 @@
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+        };
+
+        window.deleteAllProducts = function() {
+            if (!window.products || window.products.length === 0) {
+                alert("O catálogo já está vazio.");
+                return;
+            }
+            if (confirm(`Atenção: Deseja realmente EXCLUIR TODOS os ${window.products.length} produtos do seu catálogo?\n\nEsta ação não poderá ser desfeita.`)) {
+                window.products = [];
+                window.renderProducts();
+                window.saveDraft();
+                alert("Todos os produtos foram excluídos do catálogo com sucesso.");
+            }
         };
     </script>
 </body>

@@ -3081,27 +3081,83 @@
                     return;
                 }
 
+                // Helper para extrair lista de imagens ordenada e limpa
+                const extractImagesFromItem = (item) => {
+                    const imgs = [];
+                    const addImg = (val) => {
+                        if (!val) return;
+                        if (typeof val === 'string' && val.trim()) {
+                            imgs.push(val.trim());
+                        } else if (typeof val === 'object' && val !== null) {
+                            const u = val.url || val.src || val.link || val.href || val.image || val.imagem || val.foto;
+                            if (typeof u === 'string' && u.trim()) imgs.push(u.trim());
+                        }
+                    };
+
+                    // Campos diretos de imagem principal e secundárias
+                    addImg(item.image || item.imagem || item.i || item.foto || item.img || item.picture || item.photo || item.imageUrl || item.image_url || item.url_imagem || item.thumb || item.thumbnail || item.src);
+                    addImg(item.i2 || item.image2 || item.imagem2 || item.foto2 || item.img2);
+                    addImg(item.i3 || item.image3 || item.imagem3 || item.foto3 || item.img3);
+                    addImg(item.i4 || item.image4 || item.imagem4 || item.foto4 || item.img4);
+                    addImg(item.i5 || item.image5 || item.imagem5 || item.foto5 || item.img5);
+                    addImg(item.i6 || item.image6 || item.imagem6 || item.foto6 || item.img6);
+
+                    // Arrays de imagens
+                    const arr = item.images || item.fotos || item.gallery || item.galeria || item.pictures || item.photos;
+                    if (Array.isArray(arr)) {
+                        arr.forEach(element => addImg(element));
+                    }
+
+                    // Remover duplicatas preservando a ordem
+                    return Array.from(new Set(imgs));
+                };
+
                 // Normalização de itens do JSON importado
                 window.parsedImportItems = json.map((item, index) => {
-                    let pVal = item.price !== undefined ? item.price : (item.preco !== undefined ? item.preco : (item.p !== undefined ? item.p : ''));
-                    if (typeof pVal === 'number') pVal = pVal.toString();
-                    if (typeof pVal === 'string') pVal = pVal.replace('R$', '').trim().replace(',', '.');
+                    let pVal = item.price !== undefined ? item.price : (item.preco !== undefined ? item.preco : (item.p !== undefined ? item.p : (item.valor !== undefined ? item.valor : (item.val !== undefined ? item.val : (item.price_formatted !== undefined ? item.price_formatted : (item.preco_formatado !== undefined ? item.preco_formatado : ''))))));
+                    if (typeof pVal === 'number') {
+                        pVal = pVal.toFixed(2).replace('.', ',');
+                        if (pVal.endsWith(',00')) pVal = pVal.replace(',00', '');
+                    }
+                    if (typeof pVal === 'string') {
+                        pVal = pVal.replace(/R\$\s*/gi, '').trim();
+                    }
 
-                    let wVal = item.wholesalePrice !== undefined ? item.wholesalePrice : (item.priceAtacado !== undefined ? item.priceAtacado : (item.wp !== undefined ? item.wp : ''));
-                    if (typeof wVal === 'number') wVal = wVal.toString();
-                    if (typeof wVal === 'string') wVal = wVal.replace('R$', '').trim().replace(',', '.');
+                    let wVal = item.wholesalePrice !== undefined ? item.wholesalePrice : (item.priceAtacado !== undefined ? item.priceAtacado : (item.precoAtacado !== undefined ? item.precoAtacado : (item.preco_atacado !== undefined ? item.preco_atacado : (item.wp !== undefined ? item.wp : ''))));
+                    if (typeof wVal === 'number') {
+                        wVal = wVal.toFixed(2).replace('.', ',');
+                        if (wVal.endsWith(',00')) wVal = wVal.replace(',00', '');
+                    }
+                    if (typeof wVal === 'string') {
+                        wVal = wVal.replace(/R\$\s*/gi, '').trim();
+                    }
 
                     let varsStr = '';
                     if (Array.isArray(item.variations)) varsStr = item.variations.join(', ');
                     else if (Array.isArray(item.vars)) varsStr = item.vars.join(', ');
+                    else if (Array.isArray(item.variacoes)) varsStr = item.variacoes.join(', ');
                     else if (typeof item.variations === 'string') varsStr = item.variations;
                     else if (typeof item.vars === 'string') varsStr = item.vars;
+                    else if (typeof item.variacoes === 'string') varsStr = item.variacoes;
 
-                    const nameVal = item.name || item.nome || item.n || 'Produto sem nome';
-                    const catVal = item.category || item.categoria || item.cat || 'Outros';
-                    const descVal = item.description || item.descricao || item.d || '';
-                    const imgVal = item.image || item.imagem || item.i || '';
-                    const avVal = item.available !== undefined ? item.available : (item.av !== undefined ? item.av : true);
+                    let sizesStr = '';
+                    if (Array.isArray(item.sh_sizes)) sizesStr = item.sh_sizes.join(', ');
+                    else if (Array.isArray(item.tamanhos)) sizesStr = item.tamanhos.join(', ');
+                    else if (typeof item.sh_sizes === 'string') sizesStr = item.sh_sizes;
+                    else if (typeof item.tamanhos === 'string') sizesStr = item.tamanhos;
+
+                    let colorsStr = '';
+                    if (Array.isArray(item.sh_colors)) colorsStr = item.sh_colors.join(', ');
+                    else if (Array.isArray(item.cores)) colorsStr = item.cores.join(', ');
+                    else if (typeof item.sh_colors === 'string') colorsStr = item.sh_colors;
+                    else if (typeof item.cores === 'string') colorsStr = item.cores;
+
+                    const nameVal = item.name || item.nome || item.n || item.title || item.titulo || item.produto || item.product || item.product_name || item.item_name || 'Produto sem nome';
+                    const catVal = item.category || item.categoria || item.cat || item.group || item.grupo || item.secao || item.section || item.category_name || 'Outros';
+                    const descVal = item.description || item.descricao || item.d || item.desc || item.detalhes || item.details || item.obs || item.observacao || item.info || '';
+                    
+                    const extractedImgs = extractImagesFromItem(item);
+                    const avVal = item.available !== undefined ? item.available : (item.disponivel !== undefined ? item.disponivel : (item.av !== undefined ? item.av : true));
 
                     return {
                         id: item.id ? String(item.id).trim() : '',
@@ -3109,22 +3165,22 @@
                         price: pVal || '',
                         category: String(catVal).trim() || 'Outros',
                         description: String(descVal).trim(),
-                        image: String(imgVal).trim(),
-                        i2: String(item.i2 || item.image2 || '').trim(),
-                        i3: String(item.i3 || item.image3 || '').trim(),
-                        i4: String(item.i4 || item.image4 || '').trim(),
-                        i5: String(item.i5 || item.image5 || '').trim(),
-                        i6: String(item.i6 || item.image6 || '').trim(),
-                        videoUrl: String(item.videoUrl || item.v || '').trim(),
-                        badge: String(item.badge || item.selo || '').trim(),
+                        image: extractedImgs[0] || '',
+                        i2: extractedImgs[1] || '',
+                        i3: extractedImgs[2] || '',
+                        i4: extractedImgs[3] || '',
+                        i5: extractedImgs[4] || '',
+                        i6: extractedImgs[5] || '',
+                        videoUrl: String(item.videoUrl || item.video_url || item.video || item.v || '').trim(),
+                        badge: String(item.badge || item.selo || item.tag || '').trim(),
                         wholesalePrice: wVal || '',
-                        wholesaleMinQty: String(item.wholesaleMinQty || item.minWholesaleQty || item.qtdMinAtacado || item.wq || '').trim(),
+                        wholesaleMinQty: String(item.wholesaleMinQty || item.minWholesaleQty || item.qtdMinAtacado || item.qtd_min_atacado || item.wq || '').trim(),
                         vars: varsStr,
-                        sh_sizes: String(item.sh_sizes || '').trim(),
-                        sh_colors: String(item.sh_colors || '').trim(),
+                        sh_sizes: sizesStr,
+                        sh_colors: colorsStr,
                         available: avVal !== false && avVal !== 'false',
-                        f: item.f !== undefined ? (item.f === true || item.f === 'true') : false,
-                        affiliateLink: String(item.affiliateLink || item.al || '').trim(),
+                        f: item.f !== undefined ? (item.f === true || item.f === 'true') : (item.destaque !== undefined ? (item.destaque === true || item.destaque === 'true') : false),
+                        affiliateLink: String(item.affiliateLink || item.link_afiliado || item.al || item.link || '').trim(),
                         selected: true
                     };
                 });
@@ -3345,6 +3401,9 @@
                 alert(`Importação concluída com sucesso!\n\n- Produtos atualizados: ${updatedCount}\n- Novos produtos adicionados: ${addedCount}`);
             } else {
                 // Modo Adicionar ao Catálogo
+                // Limpar produtos completamente vazios/placeholders (ex: produto em branco inicial)
+                window.products = (window.products || []).filter(p => p.name && p.name.trim() !== '');
+
                 selectedItems.forEach((item, index) => {
                     window.products.push({
                         id: item.id || (Date.now().toString() + '_' + index),
@@ -3353,12 +3412,21 @@
                         category: item.category,
                         description: item.description,
                         image: item.image,
-                        badge: item.badge,
-                        wholesalePrice: item.wholesalePrice,
-                        wholesaleMinQty: item.wholesaleMinQty,
-                        vars: item.vars,
-                        available: item.available,
-                        f: item.f
+                        i2: item.i2 || '',
+                        i3: item.i3 || '',
+                        i4: item.i4 || '',
+                        i5: item.i5 || '',
+                        i6: item.i6 || '',
+                        videoUrl: item.videoUrl || '',
+                        badge: item.badge || '',
+                        wholesalePrice: item.wholesalePrice || '',
+                        wholesaleMinQty: item.wholesaleMinQty || '',
+                        vars: item.vars || '',
+                        sh_sizes: item.sh_sizes || '',
+                        sh_colors: item.sh_colors || '',
+                        available: item.available !== false,
+                        f: item.f === true,
+                        affiliateLink: item.affiliateLink || ''
                     });
                 });
 

@@ -2206,30 +2206,55 @@
             data.t = document.getElementById('niche').value;
             data.imf = document.getElementById('image-format').value;
             
-            const validProducts = window.products.filter(p => p.name);
+            const validProducts = (window.products || []).filter(p => p && (p.name || p.n || p.description || p.d));
             if (validProducts.length > 0) {
                 data.p = validProducts.map(p => {
-                    const item = { id: p.id, n: p.name };
-                    if (p.price) item.p = p.price;
-                    if (p.image) item.i = p.image;
+                    const item = { 
+                        id: p.id || Math.random().toString(36).substr(2, 9), 
+                        n: String(p.name || p.n || 'Produto').trim() 
+                    };
+                    
+                    const priceVal = p.price !== undefined ? p.price : p.p;
+                    if (priceVal !== undefined && priceVal !== '') item.p = priceVal;
+
+                    const imgVal = p.image || p.i;
+                    if (imgVal) item.i = imgVal;
                     if (p.i2) item.i2 = p.i2;
                     if (p.i3) item.i3 = p.i3;
                     if (p.i4) item.i4 = p.i4;
                     if (p.i5) item.i5 = p.i5;
                     if (p.i6) item.i6 = p.i6;
-                    if (p.videoUrl) item.v = p.videoUrl;
-                    if (p.description) item.d = p.description;
-                    if (p.category) item.cat = p.category;
-                    if (p.wholesalePrice) item.wp = p.wholesalePrice;
-                    if (p.wholesaleMinQty) item.wq = parseInt(p.wholesaleMinQty);
-                    if (p.available === false) item.av = false;
-                    if (p.vars) item.vars = p.vars;
+
+                    const vidVal = p.videoUrl || p.v;
+                    if (vidVal) item.v = vidVal;
+
+                    const descVal = p.description || p.d;
+                    if (descVal) item.d = descVal;
+
+                    const catVal = p.category || p.cat;
+                    if (catVal) item.cat = catVal;
+
+                    const wpVal = p.wholesalePrice || p.wp;
+                    if (wpVal) item.wp = wpVal;
+
+                    const wqVal = p.wholesaleMinQty || p.wq;
+                    if (wqVal) item.wq = parseInt(wqVal, 10) || 0;
+
+                    if (p.available === false || p.av === false || p.available === 'false' || p.av === 'false') item.av = false;
+
+                    const varsVal = p.vars || p.variations;
+                    if (varsVal) item.vars = Array.isArray(varsVal) ? varsVal.join(', ') : varsVal;
+
                     if (p.sh_sizes) item.sh_sizes = p.sh_sizes;
                     if (p.sh_colors) item.sh_colors = p.sh_colors;
-                    if (p.f) item.f = true;
-                    if (p.affiliateLink) item.al = p.affiliateLink;
+                    if (p.f === true || p.f === 'true') item.f = true;
+
+                    const affVal = p.affiliateLink || p.al;
+                    if (affVal) item.al = affVal;
+
                     return item;
                 });
+                data.products = data.p; // Garantia de compatibilidade com formatos longos/padrão
             }
 
             // Preserva o plano e vendedores (com cliques integrados)
@@ -2667,29 +2692,47 @@
                         window.setOperatingHoursMode('24h');
                     }
                     
-                    if (data.p && data.p.length > 0) {
-                        window.products = data.p.map(p => ({
-                            id: p.id || Math.random().toString(36).substr(2, 9),
-                            name: p.n,
-                            price: p.p,
-                            wholesalePrice: p.wp || '',
-                            wholesaleMinQty: p.wq || '',
-                            image: p.i,
-                            i2: p.i2 || '',
-                            i3: p.i3 || '',
-                            i4: p.i4 || '',
-                            i5: p.i5 || '',
-                            i6: p.i6 || '',
-                            videoUrl: p.v || '',
-                            category: p.cat || '',
-                            description: p.d || '',
-                            available: p.av !== false,
-                            vars: p.vars || '',
-                            sh_sizes: p.sh_sizes || '',
-                            sh_colors: p.sh_colors || '',
-                            f: p.f || false,
-                            affiliateLink: p.al || ''
-                        }));
+                    const rawProds = (data.p && data.p.length > 0) ? data.p : (data.products && data.products.length > 0 ? data.products : (data.produtos && data.produtos.length > 0 ? data.produtos : []));
+
+                    if (rawProds.length > 0) {
+                        window.products = rawProds.map(p => {
+                            if (!p) return null;
+                            const pName = p.n !== undefined ? p.n : (p.name !== undefined ? p.name : (p.nome !== undefined ? p.nome : ''));
+                            const pPrice = p.p !== undefined ? p.p : (p.price !== undefined ? p.price : (p.preco !== undefined ? p.preco : ''));
+                            const pImg = p.i !== undefined ? p.i : (p.image !== undefined ? p.image : (p.imagem !== undefined ? p.imagem : ''));
+                            const pCat = p.cat !== undefined ? p.cat : (p.category !== undefined ? p.category : (p.categoria !== undefined ? p.categoria : ''));
+                            const pDesc = p.d !== undefined ? p.d : (p.description !== undefined ? p.description : (p.descricao !== undefined ? p.descricao : ''));
+                            const pAv = p.av !== undefined ? p.av : (p.available !== undefined ? p.available : true);
+                            const pWp = p.wp !== undefined ? p.wp : (p.wholesalePrice !== undefined ? p.wholesalePrice : '');
+                            const pWq = p.wq !== undefined ? p.wq : (p.wholesaleMinQty !== undefined ? p.wholesaleMinQty : '');
+                            const pVars = p.vars !== undefined ? p.vars : (p.variations !== undefined ? p.variations : '');
+                            const pVid = p.v !== undefined ? p.v : (p.videoUrl !== undefined ? p.videoUrl : '');
+                            const pAff = p.al !== undefined ? p.al : (p.affiliateLink !== undefined ? p.affiliateLink : '');
+
+                            return {
+                                id: p.id || Math.random().toString(36).substr(2, 9),
+                                name: String(pName || 'Produto sem nome').trim(),
+                                price: pPrice,
+                                wholesalePrice: pWp,
+                                wholesaleMinQty: pWq,
+                                image: pImg,
+                                i2: p.i2 || p.image2 || '',
+                                i3: p.i3 || p.image3 || '',
+                                i4: p.i4 || p.image4 || '',
+                                i5: p.i5 || p.image5 || '',
+                                i6: p.i6 || p.image6 || '',
+                                videoUrl: pVid,
+                                category: String(pCat || 'Outros').trim(),
+                                description: String(pDesc || '').trim(),
+                                available: pAv !== false && pAv !== 'false',
+                                vars: Array.isArray(pVars) ? pVars.join(', ') : String(pVars || ''),
+                                sh_sizes: p.sh_sizes || '',
+                                sh_colors: p.sh_colors || '',
+                                f: p.f !== undefined ? (p.f === true || p.f === 'true') : false,
+                                affiliateLink: pAff
+                            };
+                        }).filter(Boolean);
+
                         // Normalização retroativa de categorias no carregamento
                         const tempCategories = {};
                         window.products.forEach(p => {
@@ -2992,6 +3035,7 @@
                 if (!Array.isArray(json)) {
                     if (json.products && Array.isArray(json.products)) json = json.products;
                     else if (json.produtos && Array.isArray(json.produtos)) json = json.produtos;
+                    else if (json.p && Array.isArray(json.p)) json = json.p;
                     else if (typeof json === 'object') json = [json];
                     else throw new Error("Estrutura do JSON inválida. Esperado um Array de produtos.");
                 }
@@ -3003,11 +3047,11 @@
 
                 // Normalização de itens do JSON importado
                 window.parsedImportItems = json.map((item, index) => {
-                    let pVal = item.price !== undefined ? item.price : (item.preco !== undefined ? item.preco : '');
+                    let pVal = item.price !== undefined ? item.price : (item.preco !== undefined ? item.preco : (item.p !== undefined ? item.p : ''));
                     if (typeof pVal === 'number') pVal = pVal.toString();
                     if (typeof pVal === 'string') pVal = pVal.replace('R$', '').trim().replace(',', '.');
 
-                    let wVal = item.wholesalePrice !== undefined ? item.wholesalePrice : (item.priceAtacado !== undefined ? item.priceAtacado : '');
+                    let wVal = item.wholesalePrice !== undefined ? item.wholesalePrice : (item.priceAtacado !== undefined ? item.priceAtacado : (item.wp !== undefined ? item.wp : ''));
                     if (typeof wVal === 'number') wVal = wVal.toString();
                     if (typeof wVal === 'string') wVal = wVal.replace('R$', '').trim().replace(',', '.');
 
@@ -3017,19 +3061,34 @@
                     else if (typeof item.variations === 'string') varsStr = item.variations;
                     else if (typeof item.vars === 'string') varsStr = item.vars;
 
+                    const nameVal = item.name || item.nome || item.n || 'Produto sem nome';
+                    const catVal = item.category || item.categoria || item.cat || 'Outros';
+                    const descVal = item.description || item.descricao || item.d || '';
+                    const imgVal = item.image || item.imagem || item.i || '';
+                    const avVal = item.available !== undefined ? item.available : (item.av !== undefined ? item.av : true);
+
                     return {
                         id: item.id ? String(item.id).trim() : '',
-                        name: String(item.name || item.nome || 'Produto sem nome').trim(),
+                        name: String(nameVal).trim(),
                         price: pVal || '',
-                        category: String(item.category || item.categoria || 'Outros').trim() || 'Outros',
-                        description: String(item.description || item.descricao || '').trim(),
-                        image: String(item.image || item.imagem || '').trim(),
+                        category: String(catVal).trim() || 'Outros',
+                        description: String(descVal).trim(),
+                        image: String(imgVal).trim(),
+                        i2: String(item.i2 || item.image2 || '').trim(),
+                        i3: String(item.i3 || item.image3 || '').trim(),
+                        i4: String(item.i4 || item.image4 || '').trim(),
+                        i5: String(item.i5 || item.image5 || '').trim(),
+                        i6: String(item.i6 || item.image6 || '').trim(),
+                        videoUrl: String(item.videoUrl || item.v || '').trim(),
                         badge: String(item.badge || item.selo || '').trim(),
                         wholesalePrice: wVal || '',
-                        wholesaleMinQty: String(item.wholesaleMinQty || item.minWholesaleQty || item.qtdMinAtacado || '').trim(),
+                        wholesaleMinQty: String(item.wholesaleMinQty || item.minWholesaleQty || item.qtdMinAtacado || item.wq || '').trim(),
                         vars: varsStr,
-                        available: item.available !== undefined ? Boolean(item.available) : true,
-                        f: item.f !== undefined ? Boolean(item.f) : false,
+                        sh_sizes: String(item.sh_sizes || '').trim(),
+                        sh_colors: String(item.sh_colors || '').trim(),
+                        available: avVal !== false && avVal !== 'false',
+                        f: item.f !== undefined ? (item.f === true || item.f === 'true') : false,
+                        affiliateLink: String(item.affiliateLink || item.al || '').trim(),
                         selected: true
                     };
                 });
@@ -3167,12 +3226,21 @@
                     category: item.category,
                     description: item.description,
                     image: item.image,
-                    badge: item.badge,
-                    wholesalePrice: item.wholesalePrice,
-                    wholesaleMinQty: item.wholesaleMinQty,
-                    vars: item.vars,
-                    available: item.available,
-                    f: item.f
+                    i2: item.i2 || '',
+                    i3: item.i3 || '',
+                    i4: item.i4 || '',
+                    i5: item.i5 || '',
+                    i6: item.i6 || '',
+                    videoUrl: item.videoUrl || '',
+                    badge: item.badge || '',
+                    wholesalePrice: item.wholesalePrice || '',
+                    wholesaleMinQty: item.wholesaleMinQty || '',
+                    vars: item.vars || '',
+                    sh_sizes: item.sh_sizes || '',
+                    sh_colors: item.sh_colors || '',
+                    available: item.available !== false,
+                    f: item.f === true,
+                    affiliateLink: item.affiliateLink || ''
                 }));
             } else if (mode === 'update') {
                 let updatedCount = 0;
@@ -3193,12 +3261,21 @@
                         if (item.category) matched.category = item.category;
                         if (item.description !== '') matched.description = item.description;
                         if (item.image !== '') matched.image = item.image;
+                        if (item.i2 !== '') matched.i2 = item.i2;
+                        if (item.i3 !== '') matched.i3 = item.i3;
+                        if (item.i4 !== '') matched.i4 = item.i4;
+                        if (item.i5 !== '') matched.i5 = item.i5;
+                        if (item.i6 !== '') matched.i6 = item.i6;
+                        if (item.videoUrl !== '') matched.videoUrl = item.videoUrl;
                         if (item.badge !== '') matched.badge = item.badge;
                         if (item.wholesalePrice !== '') matched.wholesalePrice = item.wholesalePrice;
                         if (item.wholesaleMinQty !== '') matched.wholesaleMinQty = item.wholesaleMinQty;
                         if (item.vars !== '') matched.vars = item.vars;
+                        if (item.sh_sizes !== '') matched.sh_sizes = item.sh_sizes;
+                        if (item.sh_colors !== '') matched.sh_colors = item.sh_colors;
                         if (item.available !== undefined) matched.available = item.available;
                         if (item.f !== undefined) matched.f = item.f;
+                        if (item.affiliateLink !== '') matched.affiliateLink = item.affiliateLink;
                         updatedCount++;
                     } else {
                         // Adicionar como novo produto
@@ -3209,12 +3286,21 @@
                             category: item.category,
                             description: item.description,
                             image: item.image,
-                            badge: item.badge,
-                            wholesalePrice: item.wholesalePrice,
-                            wholesaleMinQty: item.wholesaleMinQty,
-                            vars: item.vars,
-                            available: item.available,
-                            f: item.f
+                            i2: item.i2 || '',
+                            i3: item.i3 || '',
+                            i4: item.i4 || '',
+                            i5: item.i5 || '',
+                            i6: item.i6 || '',
+                            videoUrl: item.videoUrl || '',
+                            badge: item.badge || '',
+                            wholesalePrice: item.wholesalePrice || '',
+                            wholesaleMinQty: item.wholesaleMinQty || '',
+                            vars: item.vars || '',
+                            sh_sizes: item.sh_sizes || '',
+                            sh_colors: item.sh_colors || '',
+                            available: item.available !== false,
+                            f: item.f === true,
+                            affiliateLink: item.affiliateLink || ''
                         });
                         addedCount++;
                     }

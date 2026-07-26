@@ -1417,6 +1417,44 @@
             window.saveDraft();
         }
 
+        window.compressImageFile = function(file, maxDim = 1200, quality = 0.82) {
+            return new Promise((resolve) => {
+                if (file.size <= 300 * 1024) {
+                    resolve(file);
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > maxDim || height > maxDim) {
+                            if (width > height) {
+                                height = Math.round((height * maxDim) / width);
+                                width = maxDim;
+                            } else {
+                                width = Math.round((width * maxDim) / height);
+                                height = maxDim;
+                            }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        canvas.toBlob((blob) => {
+                            resolve(blob || file);
+                        }, 'image/jpeg', quality);
+                    };
+                    img.onerror = () => resolve(file);
+                    img.src = e.target.result;
+                };
+                reader.onerror = () => resolve(file);
+                reader.readAsDataURL(file);
+            });
+        };
+
         window.uploadToImgBB = async function(event, targetType, targetId) {
             const file = event.target.files && event.target.files[0];
             if (!file) return;
@@ -1434,103 +1472,94 @@
             else labelEl = document.getElementById(`upload-lbl-${targetType}-${targetId}`);
 
             const originalText = labelEl ? labelEl.innerText : 'Upload Imagem';
-            if (labelEl) labelEl.innerText = 'Enviando...';
+            if (labelEl) labelEl.innerText = 'Otimizando...';
 
             try {
-                const reader = new FileReader();
-                reader.onload = async function(e) {
-                    try {
-                        const base64Data = e.target.result.split(',')[1];
-                        const formData = new FormData();
-                        formData.append('image', base64Data);
+                const compressedBlob = await window.compressImageFile(file, 1200, 0.82);
+                if (labelEl) labelEl.innerText = 'Enviando...';
 
-                        const response = await fetch('https://api.imgbb.com/1/upload?key=7964279bf733e466f7a4d3adb322dcbe', {
-                            method: 'POST',
-                            body: formData
-                        });
+                const formData = new FormData();
+                formData.append('image', compressedBlob, file.name.replace(/\.[^/.]+$/, "") + ".jpg");
 
-                        const json = await response.json();
+                const response = await fetch('https://api.imgbb.com/1/upload?key=7964279bf733e466f7a4d3adb322dcbe', {
+                    method: 'POST',
+                    body: formData
+                });
 
-                        if (json.success && json.data && json.data.url) {
-                            const imageUrl = json.data.url;
+                const json = await response.json();
 
-                            if (targetType === 'logo') {
-                                const inputEl = document.getElementById('store-logo');
-                                if (inputEl) inputEl.value = imageUrl;
-                                if (window.updateLogoPreview) window.updateLogoPreview(imageUrl);
-                                if (window.saveDraft) window.saveDraft();
-                            } else if (targetType === 'banner') {
-                                const inputEl = document.getElementById('banner-image');
-                                if (inputEl) inputEl.value = imageUrl;
-                                if (window.updateBannerPreview) window.updateBannerPreview(imageUrl);
-                                if (window.saveDraft) window.saveDraft();
-                            } else if (targetType === 'payment_badge') {
-                                const inputEl = document.getElementById('payment-badge-image');
-                                if (inputEl) inputEl.value = imageUrl;
-                                if (window.updatePaymentBadgePreview) window.updatePaymentBadgePreview(imageUrl);
-                                if (window.saveDraft) window.saveDraft();
-                            } else if (targetType === 'promo') {
-                                const bannerId = targetId;
-                                const inputEl = document.getElementById(`promo-img-input-${bannerId}`);
-                                if (inputEl) inputEl.value = imageUrl;
-                                if (window.updatePromoBanner) window.updatePromoBanner(bannerId, 'i', imageUrl);
-                                const previewImg = document.getElementById(`promo-preview-${bannerId}`);
-                                const iconEl = document.getElementById(`promo-icon-${bannerId}`);
-                                if (previewImg) {
-                                    previewImg.src = window.proxyImg(imageUrl);
-                                    previewImg.classList.remove('hidden');
-                                }
-                                if (iconEl) iconEl.classList.add('hidden');
-                                if (window.saveDraft) window.saveDraft();
-                            } else {
-                                const productId = targetType;
-                                const imgField = targetId;
+                if (json.success && json.data && json.data.url) {
+                    const imageUrl = json.data.url;
 
-                                window.updateProduct(productId, imgField, imageUrl);
-
-                                const inputEl = document.getElementById(`input-${productId}-${imgField}`);
-                                if (inputEl) inputEl.value = imageUrl;
-
-                                const previewImg = document.getElementById(`preview-${productId}-${imgField}`);
-                                const iconEl = document.getElementById(`icon-${productId}-${imgField}`);
-                                if (previewImg) {
-                                    previewImg.src = window.proxyImg(imageUrl);
-                                    previewImg.classList.remove('hidden');
-                                }
-                                if (iconEl) iconEl.classList.add('hidden');
-
-                                if (imgField === 'image') {
-                                    const headerImg = document.getElementById(`header-img-${productId}`);
-                                    const headerIcon = document.getElementById(`header-icon-${productId}`);
-                                    if (headerImg) {
-                                        headerImg.src = window.proxyImg(imageUrl);
-                                        headerImg.classList.remove('hidden');
-                                    }
-                                    if (headerIcon) headerIcon.classList.add('hidden');
-                                }
-                            }
-
-                            if (labelEl) labelEl.innerText = 'Enviado!';
-                            setTimeout(() => {
-                                if (labelEl) labelEl.innerText = originalText;
-                            }, 2000);
-                        } else {
-                            console.error("Erro ImgBB:", json);
-                            alert("Erro ao enviar imagem para o ImgBB: " + (json.error ? json.error.message : 'Erro na API'));
-                            if (labelEl) labelEl.innerText = originalText;
+                    if (targetType === 'logo') {
+                        const inputEl = document.getElementById('store-logo');
+                        if (inputEl) inputEl.value = imageUrl;
+                        if (window.updateLogoPreview) window.updateLogoPreview(imageUrl);
+                        if (window.saveDraft) window.saveDraft();
+                    } else if (targetType === 'banner') {
+                        const inputEl = document.getElementById('banner-image');
+                        if (inputEl) inputEl.value = imageUrl;
+                        if (window.updateBannerPreview) window.updateBannerPreview(imageUrl);
+                        if (window.saveDraft) window.saveDraft();
+                    } else if (targetType === 'payment_badge') {
+                        const inputEl = document.getElementById('payment-badge-image');
+                        if (inputEl) inputEl.value = imageUrl;
+                        if (window.updatePaymentBadgePreview) window.updatePaymentBadgePreview(imageUrl);
+                        if (window.saveDraft) window.saveDraft();
+                    } else if (targetType === 'promo') {
+                        const bannerId = targetId;
+                        const inputEl = document.getElementById(`promo-img-input-${bannerId}`);
+                        if (inputEl) inputEl.value = imageUrl;
+                        if (window.updatePromoBanner) window.updatePromoBanner(bannerId, 'i', imageUrl);
+                        const previewImg = document.getElementById(`promo-preview-${bannerId}`);
+                        const iconEl = document.getElementById(`promo-icon-${bannerId}`);
+                        if (previewImg) {
+                            previewImg.src = window.proxyImg(imageUrl);
+                            previewImg.classList.remove('hidden');
                         }
-                    } catch (err) {
-                        console.error("Erro no envio para ImgBB:", err);
-                        alert("Erro de comunicação ao enviar imagem.");
-                        if (labelEl) labelEl.innerText = originalText;
+                        if (iconEl) iconEl.classList.add('hidden');
+                        if (window.saveDraft) window.saveDraft();
+                    } else {
+                        const productId = targetType;
+                        const imgField = targetId;
+
+                        window.updateProduct(productId, imgField, imageUrl);
+
+                        const inputEl = document.getElementById(`input-${productId}-${imgField}`);
+                        if (inputEl) inputEl.value = imageUrl;
+
+                        const previewImg = document.getElementById(`preview-${productId}-${imgField}`);
+                        const iconEl = document.getElementById(`icon-${productId}-${imgField}`);
+                        if (previewImg) {
+                            previewImg.src = window.proxyImg(imageUrl);
+                            previewImg.classList.remove('hidden');
+                        }
+                        if (iconEl) iconEl.classList.add('hidden');
+
+                        if (imgField === 'image') {
+                            const headerImg = document.getElementById(`header-img-${productId}`);
+                            const headerIcon = document.getElementById(`header-icon-${productId}`);
+                            if (headerImg) {
+                                headerImg.src = window.proxyImg(imageUrl);
+                                headerImg.classList.remove('hidden');
+                            }
+                            if (headerIcon) headerIcon.classList.add('hidden');
+                        }
                     }
-                };
-                reader.readAsDataURL(file);
+
+                    if (labelEl) labelEl.innerText = 'Enviado!';
+                    setTimeout(() => {
+                        if (labelEl) labelEl.innerText = originalText;
+                    }, 2000);
+                } else {
+                    console.error("Erro ImgBB:", json);
+                    alert("Erro ao enviar imagem para o ImgBB: " + (json.error ? json.error.message : 'Erro na API'));
+                    if (labelEl) labelEl.innerText = originalText;
+                }
             } catch (err) {
-                console.error("Erro FileReader:", err);
+                console.error("Erro no envio para ImgBB:", err);
+                alert("Erro de comunicação ao enviar imagem.");
                 if (labelEl) labelEl.innerText = originalText;
-            } finally {
-                event.target.value = '';
             }
         };
 

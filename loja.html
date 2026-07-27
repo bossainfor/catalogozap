@@ -1318,6 +1318,35 @@
             document.getElementById('overlay').classList.toggle('open', open);
         }
 
+        window.saveCart = function() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const storeId = urlParams.get('id');
+                const key = storeId ? ('cart_' + storeId) : 'cart_default';
+                localStorage.setItem(key, JSON.stringify(cart));
+            } catch (e) {
+                console.error("Erro ao salvar carrinho:", e);
+            }
+        };
+
+        window.loadCart = function() {
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const storeId = urlParams.get('id');
+                const key = storeId ? ('cart_' + storeId) : 'cart_default';
+                const saved = localStorage.getItem(key);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed)) {
+                        cart = parsed;
+                    }
+                }
+            } catch (e) {
+                console.error("Erro ao carregar carrinho:", e);
+                cart = [];
+            }
+        };
+
         function addToCart(productId, variations = {}, observation = '') {
             const product = storeData.products.find(p => p.id === productId);
             const itemKey = JSON.stringify({ variations, observation });
@@ -1350,6 +1379,7 @@
         }
 
         function updateCartUI() {
+            window.saveCart();
             const itemsContainer = document.getElementById('cart-items');
             const footerContainer = document.getElementById('cart-footer');
             const fab = document.getElementById('cart-fab');
@@ -2475,7 +2505,9 @@
             if (storeData) {
                 window.fullCatalog = storeData.products;
             }
+            window.loadCart();
             renderStore();
+            updateCartUI();
         };
     </script>
     <!-- ATENDENTE INTELIGENTE (IA LOCAL) -->

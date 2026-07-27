@@ -443,6 +443,36 @@
                             </button>
                         </div>
                     </div>
+
+                    <!-- BARRA DE BUSCA, FILTRO E CONTROLES DA LISTA DE PRODUTOS -->
+                    <div class="bg-slate-100/80 p-3 sm:p-4 rounded-2xl border border-slate-200 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                        <div class="flex flex-1 flex-col sm:flex-row items-center gap-2">
+                            <div class="relative w-full sm:flex-1">
+                                <input type="text" id="product-search-input" value="" oninput="window.filterProducts()" placeholder="🔍 Pesquisar produto por nome..." class="w-full pl-9 pr-4 py-2.5 bg-white rounded-xl border border-slate-200 text-xs font-bold text-slate-800 outline-none focus:border-orange-500 shadow-sm">
+                                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
+                            </div>
+                            <select id="product-category-filter" onchange="window.filterProducts()" class="w-full sm:w-auto px-3 py-2.5 bg-white rounded-xl border border-slate-200 text-xs font-bold text-slate-700 outline-none focus:border-orange-500 shadow-sm">
+                                <option value="">Todas as Categorias</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
+                            <button type="button" id="toggle-list-visibility-btn" onclick="window.toggleProductListVisibility()" class="bg-white text-slate-700 border border-slate-200 px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-50 active-scale flex items-center gap-1.5 cursor-pointer shadow-sm" title="Mostrar ou ocultar lista de produtos">
+                                <i data-lucide="eye-off" id="toggle-list-icon" class="w-4 h-4 text-slate-500"></i>
+                                <span id="toggle-list-lbl">Ocultar Lista</span>
+                            </button>
+                            <div class="flex items-center gap-1">
+                                <button type="button" onclick="window.collapseAllProducts()" class="bg-white text-slate-600 border border-slate-200 p-2 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-slate-50 active-scale flex items-center gap-1 shadow-sm" title="Recolher todos os produtos">
+                                    <i data-lucide="chevrons-up" class="w-4 h-4 text-slate-500"></i>
+                                    <span class="hidden sm:inline">Recolher</span>
+                                </button>
+                                <button type="button" onclick="window.expandAllProducts()" class="bg-white text-slate-600 border border-slate-200 p-2 rounded-xl text-[10px] font-bold uppercase tracking-wider hover:bg-slate-50 active-scale flex items-center gap-1 shadow-sm" title="Expandir todos os produtos">
+                                    <i data-lucide="chevrons-down" class="w-4 h-4 text-slate-500"></i>
+                                    <span class="hidden sm:inline">Expandir</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div id="products-list" class="space-y-4"></div>
                     <datalist id="categories-datalist"></datalist>
                 </section>
@@ -711,6 +741,11 @@
         window.promotionalBanners = [];
         window.videoUploadUrl = 'https://www.videotourl.com/';
         window.expandedProducts = new Set();
+        window.isProductListVisible = true;
+        window.productSearchQuery = '';
+        window.productCategoryFilter = '';
+        window.productCurrentPage = 1;
+        window.productItemsPerPage = 15;
 
         window.operatingHoursData = {
             mode: '24h',
@@ -1089,7 +1124,8 @@
                     return;
                 }
                 const id = Date.now().toString();
-                window.products.push({ 
+                // Adiciona no TOPO da lista para facilitar cadastro imediato
+                window.products.unshift({ 
                     id: id, 
                     name: '', 
                     price: '', 
@@ -1108,9 +1144,26 @@
                     category: '', 
                     description: '' 
                 });
+
+                // Garantir que a lista fique visível e resete filtros para mostrar o novo item na pág 1
+                window.isProductListVisible = true;
+                window.productCurrentPage = 1;
+                window.productSearchQuery = '';
+                window.productCategoryFilter = '';
+                const searchInp = document.getElementById('product-search-input');
+                if (searchInp) searchInp.value = '';
+                const catF = document.getElementById('product-category-filter');
+                if (catF) catF.value = '';
+
                 window.renderProducts();
-                // Auto-expandir o novo produto
-                setTimeout(() => window.toggleProduct(id), 50);
+                // Auto-expandir o novo produto e focar nele
+                setTimeout(() => {
+                    window.toggleProduct(id);
+                    const containerEl = document.getElementById(`container-${id}`);
+                    if (containerEl) {
+                        containerEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }, 50);
                 window.saveDraft();
             } catch (err) {
                 console.error("Erro ao adicionar produto:", err);
@@ -1583,13 +1636,75 @@
             }
         };
 
+        window.toggleProductListVisibility = function() {
+            window.isProductListVisible = !window.isProductListVisible;
+            window.renderProducts();
+        }
+
+        window.filterProducts = function() {
+            const searchInp = document.getElementById('product-search-input');
+            const catF = document.getElementById('product-category-filter');
+            if (searchInp) window.productSearchQuery = searchInp.value.trim().toLowerCase();
+            if (catF) window.productCategoryFilter = catF.value.trim();
+            window.productCurrentPage = 1;
+            window.renderProducts();
+        }
+
+        window.collapseAllProducts = function() {
+            window.expandedProducts.clear();
+            window.renderProducts();
+        }
+
+        window.expandAllProducts = function() {
+            if (!window.products) return;
+            window.products.forEach(p => window.expandedProducts.add(p.id));
+            window.renderProducts();
+        }
+
+        window.changeProductPage = function(page) {
+            window.productCurrentPage = page;
+            window.renderProducts();
+            const listEl = document.getElementById('products-list');
+            if (listEl) listEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+
+        window.changeProductItemsPerPage = function(val) {
+            window.productItemsPerPage = val === 'all' ? 999999 : parseInt(val);
+            window.productCurrentPage = 1;
+            window.renderProducts();
+        }
+
         window.renderProducts = function() {
             try {
                 window.updateCategoriesDatalist();
                 const list = document.getElementById('products-list');
                 if (!list) return;
-                
-                const niche = document.getElementById('niche').value;
+
+                // Atualizar filtro de categoria no select
+                const catSelect = document.getElementById('product-category-filter');
+                if (catSelect) {
+                    const currentSel = window.productCategoryFilter || '';
+                    const categories = [...new Set((window.products || [])
+                        .map(p => (p.category || '').trim())
+                        .filter(c => c !== '')
+                        .sort()
+                    )];
+                    catSelect.innerHTML = `<option value="">Todas as Categorias (${categories.length})</option>` +
+                        categories.map(c => `<option value="${c}" ${c === currentSel ? 'selected' : ''}>${c}</option>`).join('');
+                }
+
+                // Atualizar botão de Visibilidade da Lista
+                const toggleBtnLbl = document.getElementById('toggle-list-lbl');
+                const toggleBtnIcon = document.getElementById('toggle-list-icon');
+                const totalProds = (window.products || []).length;
+                if (toggleBtnLbl) {
+                    toggleBtnLbl.innerText = window.isProductListVisible ? `Ocultar Lista (${totalProds})` : `Mostrar Lista (${totalProds})`;
+                }
+                if (toggleBtnIcon) {
+                    toggleBtnIcon.setAttribute('data-lucide', window.isProductListVisible ? 'eye-off' : 'eye');
+                }
+
+                const niche = document.getElementById('niche') ? document.getElementById('niche').value : 'loja';
                 const isService = ['servicos', 'portfolio', 'clinica', 'salao', 'barbearia'].includes(niche);
                 const isAffiliate = niche === 'afiliados';
                 const isFood = niche === 'cardapio';
@@ -1608,9 +1723,9 @@
                 if (window.storePlan === 'free') limit = 5;
                 else if (window.storePlan === 'basic') limit = 15;
 
-                const isLocked = window.storePlan === 'free' && window.products.length >= 5;
+                const isLocked = window.storePlan === 'free' && totalProds >= 5;
 
-                if (!window.products || window.products.length === 0) {
+                if (!window.products || totalProds === 0) {
                     list.innerHTML = `
                         <div class="bg-slate-50 p-8 sm:p-12 rounded-[2rem] border-2 border-dashed border-slate-200 text-center space-y-3">
                             <div class="w-12 h-12 bg-slate-200/60 text-slate-400 rounded-full flex items-center justify-center mx-auto">
@@ -1626,7 +1741,69 @@
                     return;
                 }
 
-                list.innerHTML = window.products.map((p, index) => {
+                // Se a lista estiver oculta a pedido do usuário
+                if (!window.isProductListVisible) {
+                    list.innerHTML = `
+                        <div class="bg-orange-50 border-2 border-orange-200 p-6 sm:p-8 rounded-[2rem] text-center space-y-3 shadow-sm">
+                            <div class="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center mx-auto">
+                                <i data-lucide="eye-off" class="w-6 h-6"></i>
+                            </div>
+                            <h4 class="font-black text-sm uppercase tracking-wider text-orange-800">Lista de Produtos Oculta (${totalProds} Cadastrados)</h4>
+                            <p class="text-xs text-orange-700 font-medium max-w-md mx-auto leading-relaxed">
+                                A lista de produtos foi temporariamente recolhida para você editar as configurações da loja sem precisar rolar uma página longa.
+                            </p>
+                            <div class="pt-2 flex items-center justify-center gap-2">
+                                <button type="button" onclick="window.toggleProductListVisibility()" class="px-6 py-3 bg-orange-600 text-white rounded-xl font-black uppercase text-xs tracking-widest hover:bg-orange-700 active-scale inline-flex items-center gap-2 shadow-lg shadow-orange-200 cursor-pointer">
+                                    <i data-lucide="eye" class="w-4 h-4"></i> Mostrar Todos os ${totalProds} Produtos
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    if (window.lucide) lucide.createIcons();
+                    return;
+                }
+
+                // Filtragem por Busca e Categoria
+                let filtered = window.products;
+                if (window.productSearchQuery) {
+                    const q = window.productSearchQuery;
+                    filtered = filtered.filter(p => 
+                        (p.name || '').toLowerCase().includes(q) ||
+                        (p.category || '').toLowerCase().includes(q) ||
+                        (p.description || '').toLowerCase().includes(q)
+                    );
+                }
+                if (window.productCategoryFilter) {
+                    const c = window.productCategoryFilter;
+                    filtered = filtered.filter(p => (p.category || '').trim() === c);
+                }
+
+                if (filtered.length === 0) {
+                    list.innerHTML = `
+                        <div class="bg-slate-50 p-8 rounded-[2rem] border-2 border-slate-200 text-center space-y-3">
+                            <p class="font-bold text-xs uppercase tracking-wider text-slate-400">Nenhum produto encontrado para a busca ou filtro selecionado.</p>
+                            <button type="button" onclick="document.getElementById('product-search-input').value=''; document.getElementById('product-category-filter').value=''; window.filterProducts()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold text-xs uppercase hover:bg-slate-300 transition-all cursor-pointer">
+                                Limpar Filtros
+                            </button>
+                        </div>
+                    `;
+                    if (window.lucide) lucide.createIcons();
+                    return;
+                }
+
+                // Paginação
+                const totalFiltered = filtered.length;
+                const perPage = window.productItemsPerPage || 15;
+                const totalPages = Math.ceil(totalFiltered / perPage) || 1;
+                if (window.productCurrentPage > totalPages) window.productCurrentPage = totalPages;
+                if (window.productCurrentPage < 1) window.productCurrentPage = 1;
+
+                const startIdx = (window.productCurrentPage - 1) * perPage;
+                const endIdx = startIdx + perPage;
+                const paginatedList = filtered.slice(startIdx, endIdx);
+
+                let cardsHTML = paginatedList.map((p) => {
+                    const index = window.products.findIndex(item => item.id === p.id);
                     const isOpen = window.expandedProducts.has(p.id);
                     const nameEscaped = String(p.name || '').replace(/"/g, '&quot;');
                     const catEscaped = String(p.category || '').replace(/"/g, '&quot;');
@@ -1644,7 +1821,7 @@
                     const img6Escaped = String(p.i6 || '').replace(/"/g, '&quot;');
                     const videoEscaped = String(p.videoUrl || '').replace(/"/g, '&quot;');
                     const hasVideo = p.videoUrl && p.videoUrl.trim() !== '';
-                    
+
                     return `
                     <div id="container-${p.id}" class="${isOpen ? 'ring-2 ring-orange-500 bg-white' : 'bg-slate-50/50'} rounded-[2rem] border border-slate-200 overflow-hidden transition-all duration-300">
                         <!-- CABEÇALHO COMPACTO -->
@@ -1856,6 +2033,55 @@
                     </div>
                 `;
                 }).join('');
+
+                // Adicionar Barra de Paginação se houver mais de perPage ou múltiplas páginas
+                let paginationHTML = '';
+                if (totalPages > 1 || totalFiltered > 15) {
+                    const firstShown = startIdx + 1;
+                    const lastShown = Math.min(endIdx, totalFiltered);
+                    
+                    let pageBtnsHTML = '';
+                    for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+                        if (pageNum === 1 || pageNum === totalPages || (pageNum >= window.productCurrentPage - 1 && pageNum <= window.productCurrentPage + 1)) {
+                            const isCurrent = pageNum === window.productCurrentPage;
+                            pageBtnsHTML += `
+                                <button type="button" onclick="window.changeProductPage(${pageNum})" class="w-8 h-8 rounded-xl font-black text-xs transition-all ${isCurrent ? 'bg-orange-600 text-white shadow-md' : 'bg-white text-slate-700 hover:bg-slate-100 border border-slate-200'}">
+                                    ${pageNum}
+                                </button>
+                            `;
+                        } else if (pageNum === window.productCurrentPage - 2 || pageNum === window.productCurrentPage + 2) {
+                            pageBtnsHTML += `<span class="text-slate-400 font-bold px-1 text-xs">...</span>`;
+                        }
+                    }
+
+                    paginationHTML = `
+                        <div class="mt-6 p-4 bg-white rounded-2xl border border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+                            <div class="text-xs font-bold text-slate-500">
+                                Exibindo <span class="text-slate-900 font-black">${firstShown}–${lastShown}</span> de <span class="text-slate-900 font-black">${totalFiltered}</span> produtos
+                            </div>
+                            <div class="flex items-center gap-2 flex-wrap">
+                                <div class="flex items-center gap-1">
+                                    <button type="button" ${window.productCurrentPage === 1 ? 'disabled' : ''} onclick="window.changeProductPage(${window.productCurrentPage - 1})" class="p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-40 disabled:pointer-events-none transition-all">
+                                        <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                                    </button>
+                                    ${pageBtnsHTML}
+                                    <button type="button" ${window.productCurrentPage === totalPages ? 'disabled' : ''} onclick="window.changeProductPage(${window.productCurrentPage + 1})" class="p-2 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 disabled:opacity-40 disabled:pointer-events-none transition-all">
+                                        <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                    </button>
+                                </div>
+                                <select onchange="window.changeProductItemsPerPage(this.value)" class="ml-2 px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 outline-none">
+                                    <option value="15" ${perPage === 15 ? 'selected' : ''}>15 por pág.</option>
+                                    <option value="30" ${perPage === 30 ? 'selected' : ''}>30 por pág.</option>
+                                    <option value="50" ${perPage === 50 ? 'selected' : ''}>50 por pág.</option>
+                                    <option value="100" ${perPage === 100 ? 'selected' : ''}>100 por pág.</option>
+                                    <option value="all" ${perPage > 1000 ? 'selected' : ''}>Mostrar Todos</option>
+                                </select>
+                            </div>
+                        </div>
+                    `;
+                }
+
+                list.innerHTML = cardsHTML + paginationHTML;
                 if (window.lucide) lucide.createIcons();
             } catch (err) {
                 console.error("Erro ao renderizar produtos:", err);

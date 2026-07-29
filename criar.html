@@ -2514,9 +2514,10 @@
             data.t = document.getElementById('niche').value;
             data.imf = document.getElementById('image-format').value;
             
+            let extraChunksToSave = [];
             const validProducts = (window.products || []).filter(p => p && (p.name || p.n || p.description || p.d));
             if (validProducts.length > 0) {
-                data.p = validProducts.map(p => {
+                const mappedProducts = validProducts.map(p => {
                     const item = { 
                         id: p.id || Math.random().toString(36).substr(2, 9), 
                         n: String(p.name || p.n || 'Produto').trim() 
@@ -2562,7 +2563,20 @@
 
                     return item;
                 });
-                data.products = data.p; // Garantia de compatibilidade com formatos longos/padrão
+
+                const CHUNK_SIZE = 150;
+                data.p = mappedProducts.slice(0, CHUNK_SIZE);
+                if (mappedProducts.length > CHUNK_SIZE) {
+                    for (let i = CHUNK_SIZE; i < mappedProducts.length; i += CHUNK_SIZE) {
+                        extraChunksToSave.push(mappedProducts.slice(i, i + CHUNK_SIZE));
+                    }
+                    data.p_extra_chunks = extraChunksToSave.length;
+                } else {
+                    data.p_extra_chunks = 0;
+                }
+            } else {
+                data.p = [];
+                data.p_extra_chunks = 0;
             }
 
             // Preserva o plano e vendedores (com cliques integrados)
@@ -2665,8 +2679,18 @@
                     }
                 }
 
-                // Salva no Firebase
+                // Salva no Firebase (documento principal)
                 await setDoc(doc(window.db, "stores", storeId), data);
+
+                // Salva chunks extras se o catálogo for grande (>150 itens)
+                if (extraChunksToSave && extraChunksToSave.length > 0) {
+                    for (let i = 0; i < extraChunksToSave.length; i++) {
+                        const chunkNum = i + 1;
+                        await setDoc(doc(window.db, "stores", storeId, "catalog_chunks", "chunk_" + chunkNum), {
+                            p: extraChunksToSave[i]
+                        });
+                    }
+                }
 
                 // Se for uma criação nova, registra no histórico de testes (Trava Opção 2)
                 if (!existingId) {
@@ -3000,7 +3024,28 @@
                         window.setOperatingHoursMode('24h');
                     }
                     
-                    const rawProds = (data.p && data.p.length > 0) ? data.p : (data.products && data.products.length > 0 ? data.products : (data.produtos && data.produtos.length > 0 ? data.produtos : []));
+                    let rawProds = (data.p && data.p.length > 0) ? [...data.p] : (data.products && data.products.length > 0 ? [...data.products] : (data.produtos && data.produtos.length > 0 ? [...data.produtos] : []));
+
+                    if (data.p_extra_chunks && data.p_extra_chunks > 0) {
+                        try {
+                            const { getDoc, doc } = window.firebaseUtils;
+                            const extraPromises = [];
+                            for (let c = 1; c <= data.p_extra_chunks; c++) {
+                                extraPromises.push(getDoc(doc(window.db, "stores", existingId, "catalog_chunks", "chunk_" + c)));
+                            }
+                            const extraSnaps = await Promise.all(extraPromises);
+                            extraSnaps.forEach(snap => {
+                                if (snap.exists()) {
+                                    const cData = snap.data();
+                                    if (cData && Array.isArray(cData.p)) {
+                                        rawProds = rawProds.concat(cData.p);
+                                    }
+                                }
+                            });
+                        } catch (eChunk) {
+                            console.error("Erro ao carregar chunks de produtos no painel:", eChunk);
+                        }
+                    }
 
                     if (rawProds.length > 0) {
                         window.products = rawProds.map(p => {

@@ -19,6 +19,15 @@ service cloud.firestore {
       allow delete: if true;
     }
 
+    // Allow anyone to read and write store products subcollection
+    match /stores/{storeId}/products/{productId} {
+      allow read, write: if true;
+    }
+
+    match /stores/{storeId}/products/{document=**} {
+      allow read, write: if true;
+    }
+
     // Allow anyone to read and write reviews in a flat collection
     match /reviews/{reviewId} {
       allow read, write: if true;

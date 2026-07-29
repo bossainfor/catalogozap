@@ -382,9 +382,12 @@
                             </div>
                         </div>
 
-                        <div id="oh-shortcut-container" class="hidden pt-1">
-                            <button type="button" onclick="window.applyStandardHours()" class="w-full py-3.5 px-4 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-2xl font-black uppercase text-[10px] tracking-wider transition-all border border-orange-200 flex items-center justify-center gap-1.5 active-scale shadow-sm cursor-pointer">
+                        <div id="oh-shortcut-container" class="hidden pt-1 flex flex-col sm:flex-row gap-2">
+                            <button type="button" onclick="window.applyStandardHours(false)" class="flex-1 py-3 px-3.5 bg-orange-100 hover:bg-orange-200 text-orange-800 rounded-2xl font-black uppercase text-[10px] tracking-wider transition-all border border-orange-200 flex items-center justify-center gap-1.5 active-scale shadow-sm cursor-pointer">
                                 <i data-lucide="zap" class="w-3.5 h-3.5"></i> REPLICAR SEG A SÁB (08:00 ÀS 22:00)
+                            </button>
+                            <button type="button" onclick="window.applyStandardHours(true)" class="flex-1 py-3 px-3.5 bg-orange-500 hover:bg-orange-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-wider transition-all border border-orange-600 flex items-center justify-center gap-1.5 active-scale shadow-sm cursor-pointer">
+                                <i data-lucide="coffee" class="w-3.5 h-3.5"></i> REPLICAR COM ALMOÇO (08-12h e 14-18h)
                             </button>
                         </div>
 
@@ -821,50 +824,90 @@
 
             container.innerHTML = DAYS_NAMES.map(dayObj => {
                 const dayId = dayObj.id;
-                const conf = (window.operatingHoursData && window.operatingHoursData.days) ? (window.operatingHoursData.days[dayId] || { active: false, start: '08:00', end: '22:00' }) : { active: false, start: '08:00', end: '22:00' };
+                const conf = (window.operatingHoursData && window.operatingHoursData.days) ? (window.operatingHoursData.days[dayId] || { active: false, start: '08:00', end: '12:00', hasSplit: false, start2: '14:00', end2: '18:00' }) : { active: false, start: '08:00', end: '12:00', hasSplit: false, start2: '14:00', end2: '18:00' };
 
                 return `
-                    <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-sm">
-                        <div class="flex items-center justify-between sm:justify-start gap-3">
-                            <label class="relative inline-flex items-center cursor-pointer select-none">
-                                <input type="checkbox" onchange="window.toggleOperatingDay('${dayId}', this.checked)" ${conf.active ? 'checked' : ''} class="sr-only peer">
-                                <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
-                            </label>
-                            <span class="font-black text-xs sm:text-sm text-slate-800 uppercase tracking-wide">${dayObj.name}</span>
+                    <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 space-y-3 shadow-sm">
+                        <div class="flex items-center justify-between flex-wrap gap-2">
+                            <div class="flex items-center gap-3">
+                                <label class="relative inline-flex items-center cursor-pointer select-none">
+                                    <input type="checkbox" onchange="window.toggleOperatingDay('${dayId}', this.checked)" ${conf.active ? 'checked' : ''} class="sr-only peer">
+                                    <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                                </label>
+                                <span class="font-black text-xs sm:text-sm text-slate-800 uppercase tracking-wide">${dayObj.name}</span>
+                            </div>
+
+                            <button type="button" onclick="window.toggleOperatingSplit('${dayId}')" class="${conf.active ? '' : 'opacity-40 pointer-events-none'} text-[10px] font-black uppercase tracking-wider ${conf.hasSplit ? 'bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-200' : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'} px-2.5 py-1.5 rounded-xl border flex items-center gap-1.5 transition-all cursor-pointer">
+                                <i data-lucide="${conf.hasSplit ? 'minus-circle' : 'plus-circle'}" class="w-3.5 h-3.5"></i>
+                                <span>${conf.hasSplit ? 'Remover 2º Turno' : '+ 2º Turno (Almoço)'}</span>
+                            </button>
                         </div>
 
-                        <div id="oh-time-inputs-${dayId}" class="flex items-center gap-2 ${conf.active ? '' : 'opacity-40 pointer-events-none'} transition-opacity">
-                            <div class="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
-                                <span class="text-[9px] font-black text-slate-400 uppercase">ABRE:</span>
-                                <input type="time" value="${conf.start || '08:00'}" onchange="window.updateOperatingTime('${dayId}', 'start', this.value)" class="bg-transparent font-black text-xs text-slate-800 outline-none">
+                        <div id="oh-time-inputs-${dayId}" class="flex flex-col gap-2 ${conf.active ? '' : 'opacity-40 pointer-events-none'} transition-opacity">
+                            <!-- 1º Turno (Manhã / Integral) -->
+                            <div class="flex flex-wrap items-center gap-2">
+                                ${conf.hasSplit ? '<span class="text-[9px] font-black text-orange-600 bg-orange-50 px-2 py-1 rounded-lg border border-orange-100">1º TURNO:</span>' : ''}
+                                <div class="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+                                    <span class="text-[9px] font-black text-slate-400 uppercase">ABRE:</span>
+                                    <input type="time" value="${conf.start || '08:00'}" onchange="window.updateOperatingTime('${dayId}', 'start', this.value)" class="bg-transparent font-black text-xs text-slate-800 outline-none">
+                                </div>
+                                <span class="text-xs font-bold text-slate-400">ÀS</span>
+                                <div class="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+                                    <span class="text-[9px] font-black text-slate-400 uppercase">FECHA:</span>
+                                    <input type="time" value="${conf.end || (conf.hasSplit ? '12:00' : '22:00')}" onchange="window.updateOperatingTime('${dayId}', 'end', this.value)" class="bg-transparent font-black text-xs text-slate-800 outline-none">
+                                </div>
                             </div>
-                            <span class="text-xs font-bold text-slate-400">ÀS</span>
-                            <div class="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
-                                <span class="text-[9px] font-black text-slate-400 uppercase">FECHA:</span>
-                                <input type="time" value="${conf.end || '22:00'}" onchange="window.updateOperatingTime('${dayId}', 'end', this.value)" class="bg-transparent font-black text-xs text-slate-800 outline-none">
-                            </div>
+
+                            <!-- 2º Turno (Tarde / Noite) -->
+                            ${conf.hasSplit ? `
+                                <div class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100">
+                                    <span class="text-[9px] font-black text-orange-600 bg-orange-50 px-2 py-1 rounded-lg border border-orange-100">2º TURNO:</span>
+                                    <div class="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+                                        <span class="text-[9px] font-black text-slate-400 uppercase">ABRE:</span>
+                                        <input type="time" value="${conf.start2 || '14:00'}" onchange="window.updateOperatingTime('${dayId}', 'start2', this.value)" class="bg-transparent font-black text-xs text-slate-800 outline-none">
+                                    </div>
+                                    <span class="text-xs font-bold text-slate-400">ÀS</span>
+                                    <div class="flex items-center gap-1.5 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+                                        <span class="text-[9px] font-black text-slate-400 uppercase">FECHA:</span>
+                                        <input type="time" value="${conf.end2 || '18:00'}" onchange="window.updateOperatingTime('${dayId}', 'end2', this.value)" class="bg-transparent font-black text-xs text-slate-800 outline-none">
+                                    </div>
+                                </div>
+                            ` : ''}
                         </div>
                     </div>
                 `;
             }).join('');
+
+            if (window.lucide) setTimeout(() => lucide.createIcons(), 50);
         };
 
         window.toggleOperatingDay = function(dayId, checked) {
             if (!window.operatingHoursData) window.operatingHoursData = { mode: 'schedule', days: {} };
             if (!window.operatingHoursData.days) window.operatingHoursData.days = {};
             if (!window.operatingHoursData.days[dayId]) {
-                window.operatingHoursData.days[dayId] = { active: checked, start: '08:00', end: '22:00' };
+                window.operatingHoursData.days[dayId] = { active: checked, start: '08:00', end: '22:00', hasSplit: false, start2: '14:00', end2: '18:00' };
             } else {
                 window.operatingHoursData.days[dayId].active = checked;
             }
-            const timeInputs = document.getElementById(`oh-time-inputs-${dayId}`);
-            if (timeInputs) {
-                if (checked) {
-                    timeInputs.classList.remove('opacity-40', 'pointer-events-none');
-                } else {
-                    timeInputs.classList.add('opacity-40', 'pointer-events-none');
+            window.renderOperatingDays();
+            if (typeof window.saveDraft === 'function') window.saveDraft();
+        };
+
+        window.toggleOperatingSplit = function(dayId) {
+            if (!window.operatingHoursData) window.operatingHoursData = { mode: 'schedule', days: {} };
+            if (!window.operatingHoursData.days) window.operatingHoursData.days = {};
+            if (!window.operatingHoursData.days[dayId]) {
+                window.operatingHoursData.days[dayId] = { active: true, start: '08:00', end: '12:00', hasSplit: true, start2: '14:00', end2: '18:00' };
+            } else {
+                const d = window.operatingHoursData.days[dayId];
+                d.hasSplit = !d.hasSplit;
+                if (d.hasSplit) {
+                    if (!d.start2) d.start2 = '14:00';
+                    if (!d.end2) d.end2 = '18:00';
+                    if (d.end === '22:00' || d.end === '18:00') d.end = '12:00';
                 }
             }
+            window.renderOperatingDays();
             if (typeof window.saveDraft === 'function') window.saveDraft();
         };
 
@@ -872,24 +915,27 @@
             if (!window.operatingHoursData) window.operatingHoursData = { mode: 'schedule', days: {} };
             if (!window.operatingHoursData.days) window.operatingHoursData.days = {};
             if (!window.operatingHoursData.days[dayId]) {
-                window.operatingHoursData.days[dayId] = { active: true, start: '08:00', end: '22:00' };
+                window.operatingHoursData.days[dayId] = { active: true, start: '08:00', end: '22:00', hasSplit: false, start2: '14:00', end2: '18:00' };
             }
             window.operatingHoursData.days[dayId][key] = value;
             if (typeof window.saveDraft === 'function') window.saveDraft();
         };
 
-        window.applyStandardHours = function() {
+        window.applyStandardHours = function(withLunch = false) {
+            const days = {};
+            const dayKeys = ['1', '2', '3', '4', '5', '6']; // Mon-Sat
+            dayKeys.forEach(k => {
+                if (withLunch) {
+                    days[k] = { active: true, start: '08:00', end: '12:00', hasSplit: true, start2: '14:00', end2: '18:00' };
+                } else {
+                    days[k] = { active: true, start: '08:00', end: '22:00', hasSplit: false, start2: '14:00', end2: '18:00' };
+                }
+            });
+            days['0'] = { active: false, start: '08:00', end: '18:00', hasSplit: false, start2: '14:00', end2: '18:00' };
+
             window.operatingHoursData = {
                 mode: 'schedule',
-                days: {
-                    '0': { active: false, start: '08:00', end: '18:00' },
-                    '1': { active: true, start: '08:00', end: '22:00' },
-                    '2': { active: true, start: '08:00', end: '22:00' },
-                    '3': { active: true, start: '08:00', end: '22:00' },
-                    '4': { active: true, start: '08:00', end: '22:00' },
-                    '5': { active: true, start: '08:00', end: '22:00' },
-                    '6': { active: true, start: '08:00', end: '22:00' }
-                }
+                days: days
             };
             window.setOperatingHoursMode('schedule');
         };

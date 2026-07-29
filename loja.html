@@ -1251,23 +1251,7 @@
                 const pColor = String(data.c || data.primaryColor || 'f97316').trim();
                 const sColor = String(data.b || data.secondaryColor || '0f172a').trim();
 
-                let rawProducts = Array.isArray(data.p) && data.p.length > 0 ? data.p : (Array.isArray(data.products) ? data.products : (Array.isArray(data.produtos) ? data.produtos : []));
-
-                try {
-                    const { collection, getDocs } = window.firebaseUtils;
-                    const subProdsSnap = await getDocs(collection(window.db, "stores", storeId, "products"));
-                    if (!subProdsSnap.empty) {
-                        const subList = [];
-                        subProdsSnap.forEach(docItem => {
-                            subList.push(docItem.data());
-                        });
-                        if (subList.length > 0) {
-                            rawProducts = subList;
-                        }
-                    }
-                } catch (errSub) {
-                    console.error("Erro ao carregar subcoleção de produtos:", errSub);
-                }
+                const rawProducts = Array.isArray(data.p) && data.p.length > 0 ? data.p : (Array.isArray(data.products) ? data.products : (Array.isArray(data.produtos) ? data.produtos : []));
 
                 const result = {
                     name: data.n || data.name || data.nome || 'Catálogo',

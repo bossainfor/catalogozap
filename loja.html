@@ -1251,7 +1251,27 @@
                 const pColor = String(data.c || data.primaryColor || 'f97316').trim();
                 const sColor = String(data.b || data.secondaryColor || '0f172a').trim();
 
-                const rawProducts = Array.isArray(data.p) && data.p.length > 0 ? data.p : (Array.isArray(data.products) ? data.products : (Array.isArray(data.produtos) ? data.produtos : []));
+                let rawProducts = Array.isArray(data.p) && data.p.length > 0 ? [...data.p] : (Array.isArray(data.products) ? [...data.products] : (Array.isArray(data.produtos) ? [...data.produtos] : []));
+
+                if (data.p_extra_chunks && data.p_extra_chunks > 0) {
+                    try {
+                        const extraPromises = [];
+                        for (let c = 1; c <= data.p_extra_chunks; c++) {
+                            extraPromises.push(getDoc(doc(window.db, "stores", storeId, "catalog_chunks", "chunk_" + c)));
+                        }
+                        const extraSnaps = await Promise.all(extraPromises);
+                        extraSnaps.forEach(snap => {
+                            if (snap.exists()) {
+                                const cData = snap.data();
+                                if (cData && Array.isArray(cData.p)) {
+                                    rawProducts = rawProducts.concat(cData.p);
+                                }
+                            }
+                        });
+                    } catch (eChunk) {
+                        console.error("Erro ao carregar chunks extras do catálogo em loja.html:", eChunk);
+                    }
+                }
 
                 const result = {
                     name: data.n || data.name || data.nome || 'Catálogo',
@@ -1975,7 +1995,28 @@
             const urlParams = new URLSearchParams(window.location.search);
             const app = document.getElementById('app');
             if (!storeData) {
-                app.innerHTML = '<div class="p-8 text-center"><h1 class="text-xl font-bold">Link Inválido</h1><a href="criar.html" class="text-orange-500">Criar Catálogo</a></div>';
+                app.innerHTML = `
+                    <div class="min-h-screen flex items-center justify-center p-4 bg-slate-50 dark:bg-slate-900">
+                        <div class="text-center max-w-md w-full bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-700">
+                            <div class="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 text-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                <i data-lucide="alert-circle" class="w-8 h-8"></i>
+                            </div>
+                            <h1 class="text-xl font-black text-slate-800 dark:text-white mb-2 uppercase tracking-tight">Catálogo Indisponível ou Não Encontrado</h1>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium mb-6 leading-relaxed">
+                                Verifique o link informado ou clique no botão abaixo para tentar carregar novamente.
+                            </p>
+                            <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+                                <button onclick="window.location.reload()" class="w-full sm:w-auto bg-orange-600 hover:bg-orange-700 text-white text-xs font-black uppercase tracking-wider px-5 py-3 rounded-xl transition-all active-scale">
+                                    Tentar Novamente
+                                </button>
+                                <a href="criar.html" class="w-full sm:w-auto bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-black uppercase tracking-wider px-5 py-3 rounded-xl transition-all hover:bg-slate-200">
+                                    Criar Catálogo
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                if (window.lucide) lucide.createIcons();
                 return;
             }
 

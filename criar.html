@@ -8,7 +8,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, setDoc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, deleteDoc, updateDoc, writeBatch, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getStorage, ref, uploadBytesResumable, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
@@ -32,7 +32,7 @@
         window.db = db;
         window.storage = storage;
         window.auth = auth;
-        window.firebaseUtils = { doc, setDoc, getDoc, deleteDoc, ref, uploadBytesResumable, getDownloadURL, deleteObject };
+        window.firebaseUtils = { doc, setDoc, getDoc, deleteDoc, updateDoc, writeBatch, collection, getDocs, ref, uploadBytesResumable, getDownloadURL, deleteObject };
 
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
@@ -2515,8 +2515,9 @@
             data.imf = document.getElementById('image-format').value;
             
             const validProducts = (window.products || []).filter(p => p && (p.name || p.n || p.description || p.d));
+            let productItems = [];
             if (validProducts.length > 0) {
-                data.p = validProducts.map(p => {
+                productItems = validProducts.map(p => {
                     const item = { 
                         id: p.id || Math.random().toString(36).substr(2, 9), 
                         n: String(p.name || p.n || 'Produto').trim() 
@@ -2562,7 +2563,21 @@
 
                     return item;
                 });
-                data.products = data.p; // Garantia de compatibilidade com formatos longos/padrão
+                
+                // Se houver mais de 30 produtos, limpa o array do documento principal
+                // para garantir que o tamanho não ultrapasse o limite do Firestore (1MB)
+                if (productItems.length > 30) {
+                    data.p = [];
+                    data.products = [];
+                    data.hasSubcollectionProducts = true;
+                } else {
+                    data.p = productItems;
+                    data.products = productItems;
+                    data.hasSubcollectionProducts = true;
+                }
+            } else {
+                data.p = [];
+                data.products = [];
             }
 
             // Preserva o plano e vendedores (com cliques integrados)
@@ -2667,6 +2682,46 @@
 
                 // Salva no Firebase
                 await setDoc(doc(window.db, "stores", storeId), data);
+
+                // Salva os produtos na subcoleção "products" em lotes (batch) para suportar catálogo ilimitado
+                if (productItems && productItems.length > 0) {
+                    try {
+                        const { collection, getDocs, doc: fsDoc, writeBatch } = window.firebaseUtils;
+                        const existingSubSnap = await getDocs(collection(window.db, "stores", storeId, "products"));
+                        const existingIds = new Set();
+                        existingSubSnap.forEach(d => existingIds.add(d.id));
+
+                        const chunkSize = 400;
+                        for (let i = 0; i < productItems.length; i += chunkSize) {
+                            const chunk = productItems.slice(i, i + chunkSize);
+                            const batch = writeBatch(window.db);
+                            chunk.forEach((item, idx) => {
+                                const rawId = item.id || ('p_' + (i + idx));
+                                const prodId = String(rawId).trim().replace(/[\/\\#\?]/g, '_') || ('p_' + (i + idx));
+                                existingIds.delete(prodId);
+                                const prodRef = fsDoc(window.db, "stores", storeId, "products", prodId);
+                                batch.set(prodRef, item);
+                            });
+                            await batch.commit();
+                        }
+
+                        // Remove produtos antigos que foram excluídos
+                        if (existingIds.size > 0) {
+                            const deleteIds = Array.from(existingIds);
+                            for (let i = 0; i < deleteIds.length; i += chunkSize) {
+                                const chunk = deleteIds.slice(i, i + chunkSize);
+                                const batch = writeBatch(window.db);
+                                chunk.forEach(pId => {
+                                    const prodRef = fsDoc(window.db, "stores", storeId, "products", pId);
+                                    batch.delete(prodRef);
+                                });
+                                await batch.commit();
+                            }
+                        }
+                    } catch (errSubSave) {
+                        console.error("Erro ao salvar subcoleção de produtos:", errSubSave);
+                    }
+                }
 
                 // Se for uma criação nova, registra no histórico de testes (Trava Opção 2)
                 if (!existingId) {
@@ -2863,6 +2918,15 @@
                 }
 
                 await deleteDoc(doc(window.db, "stores", id));
+
+                // Deleta subcoleção de produtos se existir
+                try {
+                    const { collection, getDocs, deleteDoc: delFsDoc, doc: fsDoc } = window.firebaseUtils;
+                    const subSnap = await getDocs(collection(window.db, "stores", id, "products"));
+                    subSnap.forEach(async (subDoc) => {
+                        try { await delFsDoc(fsDoc(window.db, "stores", id, "products", subDoc.id)); } catch(e){}
+                    });
+                } catch(eSubDel){}
                 
                 // Limpa a memória se for a última loja
                 if (localStorage.getItem('lastStoreId') === id) {
@@ -3000,7 +3064,21 @@
                         window.setOperatingHoursMode('24h');
                     }
                     
-                    const rawProds = (data.p && data.p.length > 0) ? data.p : (data.products && data.products.length > 0 ? data.products : (data.produtos && data.produtos.length > 0 ? data.produtos : []));
+                    let rawProds = (data.p && data.p.length > 0) ? data.p : (data.products && data.products.length > 0 ? data.products : (data.produtos && data.produtos.length > 0 ? data.produtos : []));
+
+                    try {
+                        const { collection, getDocs } = window.firebaseUtils;
+                        const subProdsSnap = await getDocs(collection(window.db, "stores", storeId, "products"));
+                        if (!subProdsSnap.empty) {
+                            const subList = [];
+                            subProdsSnap.forEach(d => subList.push(d.data()));
+                            if (subList.length > 0) {
+                                rawProds = subList;
+                            }
+                        }
+                    } catch (eSub) {
+                        console.error("Erro ao carregar subcoleção no editor:", eSub);
+                    }
 
                     if (rawProds.length > 0) {
                         window.products = rawProds.map(p => {

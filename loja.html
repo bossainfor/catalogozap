@@ -287,39 +287,65 @@
                 };
             }
 
-            const [startH, startM] = (todayConf.start || "08:00").split(':').map(Number);
-            const [endH, endM] = (todayConf.end || "22:00").split(':').map(Number);
-            const startMins = startH * 60 + startM;
-            const endMins = endH * 60 + endM;
-
-            let isOpen = false;
-            if (endMins > startMins) {
-                isOpen = currentMinutes >= startMins && currentMinutes < endMins;
-            } else {
-                isOpen = currentMinutes >= startMins || currentMinutes < endMins;
+            function isWithinInterval(startStr, endStr) {
+                if (!startStr || !endStr) return false;
+                const [sH, sM] = startStr.split(':').map(Number);
+                const [eH, eM] = endStr.split(':').map(Number);
+                const startMins = sH * 60 + sM;
+                const endMins = eH * 60 + eM;
+                if (endMins > startMins) {
+                    return currentMinutes >= startMins && currentMinutes < endMins;
+                } else if (endMins < startMins) {
+                    return currentMinutes >= startMins || currentMinutes < endMins;
+                }
+                return false;
             }
 
-            const todayText = `Hoje: ${todayConf.start} às ${todayConf.end}`;
+            const shift1Open = isWithinInterval(todayConf.start || "08:00", todayConf.end || "12:00");
+            const hasSplit = !!(todayConf.hasSplit || (todayConf.start2 && todayConf.end2));
+            const shift2Open = hasSplit ? isWithinInterval(todayConf.start2 || "14:00", todayConf.end2 || "18:00") : false;
 
+            const isOpen = shift1Open || shift2Open;
+
+            let timeRangeText = "";
+            if (hasSplit) {
+                timeRangeText = `${todayConf.start || '08:00'} às ${todayConf.end || '12:00'} | ${todayConf.start2 || '14:00'} às ${todayConf.end2 || '18:00'}`;
+            } else {
+                timeRangeText = `${todayConf.start || '08:00'} às ${todayConf.end || '22:00'}`;
+            }
+
+            const todayText = `Hoje: ${timeRangeText}`;
+
+            let statusText = "";
             if (isOpen) {
-                return {
-                    isOpen: true,
-                    is24h: false,
-                    statusText: `Aberto agora (${todayConf.start} às ${todayConf.end})`,
-                    badgeClass: "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60",
-                    dotClass: "bg-emerald-500",
-                    todayText: todayText
-                };
+                statusText = `Aberto agora (${timeRangeText})`;
             } else {
-                return {
-                    isOpen: false,
-                    is24h: false,
-                    statusText: `Fechado agora (Abre às ${todayConf.start})`,
-                    badgeClass: "bg-red-50 text-red-600 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800/60",
-                    dotClass: "bg-red-500",
-                    todayText: todayText
-                };
+                if (hasSplit) {
+                    const [e1H, e1M] = (todayConf.end || "12:00").split(':').map(Number);
+                    const [s2H, s2M] = (todayConf.start2 || "14:00").split(':').map(Number);
+                    const end1Mins = e1H * 60 + e1M;
+                    const start2Mins = s2H * 60 + s2M;
+
+                    if (currentMinutes >= end1Mins && currentMinutes < start2Mins) {
+                        statusText = `Pausa p/ Almoço (Abre às ${todayConf.start2 || '14:00'})`;
+                    } else {
+                        statusText = `Fechado agora (Abre às ${todayConf.start || '08:00'})`;
+                    }
+                } else {
+                    statusText = `Fechado agora (Abre às ${todayConf.start || '08:00'})`;
+                }
             }
+
+            return {
+                isOpen: isOpen,
+                is24h: false,
+                statusText: statusText,
+                badgeClass: isOpen 
+                    ? "bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800/60"
+                    : "bg-red-50 text-red-600 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800/60",
+                dotClass: isOpen ? "bg-emerald-500" : "bg-red-500",
+                todayText: todayText
+            };
         };
 
         window.openOperatingHoursModal = function() {
@@ -364,15 +390,25 @@
                             const conf = (oh.days && oh.days[d.id]) ? oh.days[d.id] : null;
                             const isToday = d.id === currentDayStr;
                             const active = conf && conf.active;
+                            const hasSplit = conf && (conf.hasSplit || (conf.start2 && conf.end2));
+
+                            let hoursText = 'Fechado';
+                            if (active) {
+                                if (hasSplit) {
+                                    hoursText = `${conf.start || '08:00'} às ${conf.end || '12:00'} <span class="text-slate-400 dark:text-slate-500 mx-1">•</span> ${conf.start2 || '14:00'} às ${conf.end2 || '18:00'}`;
+                                } else {
+                                    hoursText = `${conf.start || '08:00'} às ${conf.end || '22:00'}`;
+                                }
+                            }
 
                             return `
-                                <div class="p-3 rounded-xl border ${isToday ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/20' : 'border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50'} flex items-center justify-between">
-                                    <div class="flex items-center gap-2">
+                                <div class="p-3 rounded-xl border ${isToday ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/20' : 'border-slate-100 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50'} flex items-center justify-between gap-2">
+                                    <div class="flex items-center gap-2 flex-shrink-0">
                                         ${isToday ? '<span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>' : ''}
                                         <span class="font-bold text-xs uppercase ${isToday ? 'text-orange-600 dark:text-orange-400 font-black' : 'text-slate-700 dark:text-slate-300'}">${d.name} ${isToday ? '(Hoje)' : ''}</span>
                                     </div>
-                                    <span class="text-xs font-black ${active ? 'text-slate-800 dark:text-white' : 'text-red-500'}">
-                                        ${active ? `${conf.start || '08:00'} às ${conf.end || '22:00'}` : 'Fechado'}
+                                    <span class="text-xs font-black text-right ${active ? 'text-slate-800 dark:text-white' : 'text-red-500'}">
+                                        ${hoursText}
                                     </span>
                                 </div>
                             `;

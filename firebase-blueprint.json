@@ -83,6 +83,10 @@
     "/stores/{storeId}": {
       "schema": "Store",
       "description": "Public store data"
+    },
+    "/stores/{storeId}/products/{productId}": {
+      "schema": "Product",
+      "description": "Store individual product item"
     }
   }
 }

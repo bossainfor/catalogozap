@@ -10,13 +10,13 @@ service cloud.firestore {
     }
 
     match /stores/{storeId} {
-      // Allow anyone to read a store by its ID
-      allow read: if true;
-      
-      // Allow anyone to create, update and delete
-      // In a real app, these would be protected by Firebase Auth + Rules
-      allow create, update: if true;
-      allow delete: if true;
+      // Allow anyone to read, create, update and delete a store
+      allow read, write: if true;
+    }
+
+    match /stores/{storeId}/{document=**} {
+      // Allow subcollections under stores (like catalog_chunks, reviews)
+      allow read, write: if true;
     }
 
     // Allow anyone to read and write reviews in a flat collection

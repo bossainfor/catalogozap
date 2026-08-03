@@ -2515,7 +2515,7 @@
             data.imf = document.getElementById('image-format').value;
             
             let extraChunksToSave = [];
-            const validProducts = (window.products || []).filter(p => p && (p.name || p.n || p.description || p.d));
+            const validProducts = (window.products || []).filter(p => p && (p.name || p.n || p.description || p.d || p.price || p.p || p.image || p.i || p.category || p.cat));
             if (validProducts.length > 0) {
                 const mappedProducts = validProducts.map(p => {
                     const item = { 
@@ -2709,6 +2709,7 @@
                 // Salva o ID na memória do navegador
                 localStorage.setItem('lastStoreId', storeId);
                 localStorage.setItem('lastStoreName', name);
+                window.existingStoreId = storeId;
                 window.clearDraft(); // Limpa o rascunho após criar a loja
 
                 // Atualiza a URL no navegador sem recarregar para que F5 mantenha o ID da loja
@@ -2956,6 +2957,8 @@
                 const docSnap = await getDoc(doc(window.db, "stores", storeId));
 
                 if (docSnap.exists()) {
+                    window.existingStoreId = storeId;
+                    
                     // Exibe botões de ações logadas (Ver Loja e Sair)
                     const loggedActions = document.getElementById('logged-actions');
                     const btnViewStore = document.getElementById('btn-view-store');
@@ -2993,27 +2996,15 @@
                     if (data.sub) document.getElementById('store-subtitle').value = data.sub;
                     document.getElementById('hide-banner-bg').checked = data.hb || false;
                     
-                    // Verifica se o rascunho local é mais recente que o dado do servidor
-                    if (!forcedId) {
-                        const draftStr = localStorage.getItem('catalog_draft');
-                        if (draftStr) {
-                            try {
-                                const draft = JSON.parse(draftStr);
-                                if (draft.storeId === storeId && draft.lastUpdated) {
-                                    const serverUpdate = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
-                                    if (draft.lastUpdated > serverUpdate) {
-                                        console.log("Usando rascunho local mais recente");
-                                        window.loadDraft();
-                                        window.renderProducts();
-                                        if (window.lucide) lucide.createIcons();
-                                        return;
-                                    }
-                                }
-                            } catch (e) { console.error("Erro ao comparar rascunho:", e); }
-                        }
-                    }
+                    // Reseta filtros de busca para exibir todos os produtos da loja no painel
+                    window.productSearchQuery = '';
+                    window.productCategoryFilter = '';
+                    const searchInputEl = document.getElementById('product-search-input');
+                    const categoryFilterEl = document.getElementById('product-category-filter');
+                    if (searchInputEl) searchInputEl.value = '';
+                    if (categoryFilterEl) categoryFilterEl.value = '';
 
-                    // Preenche os campos se não usou rascunho
+                    // Preenche os campos com os dados do servidor
                     document.getElementById('owner-name').value = data.cn || '';
                     document.getElementById('store-name').value = data.n || '';
                     document.getElementById('store-subtitle').value = data.sub || '';
@@ -3115,8 +3106,7 @@
                             }
                         });
                     } else {
-                        // Se a loja existe mas não tem produtos salvos, mantém o padrão ou limpa
-                        // window.products = [{ id: Date.now().toString(), name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', description: '' }];
+                        window.products = [];
                     }
                     // Carrega os Banners Promocionais salvos do Firebase
                     if (data.pb && Array.isArray(data.pb)) {

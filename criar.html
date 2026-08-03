@@ -2679,6 +2679,9 @@
                     }
                 }
 
+                // Marca a data de atualização
+                data.updatedAt = new Date().toISOString();
+
                 // Salva no Firebase (documento principal)
                 await setDoc(doc(window.db, "stores", storeId), data);
 
@@ -2707,6 +2710,12 @@
                 localStorage.setItem('lastStoreId', storeId);
                 localStorage.setItem('lastStoreName', name);
                 window.clearDraft(); // Limpa o rascunho após criar a loja
+
+                // Atualiza a URL no navegador sem recarregar para que F5 mantenha o ID da loja
+                if (window.history && window.history.replaceState) {
+                    const newUrl = window.location.pathname + '?id=' + storeId;
+                    window.history.replaceState({ path: newUrl }, '', newUrl);
+                }
 
                 // Tenta atualizar a interface (se falhar aqui, o dado já está salvo)
                 try {
@@ -2915,10 +2924,15 @@
         window.loadFromFirebase = async function(forcedId = null) {
             try {
                 const urlParams = new URLSearchParams(window.location.search);
-                const storeId = forcedId || urlParams.get('edit') || urlParams.get('id');
+                const storeId = forcedId || urlParams.get('edit') || urlParams.get('id') || localStorage.getItem('lastStoreId');
                 if (!storeId) {
                     window.showBlockOverlay();
                     return;
+                }
+
+                if (window.history && window.history.replaceState && !urlParams.get('edit') && !urlParams.get('id')) {
+                    const newUrl = window.location.pathname + '?id=' + storeId;
+                    window.history.replaceState({ path: newUrl }, '', newUrl);
                 }
 
                 // Aguarda o Firebase inicializar
@@ -2989,6 +3003,8 @@
                                     const serverUpdate = data.updatedAt ? new Date(data.updatedAt).getTime() : 0;
                                     if (draft.lastUpdated > serverUpdate) {
                                         console.log("Usando rascunho local mais recente");
+                                        window.loadDraft();
+                                        window.renderProducts();
                                         if (window.lucide) lucide.createIcons();
                                         return;
                                     }
@@ -3031,7 +3047,7 @@
                             const { getDoc, doc } = window.firebaseUtils;
                             const extraPromises = [];
                             for (let c = 1; c <= data.p_extra_chunks; c++) {
-                                extraPromises.push(getDoc(doc(window.db, "stores", existingId, "catalog_chunks", "chunk_" + c)));
+                                extraPromises.push(getDoc(doc(window.db, "stores", storeId, "catalog_chunks", "chunk_" + c)));
                             }
                             const extraSnaps = await Promise.all(extraPromises);
                             extraSnaps.forEach(snap => {

@@ -1366,7 +1366,11 @@
                     nativeGame: data.nativeGame || 'roulette',
                     gameSound: data.gameSound !== false && data.gameSound !== 'false',
                     gameAutoPopup: data.gameAutoPopup === true || data.gameAutoPopup === 'true' || false,
-                    gamePrizes: (data.gamePrizes && Array.isArray(data.gamePrizes) && data.gamePrizes.length >= 3) ? data.gamePrizes : ((data.gp && Array.isArray(data.gp) && data.gp.length >= 3) ? data.gp : null),
+                    gamePrizes: (function() {
+                        let p = data.gamePrizes || data.gp || null;
+                        if (typeof p === 'string') { try { p = JSON.parse(p); } catch(e){} }
+                        return (p && Array.isArray(p) && p.length >= 3) ? p : null;
+                    })(),
                     cf: data.cf || data.cardFee || 0,
                     pb: data.pb || data.promotionalBanners || [],
                     resellerWhatsapp: data.resellerWhatsapp || '',
@@ -2894,8 +2898,12 @@
 
         // Obter lista de prêmios da loja
         window.getStorePrizes = function() {
-            if (storeData && storeData.gamePrizes && Array.isArray(storeData.gamePrizes) && storeData.gamePrizes.length >= 3) {
-                return storeData.gamePrizes;
+            let prizes = storeData ? (storeData.gamePrizes || storeData.gp) : null;
+            if (typeof prizes === 'string') {
+                try { prizes = JSON.parse(prizes); } catch(e){}
+            }
+            if (prizes && Array.isArray(prizes) && prizes.length >= 3) {
+                return prizes;
             }
             return [
                 { name: "10% DE DESCONTO", percent: 10, fixed: 0, code: "GANHOU10", color: "#8b5cf6" },

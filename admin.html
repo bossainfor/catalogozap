@@ -1825,8 +1825,13 @@
                 { name: "20% DE DESCONTO", percent: 20, fixed: 0, code: "SUPER20", color: "#ef4444" }
             ];
 
-            window.currentEditingPrizes = (store.gamePrizes && Array.isArray(store.gamePrizes) && store.gamePrizes.length >= 3)
-                ? JSON.parse(JSON.stringify(store.gamePrizes))
+            let storePrizes = store.gamePrizes || store.gp;
+            if (typeof storePrizes === 'string') {
+                try { storePrizes = JSON.parse(storePrizes); } catch(e){}
+            }
+
+            window.currentEditingPrizes = (storePrizes && Array.isArray(storePrizes) && storePrizes.length >= 3)
+                ? JSON.parse(JSON.stringify(storePrizes))
                 : JSON.parse(JSON.stringify(defaultPrizes));
 
             window.renderModalPrizesList();
@@ -1870,7 +1875,8 @@
                             gameSound: gameSound,
                             gameAutoPopup: gameAutoPopup,
                             gameMinOrderValue: gameMinOrderValue,
-                            gamePrizes: prizesToSave
+                            gamePrizes: prizesToSave,
+                            gp: prizesToSave
                         };
 
                         await window.fs.updateDoc(window.fs.doc(window.db, "stores", id), updateData);

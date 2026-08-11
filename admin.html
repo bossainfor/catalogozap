@@ -1816,6 +1816,21 @@
             if (autoPopupCheckbox) autoPopupCheckbox.checked = store.gameAutoPopup === true || store.gameAutoPopup === 'true';
             if (minOrderInput) minOrderInput.value = store.gameMinOrderValue !== undefined ? store.gameMinOrderValue : 0;
 
+            const defaultPrizes = [
+                { name: "10% DE DESCONTO", percent: 10, fixed: 0, code: "GANHOU10", color: "#8b5cf6" },
+                { name: "FRETE GRÁTIS", percent: 0, fixed: 10, code: "FRETEGRATIS", color: "#ec4899" },
+                { name: "15% DE DESCONTO", percent: 15, fixed: 0, code: "GANHOU15", color: "#f59e0b" },
+                { name: "R$ 10 OFF", percent: 0, fixed: 10, code: "DEZREAIS", color: "#10b981" },
+                { name: "5% DE DESCONTO", percent: 5, fixed: 0, code: "GANHOU5", color: "#3b82f6" },
+                { name: "20% DE DESCONTO", percent: 20, fixed: 0, code: "SUPER20", color: "#ef4444" }
+            ];
+
+            window.currentEditingPrizes = (store.gamePrizes && Array.isArray(store.gamePrizes) && store.gamePrizes.length >= 3)
+                ? JSON.parse(JSON.stringify(store.gamePrizes))
+                : JSON.parse(JSON.stringify(defaultPrizes));
+
+            window.renderModalPrizesList();
+
             const modal = document.getElementById('game-config-modal');
             if (modal) {
                 modal.classList.remove('hidden');
@@ -1832,6 +1847,16 @@
                     const gameAutoPopup = autoPopupCheckbox ? autoPopupCheckbox.checked : false;
                     const gameMinOrderValue = minOrderInput ? (parseFloat(minOrderInput.value) || 0) : 0;
 
+                    const prizesToSave = (window.currentEditingPrizes && window.currentEditingPrizes.length >= 3)
+                        ? window.currentEditingPrizes.map(p => ({
+                            name: String(p.name || 'PRÊMIO').trim(),
+                            percent: parseFloat(p.percent) || 0,
+                            fixed: parseFloat(p.fixed) || 0,
+                            code: String(p.code || 'DESCONTO').trim().toUpperCase(),
+                            color: String(p.color || '#8b5cf6').trim()
+                        }))
+                        : defaultPrizes;
+
                     saveBtn.disabled = true;
                     saveBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Salvando...';
                     if (window.lucide) lucide.createIcons();
@@ -1844,14 +1869,15 @@
                             nativeGame: nativeGame,
                             gameSound: gameSound,
                             gameAutoPopup: gameAutoPopup,
-                            gameMinOrderValue: gameMinOrderValue
+                            gameMinOrderValue: gameMinOrderValue,
+                            gamePrizes: prizesToSave
                         };
 
                         await window.fs.updateDoc(window.fs.doc(window.db, "stores", id), updateData);
 
                         Object.assign(store, updateData);
 
-                        alert("Configuração do Game / Roleta salva com sucesso!");
+                        alert("Configuração do Game e Prêmios salva com sucesso!");
                         closeGameModal();
                         loadStores();
                     } catch (e) {
@@ -1863,6 +1889,159 @@
                         if (window.lucide) lucide.createIcons();
                     }
                 };
+            }
+        };
+
+        window.renderModalPrizesList = function() {
+            const listEl = document.getElementById('game-modal-prizes-list');
+            if (!listEl) return;
+
+            if (!window.currentEditingPrizes || window.currentEditingPrizes.length === 0) {
+                listEl.innerHTML = `<div class="p-4 text-center text-xs text-slate-400 font-bold bg-slate-50 rounded-xl border border-slate-200">Nenhum prêmio cadastrado. Clique em Adicionar Prêmio ou Restaurar Padrão.</div>`;
+                return;
+            }
+
+            const defaultColors = ["#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#3b82f6", "#ef4444", "#a855f7", "#06b6d4"];
+
+            listEl.innerHTML = window.currentEditingPrizes.map((p, idx) => {
+                const isPercent = (p.percent && parseFloat(p.percent) > 0) || (!p.fixed || parseFloat(p.fixed) === 0);
+                const val = isPercent ? (p.percent || 0) : (p.fixed || 0);
+                const prizeColor = p.color || defaultColors[idx % defaultColors.length];
+
+                return `
+                    <div class="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2 relative transition-all hover:border-purple-200 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-1.5">
+                                <div class="w-3.5 h-3.5 rounded-full border border-white shadow-sm" style="background-color: ${prizeColor}"></div>
+                                <span class="text-[11px] font-black uppercase text-purple-900 tracking-wider">Prêmio #${idx + 1}</span>
+                            </div>
+                            <button type="button" onclick="removePrizeFromModal(${idx})" class="text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-2 py-1 rounded-lg text-[10px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Excluir
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-12 gap-2">
+                            <!-- Nome Exibido -->
+                            <div class="sm:col-span-5 space-y-1">
+                                <label class="block text-[9px] font-black uppercase text-slate-500">Nome no Game</label>
+                                <input type="text" value="${(p.name || '').replace(/"/g, '&quot;')}" 
+                                       oninput="updatePrizeField(${idx}, 'name', this.value)"
+                                       placeholder="Ex: 10% DE DESCONTO" 
+                                       class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-purple-500" />
+                            </div>
+
+                            <!-- Tipo de Desconto -->
+                            <div class="sm:col-span-3 space-y-1">
+                                <label class="block text-[9px] font-black uppercase text-slate-500">Tipo</label>
+                                <select onchange="updatePrizeType(${idx}, this.value)" class="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:border-purple-500">
+                                    <option value="percent" ${isPercent ? 'selected' : ''}>% Porcentagem</option>
+                                    <option value="fixed" ${!isPercent ? 'selected' : ''}>R$ Fixo</option>
+                                </select>
+                            </div>
+
+                            <!-- Valor -->
+                            <div class="sm:col-span-2 space-y-1">
+                                <label class="block text-[9px] font-black uppercase text-slate-500">Valor (${isPercent ? '%' : 'R$'})</label>
+                                <input type="number" step="0.5" min="0" value="${val}" 
+                                       oninput="updatePrizeValue(${idx}, this.value)"
+                                       placeholder="10" 
+                                       class="w-full px-2 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-black text-slate-900 outline-none focus:border-purple-500" />
+                            </div>
+
+                            <!-- Cor -->
+                            <div class="sm:col-span-2 space-y-1">
+                                <label class="block text-[9px] font-black uppercase text-slate-500">Cor Fatia</label>
+                                <input type="color" value="${prizeColor}" 
+                                       onchange="updatePrizeField(${idx}, 'color', this.value)"
+                                       class="w-full h-8 p-0.5 bg-white border border-slate-200 rounded-xl cursor-pointer" />
+                            </div>
+                        </div>
+
+                        <!-- Código do Cupom -->
+                        <div class="space-y-1">
+                            <label class="block text-[9px] font-black uppercase text-slate-500">Código do Cupom de Desconto</label>
+                            <input type="text" value="${(p.code || '').replace(/"/g, '&quot;')}" 
+                                   oninput="updatePrizeField(${idx}, 'code', this.value.toUpperCase())"
+                                   placeholder="Ex: GANHOU10" 
+                                   class="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-purple-700 uppercase outline-none focus:border-purple-500" />
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.updatePrizeField = function(idx, field, value) {
+            if (window.currentEditingPrizes && window.currentEditingPrizes[idx]) {
+                window.currentEditingPrizes[idx][field] = value;
+            }
+        };
+
+        window.updatePrizeType = function(idx, type) {
+            if (window.currentEditingPrizes && window.currentEditingPrizes[idx]) {
+                const p = window.currentEditingPrizes[idx];
+                const currentVal = p.percent || p.fixed || 10;
+                if (type === 'percent') {
+                    p.percent = currentVal;
+                    p.fixed = 0;
+                } else {
+                    p.fixed = currentVal;
+                    p.percent = 0;
+                }
+                window.renderModalPrizesList();
+            }
+        };
+
+        window.updatePrizeValue = function(idx, value) {
+            if (window.currentEditingPrizes && window.currentEditingPrizes[idx]) {
+                const num = parseFloat(value) || 0;
+                const p = window.currentEditingPrizes[idx];
+                if (p.fixed > 0 || p.percent === 0) {
+                    p.fixed = num;
+                    p.percent = 0;
+                } else {
+                    p.percent = num;
+                    p.fixed = 0;
+                }
+            }
+        };
+
+        window.addNewPrizeToModal = function() {
+            if (!window.currentEditingPrizes) window.currentEditingPrizes = [];
+            const count = window.currentEditingPrizes.length + 1;
+            const colors = ["#8b5cf6", "#ec4899", "#f59e0b", "#10b981", "#3b82f6", "#ef4444", "#a855f7", "#06b6d4"];
+            window.currentEditingPrizes.push({
+                name: `DESCONTO ${count * 5}%`,
+                percent: count * 5,
+                fixed: 0,
+                code: `PROMO${count}0`,
+                color: colors[(count - 1) % colors.length]
+            });
+            window.renderModalPrizesList();
+        };
+
+        window.removePrizeFromModal = function(idx) {
+            if (!window.currentEditingPrizes) return;
+            if (window.currentEditingPrizes.length <= 3) {
+                alert("O jogo precisa de no mínimo 3 prêmios para funcionar corretamente!");
+                return;
+            }
+            window.currentEditingPrizes.splice(idx, 1);
+            window.renderModalPrizesList();
+        };
+
+        window.resetDefaultPrizesInModal = function() {
+            if (confirm("Deseja restaurar os prêmios para a lista padrão de 6 opções?")) {
+                window.currentEditingPrizes = [
+                    { name: "10% DE DESCONTO", percent: 10, fixed: 0, code: "GANHOU10", color: "#8b5cf6" },
+                    { name: "FRETE GRÁTIS", percent: 0, fixed: 10, code: "FRETEGRATIS", color: "#ec4899" },
+                    { name: "15% DE DESCONTO", percent: 15, fixed: 0, code: "GANHOU15", color: "#f59e0b" },
+                    { name: "R$ 10 OFF", percent: 0, fixed: 10, code: "DEZREAIS", color: "#10b981" },
+                    { name: "5% DE DESCONTO", percent: 5, fixed: 0, code: "GANHOU5", color: "#3b82f6" },
+                    { name: "20% DE DESCONTO", percent: 20, fixed: 0, code: "SUPER20", color: "#ef4444" }
+                ];
+                window.renderModalPrizesList();
             }
         };
 
@@ -2416,6 +2595,32 @@
                             <div class="text-[9px] text-slate-400 font-medium">Abrir ao carregar loja</div>
                         </div>
                         <input type="checkbox" id="game-modal-autopopup" class="w-4 h-4 accent-purple-600 rounded">
+                    </div>
+                </div>
+
+                <!-- Configuração Editável dos Prêmios -->
+                <div class="space-y-3 pt-3 border-t border-slate-100">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div>
+                            <h4 class="text-xs font-black uppercase text-purple-950 tracking-wider flex items-center gap-1.5">
+                                <i data-lucide="gift" class="w-4 h-4 text-purple-600"></i>
+                                Prêmios e Porcentagens do Game
+                            </h4>
+                            <p class="text-[10px] text-slate-500 font-medium">Edite os nomes, % de desconto, R$ fixo, cupons e cores de cada prêmio.</p>
+                        </div>
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button type="button" onclick="resetDefaultPrizesInModal()" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer">
+                                Padrão
+                            </button>
+                            <button type="button" onclick="addNewPrizeToModal()" class="px-3 py-1.5 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center gap-1 cursor-pointer">
+                                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Novo Prêmio
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Lista Editável de Prêmios -->
+                    <div id="game-modal-prizes-list" class="space-y-2 max-h-72 overflow-y-auto pr-1 custom-scrollbar">
+                        <!-- Gerado via renderModalPrizesList() -->
                     </div>
                 </div>
             </div>

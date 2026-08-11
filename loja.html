@@ -1482,12 +1482,79 @@
             updateCartUI();
         }
 
+        window.removeGameDiscount = function() {
+            window.appliedGameDiscount = null;
+            try {
+                localStorage.removeItem('bossa_promo_coupon');
+            } catch(e){}
+            updateCartUI();
+        };
+
+        window.applyManualCoupon = function(inputCode) {
+            const code = (inputCode || '').trim();
+            if (!code) {
+                alert('Por favor, digite o código do cupom.');
+                return;
+            }
+            
+            let percent = 0;
+            let fixed = 0;
+            
+            const upperCode = code.toUpperCase();
+            const matchPercent = upperCode.match(/(\d+(?:[.,]\d+)?)\s*%/);
+            if (matchPercent) {
+                percent = parseFloat(matchPercent[1].replace(',', '.'));
+            } else {
+                const matchFixed = upperCode.match(/R\$\s*(\d+(?:[.,]\d+)?)/i);
+                if (matchFixed) {
+                    fixed = parseFloat(matchFixed[1].replace(',', '.'));
+                } else {
+                    const matchAnyNum = upperCode.match(/(\d+(?:[.,]\d+)?)/);
+                    if (matchAnyNum) {
+                        const val = parseFloat(matchAnyNum[1].replace(',', '.'));
+                        if (val > 0 && val <= 100) {
+                            percent = val;
+                        } else if (val > 100) {
+                            fixed = val;
+                        }
+                    } else {
+                        percent = 10;
+                    }
+                }
+            }
+            
+            const prizeName = percent > 0 ? `${percent}% DE DESCONTO` : `R$ ${fixed.toFixed(2).replace('.', ',')} DE DESCONTO`;
+            
+            window.appliedGameDiscount = {
+                couponCode: upperCode,
+                prizeName: prizeName,
+                percent: percent,
+                fixed: fixed
+            };
+            
+            try {
+                localStorage.setItem('bossa_promo_coupon', JSON.stringify(window.appliedGameDiscount));
+            } catch(e){}
+            
+            updateCartUI();
+        };
+
         function updateCartUI() {
             window.saveCart();
             const itemsContainer = document.getElementById('cart-items');
             const footerContainer = document.getElementById('cart-footer');
             const fab = document.getElementById('cart-fab');
             const countBadge = document.getElementById('cart-count');
+
+            // Restaura desconto salvo se não estiver na memória
+            if (!window.appliedGameDiscount) {
+                try {
+                    const savedDisc = localStorage.getItem('bossa_promo_coupon');
+                    if (savedDisc) {
+                        window.appliedGameDiscount = JSON.parse(savedDisc);
+                    }
+                } catch(e){}
+            }
 
             const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
             countBadge.innerText = totalItems;
@@ -1542,7 +1609,7 @@
 
                 const shippingPrice = selectedShippingZone ? parseFloat(selectedShippingZone.price.replace(',', '.')) : 0;
 
-                // Desconto do Game Bossa Promo
+                // Desconto do Game Bossa Promo / Cupom Manual
                 let discountAmount = 0;
                 if (window.appliedGameDiscount) {
                     const disc = window.appliedGameDiscount;
@@ -1557,46 +1624,58 @@
                 const discountedSubtotal = Math.max(0, total - discountAmount);
                 const grandTotal = discountedSubtotal + shippingPrice;
 
-                // Banner do Game no Carrinho (Aparece apenas na hora do checkout)
+                // Banner do Game e Cupom no Carrinho
                 const hasGame = storeData && storeData.gameActive && storeData.gameUrl && storeData.gameUrl.trim() !== '';
                 let gamePromoBannerHTML = '';
-                if (hasGame) {
-                    if (window.appliedGameDiscount) {
-                        const disc = window.appliedGameDiscount;
-                        gamePromoBannerHTML = `
-                            <div class="p-3.5 mb-4 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-2xl flex items-center justify-between gap-2 text-left animate-fade-in shadow-sm">
-                                <div class="flex items-center gap-2.5">
-                                    <div class="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm">
-                                        <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                
+                if (window.appliedGameDiscount) {
+                    const disc = window.appliedGameDiscount;
+                    gamePromoBannerHTML = `
+                        <div class="p-3.5 mb-4 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-2xl flex items-center justify-between gap-2 text-left animate-fade-in shadow-sm">
+                            <div class="flex items-center gap-2.5">
+                                <div class="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                                    <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <div class="text-[11px] font-black uppercase text-emerald-900 dark:text-emerald-200 leading-tight">Desconto Ativado! 🎁</div>
+                                    <div class="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">Cupom: <span class="underline font-black">${disc.couponCode}</span> (${disc.prizeName})</div>
+                                </div>
+                            </div>
+                            <button onclick="window.removeGameDiscount()" class="text-[10px] font-black uppercase text-red-500 hover:text-red-700 px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900/40 shrink-0 cursor-pointer shadow-xs transition-all hover:scale-105" title="Remover Desconto">
+                                Remover
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    let gameBtnHTML = '';
+                    if (hasGame) {
+                        gameBtnHTML = `
+                            <button onclick="openGameModal()" class="w-full p-3.5 mb-3 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 text-white font-bold text-xs shadow-lg shadow-purple-500/20 hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-between gap-2 border border-white/20 group cursor-pointer">
+                                <div class="flex items-center gap-2.5 text-left">
+                                    <div class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0 text-yellow-300">
+                                        <i data-lucide="gamepad-2" class="w-5 h-5"></i>
                                     </div>
                                     <div>
-                                        <div class="text-[11px] font-black uppercase text-emerald-900 dark:text-emerald-200 leading-tight">Desconto Ativado! 🎁</div>
-                                        <div class="text-[9px] font-bold text-emerald-700 dark:text-emerald-400">Cupom: <span class="underline font-black">${disc.couponCode}</span> (${disc.prizeName})</div>
+                                        <div class="text-[11px] font-black uppercase tracking-tight text-white leading-tight">Girar Roleta de Desconto! 🎁</div>
+                                        <div class="text-[9px] text-purple-100 font-medium leading-tight">Antes de finalizar, tente ganhar um desconto no seu pedido</div>
                                     </div>
                                 </div>
-                                <button onclick="window.removeGameDiscount()" class="text-[10px] font-black uppercase text-red-500 hover:text-red-700 px-2 py-1 rounded-lg bg-white/80 dark:bg-slate-800/80 border border-red-200 dark:border-red-900/40 shrink-0 cursor-pointer" title="Remover Desconto">
-                                    Remover
-                                </button>
-                            </div>
-                        `;
-                    } else {
-                        gamePromoBannerHTML = `
-                            <div class="mb-4">
-                                <button onclick="openGameModal()" class="w-full p-3.5 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 text-white font-bold text-xs shadow-lg shadow-purple-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-between gap-2 border border-white/20 group cursor-pointer">
-                                    <div class="flex items-center gap-2.5 text-left">
-                                        <div class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0 text-yellow-300">
-                                            <i data-lucide="gamepad-2" class="w-5 h-5"></i>
-                                        </div>
-                                        <div>
-                                            <div class="text-[11px] font-black uppercase tracking-tight text-white leading-tight">Ganhar Desconto no Pedido! 🎁</div>
-                                            <div class="text-[9px] text-purple-100 font-medium leading-tight">Antes de finalizar, veja se você ganha desconto em sua compra</div>
-                                        </div>
-                                    </div>
-                                    <span class="bg-yellow-400 text-slate-900 text-[9px] font-black uppercase px-2.5 py-1.5 rounded-xl shrink-0 group-hover:bg-yellow-300 transition-colors shadow-sm">Girar 🎲</span>
-                                </button>
-                            </div>
+                                <span class="bg-yellow-400 text-slate-900 text-[9px] font-black uppercase px-2.5 py-1.5 rounded-xl shrink-0 group-hover:bg-yellow-300 transition-colors shadow-sm">Girar 🎲</span>
+                            </button>
                         `;
                     }
+                    
+                    gamePromoBannerHTML = `
+                        <div class="mb-4 space-y-2">
+                            ${gameBtnHTML}
+                            <div class="flex gap-2">
+                                <input type="text" id="manual-coupon-input" placeholder="Possui cupom de desconto?" class="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold uppercase tracking-wider outline-none focus:border-purple-500 dark:text-white placeholder:normal-case placeholder:font-normal placeholder:tracking-normal">
+                                <button onclick="window.applyManualCoupon(document.getElementById('manual-coupon-input').value)" class="px-3.5 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl text-xs font-black uppercase tracking-wider hover:opacity-90 transition-all shrink-0 cursor-pointer">
+                                    Aplicar
+                                </button>
+                            </div>
+                        </div>
+                    `;
                 }
 
                 // Cálculo da taxa do cartão progressive
@@ -1764,6 +1843,16 @@
                 message += `- ${item.quantity}x ${item.name} ${vars ? `[${vars}]` : ''}${obs} (${priceDisplay})${isWholesale ? ' *[ATACADO]*' : ''}\n`;
             });
 
+            // Restaura desconto salvo do localStorage se disponível
+            if (!window.appliedGameDiscount) {
+                try {
+                    const savedDisc = localStorage.getItem('bossa_promo_coupon');
+                    if (savedDisc) {
+                        window.appliedGameDiscount = JSON.parse(savedDisc);
+                    }
+                } catch(e){}
+            }
+
             let discountAmount = 0;
             if (window.appliedGameDiscount) {
                 const disc = window.appliedGameDiscount;
@@ -1774,12 +1863,14 @@
                 }
                 if (discountAmount > total) discountAmount = total;
 
-                message += `\n*Subtotal:* ${formatCurrency(total)}`;
-                message += `\n*🎁 Desconto Roleta Bossa Promo:* ${disc.prizeName}`;
-                message += `\n*Cupom Utilizado:* ${disc.couponCode}`;
-                message += `\n*Valor do Desconto:* -${formatCurrency(discountAmount)}\n`;
+                if (discountAmount > 0) {
+                    message += `\n*Subtotal:* ${formatCurrency(total)}`;
+                    message += `\n*🎁 Desconto Aplicado:* ${disc.prizeName || (disc.percent + '% DE DESCONTO')}`;
+                    message += `\n*Cupom Utilizado:* ${disc.couponCode}`;
+                    message += `\n*Valor do Desconto:* -${formatCurrency(discountAmount)}\n`;
 
-                total = Math.max(0, total - discountAmount);
+                    total = Math.max(0, total - discountAmount);
+                }
             }
 
             if (selectedShippingZone) {
@@ -2737,46 +2828,101 @@
             }
         };
 
-        // Escuta as mensagens enviadas pelo iframe do Bossa Promo
+        // Escuta as mensagens enviadas pelo iframe do Bossa Promo ou jogos de cupom
         window.addEventListener('message', function(event) {
-            // Verifica se a mensagem veio do Bossa Promo
-            if (event.data && event.data.type === 'BOSSA_PROMO_WIN') {
-                const data = event.data;
-                const payload = data.payload || {};
+            let data = event.data;
+            if (!data) return;
+            
+            if (typeof data === 'string') {
+                try {
+                    data = JSON.parse(data);
+                } catch(e) {}
+            }
+
+            if (!data) return;
+
+            const typeStr = String(data.type || data.action || data.event || data.status || '').toUpperCase();
+            const isWinEvent = (
+                typeStr === 'BOSSA_PROMO_WIN' ||
+                typeStr === 'GAME_COMPLETED' ||
+                typeStr === 'GAME_WIN' ||
+                typeStr === 'ROULETTE_WIN' ||
+                typeStr.includes('WIN') ||
+                typeStr.includes('REWARD') ||
+                data.couponCode ||
+                data.prizeName ||
+                (data.payload && (data.payload.couponCode || data.payload.prizeName || data.payload.discountText))
+            );
+
+            if (isWinEvent) {
+                const p = data.payload || data.data || data.detail || data.result || (typeof data === 'object' ? data : {});
+
+                const couponCode = String(p.couponCode || p.coupon || p.code || p.cupom || p.promoCode || data.couponCode || data.code || 'BOSSA-DESCONTO').trim().toUpperCase();
                 
-                const couponCode = payload.couponCode || 'DESCONTO';
-                const prizeName = payload.prizeName || payload.discountText || 'Desconto Especial';
-                
-                // Extrai o percentual ou valor fixo do prêmio (ex: "15% DE DESCONTO" ou "10%")
+                const prizeName = String(
+                    p.prizeName || p.discountText || p.message || p.prize || p.premio || p.desconto || p.title || p.label ||
+                    data.prizeName || data.discountText || data.message || 'Desconto Especial'
+                ).trim();
+
                 let percent = 0;
                 let fixed = 0;
-                
-                if (typeof prizeName === 'string') {
-                    const matchPercent = prizeName.match(/(\d+(?:[.,]\d+)?)\s*%/);
+
+                if (p.percent) percent = parseFloat(p.percent);
+                else if (p.percentage) percent = parseFloat(p.percentage);
+                else if (p.porcentagem) percent = parseFloat(p.porcentagem);
+                else if (p.discountPercent) percent = parseFloat(p.discountPercent);
+                else if (typeof p.discount === 'number') percent = parseFloat(p.discount);
+
+                if (percent > 0 && percent <= 1) {
+                    percent = percent * 100;
+                }
+
+                if (!percent) {
+                    if (p.fixed) fixed = parseFloat(p.fixed);
+                    else if (p.discountAmount) fixed = parseFloat(p.discountAmount);
+                    else if (p.discountValue) fixed = parseFloat(p.discountValue);
+                    else if (p.valor) fixed = parseFloat(p.valor);
+                }
+
+                if (!percent && !fixed) {
+                    const fullText = (prizeName + ' ' + (p.message || '') + ' ' + (p.discountText || '') + ' ' + couponCode).toUpperCase();
+                    
+                    const matchPercent = fullText.match(/(\d+(?:[.,]\d+)?)\s*%/);
                     if (matchPercent) {
                         percent = parseFloat(matchPercent[1].replace(',', '.'));
                     } else {
-                        const matchFixed = prizeName.match(/R\$\s*(\d+(?:[.,]\d+)?)/i);
+                        const matchFixed = fullText.match(/R\$\s*(\d+(?:[.,]\d+)?)/);
                         if (matchFixed) {
                             fixed = parseFloat(matchFixed[1].replace(',', '.'));
+                        } else {
+                            const matchNum = fullText.match(/(\d+(?:[.,]\d+)?)/);
+                            if (matchNum) {
+                                const val = parseFloat(matchNum[1].replace(',', '.'));
+                                if (val > 0 && val <= 100) percent = val;
+                                else if (val > 100) fixed = val;
+                            }
                         }
                     }
                 }
-                
-                // Aplica o desconto automaticamente
+
+                if (!percent && !fixed) {
+                    percent = 10;
+                }
+
+                const finalPrizeName = prizeName !== 'Desconto Especial' ? prizeName : (percent > 0 ? `${percent}% DE DESCONTO` : `R$ ${fixed} DE DESCONTO`);
+
                 window.appliedGameDiscount = {
                     couponCode: couponCode,
-                    prizeName: prizeName,
+                    prizeName: finalPrizeName,
                     percent: percent,
                     fixed: fixed,
-                    payload: payload
+                    payload: p
                 };
-                
+
                 try {
                     localStorage.setItem('bossa_promo_coupon', JSON.stringify(window.appliedGameDiscount));
                 } catch(e){}
-                
-                // Fecha o jogo e atualiza o carrinho de compras
+
                 window.closeGameModal();
                 updateCartUI();
             }

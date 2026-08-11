@@ -74,7 +74,28 @@
         },
         "createdAt": { "type": "string", "format": "date-time" },
         "clicks": { "type": "integer", "description": "Total store page views/clicks" },
-        "password": { "type": "string", "description": "Editing password chosen by the owner" }
+        "password": { "type": "string", "description": "Editing password chosen by the owner" },
+        "gameActive": { "type": "boolean", "description": "Whether gamification attraction is active on store" },
+        "gameType": { "type": "string", "enum": ["native", "iframe"], "description": "Gamification mode: native games or external iframe" },
+        "gameUrl": { "type": "string", "description": "External iframe URL if gameType is iframe" },
+        "nativeGame": { "type": "string", "enum": ["roulette", "scratch", "mystery", "slots", "all"], "description": "Primary native game featured" },
+        "gameSound": { "type": "boolean", "description": "Enable sound effects" },
+        "gameAutoPopup": { "type": "boolean", "description": "Open game automatically on store visit" },
+        "gameMinOrderValue": { "type": "number", "description": "Minimum cart order value in R$ to unlock the game" },
+        "gamePrizes": {
+          "type": "array",
+          "description": "List of custom prize items configured for native games",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string", "description": "Prize display name" },
+              "percent": { "type": "number", "description": "Percentage discount" },
+              "fixed": { "type": "number", "description": "Fixed discount in R$" },
+              "code": { "type": "string", "description": "Coupon code" },
+              "color": { "type": "string", "description": "Sector hex color" }
+            }
+          }
+        }
       },
       "required": ["n", "w", "password"]
     }

@@ -2676,6 +2676,16 @@
                         // Preserva dados do revendedor parceiro
                         if (oldData.resellerId !== undefined) data.resellerId = oldData.resellerId;
                         if (oldData.resellerName !== undefined) data.resellerName = oldData.resellerName;
+
+                        // Preserva configurações do Game e Prêmios
+                        if (oldData.gamePrizes !== undefined) data.gamePrizes = oldData.gamePrizes;
+                        if (oldData.gp !== undefined) data.gp = oldData.gp;
+                        if (oldData.gameActive !== undefined) data.gameActive = oldData.gameActive;
+                        if (oldData.gameUrl !== undefined) data.gameUrl = oldData.gameUrl;
+                        if (oldData.nativeGame !== undefined) data.nativeGame = oldData.nativeGame;
+                        if (oldData.gameSound !== undefined) data.gameSound = oldData.gameSound;
+                        if (oldData.gameAutoPopup !== undefined) data.gameAutoPopup = oldData.gameAutoPopup;
+                        if (oldData.gameMinOrderValue !== undefined) data.gameMinOrderValue = oldData.gameMinOrderValue;
                     }
                 }
 
@@ -2683,7 +2693,7 @@
                 data.updatedAt = new Date().toISOString();
 
                 // Salva no Firebase (documento principal)
-                await setDoc(doc(window.db, "stores", storeId), data);
+                await setDoc(doc(window.db, "stores", storeId), data, { merge: true });
 
                 // Salva chunks extras se o catálogo for grande (>150 itens)
                 if (extraChunksToSave && extraChunksToSave.length > 0) {

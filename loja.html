@@ -1362,6 +1362,10 @@
                     appLink: data.al || data.appLink || '',
                     gameUrl: data.gameUrl || '',
                     gameActive: data.gameActive === true || data.gameActive === 'true' || false,
+                    gameMinOrderValue: data.gameMinOrderValue !== undefined ? parseFloat(data.gameMinOrderValue) : 0,
+                    nativeGame: data.nativeGame || 'roulette',
+                    gameSound: data.gameSound !== false && data.gameSound !== 'false',
+                    gameAutoPopup: data.gameAutoPopup === true || data.gameAutoPopup === 'true' || false,
                     cf: data.cf || data.cardFee || 0,
                     pb: data.pb || data.promotionalBanners || [],
                     resellerWhatsapp: data.resellerWhatsapp || '',
@@ -1669,23 +1673,7 @@
                     let gameBtnHTML = '';
                     if (hasGame) {
                         const minOrderVal = (storeData && storeData.gameMinOrderValue !== undefined) ? parseFloat(storeData.gameMinOrderValue) : 0;
-                        if (minOrderVal > 0 && total < minOrderVal) {
-                            const needed = minOrderVal - total;
-                            gameBtnHTML = `
-                                <div class="p-3.5 mb-3 rounded-2xl bg-slate-900/95 text-white border border-purple-500/30 shadow-md text-left flex items-center justify-between gap-2.5 animate-fade-in">
-                                    <div class="flex items-center gap-2.5">
-                                        <div class="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-yellow-300 text-base shrink-0">
-                                            🎲
-                                        </div>
-                                        <div>
-                                            <div class="text-[11px] font-black uppercase tracking-tight text-purple-300 leading-tight">Roleta de Prêmios</div>
-                                            <div class="text-[10px] text-slate-300 font-medium leading-tight mt-0.5">Adicione mais <span class="text-yellow-400 font-black">${formatCurrency(needed)}</span> para liberar!</div>
-                                        </div>
-                                    </div>
-                                    <span class="text-[9px] font-black uppercase tracking-wider text-amber-400 bg-amber-400/10 px-2.5 py-1 rounded-xl border border-amber-400/20 shrink-0">Mín. R$ ${minOrderVal.toFixed(0)}</span>
-                                </div>
-                            `;
-                        } else {
+                        if (minOrderVal === 0 || total >= minOrderVal) {
                             gameBtnHTML = `
                                 <div class="p-3.5 mb-3 rounded-2xl bg-gradient-to-r from-purple-900 via-indigo-900 to-purple-950 text-white border-2 border-purple-500/50 shadow-xl relative overflow-hidden animate-fade-in">
                                     <div class="absolute -right-6 -bottom-6 w-20 h-20 bg-pink-500/20 rounded-full blur-xl pointer-events-none"></div>
@@ -1707,6 +1695,8 @@
                                     </div>
                                 </div>
                             `;
+                        } else {
+                            gameBtnHTML = '';
                         }
                     }
                     

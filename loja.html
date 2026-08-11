@@ -239,17 +239,17 @@
     </a>
 
     <!-- Modal do Game / Promoção -->
-    <div id="game-promo-modal" class="fixed inset-0 z-[9999] bg-slate-950/80 backdrop-blur-md hidden flex-col items-center justify-center p-2 sm:p-4 transition-all duration-300">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl w-full max-w-4xl h-[92vh] max-h-[850px] flex flex-col overflow-hidden animate-scale-up">
+    <div id="game-promo-modal" class="fixed inset-0 z-[9999] bg-slate-950/85 backdrop-blur-md hidden flex-col items-center justify-center p-2 sm:p-4 transition-all duration-300">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl w-full max-w-2xl sm:max-w-3xl h-[92vh] max-h-[850px] flex flex-col overflow-hidden animate-scale-up relative">
             <!-- Header -->
-            <div class="px-5 py-3.5 bg-slate-900/90 border-b border-slate-800/80 flex items-center justify-between shrink-0">
+            <div class="px-5 py-3.5 bg-slate-900/95 border-b border-slate-800 flex items-center justify-between shrink-0 z-20">
                 <div class="flex items-center gap-2.5">
                     <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 to-pink-500 text-white flex items-center justify-center shadow-lg shadow-purple-500/20">
                         <i data-lucide="sparkles" class="w-4 h-4 text-yellow-300"></i>
                     </div>
                     <div>
-                        <h3 class="font-black text-white uppercase italic text-sm tracking-tight">Promoção & Prêmios</h3>
-                        <p class="text-[10px] text-slate-400 font-bold tracking-wide">Jogue e ganhe prêmios ou descontos no seu pedido!</p>
+                        <h3 class="font-black text-white uppercase italic text-sm tracking-tight" id="game-modal-title">Roleta de Prêmios & Descontos 🎲</h3>
+                        <p class="text-[10px] text-slate-400 font-bold tracking-wide" id="game-modal-subtitle">Jogue e ganhe um desconto incrível para usar no seu pedido!</p>
                     </div>
                 </div>
                 <button onclick="closeGameModal()" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition-all active:scale-95 cursor-pointer">
@@ -257,13 +257,40 @@
                 </button>
             </div>
 
-            <!-- Iframe Container -->
-            <div class="flex-1 w-full bg-slate-950 relative overflow-hidden">
-                <div id="game-iframe-loader" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 text-slate-400 z-10 gap-3">
-                    <div class="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span class="text-xs font-black uppercase tracking-widest text-purple-400">Carregando Atração...</span>
+            <!-- Content Area (Native or Iframe) -->
+            <div class="flex-1 w-full bg-slate-950 relative overflow-y-auto custom-scrollbar flex flex-col">
+                <!-- Native Games Hub -->
+                <div id="native-game-container" class="flex-1 flex flex-col items-center justify-start p-4 sm:p-6 space-y-4 w-full">
+                    <!-- Game Tabs Selector -->
+                    <div id="native-game-tabs" class="flex items-center justify-center gap-1.5 bg-slate-900/90 p-1.5 rounded-2xl border border-slate-800/80 w-full max-w-md overflow-x-auto">
+                        <button onclick="window.switchNativeGameTab('roulette')" id="tab-game-roulette" class="flex-1 py-2 px-3 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shrink-0 bg-purple-600 text-white shadow-md">
+                            🎡 Roleta
+                        </button>
+                        <button onclick="window.switchNativeGameTab('scratch')" id="tab-game-scratch" class="flex-1 py-2 px-3 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shrink-0 bg-slate-800 text-slate-400 hover:text-white">
+                            🎟️ Raspadinha
+                        </button>
+                        <button onclick="window.switchNativeGameTab('mystery')" id="tab-game-mystery" class="flex-1 py-2 px-3 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shrink-0 bg-slate-800 text-slate-400 hover:text-white">
+                            🎁 Caixas
+                        </button>
+                        <button onclick="window.switchNativeGameTab('slots')" id="tab-game-slots" class="flex-1 py-2 px-3 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shrink-0 bg-slate-800 text-slate-400 hover:text-white">
+                            🎰 Slots
+                        </button>
+                    </div>
+
+                    <!-- Active Game Stage Area -->
+                    <div id="native-game-stage" class="w-full flex-1 flex flex-col items-center justify-center relative min-h-[360px] py-2">
+                        <!-- Content rendered dynamically via JS -->
+                    </div>
                 </div>
-                <iframe id="game-promo-iframe" class="w-full h-full border-0 relative z-20" allow="autoplay; camera; microphone; geolocation"></iframe>
+
+                <!-- Iframe Container (Legacy / External Bossa Promo) -->
+                <div id="iframe-game-container" class="hidden absolute inset-0 w-full h-full bg-slate-950">
+                    <div id="game-iframe-loader" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 text-slate-400 z-10 gap-3">
+                        <div class="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                        <span class="text-xs font-black uppercase tracking-widest text-purple-400">Carregando Atração...</span>
+                    </div>
+                    <iframe id="game-promo-iframe" class="w-full h-full border-0 relative z-20" allow="autoplay; camera; microphone; geolocation"></iframe>
+                </div>
             </div>
         </div>
     </div>
@@ -1486,6 +1513,7 @@
             window.appliedGameDiscount = null;
             try {
                 localStorage.removeItem('bossa_promo_coupon');
+                localStorage.removeItem('catalogo_game_discount');
             } catch(e){}
             updateCartUI();
         };
@@ -1549,7 +1577,7 @@
             // Restaura desconto salvo se não estiver na memória
             if (!window.appliedGameDiscount) {
                 try {
-                    const savedDisc = localStorage.getItem('bossa_promo_coupon');
+                    const savedDisc = localStorage.getItem('bossa_promo_coupon') || localStorage.getItem('catalogo_game_discount');
                     if (savedDisc) {
                         window.appliedGameDiscount = JSON.parse(savedDisc);
                     }
@@ -1625,7 +1653,7 @@
                 const grandTotal = discountedSubtotal + shippingPrice;
 
                 // Banner do Game e Cupom no Carrinho
-                const hasGame = storeData && storeData.gameActive && storeData.gameUrl && storeData.gameUrl.trim() !== '';
+                const hasGame = storeData && (storeData.gameActive === true || storeData.gameActive === 'true');
                 let gamePromoBannerHTML = '';
                 
                 if (window.appliedGameDiscount) {
@@ -1649,20 +1677,46 @@
                 } else {
                     let gameBtnHTML = '';
                     if (hasGame) {
-                        gameBtnHTML = `
-                            <button onclick="openGameModal()" class="w-full p-3.5 mb-3 rounded-2xl bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 text-white font-bold text-xs shadow-lg shadow-purple-500/20 hover:scale-[1.01] active:scale-95 transition-all flex items-center justify-between gap-2 border border-white/20 group cursor-pointer">
-                                <div class="flex items-center gap-2.5 text-left">
-                                    <div class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center shrink-0 text-yellow-300">
-                                        <i data-lucide="gamepad-2" class="w-5 h-5"></i>
+                        const minOrderVal = (storeData && storeData.gameMinOrderValue !== undefined) ? parseFloat(storeData.gameMinOrderValue) : 0;
+                        if (minOrderVal > 0 && total < minOrderVal) {
+                            const needed = minOrderVal - total;
+                            gameBtnHTML = `
+                                <div class="p-3.5 mb-3 rounded-2xl bg-slate-900/95 text-white border border-purple-500/30 shadow-md text-left flex items-center justify-between gap-2.5 animate-fade-in">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-8 h-8 rounded-xl bg-purple-500/20 border border-purple-500/40 flex items-center justify-center text-yellow-300 text-base shrink-0">
+                                            🎲
+                                        </div>
+                                        <div>
+                                            <div class="text-[11px] font-black uppercase tracking-tight text-purple-300 leading-tight">Roleta de Prêmios</div>
+                                            <div class="text-[10px] text-slate-300 font-medium leading-tight mt-0.5">Adicione mais <span class="text-yellow-400 font-black">${formatCurrency(needed)}</span> para liberar!</div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <div class="text-[11px] font-black uppercase tracking-tight text-white leading-tight">Girar Roleta de Desconto! 🎁</div>
-                                        <div class="text-[9px] text-purple-100 font-medium leading-tight">Antes de finalizar, tente ganhar um desconto no seu pedido</div>
+                                    <span class="text-[9px] font-black uppercase tracking-wider text-amber-400 bg-amber-400/10 px-2.5 py-1 rounded-xl border border-amber-400/20 shrink-0">Mín. R$ ${minOrderVal.toFixed(0)}</span>
+                                </div>
+                            `;
+                        } else {
+                            gameBtnHTML = `
+                                <div class="p-3.5 mb-3 rounded-2xl bg-gradient-to-r from-purple-900 via-indigo-900 to-purple-950 text-white border-2 border-purple-500/50 shadow-xl relative overflow-hidden animate-fade-in">
+                                    <div class="absolute -right-6 -bottom-6 w-20 h-20 bg-pink-500/20 rounded-full blur-xl pointer-events-none"></div>
+                                    <div class="flex items-center justify-between gap-2 relative z-10 mb-2">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-[9px] font-black uppercase tracking-widest text-yellow-300 bg-yellow-400/20 px-2 py-0.5 rounded-md border border-yellow-400/30">Surpresa no Pedido! 🎲</span>
+                                        </div>
+                                        <span class="text-[9px] font-bold text-slate-300">Ganhe desconto extra</span>
+                                    </div>
+                                    <div class="flex items-center justify-between gap-3 relative z-10">
+                                        <div class="text-left">
+                                            <h4 class="text-xs font-black uppercase italic tracking-tight text-white leading-tight">Roleta de Prêmios</h4>
+                                            <p class="text-[10px] text-purple-200 font-medium leading-tight">Gire agora e aplique seu cupom direto no total!</p>
+                                        </div>
+                                        <button onclick="openGameModal()" class="py-2.5 px-4 bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-300 hover:scale-105 active:scale-95 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-yellow-500/20 shrink-0 transition-all flex items-center gap-1.5 cursor-pointer">
+                                            <span>Girar Roleta</span>
+                                            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-slate-950"></i>
+                                        </button>
                                     </div>
                                 </div>
-                                <span class="bg-yellow-400 text-slate-900 text-[9px] font-black uppercase px-2.5 py-1.5 rounded-xl shrink-0 group-hover:bg-yellow-300 transition-colors shadow-sm">Girar 🎲</span>
-                            </button>
-                        `;
+                            `;
+                        }
                     }
                     
                     gamePromoBannerHTML = `
@@ -1846,7 +1900,7 @@
             // Restaura desconto salvo do localStorage se disponível
             if (!window.appliedGameDiscount) {
                 try {
-                    const savedDisc = localStorage.getItem('bossa_promo_coupon');
+                    const savedDisc = localStorage.getItem('bossa_promo_coupon') || localStorage.getItem('catalogo_game_discount');
                     if (savedDisc) {
                         window.appliedGameDiscount = JSON.parse(savedDisc);
                     }
@@ -2790,26 +2844,571 @@
             }
         }
 
+        // Motor de Som Web Audio API dos Jogos
+        window.playGameSound = function(type) {
+            if (storeData && (storeData.gameSound === false || storeData.gameSound === 'false')) return;
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                if (!window.gameAudioCtx) window.gameAudioCtx = new AudioCtx();
+                const ctx = window.gameAudioCtx;
+                if (ctx.state === 'suspended') ctx.resume();
+
+                const now = ctx.currentTime;
+
+                if (type === 'tick') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(600, now);
+                    osc.frequency.exponentialRampToValueAtTime(120, now + 0.03);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.03);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.03);
+                } else if (type === 'spin' || type === 'slot') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(220, now);
+                    osc.frequency.exponentialRampToValueAtTime(80, now + 0.06);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.06);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.06);
+                } else if (type === 'win') {
+                    const notes = [523.25, 659.25, 783.99, 1046.50];
+                    notes.forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        const startTime = now + (idx * 0.1);
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, startTime);
+                        gain.gain.setValueAtTime(0.3, startTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.4);
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(startTime);
+                        osc.stop(startTime + 0.4);
+                    });
+                } else if (type === 'scratch') {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'square';
+                    osc.frequency.setValueAtTime(800 + Math.random() * 400, now);
+                    gain.gain.setValueAtTime(0.04, now);
+                    gain.gain.linearRampToValueAtTime(0.001, now + 0.03);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.03);
+                }
+            } catch(e) {}
+        };
+
+        // Obter lista de prêmios da loja
+        window.getStorePrizes = function() {
+            if (storeData && storeData.gamePrizes && Array.isArray(storeData.gamePrizes) && storeData.gamePrizes.length >= 3) {
+                return storeData.gamePrizes;
+            }
+            return [
+                { name: "10% DE DESCONTO", percent: 10, fixed: 0, code: "GANHOU10", color: "#8b5cf6" },
+                { name: "FRETE GRÁTIS", percent: 0, fixed: 10, code: "FRETEGRATIS", color: "#ec4899" },
+                { name: "15% DE DESCONTO", percent: 15, fixed: 0, code: "GANHOU15", color: "#f59e0b" },
+                { name: "R$ 10 OFF", percent: 0, fixed: 10, code: "DEZREAIS", color: "#10b981" },
+                { name: "5% DE DESCONTO", percent: 5, fixed: 0, code: "GANHOU5", color: "#3b82f6" },
+                { name: "20% DE DESCONTO", percent: 20, fixed: 0, code: "SUPER20", color: "#ef4444" }
+            ];
+        };
+
+        // Salvar Vitória e Aplicar Desconto Instantâneo no Carrinho
+        window.handleGameWin = function(prize) {
+            window.playGameSound('win');
+
+            const percent = prize.percent || 0;
+            const fixed = prize.fixed || 0;
+            const prizeName = prize.name || (percent > 0 ? `${percent}% DE DESCONTO` : `R$ ${fixed} DE DESCONTO`);
+            const couponCode = (prize.code || `PROMO-${Math.floor(1000 + Math.random() * 9000)}`).toUpperCase();
+
+            window.appliedGameDiscount = {
+                couponCode: couponCode,
+                prizeName: prizeName,
+                percent: percent,
+                fixed: fixed
+            };
+
+            try {
+                const jsonStr = JSON.stringify(window.appliedGameDiscount);
+                localStorage.setItem('bossa_promo_coupon', jsonStr);
+                localStorage.setItem('catalogo_game_discount', jsonStr);
+            } catch(e){}
+
+            updateCartUI();
+
+            // Renderizar card festivo de vitória
+            const stage = document.getElementById('native-game-stage');
+            if (stage) {
+                stage.innerHTML = `
+                    <div class="bg-gradient-to-b from-purple-900/90 to-slate-900 p-6 sm:p-8 rounded-3xl border border-purple-500/40 shadow-2xl text-center space-y-5 animate-scale-up max-w-md w-full relative overflow-hidden">
+                        <!-- Sparkle Effects background -->
+                        <div class="absolute -top-10 -left-10 w-32 h-32 bg-purple-500/20 rounded-full blur-2xl pointer-events-none"></div>
+                        <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-pink-500/20 rounded-full blur-2xl pointer-events-none"></div>
+
+                        <div class="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-yellow-400 to-amber-500 text-slate-950 flex items-center justify-center shadow-xl shadow-yellow-500/30 animate-bounce">
+                            <i data-lucide="trophy" class="w-10 h-10"></i>
+                        </div>
+
+                        <div>
+                            <span class="text-[10px] font-black uppercase tracking-[0.2em] text-yellow-400 bg-yellow-400/10 px-3 py-1 rounded-full border border-yellow-400/20">Prêmio Garantido! 🎉</span>
+                            <h2 class="text-2xl sm:text-3xl font-black uppercase italic tracking-tight text-white leading-tight mt-2">${prizeName}</h2>
+                            <p class="text-xs text-slate-300 font-bold mt-1">Seu desconto já foi aplicado no carrinho da loja!</p>
+                        </div>
+
+                        <div class="bg-slate-950/80 p-3.5 rounded-2xl border border-slate-800 flex items-center justify-between gap-2">
+                            <span class="text-xs font-bold text-slate-400 uppercase">Código do Cupom:</span>
+                            <span class="text-sm font-black text-yellow-400 tracking-wider font-mono uppercase bg-yellow-400/10 px-3 py-1 rounded-xl border border-yellow-400/30">${couponCode}</span>
+                        </div>
+
+                        <button onclick="window.closeGameModal(); toggleCart(true);" class="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black uppercase italic tracking-widest text-sm rounded-2xl shadow-xl shadow-emerald-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer">
+                            <span>Ver Carrinho com Desconto</span>
+                            <i data-lucide="arrow-right" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                `;
+                if (window.lucide) lucide.createIcons();
+            }
+        };
+
+        // Tab Switcher dos Jogos Nativos
+        window.switchNativeGameTab = function(tabName) {
+            ['roulette', 'scratch', 'mystery', 'slots'].forEach(t => {
+                const btn = document.getElementById(`tab-game-${t}`);
+                if (btn) {
+                    if (t === tabName) {
+                        btn.className = "flex-1 py-2 px-3 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shrink-0 bg-purple-600 text-white shadow-md";
+                    } else {
+                        btn.className = "flex-1 py-2 px-3 rounded-xl font-black text-[11px] uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shrink-0 bg-slate-800 text-slate-400 hover:text-white";
+                    }
+                }
+            });
+
+            if (tabName === 'roulette') window.renderRouletteGame();
+            else if (tabName === 'scratch') window.renderScratchGame();
+            else if (tabName === 'mystery') window.renderMysteryGame();
+            else if (tabName === 'slots') window.renderSlotsGame();
+        };
+
+        // GAME 1: ROLETA DA SORTE
+        window.renderRouletteGame = function() {
+            const stage = document.getElementById('native-game-stage');
+            if (!stage) return;
+
+            const prizes = window.getStorePrizes();
+            
+            stage.innerHTML = `
+                <div class="flex flex-col items-center justify-center w-full max-w-sm mx-auto space-y-4">
+                    <div class="relative w-72 h-72 sm:w-80 sm:h-80 flex items-center justify-center">
+                        <!-- Ponteiro Indicador Superior -->
+                        <div class="absolute -top-3 z-30 text-yellow-400 drop-shadow-[0_4px_10px_rgba(234,179,8,0.6)] animate-bounce">
+                            <div class="w-0 h-0 border-l-[14px] border-l-transparent border-r-[14px] border-r-transparent border-t-[24px] border-t-yellow-400"></div>
+                        </div>
+
+                        <!-- Canvas da Roleta com Moldura Dourada -->
+                        <div class="w-full h-full rounded-full border-8 border-yellow-500/80 shadow-[0_0_50px_rgba(168,85,247,0.4)] overflow-hidden bg-slate-900 relative">
+                            <canvas id="roulette-canvas" width="320" height="320" class="w-full h-full cursor-pointer"></canvas>
+                        </div>
+
+                        <!-- Botão Central de Giro -->
+                        <button id="btn-spin-roulette" onclick="window.spinRoulette()" class="absolute z-20 w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-yellow-400 via-amber-500 to-yellow-300 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-wider shadow-2xl border-4 border-slate-900 hover:scale-110 active:scale-90 transition-all flex items-center justify-center cursor-pointer text-center leading-none">
+                            GIRAR! 🎲
+                        </button>
+                    </div>
+
+                    <p class="text-slate-400 text-xs font-bold text-center">Clique em GIRAR para rolar a roleta e garantir seu prêmio!</p>
+                </div>
+            `;
+
+            setTimeout(() => {
+                const canvas = document.getElementById('roulette-canvas');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+                const numSectors = prizes.length;
+                const anglePerSector = (2 * Math.PI) / numSectors;
+
+                window.rouletteCurrentAngle = window.rouletteCurrentAngle || 0;
+
+                window.drawRouletteWheel = function(angleOffset = 0) {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    const centerX = canvas.width / 2;
+                    const centerY = canvas.height / 2;
+                    const radius = canvas.width / 2;
+
+                    for (let i = 0; i < numSectors; i++) {
+                        const startAngle = i * anglePerSector + angleOffset;
+                        const endAngle = (i + 1) * anglePerSector + angleOffset;
+                        const p = prizes[i];
+
+                        // Setor
+                        ctx.beginPath();
+                        ctx.moveTo(centerX, centerY);
+                        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+                        ctx.closePath();
+                        ctx.fillStyle = p.color || (i % 2 === 0 ? '#8b5cf6' : '#ec4899');
+                        ctx.fill();
+                        ctx.lineWidth = 2;
+                        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+                        ctx.stroke();
+
+                        // Texto do Prêmio
+                        ctx.save();
+                        ctx.translate(centerX, centerY);
+                        ctx.rotate(startAngle + anglePerSector / 2);
+                        ctx.textAlign = "right";
+                        ctx.fillStyle = "#ffffff";
+                        ctx.font = "bold 11px Inter, sans-serif";
+                        ctx.shadowColor = "rgba(0,0,0,0.8)";
+                        ctx.shadowBlur = 4;
+                        ctx.fillText(p.name, radius - 15, 4);
+                        ctx.restore();
+                    }
+                };
+
+                window.drawRouletteWheel(window.rouletteCurrentAngle);
+            }, 50);
+        };
+
+        window.spinRoulette = function() {
+            if (window.isRouletteSpinning) return;
+            window.isRouletteSpinning = true;
+
+            const btn = document.getElementById('btn-spin-roulette');
+            if (btn) {
+                btn.disabled = true;
+                btn.classList.add('opacity-50');
+            }
+
+            const prizes = window.getStorePrizes();
+            const numSectors = prizes.length;
+            const anglePerSector = (2 * Math.PI) / numSectors;
+
+            // Escolhe um prêmio aleatório
+            const winningIndex = Math.floor(Math.random() * numSectors);
+            const winningPrize = prizes[winningIndex];
+
+            // O ponteiro fica no TOPO (-90 graus ou 3PI/2).
+            const targetSectorCenter = winningIndex * anglePerSector + anglePerSector / 2;
+            const extraSpins = (5 + Math.floor(Math.random() * 3)) * (2 * Math.PI);
+            
+            // Ângulo final necessário para o setor vencedor ficar no topo
+            const targetAngle = (1.5 * Math.PI) - targetSectorCenter + extraSpins;
+            const startAngle = window.rouletteCurrentAngle % (2 * Math.PI);
+            const totalRotationNeeded = targetAngle - startAngle;
+
+            let startTime = null;
+            const duration = 4500; // 4.5 segundos
+            let lastSectorTicked = -1;
+
+            function animateSpin(timestamp) {
+                if (!startTime) startTime = timestamp;
+                const elapsed = timestamp - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+
+                // Curva de desaceleração suave (Ease Out Cubic)
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                window.rouletteCurrentAngle = startAngle + totalRotationNeeded * easeOut;
+
+                if (window.drawRouletteWheel) {
+                    window.drawRouletteWheel(window.rouletteCurrentAngle);
+                }
+
+                // Som de Tick ao passar pelos setores
+                const currentSector = Math.floor((((1.5 * Math.PI) - window.rouletteCurrentAngle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) / anglePerSector);
+                if (currentSector !== lastSectorTicked) {
+                    window.playGameSound('tick');
+                    lastSectorTicked = currentSector;
+                }
+
+                if (progress < 1) {
+                    requestAnimationFrame(animateSpin);
+                } else {
+                    window.isRouletteSpinning = false;
+                    setTimeout(() => {
+                        window.handleGameWin(winningPrize);
+                    }, 400);
+                }
+            }
+
+            requestAnimationFrame(animateSpin);
+        };
+
+        // GAME 2: RASPADINHA PREMIADA
+        window.renderScratchGame = function() {
+            const stage = document.getElementById('native-game-stage');
+            if (!stage) return;
+
+            const prizes = window.getStorePrizes();
+            const selectedPrize = prizes[Math.floor(Math.random() * prizes.length)];
+
+            stage.innerHTML = `
+                <div class="flex flex-col items-center justify-center w-full max-w-sm mx-auto space-y-4">
+                    <div class="relative w-72 h-44 sm:w-80 sm:h-48 rounded-2xl overflow-hidden shadow-2xl border-4 border-yellow-500/80 bg-gradient-to-tr from-purple-900 via-slate-900 to-indigo-950 flex items-center justify-center">
+                        <!-- Prêmio Escondido por Baixo -->
+                        <div class="absolute inset-0 flex flex-col items-center justify-center p-4 text-center space-y-1">
+                            <span class="text-[10px] font-black uppercase text-yellow-400">✨ Prêmio Revelado! ✨</span>
+                            <h3 class="text-xl sm:text-2xl font-black uppercase italic text-white leading-tight">${selectedPrize.name}</h3>
+                            <span class="text-[10px] font-bold text-slate-300">Cupom: <span class="text-yellow-300 font-black">${selectedPrize.code || 'RASPE10'}</span></span>
+                        </div>
+
+                        <!-- Canvas Camada Raspar -->
+                        <canvas id="scratch-canvas" width="320" height="192" class="absolute inset-0 w-full h-full cursor-pointer z-10 touch-none"></canvas>
+                    </div>
+
+                    <p class="text-slate-400 text-xs font-bold text-center">Use o dedo ou o mouse para raspar a camada dourada e ver seu prêmio!</p>
+                </div>
+            `;
+
+            setTimeout(() => {
+                const canvas = document.getElementById('scratch-canvas');
+                if (!canvas) return;
+                const ctx = canvas.getContext('2d');
+
+                // Preenche com gradiente metálico
+                const grad = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                grad.addColorStop(0, '#f59e0b');
+                grad.addColorStop(0.5, '#fef08a');
+                grad.addColorStop(1, '#d97706');
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Texto sobre a raspadinha
+                ctx.fillStyle = '#78350f';
+                ctx.font = 'bold 13px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('✨ RASPE AQUI COM O DEDO ✨', canvas.width / 2, canvas.height / 2);
+
+                let isScratching = false;
+                let scratchedPixels = 0;
+                let isRevealed = false;
+
+                function scratch(x, y) {
+                    ctx.globalCompositeOperation = 'destination-out';
+                    ctx.beginPath();
+                    ctx.arc(x, y, 22, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    window.playGameSound('scratch');
+
+                    // Checa progresso de raspagem
+                    if (!isRevealed) {
+                        scratchedPixels++;
+                        if (scratchedPixels > 25) {
+                            isRevealed = true;
+                            setTimeout(() => {
+                                window.handleGameWin(selectedPrize);
+                            }, 500);
+                        }
+                    }
+                }
+
+                function getCoords(e) {
+                    const rect = canvas.getBoundingClientRect();
+                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                    return {
+                        x: (clientX - rect.left) * (canvas.width / rect.width),
+                        y: (clientY - rect.top) * (canvas.height / rect.height)
+                    };
+                }
+
+                canvas.addEventListener('mousedown', (e) => { isScratching = true; const c = getCoords(e); scratch(c.x, c.y); });
+                canvas.addEventListener('mousemove', (e) => { if (isScratching) { const c = getCoords(e); scratch(c.x, c.y); } });
+                window.addEventListener('mouseup', () => { isScratching = false; });
+
+                canvas.addEventListener('touchstart', (e) => { isScratching = true; const c = getCoords(e); scratch(c.x, c.y); }, { passive: true });
+                canvas.addEventListener('touchmove', (e) => { if (isScratching) { const c = getCoords(e); scratch(c.x, c.y); } }, { passive: true });
+                canvas.addEventListener('touchend', () => { isScratching = false; });
+            }, 50);
+        };
+
+        // GAME 3: CAIXAS MISTERIOSAS
+        window.renderMysteryGame = function() {
+            const stage = document.getElementById('native-game-stage');
+            if (!stage) return;
+
+            stage.innerHTML = `
+                <div class="flex flex-col items-center justify-center w-full max-w-md mx-auto space-y-6">
+                    <p class="text-yellow-400 text-xs font-black uppercase tracking-wider text-center">Escolha uma caixa de presente para abrir!</p>
+
+                    <div class="grid grid-cols-3 gap-3 sm:gap-4 w-full">
+                        <button onclick="window.openMysteryBox(1)" id="box-1" class="aspect-square bg-gradient-to-tr from-purple-900 to-indigo-800 border-2 border-purple-500/50 hover:border-yellow-400 rounded-3xl flex flex-col items-center justify-center p-3 text-4xl sm:text-5xl shadow-xl hover:scale-105 active:scale-95 transition-all cursor-pointer group">
+                            <span class="group-hover:animate-bounce">🎁</span>
+                            <span class="text-[9px] font-black uppercase text-purple-200 mt-2">Caixa 1</span>
+                        </button>
+                        <button onclick="window.openMysteryBox(2)" id="box-2" class="aspect-square bg-gradient-to-tr from-purple-900 to-pink-800 border-2 border-purple-500/50 hover:border-yellow-400 rounded-3xl flex flex-col items-center justify-center p-3 text-4xl sm:text-5xl shadow-xl hover:scale-105 active:scale-95 transition-all cursor-pointer group">
+                            <span class="group-hover:animate-bounce">🎁</span>
+                            <span class="text-[9px] font-black uppercase text-purple-200 mt-2">Caixa 2</span>
+                        </button>
+                        <button onclick="window.openMysteryBox(3)" id="box-3" class="aspect-square bg-gradient-to-tr from-purple-900 to-emerald-800 border-2 border-purple-500/50 hover:border-yellow-400 rounded-3xl flex flex-col items-center justify-center p-3 text-4xl sm:text-5xl shadow-xl hover:scale-105 active:scale-95 transition-all cursor-pointer group">
+                            <span class="group-hover:animate-bounce">🎁</span>
+                            <span class="text-[9px] font-black uppercase text-purple-200 mt-2">Caixa 3</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+        };
+
+        window.openMysteryBox = function(boxNum) {
+            const prizes = window.getStorePrizes();
+            const selectedPrize = prizes[Math.floor(Math.random() * prizes.length)];
+
+            const boxBtn = document.getElementById(`box-${boxNum}`);
+            if (boxBtn) {
+                window.playGameSound('tick');
+                boxBtn.classList.add('animate-bounce');
+            }
+
+            setTimeout(() => {
+                window.handleGameWin(selectedPrize);
+            }, 600);
+        };
+
+        // GAME 4: CAÇA-NÍQUEIS (SLOTS)
+        window.renderSlotsGame = function() {
+            const stage = document.getElementById('native-game-stage');
+            if (!stage) return;
+
+            stage.innerHTML = `
+                <div class="flex flex-col items-center justify-center w-full max-w-sm mx-auto space-y-5">
+                    <!-- Painel dos Carretéis -->
+                    <div class="bg-gradient-to-b from-slate-900 via-slate-950 to-slate-900 border-4 border-yellow-500/80 p-4 rounded-3xl shadow-2xl w-full flex items-center justify-center gap-2">
+                        <div id="slot-reel-1" class="flex-1 h-24 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-center text-4xl sm:text-5xl shadow-inner font-bold text-white overflow-hidden">
+                            🎁
+                        </div>
+                        <div id="slot-reel-2" class="flex-1 h-24 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-center text-4xl sm:text-5xl shadow-inner font-bold text-white overflow-hidden">
+                            🎁
+                        </div>
+                        <div id="slot-reel-3" class="flex-1 h-24 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-center text-4xl sm:text-5xl shadow-inner font-bold text-white overflow-hidden">
+                            🎁
+                        </div>
+                    </div>
+
+                    <button id="btn-spin-slots" onclick="window.spinSlots()" class="w-full py-4 bg-gradient-to-r from-yellow-400 via-amber-500 to-yellow-300 text-slate-950 font-black uppercase italic tracking-widest text-sm rounded-2xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer">
+                        <span>PUXAR ALAVANCA 🎰</span>
+                    </button>
+                </div>
+            `;
+        };
+
+        window.spinSlots = function() {
+            if (window.isSlotsSpinning) return;
+            window.isSlotsSpinning = true;
+
+            const btn = document.getElementById('btn-spin-slots');
+            if (btn) btn.disabled = true;
+
+            const emojis = ['🍔', '🍟', '🍕', '🎁', '💎', '🏆', '⚡️', '👑', '💰', '🌟'];
+            const reel1 = document.getElementById('slot-reel-1');
+            const reel2 = document.getElementById('slot-reel-2');
+            const reel3 = document.getElementById('slot-reel-3');
+
+            let spins = 0;
+            const maxSpins = 25;
+
+            const interval = setInterval(() => {
+                spins++;
+                window.playGameSound('slot');
+
+                if (reel1) reel1.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+                if (reel2) reel2.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+                if (reel3) reel3.innerText = emojis[Math.floor(Math.random() * emojis.length)];
+
+                if (spins >= maxSpins) {
+                    clearInterval(interval);
+                    window.isSlotsSpinning = false;
+
+                    // Landing on jackpot winner
+                    if (reel1) reel1.innerText = '🎁';
+                    if (reel2) reel2.innerText = '🎁';
+                    if (reel3) reel3.innerText = '🎁';
+
+                    const prizes = window.getStorePrizes();
+                    const winningPrize = prizes[Math.floor(Math.random() * prizes.length)];
+
+                    setTimeout(() => {
+                        window.handleGameWin(winningPrize);
+                    }, 500);
+                }
+            }, 80);
+        };
+
+        window.getCartSubtotal = function() {
+            if (!Array.isArray(cart)) return 0;
+            return cart.reduce((acc, item) => {
+                const isWholesale = item.wholesaleMinQty && item.quantity >= item.wholesaleMinQty;
+                const priceToUse = isWholesale ? item.wholesalePrice : item.price;
+                const sub = parseFloat(String(priceToUse || '0').replace(',', '.')) * item.quantity;
+                return acc + (isNaN(sub) ? 0 : sub);
+            }, 0);
+        };
+
         window.openGameModal = function(customUrl) {
+            const minOrderVal = (storeData && storeData.gameMinOrderValue !== undefined) ? parseFloat(storeData.gameMinOrderValue) : 0;
+            const currentSubtotal = window.getCartSubtotal();
+
+            if (minOrderVal > 0 && currentSubtotal < minOrderVal) {
+                alert(`A Roleta de Prêmios só está disponível para pedidos a partir de R$ ${minOrderVal.toFixed(2).replace('.', ',')}!\n\nSeu subtotal atual é R$ ${currentSubtotal.toFixed(2).replace('.', ',')}. Adicione mais produtos para desbloquear.`);
+                return;
+            }
+
             const modal = document.getElementById('game-promo-modal');
+            const nativeContainer = document.getElementById('native-game-container');
+            const iframeContainer = document.getElementById('iframe-game-container');
             const iframe = document.getElementById('game-promo-iframe');
             const loader = document.getElementById('game-iframe-loader');
 
-            if (!modal || !iframe) return;
+            if (!modal) return;
 
-            let targetUrl = customUrl || (storeData && storeData.gameUrl) || '';
-            if (!targetUrl) return;
+            const gameType = (storeData && storeData.gameType) || 'native';
+            const targetIframeUrl = customUrl || (storeData && storeData.gameUrl) || '';
 
-            if (!targetUrl.startsWith('http://') && !targetUrl.startsWith('https://')) {
-                targetUrl = 'https://' + targetUrl;
+            if (gameType === 'iframe' && targetIframeUrl) {
+                // Modo Iframe Externo (Bossa Promo)
+                if (nativeContainer) nativeContainer.classList.add('hidden');
+                if (iframeContainer) iframeContainer.classList.remove('hidden');
+
+                let fullUrl = targetIframeUrl;
+                if (!fullUrl.startsWith('http://') && !fullUrl.startsWith('https://')) {
+                    fullUrl = 'https://' + fullUrl;
+                }
+
+                if (loader) loader.classList.remove('hidden');
+                if (iframe) {
+                    iframe.src = fullUrl;
+                    iframe.onload = function() {
+                        if (loader) loader.classList.add('hidden');
+                    };
+                }
+            } else {
+                // Modo Jogos Nativos da Loja
+                if (iframeContainer) iframeContainer.classList.add('hidden');
+                if (nativeContainer) nativeContainer.classList.remove('hidden');
+
+                // Configurar abas e jogo inicial
+                const initialGame = (storeData && storeData.nativeGame) || 'roulette';
+                const tabsDiv = document.getElementById('native-game-tabs');
+
+                if (initialGame === 'all') {
+                    if (tabsDiv) tabsDiv.classList.remove('hidden');
+                    window.switchNativeGameTab('roulette');
+                } else {
+                    if (tabsDiv) tabsDiv.classList.add('hidden');
+                    window.switchNativeGameTab(initialGame);
+                }
             }
-
-            if (loader) loader.classList.remove('hidden');
-
-            iframe.src = targetUrl;
-            iframe.onload = function() {
-                if (loader) loader.classList.add('hidden');
-            };
 
             modal.classList.remove('hidden');
             modal.classList.add('flex');

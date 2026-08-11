@@ -282,15 +282,6 @@
                         <!-- Content rendered dynamically via JS -->
                     </div>
                 </div>
-
-                <!-- Iframe Container (Legacy / External Bossa Promo) -->
-                <div id="iframe-game-container" class="hidden absolute inset-0 w-full h-full bg-slate-950">
-                    <div id="game-iframe-loader" class="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 text-slate-400 z-10 gap-3">
-                        <div class="w-10 h-10 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-                        <span class="text-xs font-black uppercase tracking-widest text-purple-400">Carregando Atração...</span>
-                    </div>
-                    <iframe id="game-promo-iframe" class="w-full h-full border-0 relative z-20" allow="autoplay; camera; microphone; geolocation"></iframe>
-                </div>
             </div>
         </div>
     </div>
@@ -3355,7 +3346,7 @@
             }, 0);
         };
 
-        window.openGameModal = function(customUrl) {
+        window.openGameModal = function() {
             const minOrderVal = (storeData && storeData.gameMinOrderValue !== undefined) ? parseFloat(storeData.gameMinOrderValue) : 0;
             const currentSubtotal = window.getCartSubtotal();
 
@@ -3366,48 +3357,21 @@
 
             const modal = document.getElementById('game-promo-modal');
             const nativeContainer = document.getElementById('native-game-container');
-            const iframeContainer = document.getElementById('iframe-game-container');
-            const iframe = document.getElementById('game-promo-iframe');
-            const loader = document.getElementById('game-iframe-loader');
 
             if (!modal) return;
 
-            const gameType = (storeData && storeData.gameType) || 'native';
-            const targetIframeUrl = customUrl || (storeData && storeData.gameUrl) || '';
+            if (nativeContainer) nativeContainer.classList.remove('hidden');
 
-            if (gameType === 'iframe' && targetIframeUrl) {
-                // Modo Iframe Externo (Bossa Promo)
-                if (nativeContainer) nativeContainer.classList.add('hidden');
-                if (iframeContainer) iframeContainer.classList.remove('hidden');
+            // Configurar abas e jogo inicial
+            const initialGame = (storeData && storeData.nativeGame) || 'roulette';
+            const tabsDiv = document.getElementById('native-game-tabs');
 
-                let fullUrl = targetIframeUrl;
-                if (!fullUrl.startsWith('http://') && !fullUrl.startsWith('https://')) {
-                    fullUrl = 'https://' + fullUrl;
-                }
-
-                if (loader) loader.classList.remove('hidden');
-                if (iframe) {
-                    iframe.src = fullUrl;
-                    iframe.onload = function() {
-                        if (loader) loader.classList.add('hidden');
-                    };
-                }
+            if (initialGame === 'all') {
+                if (tabsDiv) tabsDiv.classList.remove('hidden');
+                window.switchNativeGameTab('roulette');
             } else {
-                // Modo Jogos Nativos da Loja
-                if (iframeContainer) iframeContainer.classList.add('hidden');
-                if (nativeContainer) nativeContainer.classList.remove('hidden');
-
-                // Configurar abas e jogo inicial
-                const initialGame = (storeData && storeData.nativeGame) || 'roulette';
-                const tabsDiv = document.getElementById('native-game-tabs');
-
-                if (initialGame === 'all') {
-                    if (tabsDiv) tabsDiv.classList.remove('hidden');
-                    window.switchNativeGameTab('roulette');
-                } else {
-                    if (tabsDiv) tabsDiv.classList.add('hidden');
-                    window.switchNativeGameTab(initialGame);
-                }
+                if (tabsDiv) tabsDiv.classList.add('hidden');
+                window.switchNativeGameTab(initialGame);
             }
 
             modal.classList.remove('hidden');
@@ -3417,13 +3381,9 @@
 
         window.closeGameModal = function() {
             const modal = document.getElementById('game-promo-modal');
-            const iframe = document.getElementById('game-promo-iframe');
             if (modal) {
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
-            }
-            if (iframe) {
-                iframe.src = 'about:blank';
             }
         };
 

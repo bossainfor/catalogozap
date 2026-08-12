@@ -532,6 +532,9 @@
                             <button onclick="editStore('${id}')" title="Configurar Catálogo" class="p-2 bg-slate-100 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 rounded-lg transition-colors">
                                 <i data-lucide="settings" size="15"></i>
                             </button>
+                            <button onclick="changeStoreId('${id}')" title="Mudar ID / Link do Catálogo" class="p-2 bg-yellow-50 text-yellow-600 hover:bg-yellow-100 rounded-lg transition-colors">
+                                <i data-lucide="tag" size="15"></i>
+                            </button>
                             <button onclick="toggleBlock('${id}', '${data.status || 'active'}')" class="p-2 ${isBlocked ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-orange-50 text-orange-600 hover:bg-orange-100'} rounded-lg transition-colors" title="${isBlocked ? 'Desbloquear' : 'Bloquear'}">
                                 <i data-lucide="${isBlocked ? 'unlock' : 'lock'}" size="15"></i>
                             </button>
@@ -603,6 +606,9 @@
                     <div class="flex items-center gap-2 pt-1 border-t border-slate-50">
                         <button onclick="editStore('${id}')" class="flex-1 py-2.5 bg-slate-900 hover:bg-slate-850 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-1">
                             <i data-lucide="settings" class="w-3 h-3"></i> Configs
+                        </button>
+                        <button onclick="changeStoreId('${id}')" class="px-3 py-2.5 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-1" title="Mudar ID (Link)">
+                            <i data-lucide="tag" class="w-3 h-3"></i> Link
                         </button>
                         <button onclick="renewStore('${id}', '${data.expiresAt || ''}')" class="flex-1 py-2.5 bg-green-500 hover:bg-green-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-colors flex items-center justify-center gap-1">
                             <i data-lucide="calendar-plus" class="w-3 h-3"></i> Renovação
@@ -682,11 +688,12 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div class="space-y-1">
                                 <label class="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Nome da Empresa</label>
-                                <input type="text" id="store-name" value="${st ? st.n || '' : ''}" oninput="suggestSlug(this.value)" placeholder="Ex: Boutique da Helena" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm outline-none focus:border-indigo-600 transition-colors">
+                                <input type="text" id="store-name" value="${st ? st.n || '' : ''}" oninput="suggestSlug(this.value, ${!!st})" placeholder="Ex: Boutique da Helena" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm outline-none focus:border-indigo-600 transition-colors">
                             </div>
                             <div class="space-y-1">
-                                <label class="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">ID da URL (Link)</label>
-                                <input type="text" id="store-slug" value="${st ? st.id || '' : ''}" ${st ? 'disabled' : ''} placeholder="Ex: boutique-helena" class="w-full px-4 py-3 bg-slate-50 disabled:opacity-50 border border-slate-200 rounded-xl font-bold text-sm outline-none focus:border-indigo-600 transition-colors">
+                                <label class="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">ID da URL (Link da Loja)</label>
+                                <input type="text" id="store-slug" value="${st ? st.id || '' : ''}" placeholder="Ex: boutique-helena" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm outline-none focus:border-indigo-600 transition-colors">
+                                <span class="text-[8px] text-indigo-500 font-bold block mt-0.5 ml-1">Você pode alterar este ID. O link da loja mudará para o novo ID.</span>
                             </div>
                         </div>
 
@@ -698,7 +705,7 @@
                             </div>
                             <div class="space-y-1">
                                 <label class="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">WhatsApp (Login do Dono)</label>
-                                <input type="text" id="store-whatsapp" value="${st ? st.w || '' : ''}" ${st ? 'disabled' : ''} placeholder="Ex: 85992147711" class="w-full px-4 py-3 bg-slate-50 disabled:opacity-50 border border-slate-200 rounded-xl font-bold text-sm outline-none focus:border-indigo-600 transition-colors">
+                                <input type="text" id="store-whatsapp" value="${st ? st.w || '' : ''}" placeholder="Ex: 85992147711" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm outline-none focus:border-indigo-600 transition-colors">
                             </div>
                         </div>
 
@@ -734,9 +741,10 @@
             if (window.lucide) lucide.createIcons();
         }
 
-        window.suggestSlug = function(text) {
+        window.suggestSlug = function(text, isEditing = false) {
+            if (isEditing) return;
             const slugInput = document.getElementById('store-slug');
-            if (slugInput && !slugInput.disabled) {
+            if (slugInput) {
                 slugInput.value = text
                     .toLowerCase()
                     .normalize('NFD')
@@ -767,10 +775,63 @@
             }
 
             try {
+                // Se o revendedor alterou o ID/Slug da loja existente
+                if (editingId && slug !== editingId) {
+                    const checkSnap = await window.fs.getDoc(window.fs.doc(window.db, "stores", slug));
+                    if (checkSnap.exists()) {
+                        alert("O novo ID (Link) '" + slug + "' já está sendo usado por outro catálogo. Escolha outro ID.");
+                        return;
+                    }
+
+                    if (!confirm(`CONFIRMAÇÃO:\nVocê está alterando o link do catálogo de:\n/loja.html?id=${editingId}\n\nPara:\n/loja.html?id=${slug}\n\nO link antigo deixará de funcionar. Deseja prosseguir?`)) {
+                        return;
+                    }
+
+                    // Busca os dados antigos do catálogo para mover
+                    const oldDocRef = window.fs.doc(window.db, "stores", editingId);
+                    const oldSnap = await window.fs.getDoc(oldDocRef);
+                    let oldData = oldSnap.exists() ? oldSnap.data() : {};
+
+                    let newPayload = {
+                        ...oldData,
+                        n: name,
+                        cn: owner,
+                        w: whatsapp,
+                        password: password,
+                        t: niche,
+                        updatedAt: new Date().toISOString()
+                    };
+
+                    // Salva no novo ID
+                    await window.fs.setDoc(window.fs.doc(window.db, "stores", slug), newPayload);
+
+                    // Atualiza histórico de login/trial se existir
+                    if (whatsapp) {
+                        try {
+                            const historyRef = window.fs.doc(window.db, "trial_history", whatsapp);
+                            const historySnap = await window.fs.getDoc(historyRef);
+                            if (historySnap.exists() && historySnap.data().storeId === editingId) {
+                                await window.fs.updateDoc(historyRef, { storeId: slug });
+                            }
+                        } catch (eH) {
+                            console.warn("Aviso:", eH);
+                        }
+                    }
+
+                    // Apaga o ID antigo
+                    await window.fs.deleteDoc(oldDocRef);
+
+                    document.getElementById('reseller-store-modal').remove();
+                    alert("Catálogo e Novo Link (ID) salvos com sucesso!");
+                    loadMyStores();
+                    return;
+                }
+
+                // Salva ou atualiza mantendo o mesmo ID
                 const storeRef = window.fs.doc(window.db, "stores", slug);
 
                 if (!editingId) {
-                    // Valida duplicidade de slug
+                    // Valida duplicidade ao criar novo
                     const snap = await window.fs.getDoc(storeRef);
                     if (snap.exists()) {
                         alert("O link (URL) escolhido já está sendo usado. Mude o link de acesso.");
@@ -778,7 +839,6 @@
                     }
                 }
 
-                // Dados a gravar
                 let payload = {
                     n: name,
                     cn: owner,
@@ -789,18 +849,14 @@
                 };
 
                 if (!editingId) {
-                    // Configuração de nova conta iniciada
                     payload.createdAt = new Date().toISOString();
                     payload.status = 'active';
                     payload.plan = 'premium';
-                    payload.expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 dias grátis
-                    
-                    // Dados padrão do revendedor
+                    payload.expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
                     payload.resellerId = loggedUser;
                     payload.resellerName = resellerData.name || '';
                     payload.resellerWhatsapp = resellerData.whatsapp || '';
 
-                    // Inicia com um serviço exemplo para facilitar
                     payload.p = [
                         {
                             id: "p_" + Date.now(),
@@ -830,6 +886,57 @@
 
         window.editStore = function(id) {
             window.openCreateStoreModal(id);
+        }
+
+        window.changeStoreId = async function(oldId) {
+            const store = allStores.find(s => s.id === oldId);
+            if (!store) return;
+
+            const newId = prompt(`MUDAR LINK (ID DA URL)\nID atual do catálogo: ${oldId}\n\nDigite o novo ID desejado (ex: boutique-helena):`, oldId);
+            if (!newId || newId === oldId) return;
+
+            const slugClean = newId.toLowerCase().trim().replace(/[^a-z0-9-]/g, '');
+            if (!slugClean) {
+                alert("ID inválido! Use apenas letras, números e traços.");
+                return;
+            }
+
+            if (!confirm(`CONFIRMAR MUDANÇA DE LINK:\nIsso vai alterar o link público do cliente de:\n/loja.html?id=${oldId}\n\nPara:\n/loja.html?id=${slugClean}\n\nO link antigo deixará de funcionar. Deseja continuar?`)) return;
+
+            try {
+                const { doc, getDoc, setDoc, deleteDoc, updateDoc } = window.fs;
+                const check = await getDoc(doc(window.db, "stores", slugClean));
+                if (check.exists()) {
+                    alert("Este ID (LINK) já está em uso por outra loja. Escolha outro.");
+                    return;
+                }
+
+                const data = { ...store };
+                delete data.id;
+
+                await setDoc(doc(window.db, "stores", slugClean), data);
+
+                if (store.w) {
+                    try {
+                        const whatsappClean = store.w.replace(/\D/g, '');
+                        const historyRef = doc(window.db, "trial_history", whatsappClean);
+                        const historySnap = await getDoc(historyRef);
+                        if (historySnap.exists() && historySnap.data().storeId === oldId) {
+                            await updateDoc(historyRef, { storeId: slugClean });
+                        }
+                    } catch (eH) {
+                        console.warn(eH);
+                    }
+                }
+
+                await deleteDoc(doc(window.db, "stores", oldId));
+
+                alert("ID (Link) alterado com sucesso!");
+                loadMyStores();
+            } catch (err) {
+                console.error("Erro ao mudar ID:", err);
+                alert("Erro ao mudar ID do catálogo: " + err.message);
+            }
         }
 
         window.toggleBlock = async function(id, currentStatus) {

@@ -505,6 +505,13 @@
                     </td>
                     <td class="px-6 py-4 text-center">
                         ${statusBadge}
+                        ${(data.maxProducts !== undefined && data.maxProducts !== null && data.maxProducts !== '') ? `
+                            <div class="mt-1">
+                                <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200/80 px-2 py-0.5 rounded-md text-[8px] sm:text-[9px] font-black uppercase tracking-wider select-none" title="Limite Personalizado de Produtos">
+                                    <i data-lucide="package" class="w-2.5 h-2.5"></i> ${data.maxProducts} Itens
+                                </span>
+                            </div>
+                        ` : ''}
                     </td>
                     <td class="px-6 py-4 text-center">
                         <span class="inline-flex items-center gap-1 text-slate-950 text-xs font-black">
@@ -709,8 +716,8 @@
                             </div>
                         </div>
 
-                        <!-- Senha e Nicho -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <!-- Senha, Nicho e Limite de Produtos -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                             <div class="space-y-1">
                                 <label class="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Senha do Dono</label>
                                 <input type="text" id="store-password" value="${st ? st.password || '' : ''}" placeholder="Ex: 1234" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm outline-none focus:border-indigo-600 transition-colors">
@@ -725,6 +732,10 @@
                                     <option value="cardapio" ${st && st.t === 'cardapio' ? 'selected' : ''}>Cardápio / Hamburgueria</option>
                                     <option value="servicos" ${st && st.t === 'servicos' ? 'selected' : ''}>Serviços em Geral</option>
                                 </select>
+                            </div>
+                            <div class="space-y-1">
+                                <label class="text-[9px] font-black uppercase tracking-widest text-slate-400 ml-1">Limite de Itens</label>
+                                <input type="number" id="store-max-products" min="1" value="${st && st.maxProducts !== undefined && st.maxProducts !== null ? st.maxProducts : ''}" placeholder="${resellerData && resellerData.maxProductsPerStore ? 'Padrão (' + resellerData.maxProductsPerStore + ')' : 'Ex: 20 ou vazio'}" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-sm outline-none focus:border-indigo-600 transition-colors">
                             </div>
                         </div>
                     </div>
@@ -762,10 +773,21 @@
             const whatsapp = document.getElementById('store-whatsapp').value.trim().replace(/\D/g, '');
             const password = document.getElementById('store-password').value.trim();
             const niche = document.getElementById('store-niche').value;
+            const maxProductsRaw = document.getElementById('store-max-products').value;
 
             if (!name || !slug || !owner || !whatsapp || !password) {
                 alert("Por favor, preencha todos os campos.");
                 return;
+            }
+
+            let maxProducts = null;
+            if (maxProductsRaw && maxProductsRaw.trim() !== '') {
+                const parsed = parseInt(maxProductsRaw.trim(), 10);
+                if (!isNaN(parsed) && parsed > 0) {
+                    maxProducts = parsed;
+                }
+            } else if (!editingId && resellerData && resellerData.maxProductsPerStore) {
+                maxProducts = resellerData.maxProductsPerStore;
             }
 
             const maxAllowed = (resellerData && resellerData.maxStores !== undefined) ? resellerData.maxStores : 5;
@@ -799,6 +821,7 @@
                         w: whatsapp,
                         password: password,
                         t: niche,
+                        maxProducts: maxProducts,
                         updatedAt: new Date().toISOString()
                     };
 
@@ -845,6 +868,7 @@
                     w: whatsapp,
                     password: password,
                     t: niche,
+                    maxProducts: maxProducts,
                     updatedAt: new Date().toISOString()
                 };
 

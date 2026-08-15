@@ -366,8 +366,9 @@
                 }
 
                 // Verifica Expiração
+                const isLifetime = resellerData.isLifetime === true || resellerData.isLifetime === 'true' || resellerData.plan === 'lifetime';
                 const exp = resellerData.expiresAt ? new Date(resellerData.expiresAt) : null;
-                if (exp && new Date() > exp) {
+                if (!isLifetime && exp && new Date() > exp) {
                     showScreen('lockout-screen');
                     document.getElementById('lockout-title').innerText = "Licença Expirada";
                     document.getElementById('lockout-message').innerText = "A validade da sua licença de revenda expirou em " + exp.toLocaleDateString('pt-BR') + ". Renove sua licença com o suporte.";
@@ -376,10 +377,15 @@
 
                 // Prepara cabeçalho
                 document.getElementById('logged-reseller-name').innerText = resellerData.name || 'Parceiro';
-                document.getElementById('logged-reseller-expires').innerText = "Válido até " + (exp ? exp.toLocaleDateString('pt-BR') : 'Sem Limite');
-                document.getElementById('stat-reseller-expiry').innerText = exp ? exp.toLocaleDateString('pt-BR') : 'Sem Expiração';
+                document.getElementById('logged-reseller-expires').innerText = isLifetime ? "Licença Vitalícia" : ("Válido até " + (exp ? exp.toLocaleDateString('pt-BR') : 'Sem Limite'));
+                if (isLifetime) {
+                    document.getElementById('stat-reseller-expiry').innerHTML = '<span class="text-purple-600 font-black inline-flex items-center gap-1"><i data-lucide="infinity" class="w-4 h-4"></i> Vitalício</span>';
+                } else {
+                    document.getElementById('stat-reseller-expiry').innerText = exp ? exp.toLocaleDateString('pt-BR') : 'Sem Expiração';
+                }
 
                 showScreen('reseller-panel');
+                if (window.lucide) lucide.createIcons();
                 await loadMyStores();
             } catch (err) {
                 console.error("Autenticação falhou:", err);

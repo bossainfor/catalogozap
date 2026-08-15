@@ -641,9 +641,15 @@
                             </div>
                         </div>
 
-                        <div class="space-y-1.5">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Limite Máximo de Lojas (Slots do Revendedor)</label>
-                            <input type="number" id="reseller-max-stores" value="${r ? (r.maxStores !== undefined ? r.maxStores : 5) : 5}" min="1" placeholder="Ex: 5" class="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 font-bold text-sm outline-none focus:border-indigo-500 transition-colors">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Limite Máximo de Lojas (Slots)</label>
+                                <input type="number" id="reseller-max-stores" value="${r ? (r.maxStores !== undefined ? r.maxStores : 5) : 5}" min="1" placeholder="Ex: 5" class="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 font-bold text-sm outline-none focus:border-indigo-500 transition-colors">
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Limite de Produtos por Loja</label>
+                                <input type="number" id="reseller-max-products-per-store" value="${r && r.maxProductsPerStore !== undefined && r.maxProductsPerStore !== null ? r.maxProductsPerStore : ''}" min="1" placeholder="Ex: 20 ou vazio (padrão)" class="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 font-bold text-sm outline-none focus:border-indigo-500 transition-colors">
+                            </div>
                         </div>
                     </div>
 
@@ -666,6 +672,7 @@
             const password = document.getElementById('reseller-password').value.trim();
             const expiresRaw = document.getElementById('reseller-expires').value;
             const maxStoresRaw = document.getElementById('reseller-max-stores').value;
+            const maxProductsPerStoreRaw = document.getElementById('reseller-max-products-per-store').value;
 
             if (!name || !whatsapp || !login || !password) {
                 alert("Por favor, preencha todos os campos obrigatórios.");
@@ -687,6 +694,13 @@
                 // Define expiração padrão de 1 ano se não colocado de forma manual
                 const expiresAt = expiresRaw ? new Date(expiresRaw).toISOString() : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
                 const maxStores = maxStoresRaw ? parseInt(maxStoresRaw, 10) : 5;
+                let maxProductsPerStore = null;
+                if (maxProductsPerStoreRaw && maxProductsPerStoreRaw.trim() !== '') {
+                    const parsedProds = parseInt(maxProductsPerStoreRaw.trim(), 10);
+                    if (!isNaN(parsedProds) && parsedProds > 0) {
+                        maxProductsPerStore = parsedProds;
+                    }
+                }
 
                 const resellerData = {
                     name,
@@ -694,6 +708,7 @@
                     password,
                     expiresAt,
                     maxStores: isNaN(maxStores) ? 5 : maxStores,
+                    maxProductsPerStore: maxProductsPerStore,
                     status: resellerId ? (allResellers.find(x => x.id === resellerId).status || 'active') : 'active',
                     updatedAt: new Date().toISOString()
                 };
@@ -1352,6 +1367,13 @@
                     </td>
                     <td class="px-6 py-5 text-center">
                         ${planBadge}
+                        ${(data.maxProducts !== undefined && data.maxProducts !== null && data.maxProducts !== '') ? `
+                            <div class="mt-1">
+                                <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200/80 px-2 py-0.5 rounded-md text-[8px] sm:text-[9px] font-black uppercase tracking-wider select-none" title="Limite Personalizado de Produtos">
+                                    <i data-lucide="package" class="w-2.5 h-2.5"></i> ${data.maxProducts} Itens
+                                </span>
+                            </div>
+                        ` : ''}
                     </td>
                     <td class="px-6 py-5 text-center">
                         <button onclick="showVendors('${id}')" class="text-xs font-black ${vendorCount > 0 ? 'text-indigo-600' : 'text-slate-400'} hover:text-blue-600 flex items-center justify-center gap-1 mx-auto transition-all">
@@ -1447,6 +1469,11 @@
                         <div class="flex flex-col items-end gap-1.5">
                             ${statusBadge}
                             ${planBadge}
+                            ${(data.maxProducts !== undefined && data.maxProducts !== null && data.maxProducts !== '') ? `
+                                <span class="inline-flex items-center gap-1 bg-amber-50 text-amber-800 border border-amber-200/80 px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-wider select-none">
+                                    <i data-lucide="package" class="w-2.5 h-2.5"></i> ${data.maxProducts} Itens
+                                </span>
+                            ` : ''}
                         </div>
                     </div>
                     
@@ -1758,6 +1785,19 @@
                 return;
             }
 
+            // 5. Limite Máximo de Produtos Personalizado
+            const currentLimit = (store.maxProducts !== undefined && store.maxProducts !== null) ? store.maxProducts : "";
+            const newLimitStr = prompt("Limite Máximo de Produtos Customizado:\n(Digite um número como 20, 50, 100... ou deixe em branco para seguir o limite padrão do plano)", currentLimit);
+            if (newLimitStr === null) return;
+
+            let newMaxProducts = null;
+            if (newLimitStr.trim() !== "") {
+                const parsedLimit = parseInt(newLimitStr.trim(), 10);
+                if (!isNaN(parsedLimit) && parsedLimit > 0) {
+                    newMaxProducts = parsedLimit;
+                }
+            }
+
             try {
                 const { doc, getDoc, updateDoc, setDoc, deleteDoc } = window.fs;
                 const oldWhatsAppClean = store.w ? store.w.replace(/\D/g, '') : '';
@@ -1779,6 +1819,7 @@
                     data.n = newName;
                     data.cn = newOwner;
                     data.w = whatsappClean;
+                    data.maxProducts = newMaxProducts;
                     data.updatedAt = new Date().toISOString();
 
                     // Garantir que expiresAt seja uma string ISO compatível
@@ -1814,6 +1855,7 @@
                         n: newName,
                         cn: newOwner,
                         w: whatsappClean,
+                        maxProducts: newMaxProducts,
                         updatedAt: new Date().toISOString()
                     });
 
@@ -2361,8 +2403,8 @@
                             </div>
                         </div>
 
-                        <!-- Plano, Status e Revendedor -->
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <!-- Plano, Status, Revendedor e Limite de Produtos -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                             <div class="space-y-1.5">
                                 <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Plano</label>
                                 <select id="new-store-plan" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700/30 rounded-xl border border-slate-200 dark:border-slate-600 font-bold text-xs sm:text-sm outline-none text-slate-800 dark:text-slate-100 focus:border-indigo-500 transition-colors">
@@ -2379,11 +2421,15 @@
                                     <option value="blocked">Bloqueado</option>
                                 </select>
                             </div>
-                            <div class="space-y-1.5 sm:col-span-1">
+                            <div class="space-y-1.5">
                                 <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Revendedor</label>
                                 <select id="new-store-reseller" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700/30 rounded-xl border border-slate-200 dark:border-slate-600 font-bold text-xs sm:text-sm outline-none text-slate-800 dark:text-slate-100 focus:border-indigo-500 transition-colors">
                                     ${resellerOptions}
                                 </select>
+                            </div>
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Limite de Itens</label>
+                                <input type="number" id="new-store-max-products" min="1" placeholder="Ex: 20 ou vazio" class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700/30 rounded-xl border border-slate-200 dark:border-slate-600 font-bold text-xs sm:text-sm outline-none text-slate-800 dark:text-slate-100 focus:border-indigo-500 transition-colors">
                             </div>
                         </div>
                     </div>
@@ -2411,6 +2457,7 @@
             const plan = document.getElementById('new-store-plan').value;
             const status = document.getElementById('new-store-status').value;
             const resellerId = document.getElementById('new-store-reseller').value;
+            const maxProductsRaw = document.getElementById('new-store-max-products').value;
 
             if (!name || !slug || !owner || !whatsapp || !password) {
                 alert("Por favor, preencha todos os campos obrigatórios.");
@@ -2429,6 +2476,14 @@
                 return;
             }
 
+            let maxProducts = null;
+            if (maxProductsRaw && maxProductsRaw.trim() !== '') {
+                const parsedProds = parseInt(maxProductsRaw.trim(), 10);
+                if (!isNaN(parsedProds) && parsedProds > 0) {
+                    maxProducts = parsedProds;
+                }
+            }
+
             // Pesquisa info do revendedor
             let resName = '';
             let resWa = '';
@@ -2437,6 +2492,9 @@
                 if (partner) {
                     resName = partner.name || '';
                     resWa = partner.whatsapp || '';
+                    if (!maxProducts && partner.maxProductsPerStore) {
+                        maxProducts = partner.maxProductsPerStore;
+                    }
                 }
             }
 
@@ -2498,6 +2556,7 @@
                     password: password,
                     expiresAt: expiresAt,
                     plan: plan,
+                    maxProducts: maxProducts,
                     t: niche,
                     c: "ea580c", // Cor primária (laranja)
                     b: "0f172a", // Cor secundária (azul escuro)

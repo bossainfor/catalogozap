@@ -514,8 +514,9 @@
 
             resellers.forEach((r) => {
                 const isBlocked = r.status === 'blocked';
+                const isLifetime = r.isLifetime === true || r.isLifetime === 'true' || r.plan === 'lifetime';
                 const expiresAt = r.expiresAt ? new Date(r.expiresAt) : null;
-                const isExpired = expiresAt && new Date() > expiresAt;
+                const isExpired = isLifetime ? false : (expiresAt && new Date() > expiresAt);
                 
                 let statusBadge = '';
                 if (isBlocked) {
@@ -558,9 +559,15 @@
                         </button>
                     </td>
                     <td class="px-6 py-5">
-                        <div class="text-xs font-bold text-slate-600">
-                            Expira em: ${expiresAt ? expiresAt.toLocaleDateString('pt-BR') : 'Sem Limite'}
-                        </div>
+                        ${isLifetime ? `
+                            <div class="inline-flex items-center gap-1.5 bg-purple-100 text-purple-700 border border-purple-200 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest">
+                                <i data-lucide="infinity" class="w-3.5 h-3.5"></i> Vitalício
+                            </div>
+                        ` : `
+                            <div class="text-xs font-bold ${isExpired ? 'text-red-500 font-black' : 'text-slate-600'}">
+                                Expira em: ${expiresAt ? expiresAt.toLocaleDateString('pt-BR') : 'Sem Limite'}
+                            </div>
+                        `}
                         <div class="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-50 border border-blue-100 rounded-lg text-[9px] text-blue-600 font-black uppercase tracking-widest mt-1">
                             <i data-lucide="key" class="w-2.5 h-2.5"></i> Senha: ${r.password || '---'}
                         </div>
@@ -573,7 +580,7 @@
                             <button onclick="window.toggleResellerStatus('${r.id}', '${r.status || 'active'}')" title="${isBlocked ? 'Desbloquear Painel' : 'Bloquear Painel'}" class="p-2 ${isBlocked ? 'bg-green-50 text-green-600 hover:bg-green-100' : 'bg-red-50 text-red-600 hover:bg-red-100'} rounded-lg transition-colors">
                                 <i data-lucide="${isBlocked ? 'unlock' : 'lock'}" size="16"></i>
                             </button>
-                            <button onclick="window.renewReseller('${r.id}', '${r.expiresAt || ''}')" title="Estender Validade" class="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors">
+                            <button onclick="window.renewReseller('${r.id}', '${r.expiresAt || ''}')" title="Gerenciar Validade / Vitalício" class="p-2 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors">
                                 <i data-lucide="calendar-plus" size="16"></i>
                             </button>
                             <button onclick="window.deleteReseller('${r.id}')" title="Excluir Revendedor" class="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
@@ -637,8 +644,28 @@
                             </div>
                             <div class="space-y-1.5">
                                 <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Data de Expiração</label>
-                                <input type="date" id="reseller-expires" value="${r && r.expiresAt ? r.expiresAt.substring(0, 10) : ''}" class="w-full px-4 py-3 bg-slate-50 rounded-xl border border-slate-200 font-bold text-sm outline-none focus:border-indigo-500 transition-colors">
+                                <input type="date" id="reseller-expires" value="${r && r.expiresAt ? r.expiresAt.substring(0, 10) : ''}" ${r && (r.isLifetime === true || r.isLifetime === 'true' || r.plan === 'lifetime') ? 'disabled' : ''} class="w-full px-4 py-3 bg-slate-50 disabled:opacity-40 disabled:bg-slate-100 rounded-xl border border-slate-200 font-bold text-sm outline-none focus:border-indigo-500 transition-colors">
                             </div>
+                        </div>
+
+                        <!-- Opção Vitalício Exclusiva do Painel Master -->
+                        <div class="p-3.5 bg-purple-50/80 rounded-2xl border border-purple-200/80 flex items-center justify-between shadow-sm">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl bg-purple-600 text-white flex items-center justify-center shrink-0 shadow-md shadow-purple-200">
+                                    <i data-lucide="infinity" class="w-5 h-5"></i>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-black uppercase text-purple-950 tracking-tight flex items-center gap-1.5">
+                                        Plano Vitalício
+                                        <span class="text-[8px] bg-purple-200 text-purple-800 px-1.5 py-0.5 rounded font-black">MASTER ONLY</span>
+                                    </div>
+                                    <div class="text-[10px] text-purple-700 font-medium leading-tight mt-0.5">Acesso permanente sem data de expiração para o revendedor</div>
+                                </div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer shrink-0 ml-2">
+                                <input type="checkbox" id="reseller-is-lifetime" ${r && (r.isLifetime === true || r.isLifetime === 'true' || r.plan === 'lifetime') ? 'checked' : ''} onchange="document.getElementById('reseller-expires').disabled = this.checked;" class="sr-only peer">
+                                <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+                            </label>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -671,6 +698,7 @@
             const login = document.getElementById('reseller-login').value.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
             const password = document.getElementById('reseller-password').value.trim();
             const expiresRaw = document.getElementById('reseller-expires').value;
+            const isLifetime = document.getElementById('reseller-is-lifetime') ? document.getElementById('reseller-is-lifetime').checked : false;
             const maxStoresRaw = document.getElementById('reseller-max-stores').value;
             const maxProductsPerStoreRaw = document.getElementById('reseller-max-products-per-store').value;
 
@@ -691,8 +719,12 @@
                     }
                 }
 
-                // Define expiração padrão de 1 ano se não colocado de forma manual
-                const expiresAt = expiresRaw ? new Date(expiresRaw).toISOString() : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+                // Define expiração se não for vitalício
+                let expiresAt = null;
+                if (!isLifetime) {
+                    expiresAt = expiresRaw ? new Date(expiresRaw).toISOString() : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+                }
+
                 const maxStores = maxStoresRaw ? parseInt(maxStoresRaw, 10) : 5;
                 let maxProductsPerStore = null;
                 if (maxProductsPerStoreRaw && maxProductsPerStoreRaw.trim() !== '') {
@@ -707,6 +739,7 @@
                     whatsapp,
                     password,
                     expiresAt,
+                    isLifetime: isLifetime,
                     maxStores: isNaN(maxStores) ? 5 : maxStores,
                     maxProductsPerStore: maxProductsPerStore,
                     status: resellerId ? (allResellers.find(x => x.id === resellerId).status || 'active') : 'active',
@@ -749,16 +782,44 @@
         }
 
         window.renewReseller = async function(id, expiresAt) {
-            const currentExp = expiresAt ? new Date(expiresAt) : new Date();
-            // Adiciona 30 dias por padrão
-            const newExp = new Date(currentExp.getTime() + 30 * 24 * 60 * 60 * 1000);
-            
-            if (!confirm(`Estender validade deste revendedor em +30 dias? Nova data: ${newExp.toLocaleDateString('pt-BR')}`)) return;
+            const r = allResellers.find(x => x.id === id);
+            const isCurrentlyLifetime = r && (r.isLifetime === true || r.isLifetime === 'true' || r.plan === 'lifetime');
+
+            const choice = prompt(
+                `GERENCIAR VALIDADE DO REVENDEDOR (${id}):\n\n` +
+                `Opções:\n` +
+                `1 -> Adicionar +30 Dias de Validade\n` +
+                `2 -> Adicionar +1 Ano (365 Dias)\n` +
+                `3 -> ATIVAR ACESSO VITALÍCIO (Sem Expiração)\n` +
+                (isCurrentlyLifetime ? `4 -> Remover Vitalício e definir 30 dias\n` : ``) +
+                `\nOu digite a quantidade de dias desejada (Ex: 60, 90):`,
+                isCurrentlyLifetime ? "3" : "1"
+            );
+            if (!choice) return;
 
             try {
                 const docRef = window.fs.doc(window.db, "resellers", id);
-                await window.fs.updateDoc(docRef, { expiresAt: newExp.toISOString(), status: 'active', updatedAt: new Date().toISOString() });
-                alert("Validade estendida e revendedor liberado!");
+                if (choice === "3" || choice.toLowerCase() === "vitalicio" || choice.toLowerCase() === "vitalício") {
+                    await window.fs.updateDoc(docRef, { isLifetime: true, expiresAt: null, status: 'active', updatedAt: new Date().toISOString() });
+                    alert(`Revendedor "${id}" agora é VITALÍCIO com sucesso!`);
+                } else if (choice === "4" && isCurrentlyLifetime) {
+                    const newExp = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+                    await window.fs.updateDoc(docRef, { isLifetime: false, expiresAt: newExp.toISOString(), status: 'active', updatedAt: new Date().toISOString() });
+                    alert(`Vitalício removido de "${id}". Validade definida para 30 dias.`);
+                } else {
+                    let days = 30;
+                    if (choice === "1") days = 30;
+                    else if (choice === "2") days = 365;
+                    else {
+                        const parsedDays = parseInt(choice, 10);
+                        if (!isNaN(parsedDays) && parsedDays > 0) days = parsedDays;
+                    }
+                    const currentExp = (expiresAt && !isCurrentlyLifetime) ? new Date(expiresAt) : new Date();
+                    const baseTime = currentExp > new Date() ? currentExp.getTime() : Date.now();
+                    const newExp = new Date(baseTime + days * 24 * 60 * 60 * 1000);
+                    await window.fs.updateDoc(docRef, { isLifetime: false, expiresAt: newExp.toISOString(), status: 'active', updatedAt: new Date().toISOString() });
+                    alert(`Validade de "${id}" estendida em +${days} dias! Nova data: ${newExp.toLocaleDateString('pt-BR')}`);
+                }
                 loadResellers();
             } catch (err) {
                 console.error(err);

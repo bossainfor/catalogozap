@@ -2,9 +2,92 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import { createServer as createViteServer } from "vite";
+import { GoogleGenAI } from "@google/genai";
 
 const app = express();
 const PORT = 3000;
+
+app.use(express.json({ limit: "10mb" }));
+
+// Lazy Google GenAI Client
+let genAIClient: GoogleGenAI | null = null;
+function getGenAI(): GoogleGenAI | null {
+  if (!genAIClient && process.env.GEMINI_API_KEY) {
+    genAIClient = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+  }
+  return genAIClient;
+}
+
+// API endpoint for Virtual Attendant (AI)
+app.post("/api/ai-chat", async (req, res) => {
+  try {
+    const { message, storeContext, chatHistory } = req.body;
+    if (!message || typeof message !== "string") {
+      return res.status(400).json({ error: "Mensagem inválida" });
+    }
+
+    const ai = getGenAI();
+    if (!ai) {
+      return res.status(503).json({ 
+        error: "Chave Gemini não configurada no servidor",
+        fallback: true 
+      });
+    }
+
+    const storeName = storeContext?.name || "Nossa Loja";
+    const storeType = storeContext?.type || "Comércio / Serviços";
+    const storeBio = storeContext?.bio || storeContext?.description || "";
+    const storeCity = storeContext?.city || "";
+    const storeAddress = storeContext?.address || "";
+    const storePhone = storeContext?.phone || storeContext?.whatsapp || "";
+    const paymentMethods = storeContext?.paymentMethods || "PIX, Cartão e Dinheiro";
+    const deliveryInfo = storeContext?.deliveryInfo || "Entrega local e retirada";
+    const productsList = (storeContext?.products || [])
+      .slice(0, 80)
+      .map((p: any) => `- ${p.name}: R$ ${p.price || 0}${p.description ? ` (${p.description})` : ""}${p.category ? ` [Categoria: ${p.category}]` : ""}`)
+      .join("\n");
+
+    const systemInstruction = `Você é a Atendente Virtual Oficial e Inteligente da empresa "${storeName}".
+Segmento / Especialidade: "${storeType}".
+${storeBio ? `Sobre a empresa: ${storeBio}` : ""}
+${storeCity ? `Cidade / Localização: ${storeCity} ${storeAddress}` : ""}
+Contato WhatsApp: ${storePhone}
+Formas de Pagamento: ${paymentMethods}
+Informações de Frete / Atendimento: ${deliveryInfo}
+
+PRODUTOS E SERVIÇOS DISPONÍVEIS NO CATÁLOGO:
+${productsList || "Nenhum produto cadastrado no momento."}
+
+DIRETRIZES FUNDAMENTAIS DE ATENDIMENTO:
+1. Responda em português brasileiro de maneira prestativa, profissional, calorosa e concisa (máximo 2 a 3 frases por resposta).
+2. Se o cliente perguntar se a empresa faz ou vende algo que NÃO está na lista de produtos/serviços nem pertence ao segmento da empresa (por exemplo, perguntar se levanta muro para uma loja de pisos industriais, ou se vende pizza para uma hamburgueria):
+   - NUNCA diga respostas genéricas como "Não sei informar" ou "Ainda não tenho essa informação".
+   - Explique educadamente o foco exato da empresa e esclareça que não trabalham com esse outro item.
+   - Exemplo modelo: "A ${storeName} é especializada em ${storeType} (como ${productsList.split("\n")[0] || "nossos serviços de catálogo"}). Não realizamos [serviço solicitado]. Gostaria de um orçamento para nossos serviços de [área da empresa] ou falar com a equipe no WhatsApp?"
+3. Se o cliente perguntar sobre produtos existentes, preços, agendamentos, pagamentos ou prazos, responda com precisão baseado nos dados acima.
+4. Se o cliente pedir para falar com atendente humano ou negociar, oriente a clicar no botão de WhatsApp.
+5. Seja natural, simpática e focada em ajudar a fechar negócios.`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: `${systemInstruction}\n\nPergunta do cliente: "${message}"` }]
+        }
+      ]
+    });
+
+    const replyText = response.text || "Olá! Como posso ajudar você hoje?";
+    return res.json({ reply: replyText });
+  } catch (error: any) {
+    console.error("Erro no /api/ai-chat:", error);
+    return res.status(500).json({ 
+      error: error?.message || "Erro ao processar IA",
+      fallback: true 
+    });
+  }
+});
 
 interface StoreCache {
   name: string;

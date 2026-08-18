@@ -3914,74 +3914,89 @@
             updateCartUI();
         };
     </script>
-    <!-- ATENDENTE INTELIGENTE (IA LOCAL) -->
-    <div id="ai-attendant" class="fixed bottom-24 left-4 right-4 sm:left-auto sm:right-6 z-[90] pointer-events-none opacity-0 transition-all duration-500 transform translate-y-10 hidden">
-        <div class="bg-white dark:bg-slate-800 w-full sm:w-80 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden pointer-events-auto">
+    <!-- ATENDENTE INTELIGENTE (IA INTEGRADA & LOCAL) -->
+    <div id="ai-attendant" class="fixed bottom-20 left-4 right-4 sm:left-auto sm:right-6 z-[999] pointer-events-none opacity-0 transition-all duration-300 transform translate-y-10 hidden">
+        <div class="bg-white dark:bg-slate-800 w-full sm:w-85 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden pointer-events-auto flex flex-col max-h-[80vh]">
             <!-- Header -->
-            <div class="bg-slate-900 p-4 flex items-center justify-between">
+            <div class="bg-slate-900 p-4 flex items-center justify-between shrink-0">
                 <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-gradient-to-tr from-emerald-400 to-[#25D366] rounded-full flex items-center justify-center animate-pulse shadow-md shadow-emerald-500/20">
-                        <i data-lucide="headset" class="w-4.5 h-4.5 text-slate-900"></i>
+                    <div class="w-9 h-9 bg-gradient-to-tr from-emerald-400 to-[#25D366] rounded-full flex items-center justify-center animate-pulse shadow-md shadow-emerald-500/20 text-slate-900">
+                        <i data-lucide="headset" class="w-5 h-5 text-slate-900"></i>
                     </div>
                     <div>
                         <h4 class="text-white text-sm font-black uppercase italic leading-none">Atendente Virtual</h4>
-                        <span class="text-[#25D366] text-[10px] font-bold uppercase tracking-wider">Online agora</span>
+                        <span class="text-[#25D366] text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 mt-0.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-[#25D366] animate-ping inline-block"></span> Online agora
+                        </span>
                     </div>
                 </div>
-                <button onclick="toggleAI(false)" class="text-slate-400 hover:text-white transition-colors active-scale">
+                <button type="button" onclick="window.toggleAI(false)" class="text-slate-400 hover:text-white p-1 rounded-full hover:bg-slate-800 transition-colors active-scale">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
             
             <!-- Chat Area -->
-            <div id="ai-messages" class="h-64 overflow-y-auto p-4 space-y-3 bg-slate-50 flex flex-col custom-scrollbar">
-                <div class="bg-slate-200 text-slate-700 p-3 rounded-2xl rounded-tl-none text-[11px] font-medium self-start shadow-sm leading-relaxed">
+            <div id="ai-messages" class="h-64 sm:h-72 overflow-y-auto p-4 space-y-3 bg-slate-50 dark:bg-slate-900/50 flex flex-col custom-scrollbar">
+                <div class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 p-3 rounded-2xl rounded-tl-none text-xs font-medium self-start shadow-sm leading-relaxed max-w-[90%]">
                     Olá! Sou a atendente virtual da loja. Tire suas dúvidas sobre nossos serviços, produtos, prazos, formas de pagamento ou solicite um orçamento!
                 </div>
             </div>
 
             <!-- Suggestion Chips / Quick Actions -->
-            <div class="px-3 py-2 bg-slate-100 dark:bg-slate-700 flex flex-nowrap overflow-x-auto gap-2 border-t border-slate-200/50 dark:border-slate-600 select-none custom-scrollbar shrink-0">
-                <button type="button" onclick="window.triggerQuickAction('whatsapp')" class="bg-gradient-to-r from-emerald-500 to-[#25D366] hover:from-emerald-600 hover:to-[#22c35e] text-slate-900 duration-200 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 active-scale shadow-sm shadow-emerald-500/20">
+            <div class="px-3 py-2 bg-slate-100 dark:bg-slate-750 flex flex-nowrap overflow-x-auto gap-2 border-t border-slate-200/60 dark:border-slate-700 select-none custom-scrollbar shrink-0">
+                <button type="button" onclick="window.triggerQuickAction('whatsapp')" class="bg-gradient-to-r from-emerald-500 to-[#25D366] hover:from-emerald-600 hover:to-[#22c35e] text-slate-900 duration-200 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 active-scale shadow-sm shadow-emerald-500/20 cursor-pointer">
                     <i data-lucide="phone" class="w-3.5 h-3.5 animate-pulse"></i> Falar com Atendente
                 </button>
-                <button type="button" onclick="window.triggerQuickAction('pagamento')" class="bg-white dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 transition-all duration-200 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 active-scale shadow-sm">
+                <button type="button" onclick="window.triggerQuickAction('pagamento')" class="bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 transition-all duration-200 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 active-scale shadow-sm cursor-pointer">
                     <i data-lucide="credit-card" class="w-3.5 h-3.5"></i> Pagamentos
                 </button>
-                <button type="button" onclick="window.triggerQuickAction('frete')" class="bg-white dark:bg-slate-850 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 transition-all duration-200 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 active-scale shadow-sm">
+                <button type="button" onclick="window.triggerQuickAction('frete')" class="bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 transition-all duration-200 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 active-scale shadow-sm cursor-pointer">
                     <i data-lucide="truck" class="w-3.5 h-3.5"></i> Entrega & Frete
                 </button>
             </div>
 
             <!-- Input Area -->
-            <div class="p-3 bg-white border-t border-slate-100 flex gap-2">
-                <input type="text" id="ai-input" placeholder="Pergunte aqui..." class="flex-grow bg-slate-100 border-none rounded-xl px-4 py-3 text-[11px] font-bold focus:ring-2 focus:ring-[#25D366] outline-none">
-                <button onclick="askAI()" class="bg-[#25D366] text-slate-900 p-3 rounded-xl hover:scale-105 active-scale transition-all">
+            <div class="p-3 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700 flex gap-2 shrink-0">
+                <input type="text" id="ai-input" placeholder="Digite sua dúvida ou pedido..." class="flex-grow bg-slate-100 dark:bg-slate-900 border-none rounded-xl px-4 py-3 text-xs font-bold text-slate-800 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-[#25D366] outline-none">
+                <button type="button" onclick="window.askAI()" class="bg-[#25D366] hover:bg-emerald-500 text-slate-900 p-3 rounded-xl hover:scale-105 active-scale transition-all shadow-md flex items-center justify-center shrink-0 cursor-pointer">
                     <i data-lucide="send" class="w-4 h-4"></i>
                 </button>
             </div>
         </div>
     </div>
 
-    <div id="ai-trigger" class="hidden fixed bottom-32 right-6 z-50 flex items-center gap-1.5 opacity-0 pointer-events-none transition-all duration-300">
+    <!-- Trigger Button -->
+    <div id="ai-trigger" class="fixed bottom-24 right-4 sm:right-6 z-[80] flex items-center gap-2 transition-all duration-300 pointer-events-auto">
         <!-- Mini dismiss button -->
-        <button onclick="event.stopPropagation(); window.dismissAITrigger()" class="bg-red-500/90 text-white hover:bg-red-650 w-5 h-5 rounded-full flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-md shrink-0 cursor-pointer border border-white/10" title="Minimizar / Fechar">
+        <button type="button" onclick="event.stopPropagation(); window.dismissAITrigger()" class="bg-slate-800/80 hover:bg-red-500 text-white w-6 h-6 rounded-full flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-md shrink-0 cursor-pointer border border-white/20" title="Ocultar Atendente">
             <i data-lucide="x" class="w-3 h-3"></i>
         </button>
         <!-- The trigger button -->
-        <button onclick="toggleAI(true)" class="bg-gradient-to-r from-slate-950 to-slate-800 dark:from-slate-900 dark:to-slate-800 text-white p-2.5 sm:pl-3 sm:pr-4 sm:py-2.5 rounded-full flex items-center justify-center gap-2.5 shadow-2xl hover:scale-105 active-scale transition-all duration-300 border-2 border-emerald-500">
-            <div class="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-emerald-500 to-[#25D366] text-slate-950 shadow-md shrink-0">
+        <button type="button" onclick="window.toggleAI(true)" class="bg-gradient-to-r from-slate-950 to-slate-800 dark:from-slate-900 dark:to-slate-800 text-white p-2.5 sm:pl-3.5 sm:pr-5 sm:py-3 rounded-full flex items-center justify-center gap-2.5 shadow-2xl hover:scale-105 active-scale transition-all duration-300 border-2 border-emerald-500 cursor-pointer group">
+            <div class="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-emerald-500 to-[#25D366] text-slate-950 shadow-md shrink-0 group-hover:rotate-12 transition-transform">
                 <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
                 <i data-lucide="headset" class="relative w-4.5 h-4.5 text-slate-950"></i>
             </div>
             <div class="hidden sm:flex flex-col items-start text-left select-none">
                 <span class="text-[9px] uppercase font-black tracking-wider text-emerald-400 leading-none">Dúvidas?</span>
-                <span class="text-[10px] font-black text-white leading-normal uppercase">Atendente Virtual</span>
+                <span class="text-[11px] font-black text-white leading-normal uppercase">Atendente Virtual</span>
             </div>
         </button>
     </div>
 
     <script>
+        // Utilitário de escape de HTML
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+        window.escapeHtml = escapeHtml;
+
         // Lógica do Atendente Inteligente
         let aiOpen = false;
 
@@ -3993,68 +4008,96 @@
             }
         };
 
-        function toggleAI(show) {
-            aiOpen = show;
+        window.toggleAI = function(show) {
+            aiOpen = !!show;
             const widget = document.getElementById('ai-attendant');
             const trigger = document.getElementById('ai-trigger');
             
-            if(show) {
+            if (!widget) return;
+
+            if (show) {
                 // Personaliza mensagem inicial com o nome da loja
                 const firstMsg = document.querySelector('#ai-messages > div:first-child');
-                if (firstMsg && storeData && storeData.name) {
-                    firstMsg.innerHTML = `Olá! Sou a atendente virtual da <strong>${escapeHtml(storeData.name)}</strong>. Posso te ajudar a tirar dúvidas, encontrar serviços ou fazer orçamentos!`;
+                const storeName = (window.storeData && window.storeData.name) ? window.storeData.name : (storeData && storeData.name ? storeData.name : "");
+                if (firstMsg && storeName) {
+                    firstMsg.innerHTML = `Olá! Sou a atendente virtual da <strong>${escapeHtml(storeName)}</strong>. Posso te ajudar a tirar dúvidas, encontrar serviços ou fazer orçamentos!`;
                 }
 
                 widget.style.display = 'block';
-                if(trigger) {
+                widget.classList.remove('hidden');
+                
+                if (trigger) {
                     trigger.classList.add('scale-0', 'opacity-0', 'pointer-events-none');
                 }
+                
                 setTimeout(() => {
                     widget.classList.remove('opacity-0', 'translate-y-10', 'pointer-events-none');
-                    document.getElementById('ai-input').focus();
-                }, 10);
+                    widget.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
+                    const aiInput = document.getElementById('ai-input');
+                    if (aiInput) aiInput.focus();
+                    if (window.lucide) lucide.createIcons();
+                }, 20);
             } else {
+                widget.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
                 widget.classList.add('opacity-0', 'translate-y-10', 'pointer-events-none');
-                if(trigger && sessionStorage.getItem('ai_trigger_dismissed') !== 'true') {
+                
+                if (trigger && sessionStorage.getItem('ai_trigger_dismissed') !== 'true') {
                     trigger.classList.remove('scale-0', 'opacity-0', 'pointer-events-none');
                 }
-                setTimeout(() => { if(!aiOpen) widget.style.display = 'none'; }, 500);
+                
+                setTimeout(() => {
+                    if (!aiOpen) {
+                        widget.style.display = 'none';
+                        widget.classList.add('hidden');
+                    }
+                }, 300);
             }
-        }
+        };
 
         function appendMessage(text, type, productLink = null, actionType = null, isTemporary = false) {
             const messages = document.getElementById('ai-messages');
+            if (!messages) return null;
+
             const div = document.createElement('div');
             if (isTemporary) div.id = 'ai-typing-indicator';
             
             div.className = type === 'user' 
                 ? 'bg-slate-900 text-white p-3 rounded-2xl rounded-tr-none text-xs font-bold self-end shadow-md max-w-[80%]'
-                : 'bg-white border border-slate-200 text-slate-700 p-3 rounded-2xl rounded-tl-none text-xs font-medium self-start shadow-sm max-w-[85%] flex flex-col gap-2';
+                : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 p-3 rounded-2xl rounded-tl-none text-xs font-medium self-start shadow-sm max-w-[85%] flex flex-col gap-2';
             
             const textSpan = document.createElement('span');
             textSpan.innerHTML = text;
             div.appendChild(textSpan);
 
-            if(productLink) {
+            if (productLink) {
                 const btn = document.createElement('button');
-                btn.className = 'mt-1 bg-[#25D366] text-slate-900 text-[10px] font-black uppercase py-2 px-3 rounded-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1 shadow-sm';
+                btn.type = 'button';
+                btn.className = 'mt-1 bg-[#25D366] text-slate-900 text-[10px] font-black uppercase py-2 px-3 rounded-xl hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-1 shadow-sm cursor-pointer';
                 btn.innerHTML = `<i data-lucide="eye" class="w-3.5 h-3.5"></i> Abrir Produto / Serviço`;
                 btn.onclick = () => {
-                    openProductModal(productLink.id);
-                    toggleAI(false);
+                    if (typeof openProductModal === 'function') {
+                        openProductModal(productLink.id);
+                    }
+                    window.toggleAI(false);
                 };
                 div.appendChild(btn);
                 setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 0);
             }
 
-            if(actionType === 'whatsapp') {
+            if (actionType === 'whatsapp') {
                 const btn = document.createElement('button');
-                btn.className = 'mt-1.5 bg-gradient-to-r from-emerald-500 to-[#25D366] hover:from-emerald-600 hover:to-[#22c35e] text-slate-900 duration-200 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 self-start active-scale shadow-md shadow-emerald-500/20 border border-emerald-450/20';
+                btn.type = 'button';
+                btn.className = 'mt-1.5 bg-gradient-to-r from-emerald-500 to-[#25D366] hover:from-emerald-600 hover:to-[#22c35e] text-slate-900 duration-200 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 self-start active-scale shadow-md shadow-emerald-500/20 border border-emerald-450/20 cursor-pointer';
                 btn.innerHTML = `<i data-lucide="phone" class="w-4 h-4"></i> Falar com Atendente`;
                 btn.onclick = () => {
-                    let whatsapp = (storeData && storeData.whatsapp) ? storeData.whatsapp.replace(/\D/g, '') : '';
+                    const currentStore = window.storeData || storeData;
+                    let whatsapp = (currentStore && currentStore.whatsapp) ? currentStore.whatsapp.replace(/\D/g, '') : '';
                     if (whatsapp.length <= 11 && whatsapp.length > 0) whatsapp = '55' + whatsapp;
-                    window.openResilientWhatsApp(whatsapp, "Olá! Vim do assistente do seu catálogo e gostaria de tirar uma dúvida.");
+                    if (typeof window.openResilientWhatsApp === 'function') {
+                        window.openResilientWhatsApp(whatsapp, "Olá! Vim do assistente do seu catálogo e gostaria de tirar uma dúvida.");
+                    } else if (whatsapp) {
+                        window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent("Olá! Vim do assistente do seu catálogo e gostaria de tirar uma dúvida.")}`, '_blank');
+                    }
                 };
                 div.appendChild(btn);
                 setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 0);
@@ -4064,6 +4107,7 @@
             messages.scrollTop = messages.scrollHeight;
             return div;
         }
+        window.appendMessage = appendMessage;
 
         window.triggerQuickAction = async function(action) {
             if (action === 'whatsapp') {
@@ -4078,14 +4122,15 @@
                 appendMessage("Como funciona a entrega / frete?", 'user');
                 await processAIQuery("Como funciona a entrega e o frete?");
             }
-        }
+        };
 
         // Mecanismo Semântico Inteligente Local com Contexto Completo da Loja
         function findLocalContextualResponse(query) {
             const queryLower = query.toLowerCase().trim();
-            const products = window.fullCatalog || (storeData ? storeData.products : []) || [];
-            const storeName = storeData?.name || "Nossa Loja";
-            const storeType = storeData?.type || storeData?.t || "serviços e produtos";
+            const currentStore = window.storeData || storeData;
+            const products = window.fullCatalog || (currentStore ? currentStore.products : []) || [];
+            const storeName = currentStore?.name || "Nossa Loja";
+            const storeType = currentStore?.type || currentStore?.t || "serviços e produtos";
             
             // 0. Contato / WhatsApp / Atendente
             const contactKeys = ['contato', 'whatsapp', 'zap', 'telefone', 'falar', 'conversar', 'suporte', 'ajuda', 'duvida', 'dúvida', 'vendedor', 'humano', 'ligar', 'chamar', 'atendente', 'comprar', 'pedir'];
@@ -4134,13 +4179,13 @@
             // 2. Formas de Pagamento
             if (['pagamento', 'paga', 'pix', 'cartao', 'cartão', 'dinheiro', 'taxa', 'parcela', 'parcelamento'].some(k => queryLower.includes(k))) {
                 let paymentText = "Aceitamos PIX, Cartão e Dinheiro.";
-                if (storeData?.paymentPix) paymentText = "Aceitamos PIX (chave cadastrada), Dinheiro e Cartão com opções de parcelamento.";
+                if (currentStore?.paymentPix) paymentText = "Aceitamos PIX (chave cadastrada), Dinheiro e Cartão com opções de parcelamento.";
                 return { text: paymentText };
             }
 
             // 3. Entrega / Frete / Atendimento
             if (['entrega', 'frete', 'envia', 'recebe', 'chega', 'correio', 'retirada', 'região', 'atende'].some(k => queryLower.includes(k))) {
-                const deliveryFees = storeData?.deliveryFees || storeData?.df || [];
+                const deliveryFees = currentStore?.deliveryFees || currentStore?.df || [];
                 if (Array.isArray(deliveryFees) && deliveryFees.length > 0) {
                     const sampleFees = deliveryFees.slice(0, 3).map(b => `${b.neighborhood || b.n}: R$ ${b.fee || b.f}`).join(', ');
                     return { text: `Realizamos entregas na região! Taxas por bairro: ${sampleFees}. O valor final é calculado no carrinho.` };
@@ -4155,7 +4200,7 @@
 
             // 5. Categorias e Navegação
             if (queryLower.includes('ver tudo') || queryLower.includes('catalogo') || queryLower.includes('catálogo') || queryLower.includes('produtos') || queryLower.includes('servicos') || queryLower.includes('serviços')) {
-                const topCats = storeData?.categories ? storeData.categories.slice(0, 4).join(', ') : 'nossas categorias';
+                const topCats = currentStore?.categories ? currentStore.categories.slice(0, 4).join(', ') : 'nossas categorias';
                 return { text: `Você pode navegar por todo o catálogo no topo da página. Nossas especialidades incluem: ${topCats}.` };
             }
 
@@ -4166,6 +4211,7 @@
                 action: 'whatsapp'
             };
         }
+        window.findLocalContextualResponse = findLocalContextualResponse;
 
         async function processAIQuery(query) {
             // Mostra indicador de digitação
@@ -4173,14 +4219,15 @@
 
             // Tenta consultar endpoint de IA integrado no servidor
             try {
+                const currentStore = window.storeData || storeData;
                 const storeContext = {
-                    name: storeData?.name || "CatálogoZap",
-                    type: storeData?.type || storeData?.t || "Pisos e Construção",
-                    bio: storeData?.bio || storeData?.description || "",
-                    city: storeData?.city || "",
-                    address: storeData?.address || "",
-                    phone: storeData?.whatsapp || "",
-                    products: (window.fullCatalog || storeData?.products || []).map(p => ({
+                    name: currentStore?.name || "CatálogoZap",
+                    type: currentStore?.type || currentStore?.t || "Pisos e Construção",
+                    bio: currentStore?.bio || currentStore?.description || "",
+                    city: currentStore?.city || "",
+                    address: currentStore?.address || "",
+                    phone: currentStore?.whatsapp || "",
+                    products: (window.fullCatalog || currentStore?.products || []).map(p => ({
                         id: p.id,
                         name: p.name,
                         price: p.price,
@@ -4201,10 +4248,10 @@
                 if (res.ok) {
                     const data = await res.json();
                     if (data && data.reply) {
-                        typingDiv.remove();
+                        if (typingDiv) typingDiv.remove();
                         // Checa se mencionou algum produto específico para colocar botão
                         const queryLower = query.toLowerCase();
-                        const matchingProd = (window.fullCatalog || storeData?.products || []).find(p => 
+                        const matchingProd = (window.fullCatalog || currentStore?.products || []).find(p => 
                             p.name && queryLower.includes(p.name.toLowerCase())
                         );
                         appendMessage(data.reply, 'bot', matchingProd || null, data.reply.toLowerCase().includes('whatsapp') ? 'whatsapp' : null);
@@ -4216,40 +4263,52 @@
             }
 
             // Fallback imediato para o motor semântico contextual inteligente local (Zero Custo e Sem Erros)
-            typingDiv.remove();
+            if (typingDiv) typingDiv.remove();
             const fallbackObj = findLocalContextualResponse(query);
             appendMessage(fallbackObj.text, 'bot', fallbackObj.product, fallbackObj.action);
         }
+        window.processAIQuery = processAIQuery;
 
         async function askAI() {
             const input = document.getElementById('ai-input');
+            if (!input) return;
             const query = input.value.trim();
-            if(!query) return;
+            if (!query) return;
 
             appendMessage(query, 'user');
             input.value = '';
 
             await processAIQuery(query);
         }
+        window.askAI = askAI;
+
+        // Inicializador do botão do atendente
+        window.initAIAttendant = function() {
+            const currentStore = window.storeData || storeData;
+            const isAffiliate = currentStore && (currentStore.type === 'afiliados' || currentStore.t === 'afiliados');
+            if (isAffiliate) return;
+            if (sessionStorage.getItem('ai_trigger_dismissed') === 'true') return;
+            
+            const trigger = document.getElementById('ai-trigger');
+            if (trigger) {
+                trigger.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+            }
+            if (window.lucide) lucide.createIcons();
+        };
 
         // Mostrar o botão após carregar
         window.addEventListener('load', () => {
-            const isAffiliate = storeData && storeData.type === 'afiliados';
-            if (isAffiliate) return; // Não mostra IA se for afiliado
-            if (sessionStorage.getItem('ai_trigger_dismissed') === 'true') return; // Se já minimizou/recolheu, não mostra
-            
-            setTimeout(() => {
-                const trigger = document.getElementById('ai-trigger');
-                if (trigger) {
-                    trigger.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
-                }
-                if (window.lucide) lucide.createIcons();
-            }, 2000);
+            setTimeout(window.initAIAttendant, 1000);
         });
 
         // Enviar com Enter
-        document.getElementById('ai-input').addEventListener('keypress', (e) => {
-            if(e.key === 'Enter') askAI();
+        document.addEventListener('DOMContentLoaded', () => {
+            const input = document.getElementById('ai-input');
+            if (input) {
+                input.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') window.askAI();
+                });
+            }
         });
     </script>
 </body>

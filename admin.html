@@ -1859,6 +1859,12 @@
                 }
             }
 
+            // 6. Segmento / Nicho da Loja (Liberado no Painel Master)
+            const currentNiche = store.t || "loja";
+            const newNiche = prompt("Nicho / Segmento da Loja (Liberado para o Admin Master):\nOpções: loja, cardapio, salao, barbearia, acougue, clinica, servicos, portfolio, afiliados", currentNiche);
+            if (newNiche === null) return;
+            const nicheClean = newNiche.trim().toLowerCase() || currentNiche;
+
             try {
                 const { doc, getDoc, updateDoc, setDoc, deleteDoc } = window.fs;
                 const oldWhatsAppClean = store.w ? store.w.replace(/\D/g, '') : '';
@@ -1880,6 +1886,7 @@
                     data.n = newName;
                     data.cn = newOwner;
                     data.w = whatsappClean;
+                    data.t = nicheClean;
                     data.maxProducts = newMaxProducts;
                     data.updatedAt = new Date().toISOString();
 
@@ -1916,6 +1923,7 @@
                         n: newName,
                         cn: newOwner,
                         w: whatsappClean,
+                        t: nicheClean,
                         maxProducts: newMaxProducts,
                         updatedAt: new Date().toISOString()
                     });

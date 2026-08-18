@@ -85,6 +85,36 @@
         
         .active-scale:active { transform: scale(0.96); }
         .active-scale { transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1); will-change: transform; }
+
+        /* Estilos de Impressão Térmica (58mm e 80mm) */
+        @media print {
+            body * {
+                visibility: hidden !important;
+            }
+            #receipt-print-area, #receipt-print-area * {
+                visibility: visible !important;
+            }
+            #receipt-print-area {
+                display: block !important;
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: var(--receipt-width, 58mm) !important;
+                max-width: var(--receipt-width, 58mm) !important;
+                margin: 0 !important;
+                padding: 2mm 3mm !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+                font-family: 'Courier New', Courier, monospace !important;
+                font-size: 12px !important;
+                line-height: 1.25 !important;
+                box-sizing: border-box !important;
+            }
+            @page {
+                size: auto;
+                margin: 0mm;
+            }
+        }
     </style>
 </head>
 <body class="bg-white text-slate-900">
@@ -237,6 +267,69 @@
             <span class="absolute -bottom-1 -right-1 bg-green-500 text-white text-[8px] font-black px-1 rounded-full border border-white">APP</span>
         </div>
     </a>
+
+    <!-- Área invisível para impressão térmica real -->
+    <div id="receipt-print-area" class="hidden"></div>
+
+    <!-- Modal de Impressão de Comanda / Cupom Térmico (58mm / 80mm) -->
+    <div id="receipt-modal" class="fixed inset-0 z-[1060] bg-slate-950/80 backdrop-blur-sm hidden flex-col items-center justify-center p-3 sm:p-4 transition-all duration-300">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl w-full max-w-md max-h-[92vh] flex flex-col overflow-hidden animate-scale-up">
+            <!-- Header do Modal -->
+            <div class="p-4 bg-slate-900 text-white flex items-center justify-between shrink-0 border-b border-slate-800">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center border border-emerald-500/30">
+                        <i data-lucide="printer" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-black uppercase text-sm tracking-wide text-white">Comanda / Cupom Térmico</h3>
+                        <p class="text-[11px] text-slate-400">Impressão não fiscal para pedidos</p>
+                    </div>
+                </div>
+                <button onclick="window.closeReceiptModal()" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition-colors">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <!-- Seletor de Largura da Bobina -->
+            <div class="p-3 bg-slate-100 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between gap-2">
+                <span class="text-xs font-bold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
+                    <i data-lucide="settings-2" class="w-3.5 h-3.5 text-orange-500"></i> Largura do Papel:
+                </span>
+                <div class="flex items-center gap-1.5 bg-white dark:bg-slate-900 p-1 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <button id="btn-receipt-58" onclick="window.setReceiptWidth('58mm')" class="px-3 py-1 bg-orange-500 text-white rounded-lg font-black text-xs transition-all shadow-sm">
+                        58mm (Mini BT)
+                    </button>
+                    <button id="btn-receipt-80" onclick="window.setReceiptWidth('80mm')" class="px-3 py-1 bg-transparent text-slate-600 dark:text-slate-400 rounded-lg font-bold text-xs hover:text-slate-900 dark:hover:text-white transition-all">
+                        80mm (Balcão)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Preview do Cupom Térmico -->
+            <div class="flex-1 overflow-y-auto p-4 bg-slate-200/70 dark:bg-slate-950 flex justify-center items-start custom-scrollbar">
+                <div id="receipt-paper" class="w-full bg-white text-slate-950 p-5 rounded-md shadow-xl border border-slate-300 transition-all font-mono text-xs leading-relaxed" style="max-width: 320px;">
+                    <div id="receipt-paper-content">
+                        <!-- Conteúdo gerado dinamicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rodapé com Ações de Impressão -->
+            <div class="p-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row gap-2 shrink-0">
+                <button onclick="window.printReceipt()" class="flex-1 py-3.5 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-black uppercase tracking-wider text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                    <span>Imprimir Agora</span>
+                </button>
+                <button onclick="window.copyReceiptText()" class="py-3.5 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl transition-all flex items-center justify-center gap-1.5">
+                    <i data-lucide="copy" class="w-4 h-4"></i>
+                    <span>Copiar Texto</span>
+                </button>
+                <button onclick="window.closeReceiptModal()" class="py-3.5 px-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl transition-all">
+                    Fechar
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal do Game / Promoção -->
     <div id="game-promo-modal" class="fixed inset-0 z-[9999] bg-slate-950/85 backdrop-blur-md hidden flex-col items-center justify-center p-2 sm:p-4 transition-all duration-300">
@@ -1833,6 +1926,10 @@
                         </div>
                     </div>
                     ${checkoutBtnHTML}
+                    <button onclick="window.openReceiptModal()" class="w-full mt-2.5 py-3.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-black uppercase tracking-wider text-xs rounded-2xl shadow transition-all flex items-center justify-center gap-2 border border-slate-700 dark:border-slate-600 active:scale-95">
+                        <i data-lucide="printer" class="w-4 h-4 text-emerald-400"></i>
+                        <span>Imprimir Comanda / Cupom</span>
+                    </button>
                 `;
             }
             lucide.createIcons();
@@ -1959,6 +2056,219 @@
             if (whatsapp.length <= 11) whatsapp = '55' + whatsapp;
             window.openResilientWhatsApp(whatsapp, message);
         }
+
+        /* Funções de Impressão Térmica de Comanda / Cupom (58mm / 80mm) */
+        window.selectedReceiptWidth = '58mm';
+        window.setReceiptWidth = function(width) {
+            window.selectedReceiptWidth = width;
+            document.documentElement.style.setProperty('--receipt-width', width);
+            const paperEl = document.getElementById('receipt-paper');
+            if (paperEl) {
+                paperEl.style.maxWidth = width === '80mm' ? '390px' : '300px';
+            }
+            const btn58 = document.getElementById('btn-receipt-58');
+            const btn80 = document.getElementById('btn-receipt-80');
+            if (btn58 && btn80) {
+                if (width === '58mm') {
+                    btn58.className = "px-3 py-1 bg-orange-500 text-white rounded-lg font-black text-xs transition-all shadow-sm";
+                    btn80.className = "px-3 py-1 bg-transparent text-slate-600 dark:text-slate-400 rounded-lg font-bold text-xs hover:text-slate-900 dark:hover:text-white transition-all";
+                } else {
+                    btn80.className = "px-3 py-1 bg-orange-500 text-white rounded-lg font-black text-xs transition-all shadow-sm";
+                    btn58.className = "px-3 py-1 bg-transparent text-slate-600 dark:text-slate-400 rounded-lg font-bold text-xs hover:text-slate-900 dark:hover:text-white transition-all";
+                }
+            }
+        };
+
+        window.openReceiptModal = function() {
+            if (!cart || cart.length === 0) {
+                alert("Seu carrinho está vazio! Adicione produtos para gerar e imprimir a comanda.");
+                return;
+            }
+            window.renderReceiptTicket();
+            const modal = document.getElementById('receipt-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                if (window.lucide) lucide.createIcons();
+            }
+        };
+
+        window.closeReceiptModal = function() {
+            const modal = document.getElementById('receipt-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        };
+
+        window.renderReceiptTicket = function() {
+            const container = document.getElementById('receipt-paper-content');
+            if (!container) return;
+
+            const now = new Date();
+            const dateStr = now.toLocaleDateString('pt-BR');
+            const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+            const orderNum = 'PED-' + String(now.getTime()).slice(-5);
+
+            // Vendedor se houver
+            const urlParams = new URLSearchParams(window.location.search);
+            const vendorCode = urlParams.get('v');
+            let vendorName = '';
+            if (vendorCode) {
+                const vendorObj = (storeData.vendors || []).find(v => v.code === vendorCode);
+                vendorName = vendorObj ? vendorObj.name : vendorCode;
+            }
+
+            let subtotal = 0;
+            let itemsHTML = '';
+            cart.forEach(item => {
+                const isWholesale = item.wholesaleMinQty && item.quantity >= item.wholesaleMinQty;
+                const priceToUse = isWholesale ? item.wholesalePrice : item.price;
+                const itemSub = parseFloat(String(priceToUse || '0').replace(',', '.')) * item.quantity;
+                subtotal += itemSub;
+                const priceDisplay = formatCurrency(priceToUse);
+                const subDisplay = formatCurrency(itemSub);
+                const vars = Object.entries(item.variations || {}).map(([k, v]) => `${k}: ${v}`).join(', ');
+
+                itemsHTML += `
+                    <div style="margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px dashed #ccc;">
+                        <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 11px;">
+                            <span>${item.quantity}x ${item.name}</span>
+                            <span>${subDisplay}</span>
+                        </div>
+                        ${vars ? `<div style="font-size: 10px; color: #444;">• ${vars}</div>` : ''}
+                        ${item.observation ? `<div style="font-size: 10px; color: #444; font-style: italic;">• Obs: ${item.observation}</div>` : ''}
+                        <div style="font-size: 9.5px; color: #666; text-align: right;">(Un: ${priceDisplay}${isWholesale ? ' [ATACADO]' : ''})</div>
+                    </div>
+                `;
+            });
+
+            // Desconto Bossa Promo
+            let discountAmount = 0;
+            let discountDesc = '';
+            if (window.appliedGameDiscount) {
+                const disc = window.appliedGameDiscount;
+                if (disc.percent > 0) {
+                    discountAmount = (subtotal * disc.percent) / 100;
+                } else if (disc.fixed > 0) {
+                    discountAmount = disc.fixed;
+                }
+                if (discountAmount > subtotal) discountAmount = subtotal;
+                if (discountAmount > 0) {
+                    discountDesc = disc.prizeName || (disc.couponCode ? `Cupom: ${disc.couponCode}` : 'Desconto Promo');
+                }
+            }
+
+            let totalAfterDiscount = Math.max(0, subtotal - discountAmount);
+
+            // Taxa de entrega
+            let shippingPrice = 0;
+            let shippingName = 'Retirada no Local / Balcão';
+            if (selectedShippingZone) {
+                shippingPrice = parseFloat(String(selectedShippingZone.price || '0').replace(',', '.'));
+                shippingName = `Entrega (${selectedShippingZone.neighborhood})`;
+            }
+
+            let grandTotal = totalAfterDiscount + shippingPrice;
+
+            // Taxa de cartão
+            const cardFeePercentage = storeData.cf ? parseFloat(storeData.cf) : 0;
+            let activeFee = 0;
+            if (selectedPaymentMethod === 'card' && selectedInstallment >= 4) {
+                activeFee = cardFeePercentage + (selectedInstallment - 4) * 1.5;
+            }
+            const finalTotal = activeFee > 0 ? (grandTotal * (1 + activeFee / 100)) : grandTotal;
+
+            // Forma de pagamento formatada
+            let paymentText = 'PIX ⚡';
+            if (selectedPaymentMethod === 'pix') {
+                paymentText = `PIX ⚡ ${storeData.pixKey ? `(Chave: ${storeData.pixKey})` : ''}`;
+            } else if (selectedPaymentMethod === 'cash') {
+                paymentText = `Dinheiro 💵 ${window.cashChangeValue && window.cashChangeValue.trim() !== '' ? `(Troco p/: ${window.cashChangeValue.trim()})` : '(Sem troco)'}`;
+            } else {
+                paymentText = `Cartão de Crédito 💳 (${selectedInstallment}x de ${formatCurrency(finalTotal / selectedInstallment)})`;
+            }
+
+            container.innerHTML = `
+                <div style="text-align: center; margin-bottom: 8px;">
+                    <div style="font-size: 15px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;">${storeData.name || 'PEDIDO'}</div>
+                    ${storeData.sub ? `<div style="font-size: 10.5px; color: #333;">${storeData.sub}</div>` : ''}
+                    ${storeData.address ? `<div style="font-size: 10px; color: #333; margin-top: 2px;">📍 ${storeData.address}</div>` : ''}
+                    ${storeData.whatsapp ? `<div style="font-size: 10px; color: #333;">📱 WhatsApp: ${storeData.whatsapp}</div>` : ''}
+                </div>
+
+                <div style="border-top: 1px dashed #000; border-bottom: 1px dashed #000; padding: 5px 0; margin-bottom: 8px; font-size: 11px;">
+                    <div style="display: flex; justify-content: space-between; font-weight: bold;">
+                        <span>Nº: ${orderNum}</span>
+                        <span>${dateStr} ${timeStr}</span>
+                    </div>
+                    ${vendorName ? `<div><strong>Vendedor:</strong> ${vendorName}</div>` : ''}
+                    <div><strong>Tipo:</strong> ${shippingName}</div>
+                </div>
+
+                <div style="margin-bottom: 8px;">
+                    <div style="font-weight: bold; font-size: 11px; text-transform: uppercase; margin-bottom: 4px; border-bottom: 1px solid #000; padding-bottom: 2px;">ITENS DO PEDIDO</div>
+                    ${itemsHTML}
+                </div>
+
+                <div style="border-top: 1px dashed #000; padding-top: 6px; font-size: 11px; margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Subtotal:</span>
+                        <span>${formatCurrency(subtotal)}</span>
+                    </div>
+                    ${discountAmount > 0 ? `
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Desconto (${discountDesc}):</span>
+                        <span>- ${formatCurrency(discountAmount)}</span>
+                    </div>` : ''}
+                    ${selectedShippingZone ? `
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Taxa de Entrega:</span>
+                        <span>${formatCurrency(shippingPrice)}</span>
+                    </div>` : ''}
+                    ${activeFee > 0 ? `
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Acréscimo Cartão (${activeFee.toFixed(1)}%):</span>
+                        <span>+ ${formatCurrency(finalTotal - grandTotal)}</span>
+                    </div>` : ''}
+                    <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 900; margin-top: 4px; border-top: 1px solid #000; padding-top: 4px;">
+                        <span>TOTAL GERAL:</span>
+                        <span>${formatCurrency(finalTotal)}</span>
+                    </div>
+                </div>
+
+                <div style="background: #f4f4f4; padding: 6px; border-radius: 4px; font-size: 10.5px; margin-bottom: 10px; border: 1px dashed #888;">
+                    <div><strong>FORMA DE PAGAMENTO:</strong></div>
+                    <div>${paymentText}</div>
+                </div>
+
+                <div style="text-align: center; font-size: 10px; border-top: 1px dashed #000; padding-top: 6px; color: #222;">
+                    <div>*** OBRIGADO PELA PREFERÊNCIA! ***</div>
+                    <div style="font-size: 9px; color: #666; margin-top: 2px;">VendaZap • Catálogo & Pedidos</div>
+                </div>
+            `;
+        };
+
+        window.printReceipt = function() {
+            const printArea = document.getElementById('receipt-print-area');
+            const receiptContent = document.getElementById('receipt-paper-content');
+            if (printArea && receiptContent) {
+                printArea.innerHTML = receiptContent.innerHTML;
+                document.documentElement.style.setProperty('--receipt-width', window.selectedReceiptWidth || '58mm');
+                window.print();
+            }
+        };
+
+        window.copyReceiptText = function() {
+            const receiptContent = document.getElementById('receipt-paper-content');
+            if (!receiptContent) return;
+            const text = receiptContent.innerText || receiptContent.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert("Texto da comanda copiado para a área de transferência!");
+            }).catch(() => {
+                alert("Texto copiado!");
+            });
+        };
 
         function requestQuote(productId, variations = '', observation = '') {
             const product = storeData.products.find(p => p.id === productId);
@@ -2919,7 +3229,21 @@
         window.getLastSpinTimestamp = function() {
             try {
                 const val = localStorage.getItem('bossa_last_spin_time') || localStorage.getItem('catalogo_last_spin_time');
-                return val ? parseInt(val, 10) : 0;
+                let spinTs = val ? parseInt(val, 10) : 0;
+
+                // Se a loja acionou um Reset no Painel Master para liberar novos giros
+                if (storeData && storeData.lastGameReset) {
+                    const resetTs = typeof storeData.lastGameReset === 'number' ? storeData.lastGameReset : new Date(storeData.lastGameReset).getTime();
+                    if (resetTs && resetTs > spinTs) {
+                        localStorage.removeItem('bossa_last_spin_time');
+                        localStorage.removeItem('catalogo_last_spin_time');
+                        localStorage.removeItem('bossa_promo_coupon');
+                        localStorage.removeItem('catalogo_game_discount');
+                        window.appliedGameDiscount = null;
+                        spinTs = 0;
+                    }
+                }
+                return spinTs;
             } catch(e) {
                 return 0;
             }
@@ -2929,17 +3253,21 @@
             const stage = document.getElementById('native-game-stage');
             if (!stage) return false;
 
-            // Restaurar cupom salvo se ainda não estiver na memória
-            if (!window.appliedGameDiscount) {
+            const lastSpinTs = window.getLastSpinTimestamp();
+
+            // Restaurar cupom salvo se ainda não estiver na memória e o giro for válido
+            if (lastSpinTs > 0 && !window.appliedGameDiscount) {
                 try {
                     const savedDisc = localStorage.getItem('bossa_promo_coupon') || localStorage.getItem('catalogo_game_discount');
                     if (savedDisc) {
                         window.appliedGameDiscount = JSON.parse(savedDisc);
                     }
                 } catch(e){}
+            } else if (lastSpinTs === 0) {
+                window.appliedGameDiscount = null;
             }
 
-            const hasSpun = !!window.appliedGameDiscount || window.getLastSpinTimestamp() > 0;
+            const hasSpun = !!window.appliedGameDiscount || lastSpinTs > 0;
 
             // Se o cliente já girou/jogou nesta compra
             if (hasSpun) {

@@ -48,10 +48,10 @@
         body { font-family: 'Inter', sans-serif; transition: background-color 0.3s, color 0.3s; -webkit-tap-highlight-color: transparent; }
         html { scroll-behavior: smooth; }
         .dark body { background-color: #0f172a; color: #f8fafc; }
-        .cart-drawer { transform: translateX(100%); transition: transform 0.3s ease-in-out; display: none; }
-        .cart-drawer.open { transform: translateX(0); display: flex; }
-        .overlay { opacity: 0; pointer-events: none; transition: opacity 0.3s; display: none; }
-        .overlay.open { opacity: 1; pointer-events: auto; display: block; }
+        .cart-drawer { transform: translateX(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.3s; visibility: hidden; pointer-events: none; display: flex; }
+        .cart-drawer.open { transform: translateX(0); visibility: visible; pointer-events: auto; }
+        .overlay { opacity: 0; pointer-events: none; transition: opacity 0.3s ease, visibility 0.3s; visibility: hidden; display: block; }
+        .overlay.open { opacity: 1; pointer-events: auto; visibility: visible; }
         .category-scroll::-webkit-scrollbar { display: none; }
         .category-scroll { -ms-overflow-style: none; scrollbar-width: none; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -244,13 +244,52 @@
         </div>
     </div>
 
-    <div id="cart-drawer" class="cart-drawer fixed top-0 right-0 h-full w-full sm:max-w-md bg-white dark:bg-slate-800 z-[1050] shadow-2xl flex flex-col">
-        <div class="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
-            <h2 class="text-lg sm:text-xl font-black uppercase italic tracking-tighter dark:text-white">Seu Carrinho</h2>
-            <button onclick="toggleCart(false)" class="p-3 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors dark:text-white"><i data-lucide="x"></i></button>
+    <!-- DRAWER DO CARRINHO (RESPONSIVO PARA CELULAR, TABLET, NOTEBOOK E PC) -->
+    <div id="cart-drawer" class="cart-drawer fixed top-0 right-0 h-full w-full sm:max-w-md md:max-w-lg lg:max-w-xl bg-white dark:bg-slate-800 z-[1050] shadow-2xl flex flex-col overflow-hidden">
+        <!-- Header Fixo -->
+        <div class="px-4 py-3.5 sm:px-6 sm:py-4 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between bg-white dark:bg-slate-800 shrink-0 z-20">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-orange-100 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400 flex items-center justify-center font-bold shrink-0">
+                    <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+                </div>
+                <div class="min-w-0">
+                    <h2 class="text-base sm:text-lg font-black uppercase italic tracking-tight text-slate-900 dark:text-white flex items-center gap-2 truncate">
+                        Seu Carrinho
+                        <span id="cart-header-count" class="text-[11px] font-black px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">0</span>
+                    </h2>
+                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">Itens selecionados e pagamento</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-1 shrink-0">
+                <button type="button" id="cart-clear-btn" onclick="window.clearCartConfirm()" class="hidden text-xs font-bold text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 px-2.5 py-1.5 rounded-xl transition-all mr-1 cursor-pointer active-scale" title="Limpar Carrinho">
+                    Limpar
+                </button>
+                <button type="button" onclick="toggleCart(false)" class="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all text-slate-500 dark:text-slate-300 cursor-pointer active-scale" title="Fechar">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
         </div>
-        <div id="cart-items" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4"></div>
-        <div id="cart-footer" class="p-4 sm:p-6 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 space-y-4"></div>
+
+        <!-- Conteúdo Rolável Unificado (Itens + Cupom + Bairro + Pagamento + Resumo) -->
+        <div id="cart-scroll-body" class="flex-1 overflow-y-auto custom-scrollbar p-4 sm:p-6 space-y-4 sm:space-y-5 bg-slate-50/60 dark:bg-slate-900/40">
+            <!-- Container dos Produtos -->
+            <div id="cart-items" class="space-y-3"></div>
+
+            <!-- Cupom / Roleta de Desconto -->
+            <div id="cart-promo-section"></div>
+
+            <!-- Seleção de Bairro / Frete -->
+            <div id="cart-shipping-section"></div>
+
+            <!-- Forma de Pagamento -->
+            <div id="cart-payment-section"></div>
+
+            <!-- Detalhamento de Valores -->
+            <div id="cart-breakdown-section"></div>
+        </div>
+
+        <!-- Barra Inferior Fixa de Ação e Checkout -->
+        <div id="cart-footer" class="p-4 sm:p-5 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 shrink-0 z-20 space-y-2.5 shadow-[0_-8px_20px_rgba(0,0,0,0.06)]"></div>
     </div>
 
     <button id="cart-fab" onclick="toggleCart(true)" class="hidden fixed bottom-6 right-6 sm:bottom-8 sm:right-8 text-white p-4 sm:p-5 rounded-full shadow-2xl z-[60] flex items-center justify-center active-scale transition-all border-4 border-white dark:border-slate-800">
@@ -1538,9 +1577,30 @@
         }
 
         function toggleCart(open) {
-            document.getElementById('cart-drawer').classList.toggle('open', open);
-            document.getElementById('overlay').classList.toggle('open', open);
+            const drawer = document.getElementById('cart-drawer');
+            const overlay = document.getElementById('overlay');
+            if (!drawer) return;
+            if (open) {
+                drawer.classList.add('open');
+                if (overlay) overlay.classList.add('open');
+                document.body.style.overflow = 'hidden';
+            } else {
+                drawer.classList.remove('open');
+                if (overlay) overlay.classList.remove('open');
+                document.body.style.overflow = '';
+            }
+            if (window.lucide) lucide.createIcons();
         }
+
+        window.toggleCart = toggleCart;
+
+        window.clearCartConfirm = function() {
+            if (confirm("Deseja realmente limpar todos os itens do carrinho?")) {
+                cart = [];
+                window.removeGameDiscount();
+                updateCartUI();
+            }
+        };
 
         window.saveCart = function() {
             try {
@@ -1663,9 +1723,15 @@
         function updateCartUI() {
             window.saveCart();
             const itemsContainer = document.getElementById('cart-items');
+            const promoContainer = document.getElementById('cart-promo-section');
+            const shippingContainer = document.getElementById('cart-shipping-section');
+            const paymentContainer = document.getElementById('cart-payment-section');
+            const breakdownContainer = document.getElementById('cart-breakdown-section');
             const footerContainer = document.getElementById('cart-footer');
             const fab = document.getElementById('cart-fab');
             const countBadge = document.getElementById('cart-count');
+            const headerCount = document.getElementById('cart-header-count');
+            const clearBtn = document.getElementById('cart-clear-btn');
 
             // Restaura desconto salvo se não estiver na memória
             if (!window.appliedGameDiscount) {
@@ -1678,57 +1744,87 @@
             }
 
             const totalItems = cart.reduce((acc, item) => acc + item.quantity, 0);
-            countBadge.innerText = totalItems;
-            fab.classList.toggle('hidden', totalItems === 0);
-            fab.style.backgroundColor = storeData.primaryColor;
+            if (countBadge) countBadge.innerText = totalItems;
+            if (headerCount) headerCount.innerText = totalItems;
+            if (fab) {
+                fab.classList.toggle('hidden', totalItems === 0);
+                fab.style.backgroundColor = storeData.primaryColor || '#ea580c';
+            }
+            if (clearBtn) {
+                clearBtn.classList.toggle('hidden', totalItems === 0);
+            }
 
             if (cart.length === 0) {
-                itemsContainer.innerHTML = '<p class="text-center text-slate-400">Carrinho vazio</p>';
-                footerContainer.innerHTML = '';
-            } else {
-                let total = 0;
-                itemsContainer.innerHTML = cart.map((item, idx) => {
-                    const isWholesale = item.wholesaleMinQty && item.quantity >= item.wholesaleMinQty;
-                    const priceToUse = isWholesale ? item.wholesalePrice : item.price;
-                    const subtotal = parseFloat(String(priceToUse || '0').replace(',', '.')) * item.quantity;
-                    total += subtotal;
-
-                    const varDisplay = Object.entries(item.variations || {}).map(([k, v]) => `${k}: ${v}`).join(' | ');
-                    const obsDisplay = item.observation ? `Obs: ${item.observation}` : '';
-
-                    return `
-                        <div class="flex gap-4 items-start bg-slate-50 dark:bg-slate-900 p-4 rounded-2xl border border-slate-100 dark:border-slate-700">
-                            <img src="${proxyImg(item.image)}" class="w-16 h-16 rounded-lg object-cover" referrerpolicy="no-referrer">
-                            <div class="flex-1">
-                                <h4 class="font-bold text-sm line-clamp-1">${item.name}</h4>
-                                ${varDisplay ? `<p class="text-[10px] text-slate-400 font-bold uppercase mb-0.5">${varDisplay}</p>` : ''}
-                                ${obsDisplay ? `<p class="text-[10px] text-orange-500 dark:text-orange-400 font-bold italic mb-1">📝 ${obsDisplay}</p>` : ''}
-                                <div class="flex items-center gap-2">
-                                    <p class="text-xs font-bold" style="color: ${isWholesale ? '#f97316' : storeData.primaryColor}">${formatCurrency(priceToUse)}</p>
-                                    ${isWholesale ? '<span class="text-[8px] bg-orange-100 dark:bg-orange-900/40 text-orange-600 px-1.5 py-0.5 rounded font-black uppercase">Atacado</span>' : ''}
-                                </div>
-                                <div class="flex items-center gap-2 mt-2">
-                                    <button onclick="window.updateQuantity(${idx}, -1)" class="w-6 h-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded flex items-center justify-center cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-bold text-sm select-none">-</button>
-                                    <span class="text-xs font-bold w-4 text-center">${item.quantity}</span>
-                                    <button onclick="window.updateQuantity(${idx}, 1)" class="w-6 h-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded flex items-center justify-center cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-bold text-sm select-none">+</button>
-                                </div>
+                if (itemsContainer) {
+                    itemsContainer.innerHTML = `
+                        <div class="py-12 px-4 text-center flex flex-col items-center justify-center bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700/60 shadow-xs">
+                            <div class="w-16 h-16 rounded-3xl bg-orange-50 dark:bg-orange-950/40 text-orange-500 flex items-center justify-center mb-3.5 shadow-inner">
+                                <i data-lucide="shopping-bag" class="w-8 h-8"></i>
                             </div>
-                            <button onclick="window.removeFromCart(${idx})" class="text-red-400 cursor-pointer hover:text-red-600 transition-all p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            <h3 class="text-base font-black uppercase text-slate-800 dark:text-white tracking-tight mb-1">Seu carrinho está vazio</h3>
+                            <p class="text-xs text-slate-400 dark:text-slate-400 font-medium max-w-xs mb-5 leading-relaxed">Navegue pelos produtos do cardápio/catálogo e adicione os itens desejados.</p>
+                            <button type="button" onclick="toggleCart(false)" class="px-6 py-3 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-xs font-black uppercase tracking-wider rounded-xl active-scale transition-all shadow-md cursor-pointer">
+                                Ver Produtos
+                            </button>
                         </div>
                     `;
-                }).join('');
+                }
+                if (promoContainer) promoContainer.innerHTML = '';
+                if (shippingContainer) shippingContainer.innerHTML = '';
+                if (paymentContainer) paymentContainer.innerHTML = '';
+                if (breakdownContainer) breakdownContainer.innerHTML = '';
+                if (footerContainer) {
+                    footerContainer.innerHTML = '';
+                    footerContainer.classList.add('hidden');
+                }
+            } else {
+                if (footerContainer) {
+                    footerContainer.classList.remove('hidden');
+                }
 
-                const shippingHTML = (storeData.shippingZones && storeData.shippingZones.length > 0) ? `
-                    <div class="space-y-2 mb-4">
-                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Selecione seu Bairro (Entrega)</label>
-                        <select onchange="window.setShippingZone(this.value)" class="w-full px-4 py-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 font-bold text-sm outline-none dark:text-white">
-                            <option value="">Selecione...</option>
-                            ${storeData.shippingZones.map((z, idx) => `<option value="${idx}" ${selectedShippingZone && selectedShippingZone.neighborhood === z.neighborhood ? 'selected' : ''}>${z.neighborhood} (+ ${formatCurrency(z.price)})</option>`).join('')}
-                        </select>
-                    </div>
-                ` : '';
+                let total = 0;
+                if (itemsContainer) {
+                    itemsContainer.innerHTML = cart.map((item, idx) => {
+                        const isWholesale = item.wholesaleMinQty && item.quantity >= item.wholesaleMinQty;
+                        const priceToUse = isWholesale ? item.wholesalePrice : item.price;
+                        const subtotal = parseFloat(String(priceToUse || '0').replace(',', '.')) * item.quantity;
+                        total += subtotal;
 
-                const shippingPrice = selectedShippingZone ? parseFloat(selectedShippingZone.price.replace(',', '.')) : 0;
+                        const varDisplay = Object.entries(item.variations || {}).map(([k, v]) => `${k}: ${v}`).join(' | ');
+                        const obsDisplay = item.observation ? `Obs: ${item.observation}` : '';
+
+                        return `
+                            <div class="flex gap-3 sm:gap-4 items-start bg-white dark:bg-slate-800 p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-sm transition-all hover:border-slate-300 dark:hover:border-slate-600">
+                                <img src="${proxyImg(item.image)}" class="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover border border-slate-100 dark:border-slate-700 shrink-0 bg-slate-100 dark:bg-slate-900" alt="${escapeHtml(item.name || 'Produto')}" referrerpolicy="no-referrer">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-start justify-between gap-1">
+                                        <h4 class="font-black text-xs sm:text-sm text-slate-800 dark:text-white leading-snug line-clamp-2">${escapeHtml(item.name)}</h4>
+                                        <button type="button" onclick="window.removeFromCart(${idx})" class="text-slate-400 hover:text-red-500 p-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/40 transition-all cursor-pointer shrink-0" title="Remover item">
+                                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                    ${varDisplay ? `<p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5 leading-tight line-clamp-1">${escapeHtml(varDisplay)}</p>` : ''}
+                                    ${obsDisplay ? `<p class="text-[10px] text-orange-600 dark:text-orange-400 font-bold italic mt-0.5 leading-tight line-clamp-1">📝 ${escapeHtml(obsDisplay)}</p>` : ''}
+                                    
+                                    <div class="flex items-baseline gap-2 mt-1.5 flex-wrap">
+                                        <span class="text-xs sm:text-sm font-black" style="color: ${isWholesale ? '#f97316' : (storeData.primaryColor || '#ea580c')}">${formatCurrency(priceToUse)}</span>
+                                        ${isWholesale ? '<span class="text-[8px] bg-orange-100 dark:bg-orange-950 text-orange-600 px-1.5 py-0.5 rounded font-black uppercase">Atacado</span>' : ''}
+                                        ${item.quantity > 1 ? `<span class="text-[10px] text-slate-400 font-bold">(Total: ${formatCurrency(subtotal)})</span>` : ''}
+                                    </div>
+
+                                    <div class="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-700/60">
+                                        <div class="flex items-center bg-slate-100 dark:bg-slate-700/80 rounded-xl p-0.5 border border-slate-200/60 dark:border-slate-600">
+                                            <button type="button" onclick="window.updateQuantity(${idx}, -1)" class="w-7 h-7 sm:w-8 sm:h-8 bg-white dark:bg-slate-800 rounded-lg flex items-center justify-center cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 transition-all font-black text-xs text-slate-700 dark:text-slate-200 select-none shadow-xs active-scale" title="Diminuir">-</button>
+                                            <span class="text-xs font-black w-7 sm:w-8 text-center text-slate-800 dark:text-white select-none">${item.quantity}</span>
+                                            <button type="button" onclick="window.updateQuantity(${idx}, 1)" class="w-7 h-7 sm:w-8 sm:h-8 bg-white dark:bg-slate-800 rounded-lg flex items-center justify-center cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600 transition-all font-black text-xs text-slate-700 dark:text-slate-200 select-none shadow-xs active-scale" title="Aumentar">+</button>
+                                        </div>
+                                        <span class="text-xs font-black text-slate-700 dark:text-slate-300">${formatCurrency(subtotal)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
 
                 // Desconto do Game Bossa Promo / Cupom Manual
                 let discountAmount = 0;
@@ -1742,76 +1838,98 @@
                     if (discountAmount > total) discountAmount = total;
                 }
 
+                // Render Seção de Cupom & Promoções
+                if (promoContainer) {
+                    const hasGame = storeData && (storeData.gameActive === true || storeData.gameActive === 'true');
+                    let gamePromoBannerHTML = '';
+                    
+                    if (window.appliedGameDiscount) {
+                        const disc = window.appliedGameDiscount;
+                        gamePromoBannerHTML = `
+                            <div class="p-3.5 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-2xl flex items-center justify-between gap-2 text-left animate-fade-in shadow-xs">
+                                <div class="flex items-center gap-2.5 min-w-0">
+                                    <div class="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                                        <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="text-[11px] font-black uppercase text-emerald-900 dark:text-emerald-200 leading-tight">Desconto Ativado! 🎁</div>
+                                        <div class="text-[10px] font-bold text-emerald-700 dark:text-emerald-400 truncate">Cupom: <span class="underline font-black">${disc.couponCode}</span> (${disc.prizeName})</div>
+                                    </div>
+                                </div>
+                                <button type="button" onclick="window.removeGameDiscount()" class="text-[10px] font-black uppercase text-red-500 hover:text-red-700 px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900/40 shrink-0 cursor-pointer shadow-xs transition-all hover:scale-105 active-scale" title="Remover Desconto">
+                                    Remover
+                                </button>
+                            </div>
+                        `;
+                    } else {
+                        let gameBtnHTML = '';
+                        if (hasGame) {
+                            const minOrderVal = (storeData && storeData.gameMinOrderValue !== undefined) ? parseFloat(storeData.gameMinOrderValue) : 0;
+                            if (minOrderVal === 0 || total >= minOrderVal) {
+                                gameBtnHTML = `
+                                    <div class="p-3.5 rounded-2xl bg-gradient-to-r from-purple-900 via-indigo-900 to-purple-950 text-white border-2 border-purple-500/50 shadow-lg relative overflow-hidden animate-fade-in mb-2.5">
+                                        <div class="absolute -right-6 -bottom-6 w-20 h-20 bg-pink-500/20 rounded-full blur-xl pointer-events-none"></div>
+                                        <div class="flex items-center justify-between gap-2 relative z-10 mb-2">
+                                            <div class="flex items-center gap-2">
+                                                <span class="text-[9px] font-black uppercase tracking-widest text-yellow-300 bg-yellow-400/20 px-2 py-0.5 rounded-md border border-yellow-400/30">Surpresa no Pedido! 🎲</span>
+                                            </div>
+                                            <span class="text-[9px] font-bold text-slate-300">Ganhe desconto</span>
+                                        </div>
+                                        <div class="flex items-center justify-between gap-3 relative z-10">
+                                            <div class="text-left">
+                                                <h4 class="text-xs font-black uppercase italic tracking-tight text-white leading-tight">Roleta de Prêmios</h4>
+                                                <p class="text-[10px] text-purple-200 font-medium leading-tight">Gire agora e aplique seu cupom no total!</p>
+                                            </div>
+                                            <button type="button" onclick="openGameModal()" class="py-2 px-3.5 bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-300 hover:scale-105 active:scale-95 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-md shadow-yellow-500/20 shrink-0 transition-all flex items-center gap-1.5 cursor-pointer">
+                                                <span>Girar</span>
+                                                <i data-lucide="sparkles" class="w-3.5 h-3.5 text-slate-950"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                        }
+                        
+                        gamePromoBannerHTML = `
+                            <div class="space-y-2">
+                                ${gameBtnHTML}
+                                <div class="flex gap-2">
+                                    <input type="text" id="manual-coupon-input" placeholder="Possui cupom de desconto?" class="flex-1 px-3.5 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold uppercase tracking-wider outline-none focus:border-purple-500 dark:text-white placeholder:normal-case placeholder:font-normal placeholder:tracking-normal shadow-xs">
+                                    <button type="button" onclick="window.applyManualCoupon(document.getElementById('manual-coupon-input').value)" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 rounded-xl text-xs font-black uppercase tracking-wider transition-all shrink-0 cursor-pointer shadow-xs active-scale">
+                                        Aplicar
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    promoContainer.innerHTML = gamePromoBannerHTML;
+                }
+
+                // Render Seção de Entrega & Bairro
+                if (shippingContainer) {
+                    if (storeData.shippingZones && storeData.shippingZones.length > 0) {
+                        shippingContainer.innerHTML = `
+                            <div class="space-y-1.5 text-left bg-white dark:bg-slate-800 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-xs">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 flex items-center gap-1.5">
+                                    <i data-lucide="map-pin" class="w-3.5 h-3.5 text-orange-500"></i>
+                                    <span>Selecione seu Bairro (Entrega)</span>
+                                </label>
+                                <select onchange="window.setShippingZone(this.value)" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-xs sm:text-sm outline-none dark:text-white cursor-pointer focus:border-orange-500">
+                                    <option value="">Selecione seu bairro...</option>
+                                    ${storeData.shippingZones.map((z, idx) => `<option value="${idx}" ${selectedShippingZone && selectedShippingZone.neighborhood === z.neighborhood ? 'selected' : ''}>${escapeHtml(z.neighborhood)} (+ ${formatCurrency(z.price)})</option>`).join('')}
+                                </select>
+                            </div>
+                        `;
+                    } else {
+                        shippingContainer.innerHTML = '';
+                    }
+                }
+
+                const shippingPrice = selectedShippingZone ? parseFloat(selectedShippingZone.price.replace(',', '.')) : 0;
                 const discountedSubtotal = Math.max(0, total - discountAmount);
                 const grandTotal = discountedSubtotal + shippingPrice;
 
-                // Banner do Game e Cupom no Carrinho
-                const hasGame = storeData && (storeData.gameActive === true || storeData.gameActive === 'true');
-                let gamePromoBannerHTML = '';
-                
-                if (window.appliedGameDiscount) {
-                    const disc = window.appliedGameDiscount;
-                    gamePromoBannerHTML = `
-                        <div class="p-3.5 mb-4 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-2xl flex items-center justify-between gap-2 text-left animate-fade-in shadow-sm">
-                            <div class="flex items-center gap-2.5">
-                                <div class="w-8 h-8 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm">
-                                    <i data-lucide="check-circle-2" class="w-5 h-5"></i>
-                                </div>
-                                <div>
-                                    <div class="text-[11px] font-black uppercase text-emerald-900 dark:text-emerald-200 leading-tight">Desconto Ativado! 🎁</div>
-                                    <div class="text-[10px] font-bold text-emerald-700 dark:text-emerald-400">Cupom: <span class="underline font-black">${disc.couponCode}</span> (${disc.prizeName})</div>
-                                </div>
-                            </div>
-                            <button onclick="window.removeGameDiscount()" class="text-[10px] font-black uppercase text-red-500 hover:text-red-700 px-2.5 py-1.5 rounded-xl bg-white dark:bg-slate-800 border border-red-200 dark:border-red-900/40 shrink-0 cursor-pointer shadow-xs transition-all hover:scale-105" title="Remover Desconto">
-                                Remover
-                            </button>
-                        </div>
-                    `;
-                } else {
-                    let gameBtnHTML = '';
-                    if (hasGame) {
-                        const minOrderVal = (storeData && storeData.gameMinOrderValue !== undefined) ? parseFloat(storeData.gameMinOrderValue) : 0;
-                        if (minOrderVal === 0 || total >= minOrderVal) {
-                            gameBtnHTML = `
-                                <div class="p-3.5 mb-3 rounded-2xl bg-gradient-to-r from-purple-900 via-indigo-900 to-purple-950 text-white border-2 border-purple-500/50 shadow-xl relative overflow-hidden animate-fade-in">
-                                    <div class="absolute -right-6 -bottom-6 w-20 h-20 bg-pink-500/20 rounded-full blur-xl pointer-events-none"></div>
-                                    <div class="flex items-center justify-between gap-2 relative z-10 mb-2">
-                                        <div class="flex items-center gap-2">
-                                            <span class="text-[9px] font-black uppercase tracking-widest text-yellow-300 bg-yellow-400/20 px-2 py-0.5 rounded-md border border-yellow-400/30">Surpresa no Pedido! 🎲</span>
-                                        </div>
-                                        <span class="text-[9px] font-bold text-slate-300">Ganhe desconto extra</span>
-                                    </div>
-                                    <div class="flex items-center justify-between gap-3 relative z-10">
-                                        <div class="text-left">
-                                            <h4 class="text-xs font-black uppercase italic tracking-tight text-white leading-tight">Roleta de Prêmios</h4>
-                                            <p class="text-[10px] text-purple-200 font-medium leading-tight">Gire agora e aplique seu cupom direto no total!</p>
-                                        </div>
-                                        <button onclick="openGameModal()" class="py-2.5 px-4 bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-300 hover:scale-105 active:scale-95 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-yellow-500/20 shrink-0 transition-all flex items-center gap-1.5 cursor-pointer">
-                                            <span>Girar Roleta</span>
-                                            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-slate-950"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            `;
-                        } else {
-                            gameBtnHTML = '';
-                        }
-                    }
-                    
-                    gamePromoBannerHTML = `
-                        <div class="mb-4 space-y-2">
-                            ${gameBtnHTML}
-                            <div class="flex gap-2">
-                                <input type="text" id="manual-coupon-input" placeholder="Possui cupom de desconto?" class="flex-1 px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold uppercase tracking-wider outline-none focus:border-purple-500 dark:text-white placeholder:normal-case placeholder:font-normal placeholder:tracking-normal">
-                                <button onclick="window.applyManualCoupon(document.getElementById('manual-coupon-input').value)" class="px-3.5 py-2 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-xl text-xs font-black uppercase tracking-wider hover:opacity-90 transition-all shrink-0 cursor-pointer">
-                                    Aplicar
-                                </button>
-                            </div>
-                        </div>
-                    `;
-                }
-
-                // Cálculo da taxa do cartão progressive
+                // Cálculo da taxa do cartão progressiva
                 const cardFeePercentage = storeData.cf ? parseFloat(storeData.cf) : 0;
                 let activeFeePercentage = 0;
                 if (selectedPaymentMethod === 'card') {
@@ -1821,118 +1939,151 @@
                 }
                 const totalToDisplay = activeFeePercentage > 0 ? (grandTotal * (1 + activeFeePercentage / 100)) : grandTotal;
 
-                let paymentMethodHTML = `
-                    <div class="space-y-2 mb-4 text-left">
-                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Forma de Pagamento</label>
-                        <div class="grid grid-cols-3 gap-1.5">
-                            <button onclick="window.setPaymentMethod('pix')" class="py-2.5 px-2 rounded-xl border-2 font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1 transition-all ${selectedPaymentMethod === 'pix' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white' : 'bg-slate-50 text-slate-700 border-slate-100 hover:border-slate-200 dark:bg-slate-700 dark:border-slate-600 dark:text-white'}" id="pay-btn-pix">
-                                <i data-lucide="qr-code" class="w-3.5 h-3.5"></i> PIX
-                            </button>
-                            <button onclick="window.setPaymentMethod('card')" class="py-2.5 px-2 rounded-xl border-2 font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1 transition-all ${selectedPaymentMethod === 'card' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white' : 'bg-slate-50 text-slate-700 border-slate-100 hover:border-slate-200 dark:bg-slate-700 dark:border-slate-600 dark:text-white'}" id="pay-btn-card">
-                                <i data-lucide="credit-card" class="w-3.5 h-3.5"></i> Cartão
-                            </button>
-                            <button onclick="window.setPaymentMethod('cash')" class="py-2.5 px-2 rounded-xl border-2 font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1 transition-all ${selectedPaymentMethod === 'cash' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white' : 'bg-slate-50 text-slate-700 border-slate-100 hover:border-slate-200 dark:bg-slate-700 dark:border-slate-600 dark:text-white'}" id="pay-btn-cash">
-                                <i data-lucide="banknote" class="w-3.5 h-3.5"></i> Dinheiro
-                            </button>
-                        </div>
-                    </div>
-                `;
+                // Render Seção de Forma de Pagamento
+                if (paymentContainer) {
+                    let paymentMethodHTML = `
+                        <div class="space-y-2 text-left bg-white dark:bg-slate-800 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-xs">
+                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 flex items-center gap-1.5">
+                                <i data-lucide="wallet" class="w-3.5 h-3.5 text-orange-500"></i>
+                                <span>Forma de Pagamento</span>
+                            </label>
+                            <div class="grid grid-cols-3 gap-1.5 sm:gap-2">
+                                <button type="button" onclick="window.setPaymentMethod('pix')" class="py-2.5 px-2 rounded-xl border-2 font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1 transition-all cursor-pointer active-scale ${selectedPaymentMethod === 'pix' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white shadow-xs' : 'bg-slate-50 text-slate-700 border-slate-100 hover:border-slate-200 dark:bg-slate-700 dark:border-slate-600 dark:text-white'}" id="pay-btn-pix">
+                                    <i data-lucide="qr-code" class="w-3.5 h-3.5"></i> PIX
+                                </button>
+                                <button type="button" onclick="window.setPaymentMethod('card')" class="py-2.5 px-2 rounded-xl border-2 font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1 transition-all cursor-pointer active-scale ${selectedPaymentMethod === 'card' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white shadow-xs' : 'bg-slate-50 text-slate-700 border-slate-100 hover:border-slate-200 dark:bg-slate-700 dark:border-slate-600 dark:text-white'}" id="pay-btn-card">
+                                    <i data-lucide="credit-card" class="w-3.5 h-3.5"></i> Cartão
+                                </button>
+                                <button type="button" onclick="window.setPaymentMethod('cash')" class="py-2.5 px-2 rounded-xl border-2 font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1 transition-all cursor-pointer active-scale ${selectedPaymentMethod === 'cash' ? 'bg-slate-900 text-white border-slate-900 dark:bg-white dark:text-slate-950 dark:border-white shadow-xs' : 'bg-slate-50 text-slate-700 border-slate-100 hover:border-slate-200 dark:bg-slate-700 dark:border-slate-600 dark:text-white'}" id="pay-btn-cash">
+                                    <i data-lucide="banknote" class="w-3.5 h-3.5"></i> Dinheiro
+                                </button>
+                            </div>
+                    `;
 
-                if (selectedPaymentMethod === 'card') {
-                    let installmentOptions = '';
-                    for (let i = 1; i <= 10; i++) {
-                        let feeForThisOption = 0;
-                        if (i >= 4) {
-                            feeForThisOption = cardFeePercentage + (i - 4) * 1.5;
+                    if (selectedPaymentMethod === 'card') {
+                        let installmentOptions = '';
+                        for (let i = 1; i <= 10; i++) {
+                            let feeForThisOption = 0;
+                            if (i >= 4) {
+                                feeForThisOption = cardFeePercentage + (i - 4) * 1.5;
+                            }
+                            const totalForThisOption = feeForThisOption > 0 ? (grandTotal * (1 + feeForThisOption / 100)) : grandTotal;
+                            const valPerInstallment = totalForThisOption / i;
+                            installmentOptions += `<option value="${i}" ${selectedInstallment === i ? 'selected' : ''}>${i}x de ${formatCurrency(valPerInstallment)} ${feeForThisOption > 0 ? `(+${feeForThisOption.toFixed(1)}% juros)` : '(Sem juros)'}</option>`;
                         }
-                        const totalForThisOption = feeForThisOption > 0 ? (grandTotal * (1 + feeForThisOption / 100)) : grandTotal;
-                        const valPerInstallment = totalForThisOption / i;
-                        installmentOptions += `<option value="${i}" ${selectedInstallment === i ? 'selected' : ''}>${i}x de ${formatCurrency(valPerInstallment)} ${feeForThisOption > 0 ? `(+${feeForThisOption.toFixed(1)}% juros)` : '(Sem juros)'}</option>`;
+
+                        paymentMethodHTML += `
+                            <div class="space-y-2 mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 animate-fade-in text-left">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Selecione as Parcelas</label>
+                                <select onchange="window.setInstallment(this.value)" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-xs sm:text-sm outline-none dark:text-white cursor-pointer">
+                                    ${installmentOptions}
+                                </select>
+                                <div class="p-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-700/60 flex items-center justify-between gap-2">
+                                    <div class="space-y-0.5 text-left">
+                                        <h5 class="text-[10px] font-black uppercase text-slate-700 dark:text-white">Pagamento por Link Seguro</h5>
+                                        <p class="text-[8px] text-slate-400 font-bold uppercase tracking-wide leading-none">Cartão de Crédito e Débito</p>
+                                    </div>
+                                    <img src="https://i0.wp.com/imprensa24h.com.br/wp-content/uploads/2023/03/bandeiras-de-cartoes-de-credito-png-e-vetor.png?fit=1920%2C1080&ssl=1" alt="Bandeiras de Cartão" class="h-5 w-auto object-contain bg-white px-1.5 py-0.5 rounded border border-slate-100 shadow-xs" referrerpolicy="no-referrer">
+                                </div>
+                            </div>
+                        `;
+                    } else if (selectedPaymentMethod === 'cash') {
+                        paymentMethodHTML += `
+                            <div class="space-y-1.5 mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 animate-fade-in text-left">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Precisa de Troco? (Opcional)</label>
+                                <input type="text" id="cash-change-input" placeholder="Ex: Troco para R$ 100,00 ou Não precisa" value="${escapeHtml(window.cashChangeValue || '')}" oninput="window.setCashChange(this.value)" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-xs outline-none dark:text-white placeholder:text-slate-400 focus:border-slate-400 transition-all">
+                            </div>
+                        `;
                     }
 
-                    paymentMethodHTML += `
-                        <div class="space-y-2 mb-4 animate-fade-in text-left">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Selecione as Parcelas</label>
-                            <select onchange="window.setInstallment(this.value)" class="w-full px-4 py-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-100 dark:border-slate-700 font-bold text-sm outline-none dark:text-white">
-                                ${installmentOptions}
-                            </select>
-                            <div class="p-3 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-700/60 flex flex-col md:flex-row items-center justify-between gap-3">
-                                <div class="space-y-0.5 text-left">
-                                    <h5 class="text-[10px] font-black uppercase text-slate-700 dark:text-white">Pagamento por Link de Cartão</h5>
-                                    <p class="text-[8px] text-slate-400 font-bold uppercase tracking-wide leading-none">Cobre de forma simples parcelado!</p>
-                                </div>
-                                <img src="https://i0.wp.com/imprensa24h.com.br/wp-content/uploads/2023/03/bandeiras-de-cartoes-de-credito-png-e-vetor.png?fit=1920%2C1080&ssl=1" alt="Bandeiras de Cartão" class="h-6 w-auto object-contain bg-white px-2 py-0.5 rounded border border-slate-100 shadow-sm" referrerpolicy="no-referrer">
+                    paymentMethodHTML += `</div>`;
+                    paymentContainer.innerHTML = paymentMethodHTML;
+                }
+
+                // Render Seção de Detalhamento Financeiro
+                if (breakdownContainer) {
+                    breakdownContainer.innerHTML = `
+                        <div class="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-xs space-y-2 text-left">
+                            <h5 class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Resumo dos Valores</h5>
+                            
+                            <div class="flex justify-between text-xs font-bold">
+                                <span class="text-slate-400">Subtotal (${totalItems} ${totalItems === 1 ? 'item' : 'itens'})</span>
+                                <span class="dark:text-white font-black">${formatCurrency(total)}</span>
                             </div>
-                        </div>
-                    `;
-                } else if (selectedPaymentMethod === 'cash') {
-                    paymentMethodHTML += `
-                        <div class="space-y-1.5 mb-4 animate-fade-in text-left">
-                            <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Precisa de Troco? (Opcional)</label>
-                            <input type="text" id="cash-change-input" placeholder="Ex: Troco para R$ 100,00 ou Não precisa de troco" value="${window.cashChangeValue || ''}" oninput="window.setCashChange(this.value)" class="w-full px-4 py-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-xs outline-none dark:text-white placeholder:text-slate-400 focus:border-slate-400 transition-all">
+
+                            ${discountAmount > 0 ? `
+                                <div class="flex justify-between text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 p-2.5 rounded-xl border border-emerald-100 dark:border-emerald-800/40 my-1 animate-fade-in">
+                                    <span class="flex items-center gap-1.5 font-black">
+                                        <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+                                        Desconto (${escapeHtml(window.appliedGameDiscount.couponCode)})
+                                    </span>
+                                    <span class="font-black">- ${formatCurrency(discountAmount)}</span>
+                                </div>
+                            ` : ''}
+
+                            ${selectedShippingZone ? `
+                                <div class="flex justify-between text-xs font-bold">
+                                    <span class="text-slate-400">Taxa de Entrega (${escapeHtml(selectedShippingZone.neighborhood)})</span>
+                                    <span class="dark:text-white font-black">${formatCurrency(shippingPrice)}</span>
+                                </div>
+                            ` : ''}
+
+                            ${selectedPaymentMethod === 'card' && activeFeePercentage > 0 ? `
+                                <div class="flex justify-between text-xs font-bold animate-fade-in">
+                                    <span class="text-slate-400">Acréscimo Cartão (${activeFeePercentage.toFixed(1)}%)</span>
+                                    <span class="text-orange-500 font-black">+ ${formatCurrency(totalToDisplay - grandTotal)}</span>
+                                </div>
+                            ` : ''}
+
+                            ${selectedPaymentMethod === 'card' && selectedInstallment <= 3 ? `
+                                <div class="flex justify-between text-xs font-bold text-emerald-500 animate-fade-in">
+                                    <span class="text-emerald-500 font-bold">Condição Especial</span>
+                                    <span class="font-black">1x a 3x Sem Juros! ⭐</span>
+                                </div>
+                            ` : ''}
+
+                            <div class="flex justify-between items-baseline font-bold pt-2.5 border-t border-slate-100 dark:border-slate-700/80">
+                                <span class="text-slate-500 dark:text-slate-400 uppercase text-xs tracking-wider font-black">Total Previsto</span>
+                                <span class="text-lg font-black tracking-tight dark:text-white" style="color: ${storeData.primaryColor || '#ea580c'}">${formatCurrency(totalToDisplay)}</span>
+                            </div>
                         </div>
                     `;
                 }
 
-                const ohStatus = window.checkStoreOperatingStatus(storeData.oh);
-                const checkoutBtnHTML = ohStatus.isOpen ? `
-                    <button onclick="checkout()" class="w-full py-4 text-white font-black uppercase italic tracking-widest text-sm rounded-2xl shadow-lg transition-all active:scale-95" style="background-color: ${storeData.primaryColor}">Finalizar no WhatsApp</button>
-                ` : `
-                    <button onclick="window.openOperatingHoursModal()" class="w-full py-4 bg-red-600 text-white font-black uppercase italic tracking-widest text-sm rounded-2xl shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2">
-                        <i data-lucide="lock" class="w-4 h-4"></i>
-                        <span>Fechado no Momento (Ver Horários)</span>
-                    </button>
-                `;
+                // Render Barra Fixa Inferior de Checkout
+                if (footerContainer) {
+                    const ohStatus = window.checkStoreOperatingStatus(storeData.oh);
+                    const checkoutBtnHTML = ohStatus.isOpen ? `
+                        <button type="button" onclick="checkout()" class="w-full py-4 text-white font-black uppercase italic tracking-widest text-sm rounded-2xl shadow-lg hover:brightness-110 active-scale transition-all flex items-center justify-center gap-2 cursor-pointer" style="background-color: ${storeData.primaryColor || '#16a34a'}">
+                            <i data-lucide="message-circle" class="w-5 h-5"></i>
+                            <span>Finalizar no WhatsApp</span>
+                        </button>
+                    ` : `
+                        <button type="button" onclick="window.openOperatingHoursModal()" class="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-black uppercase italic tracking-widest text-sm rounded-2xl shadow-lg active-scale transition-all flex items-center justify-center gap-2 cursor-pointer">
+                            <i data-lucide="lock" class="w-4 h-4"></i>
+                            <span>Fechado no Momento (Ver Horários)</span>
+                        </button>
+                    `;
 
-                footerContainer.innerHTML = `
-                    ${gamePromoBannerHTML}
-                    ${shippingHTML}
-                    ${paymentMethodHTML}
-                    <div class="space-y-1 mb-4 text-left">
-                        <div class="flex justify-between text-xs font-bold">
-                            <span class="text-slate-400">Subtotal</span>
-                            <span class="dark:text-white">${formatCurrency(total)}</span>
+                    footerContainer.innerHTML = `
+                        <div class="flex items-baseline justify-between">
+                            <div>
+                                <span class="text-[10px] font-black uppercase tracking-widest text-slate-400 block">Total a Pagar</span>
+                                <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400">${totalItems} ${totalItems === 1 ? 'item' : 'itens'}</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xl sm:text-2xl font-black tracking-tight text-slate-900 dark:text-white">${formatCurrency(totalToDisplay)}</span>
+                            </div>
                         </div>
-                        ${discountAmount > 0 ? `
-                            <div class="flex justify-between text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 p-2 rounded-xl border border-emerald-100 dark:border-emerald-800/40 my-1 animate-fade-in">
-                                <span class="flex items-center gap-1 font-black">
-                                    <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
-                                    Desconto Bossa Promo (${window.appliedGameDiscount.couponCode})
-                                </span>
-                                <span class="font-black">- ${formatCurrency(discountAmount)}</span>
-                            </div>
-                        ` : ''}
-                        ${selectedShippingZone ? `
-                            <div class="flex justify-between text-xs font-bold">
-                                <span class="text-slate-400">Entrega (${selectedShippingZone.neighborhood})</span>
-                                <span class="dark:text-white">${formatCurrency(shippingPrice)}</span>
-                            </div>
-                        ` : ''}
-                        ${selectedPaymentMethod === 'card' && activeFeePercentage > 0 ? `
-                            <div class="flex justify-between text-xs font-bold animate-fade-in">
-                                <span class="text-slate-400">Acréscimo do Cartão (${activeFeePercentage.toFixed(1)}%)</span>
-                                <span class="text-orange-500 font-bold">+ ${formatCurrency(totalToDisplay - grandTotal)}</span>
-                            </div>
-                        ` : ''}
-                        ${selectedPaymentMethod === 'card' && selectedInstallment <= 3 ? `
-                            <div class="flex justify-between text-xs font-bold text-emerald-500 animate-fade-in">
-                                <span class="text-emerald-500 font-bold">Promoção Parcelamento</span>
-                                <span class="font-bold">1x a 3x Sem Juros! ⭐</span>
-                            </div>
-                        ` : ''}
-                        <div class="flex justify-between font-bold pt-2 border-t border-slate-100 dark:border-slate-700">
-                            <span class="text-slate-400 uppercase text-[10px] tracking-widest">Total</span>
-                            <span class="text-xl font-black tracking-tighter dark:text-white">${formatCurrency(totalToDisplay)}</span>
-                        </div>
-                    </div>
-                    ${checkoutBtnHTML}
-                    <button onclick="window.openReceiptModal()" class="w-full mt-2.5 py-3.5 bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-black uppercase tracking-wider text-xs rounded-2xl shadow transition-all flex items-center justify-center gap-2 border border-slate-700 dark:border-slate-600 active:scale-95">
-                        <i data-lucide="printer" class="w-4 h-4 text-emerald-400"></i>
-                        <span>Imprimir Comanda / Cupom</span>
-                    </button>
-                `;
+                        ${checkoutBtnHTML}
+                        <button type="button" onclick="window.openReceiptModal()" class="w-full py-3 bg-slate-900 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600 text-white font-black uppercase tracking-wider text-xs rounded-xl shadow transition-all flex items-center justify-center gap-2 border border-slate-700 dark:border-slate-600 active-scale cursor-pointer">
+                            <i data-lucide="printer" class="w-4 h-4 text-emerald-400"></i>
+                            <span>Imprimir Comanda / Cupom</span>
+                        </button>
+                    `;
+                }
             }
-            lucide.createIcons();
+            if (window.lucide) lucide.createIcons();
         }
 
         window.setShippingZone = function(idx) {

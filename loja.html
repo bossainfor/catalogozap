@@ -5251,23 +5251,44 @@
             const currentStore = window.storeData || storeData;
             const storeSlug = currentStore?.slug || currentStore?.id || new URLSearchParams(window.location.search).get('id') || 'demo';
             
-            const { collection, query, where, onSnapshot } = window.firebaseUtils;
+            const { collection, query, where, onSnapshot, doc, deleteDoc } = window.firebaseUtils;
             const q = query(collection(window.db, "promotions"), where("storeSlug", "==", storeSlug));
 
             let isFirstLoad = true;
             onSnapshot(q, (snapshot) => {
+                const now = Date.now();
+
                 if (isFirstLoad) {
                     isFirstLoad = false;
+                    // Limpa promoções expiradas que possam estar no snapshot inicial
+                    snapshot.forEach(async (docSnap) => {
+                        const data = docSnap.data();
+                        const exp = data.expiresAt || (data.timestamp ? data.timestamp + 24*60*60*1000 : 0);
+                        if (exp && now > exp) {
+                            try {
+                                await deleteDoc(doc(window.db, "promotions", docSnap.id));
+                            } catch(e) {}
+                        }
+                    });
                     return;
                 }
 
-                snapshot.docChanges().forEach((change) => {
+                snapshot.docChanges().forEach(async (change) => {
                     if (change.type === 'added' || change.type === 'modified') {
                         const promo = change.doc.data();
-                        const timeDiff = Date.now() - (promo.timestamp || 0);
+                        const exp = promo.expiresAt || (promo.timestamp ? promo.timestamp + 24*60*60*1000 : 0);
                         
-                        // Mostra se foi disparada nos últimos 10 minutos
-                        if (timeDiff < 600000 && promo.active !== false) {
+                        // Se já estiver expirada, remove do banco
+                        if (exp && now > exp) {
+                            try {
+                                await deleteDoc(doc(window.db, "promotions", change.doc.id));
+                            } catch(e) {}
+                            return;
+                        }
+
+                        const timeDiff = now - (promo.timestamp || 0);
+                        // Mostra se foi disparada nos últimos 15 minutos e não expirou
+                        if (timeDiff < 900000 && promo.active !== false) {
                             showPromoAlert(promo);
                         }
                     }

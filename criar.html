@@ -474,19 +474,27 @@
 
                 <!-- NOVO CARROSSEL DE BANNERS PROMOCIONAIS -->
                 <section class="space-y-6 border-t border-slate-200/60 pt-6">
-                    <div class="flex items-center justify-between mb-2">
+                    <div class="flex flex-wrap items-center justify-between gap-3 mb-2">
                         <div class="space-y-0.5 min-w-0">
                             <h3 class="font-black uppercase italic tracking-widest text-sm text-blue-600 flex items-center gap-1.5">
                                 <i data-lucide="layout-grid" class="w-4 h-4"></i> Carrossel de Banners Promocionais
                             </h3>
                             <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Crie slides rotativos no topo com links de ofertas (Ex: 1920x800 do Canva)</p>
                         </div>
-                        <button type="button" onclick="window.addPromoBanner()" class="bg-blue-600 text-white px-5 py-3 rounded-2xl text-xs font-black uppercase italic tracking-widest hover:bg-blue-700 active-scale shadow-lg shadow-blue-100 flex items-center gap-1.5 flex-shrink-0">
-                            <i data-lucide="plus" class="w-4 h-4"></i>
-                            <span>Adicionar Slide</span>
-                        </button>
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <button type="button" onclick="window.togglePromoBannersCollapse()" id="promo-collapse-btn" class="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3.5 py-2 rounded-2xl text-[11px] font-black uppercase tracking-wider transition-all flex items-center gap-1.5 shrink-0 border border-blue-200/80 active-scale shadow-sm cursor-pointer select-none">
+                                <i data-lucide="chevron-up" id="promo-collapse-icon" class="w-4 h-4"></i>
+                                <span id="promo-collapse-text">RECOLHER</span>
+                            </button>
+                            <button type="button" onclick="window.addPromoBanner()" class="bg-blue-600 text-white px-4 py-2.5 rounded-2xl text-xs font-black uppercase italic tracking-widest hover:bg-blue-700 active-scale shadow-lg shadow-blue-100 flex items-center gap-1.5 flex-shrink-0 cursor-pointer">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                                <span>Adicionar Slide</span>
+                            </button>
+                        </div>
                     </div>
-                    <div id="promo-banners-list" class="space-y-4"></div>
+                    <div id="promo-banners-body" class="space-y-4">
+                        <div id="promo-banners-list" class="space-y-4"></div>
+                    </div>
                 </section>
 
                 <section class="space-y-6">
@@ -843,6 +851,32 @@
                 cardBody.classList.add('hidden');
                 if (text) text.innerText = "EXPANDIR";
                 if (icon) icon.classList.add('rotate-180');
+            }
+        };
+
+        window.isPromoBannersCollapsed = false;
+        window.togglePromoBannersCollapse = function(forceState = null) {
+            const cardBody = document.getElementById('promo-banners-body');
+            const icon = document.getElementById('promo-collapse-icon');
+            const text = document.getElementById('promo-collapse-text');
+            if (!cardBody) return;
+
+            if (forceState !== null) {
+                window.isPromoBannersCollapsed = forceState;
+            } else {
+                window.isPromoBannersCollapsed = !window.isPromoBannersCollapsed;
+            }
+
+            const count = (window.promotionalBanners || []).length;
+
+            if (window.isPromoBannersCollapsed) {
+                cardBody.classList.add('hidden');
+                if (text) text.innerText = count > 0 ? `EXPANDIR (${count})` : "EXPANDIR";
+                if (icon) icon.classList.add('rotate-180');
+            } else {
+                cardBody.classList.remove('hidden');
+                if (text) text.innerText = "RECOLHER";
+                if (icon) icon.classList.remove('rotate-180');
             }
         };
 
@@ -3356,6 +3390,10 @@
                 i: '', // i: Imagem URL
                 al: '' // al: Action Link (URL de clique)
             });
+            // Se estiver recolhido, expande automaticamente ao adicionar novo slide
+            if (window.isPromoBannersCollapsed) {
+                window.togglePromoBannersCollapse(false);
+            }
             window.renderPromoBanners();
             window.saveDraft();
         }
@@ -3409,6 +3447,20 @@
 
         window.renderPromoBanners = function() {
             const list = document.getElementById('promo-banners-list');
+            const collapseText = document.getElementById('promo-collapse-text');
+            const collapseIcon = document.getElementById('promo-collapse-icon');
+            
+            const count = (window.promotionalBanners || []).length;
+            if (collapseText) {
+                if (window.isPromoBannersCollapsed) {
+                    collapseText.innerText = count > 0 ? `EXPANDIR (${count})` : "EXPANDIR";
+                    if (collapseIcon) collapseIcon.classList.add('rotate-180');
+                } else {
+                    collapseText.innerText = "RECOLHER";
+                    if (collapseIcon) collapseIcon.classList.remove('rotate-180');
+                }
+            }
+
             if (!list) return;
 
             if (window.promotionalBanners.length === 0) {

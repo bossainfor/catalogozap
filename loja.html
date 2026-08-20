@@ -5255,14 +5255,15 @@
         window.askAI = askAI;
 
         // ==========================================
-        // WEB PUSH NOTIFICATIONS & PROMOÇÕES
+        // WEB PUSH NOTIFICATIONS & PROMOÇÕES PERSISTENTES
         // ==========================================
         window.dismissPushBanner = function() {
             const bar = document.getElementById('push-notification-bar');
             if (bar) {
                 bar.classList.add('-translate-y-24', 'opacity-0', 'pointer-events-none');
-                localStorage.setItem('push_banner_dismissed', 'true');
             }
+            // Guarda apenas na sessão temporária; se o cliente atualizar e não ativou, reaparece
+            sessionStorage.setItem('push_banner_temp_dismissed', 'true');
         };
 
         window.requestWebPushPermission = async function() {
@@ -5276,6 +5277,7 @@
                 const permission = await Notification.requestPermission();
                 if (permission === 'granted') {
                     localStorage.setItem('push_notifications_enabled', 'true');
+                    sessionStorage.removeItem('push_banner_temp_dismissed');
                     window.dismissPushBanner();
                     
                     // Registra service worker
@@ -5324,6 +5326,61 @@
         };
 
         window.currentActivePromo = null;
+
+        // Helper para checar se a promoção já foi ativada pelo cliente
+        function getPromoStorageKey(promo) {
+            if (!promo) return '';
+            return promo.id ? `promo_activated_${promo.id}` : (promo.coupon ? `coupon_activated_${promo.coupon}` : `promo_activated_${promo.timestamp || 'default'}`);
+        }
+
+        function isPromoActivated(promo) {
+            if (!promo) return true;
+            const key = getPromoStorageKey(promo);
+            if (localStorage.getItem(key) === 'true') return true;
+            if (promo.coupon && (localStorage.getItem(`coupon_applied_${promo.coupon}`) === 'true' || window.appliedCouponCode === promo.coupon)) {
+                return true;
+            }
+            return false;
+        }
+
+        function markPromoAsActivated(promo) {
+            if (!promo) return;
+            const key = getPromoStorageKey(promo);
+            if (key) localStorage.setItem(key, 'true');
+            if (promo.coupon) {
+                localStorage.setItem(`coupon_applied_${promo.coupon}`, 'true');
+            }
+            // Remove o botão/badge flutuante persistente de oferta pendente
+            const floatBadge = document.getElementById('promo-pending-floating-badge');
+            if (floatBadge) floatBadge.remove();
+        }
+
+        // Renderiza ou atualiza botão flutuante de oferta ativa não ativada
+        function updatePendingPromoFloatingBadge(promo) {
+            let floatBadge = document.getElementById('promo-pending-floating-badge');
+            if (!promo || isPromoActivated(promo)) {
+                if (floatBadge) floatBadge.remove();
+                return;
+            }
+
+            if (!floatBadge) {
+                floatBadge = document.createElement('div');
+                floatBadge.id = 'promo-pending-floating-badge';
+                floatBadge.className = 'fixed bottom-24 left-4 z-[980] flex items-center animate-bounce duration-1000';
+                document.body.appendChild(floatBadge);
+            }
+
+            floatBadge.innerHTML = `
+                <button type="button" onclick="window.openPromoFullModal(window.currentActivePromo)" class="bg-gradient-to-r from-orange-600 via-amber-600 to-orange-500 hover:from-orange-500 hover:to-amber-500 text-white pl-3 pr-4 py-2.5 rounded-full shadow-2xl border-2 border-amber-300/80 flex items-center gap-2 text-xs font-black uppercase tracking-wider cursor-pointer active-scale">
+                    <span class="w-6 h-6 rounded-full bg-white text-orange-600 flex items-center justify-center font-black text-sm shadow-md">🔥</span>
+                    <div class="flex flex-col items-start text-left leading-none">
+                        <span class="text-[9px] text-amber-200 uppercase font-black tracking-widest">Oferta Disponível</span>
+                        <span class="text-[11px] font-black">${promo.coupon ? `Cupom: ${escapeHtml(promo.coupon)}` : 'Ver Desconto'}</span>
+                    </div>
+                </button>
+            `;
+            if (window.lucide) lucide.createIcons();
+        }
 
         window.openPromoFromToast = function() {
             if (window.currentActivePromo) {
@@ -5382,9 +5439,16 @@
                 modal.classList.remove('flex');
                 document.body.style.overflow = '';
             }
+            // Se ainda não ativou, mantém o badge flutuante ativo
+            if (window.currentActivePromo && !isPromoActivated(window.currentActivePromo)) {
+                updatePendingPromoFloatingBadge(window.currentActivePromo);
+            }
         };
 
         window.applyPromoModalCoupon = function() {
+            if (window.currentActivePromo) {
+                markPromoAsActivated(window.currentActivePromo);
+            }
             if (window.activePromoCoupon) {
                 if (typeof window.applyManualCoupon === 'function') {
                     window.applyManualCoupon(window.activePromoCoupon);
@@ -5397,10 +5461,15 @@
                 if (typeof window.toggleCart === 'function') {
                     window.toggleCart(true);
                 }
+            } else {
+                window.closePromoFullModal();
             }
         };
 
         window.explorePromoProducts = function() {
+            if (window.currentActivePromo) {
+                markPromoAsActivated(window.currentActivePromo);
+            }
             if (window.activePromoCoupon && typeof window.applyManualCoupon === 'function') {
                 window.applyManualCoupon(window.activePromoCoupon);
             }
@@ -5416,9 +5485,16 @@
             if (toast) {
                 toast.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
             }
+            // Se não ativou, mostra o botão flutuante para poder acessar a qualquer hora
+            if (window.currentActivePromo && !isPromoActivated(window.currentActivePromo)) {
+                updatePendingPromoFloatingBadge(window.currentActivePromo);
+            }
         };
 
         window.copyPromoCoupon = function() {
+            if (window.currentActivePromo) {
+                markPromoAsActivated(window.currentActivePromo);
+            }
             if (window.activePromoCoupon && navigator.clipboard) {
                 navigator.clipboard.writeText(window.activePromoCoupon).then(() => {
                     alert(`✅ Cupom ${window.activePromoCoupon} copiado com sucesso! Cole no carrinho.`);
@@ -5434,45 +5510,44 @@
             const { collection, query, where, onSnapshot, doc, deleteDoc } = window.firebaseUtils;
             const q = query(collection(window.db, "promotions"), where("storeSlug", "==", storeSlug));
 
-            let isFirstLoad = true;
             onSnapshot(q, (snapshot) => {
                 const now = Date.now();
+                const activePromos = [];
 
-                if (isFirstLoad) {
-                    isFirstLoad = false;
-                    // Limpa promoções expiradas que possam estar no snapshot inicial
-                    snapshot.forEach(async (docSnap) => {
-                        const data = docSnap.data();
-                        const exp = data.expiresAt || (data.timestamp ? data.timestamp + 24*60*60*1000 : 0);
-                        if (exp && now > exp) {
-                            try {
-                                await deleteDoc(doc(window.db, "promotions", docSnap.id));
-                            } catch(e) {}
-                        }
-                    });
-                    return;
-                }
-
-                snapshot.docChanges().forEach(async (change) => {
-                    if (change.type === 'added' || change.type === 'modified') {
-                        const promo = change.doc.data();
-                        const exp = promo.expiresAt || (promo.timestamp ? promo.timestamp + 24*60*60*1000 : 0);
-                        
-                        // Se já estiver expirada, remove do banco
-                        if (exp && now > exp) {
-                            try {
-                                await deleteDoc(doc(window.db, "promotions", change.doc.id));
-                            } catch(e) {}
-                            return;
-                        }
-
-                        const timeDiff = now - (promo.timestamp || 0);
-                        // Mostra se foi disparada nos últimos 15 minutos e não expirou
-                        if (timeDiff < 900000 && promo.active !== false) {
-                            showPromoAlert(promo);
-                        }
+                snapshot.forEach(async (docSnap) => {
+                    const data = docSnap.data();
+                    data.id = docSnap.id;
+                    const exp = data.expiresAt || (data.timestamp ? data.timestamp + 24*60*60*1000 : 0);
+                    
+                    // Expurgo automático de promoções vencidas
+                    if (exp && now > exp) {
+                        try {
+                            await deleteDoc(doc(window.db, "promotions", docSnap.id));
+                        } catch(e) {}
+                    } else if (data.active !== false) {
+                        activePromos.push(data);
                     }
                 });
+
+                // Ordena pela promoção mais recente
+                activePromos.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+                if (activePromos.length > 0) {
+                    const latestPromo = activePromos[0];
+                    window.currentActivePromo = latestPromo;
+
+                    // Se o cliente ainda não ativou a promoção, ela DEVE aparecer e ficar visível mesmo após atualizar a página
+                    if (!isPromoActivated(latestPromo)) {
+                        showPromoAlert(latestPromo);
+                        updatePendingPromoFloatingBadge(latestPromo);
+                    } else {
+                        // Se já ativou, garante que o badge flutuante não fica aberto
+                        updatePendingPromoFloatingBadge(null);
+                    }
+                } else {
+                    window.currentActivePromo = null;
+                    updatePendingPromoFloatingBadge(null);
+                }
             }, (err) => console.warn("Erro no listener de promoções:", err));
 
             // Ouvinte de mensagens do Service Worker quando o cliente clica na notificação do SO/Navegador
@@ -5544,9 +5619,10 @@
                 toast.classList.remove('translate-y-12', 'opacity-0', 'pointer-events-none');
                 if (window.lucide) lucide.createIcons();
 
+                // Mantém o toast aberto por mais tempo ou até o cliente interagir
                 setTimeout(() => {
                     window.closePromoToast();
-                }, 15000);
+                }, 18000);
             }
         }
 
@@ -5561,18 +5637,19 @@
                 trigger.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
             }
 
-            // Mostra banner de push após 4 segundos se nunca dispensou ou ativou
-            if ('Notification' in window && Notification.permission === 'default' && localStorage.getItem('push_banner_dismissed') !== 'true') {
+            // Mostra banner de push se o cliente ainda não ativou ('granted')
+            // Se atualizar a página e o cliente não ativou, reaparece para ele poder ativar
+            if ('Notification' in window && Notification.permission !== 'granted') {
                 setTimeout(() => {
                     const bar = document.getElementById('push-notification-bar');
                     if (bar) {
                         bar.classList.remove('-translate-y-24', 'opacity-0', 'pointer-events-none');
                         if (window.lucide) lucide.createIcons();
                     }
-                }, 4000);
+                }, 2500);
             }
 
-            // Inicia listener de promoções push
+            // Inicia listener de promoções push e cupons persistentes
             setupPromotionListener();
 
             if (window.lucide) lucide.createIcons();

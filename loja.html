@@ -21,7 +21,7 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, updateDoc, increment, collection, addDoc, getDocs, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, increment, collection, addDoc, getDocs, query, where, orderBy, onSnapshot, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -41,7 +41,7 @@
         signInAnonymously(auth).catch(err => console.error("Erro no login anônimo:", err));
 
         window.db = db;
-        window.firebaseUtils = { doc, getDoc, updateDoc, increment, collection, addDoc, getDocs, query, where, orderBy };
+        window.firebaseUtils = { doc, getDoc, setDoc, updateDoc, deleteDoc, increment, collection, addDoc, getDocs, query, where, orderBy, onSnapshot, arrayUnion };
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
     <style>
@@ -4299,38 +4299,95 @@
             updateCartUI();
         };
     </script>
-    <!-- ATENDENTE INTELIGENTE (IA INTEGRADA & LOCAL) -->
+    <!-- BANNER / BOTÃO FLUTUANTE DE NOTIFICAÇÕES PUSH -->
+    <div id="push-notification-bar" class="fixed top-3 left-1/2 -translate-x-1/2 z-[990] w-[94%] max-w-md bg-slate-900/95 text-white border border-emerald-500/40 rounded-2xl shadow-2xl p-3.5 flex items-center justify-between gap-3 backdrop-blur-md transform -translate-y-24 transition-all duration-500 opacity-0 pointer-events-none">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shrink-0">
+                <i data-lucide="bell-ring" class="w-5 h-5 animate-bounce"></i>
+            </div>
+            <div>
+                <h5 class="text-xs font-black uppercase text-white leading-tight">Receber Ofertas & Rastreio</h5>
+                <p class="text-[10px] text-slate-300 font-medium leading-tight mt-0.5">Ative avisos no seu navegador para não perder promoções exclusivas!</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-1.5 shrink-0">
+            <button onclick="window.dismissPushBanner()" class="p-1.5 text-slate-400 hover:text-white rounded-lg text-xs font-bold transition-all">Agora não</button>
+            <button onclick="window.requestWebPushPermission()" class="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-xl text-xs font-black uppercase tracking-wider shadow-md transition-all active:scale-95">Ativar 🔔</button>
+        </div>
+    </div>
+
+    <!-- TOAST DE PROMOÇÃO AO VIVO RECEBIDA -->
+    <div id="live-promo-toast" class="fixed bottom-24 left-4 right-4 sm:left-6 sm:right-auto sm:max-w-sm z-[995] bg-gradient-to-br from-slate-950 to-slate-900 text-white border-2 border-orange-500 rounded-3xl shadow-2xl p-4 transform translate-y-12 opacity-0 pointer-events-none transition-all duration-300">
+        <div class="flex items-start justify-between gap-2">
+            <div class="flex items-center gap-2.5">
+                <span class="p-2 rounded-2xl bg-orange-500 text-slate-950 font-black text-sm shadow-md">🔥</span>
+                <div>
+                    <span class="text-[10px] font-black uppercase tracking-widest text-orange-400">Oferta Relâmpago</span>
+                    <h4 id="promo-toast-title" class="text-xs font-black text-white leading-tight">Nova Promoção Disponível!</h4>
+                </div>
+            </div>
+            <button onclick="window.closePromoToast()" class="p-1 text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+        </div>
+        <p id="promo-toast-desc" class="text-[11px] text-slate-300 font-medium mt-2 leading-relaxed">Aproveite desconto especial em todos os itens do catálogo hoje!</p>
+        <div id="promo-toast-coupon-wrap" class="mt-2.5 flex items-center gap-2 bg-slate-950/80 p-2 rounded-xl border border-slate-800 hidden">
+            <span class="text-[10px] font-black uppercase text-slate-400">Cupom:</span>
+            <span id="promo-toast-coupon" class="font-mono font-black text-xs text-emerald-400"></span>
+            <button onclick="window.copyPromoCoupon()" class="ml-auto px-2.5 py-1 bg-emerald-500/20 hover:bg-emerald-500 text-emerald-400 hover:text-slate-950 rounded-lg text-[10px] font-black uppercase transition-all">Copiar</button>
+        </div>
+    </div>
+
+    <!-- ATENDENTE INTELIGENTE E CHAT AO VIVO COM O DONO -->
     <div id="ai-attendant" class="fixed bottom-20 left-4 right-4 sm:left-auto sm:right-6 z-[999] pointer-events-none opacity-0 transition-all duration-300 transform translate-y-10 hidden">
-        <div class="bg-white dark:bg-slate-800 w-full sm:w-85 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden pointer-events-auto flex flex-col max-h-[80vh]">
+        <div class="bg-white dark:bg-slate-800 w-full sm:w-88 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden pointer-events-auto flex flex-col max-h-[82vh]">
             <!-- Header -->
-            <div class="bg-slate-900 p-4 flex items-center justify-between shrink-0">
-                <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 bg-gradient-to-tr from-emerald-400 to-[#25D366] rounded-full flex items-center justify-center animate-pulse shadow-md shadow-emerald-500/20 text-slate-900">
-                        <i data-lucide="headset" class="w-5 h-5 text-slate-900"></i>
+            <div class="bg-slate-900 p-3.5 flex flex-col gap-2 shrink-0">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                        <div id="chat-header-avatar" class="w-9 h-9 bg-gradient-to-tr from-emerald-400 to-[#25D366] rounded-full flex items-center justify-center animate-pulse shadow-md shadow-emerald-500/20 text-slate-900">
+                            <i data-lucide="headset" class="w-5 h-5 text-slate-900"></i>
+                        </div>
+                        <div>
+                            <h4 id="chat-header-title" class="text-white text-sm font-black uppercase italic leading-none">Atendente Virtual</h4>
+                            <span id="chat-header-status" class="text-[#25D366] text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 mt-0.5">
+                                <span class="w-1.5 h-1.5 rounded-full bg-[#25D366] animate-ping inline-block"></span> Online agora
+                            </span>
+                        </div>
                     </div>
-                    <div>
-                        <h4 class="text-white text-sm font-black uppercase italic leading-none">Atendente Virtual</h4>
-                        <span class="text-[#25D366] text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 mt-0.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-[#25D366] animate-ping inline-block"></span> Online agora
-                        </span>
+                    <div class="flex items-center gap-1">
+                        <button type="button" onclick="window.toggleAI(false)" class="text-slate-400 hover:text-white p-1 rounded-full hover:bg-slate-800 transition-colors active-scale">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
                     </div>
                 </div>
-                <button type="button" onclick="window.toggleAI(false)" class="text-slate-400 hover:text-white p-1 rounded-full hover:bg-slate-800 transition-colors active-scale">
-                    <i data-lucide="x" class="w-5 h-5"></i>
-                </button>
+
+                <!-- Seletor de Modo: IA vs Dono da Loja (Humano) -->
+                <div class="grid grid-cols-2 bg-slate-950 p-1 rounded-2xl border border-slate-800 text-[11px] font-black uppercase tracking-wider">
+                    <button type="button" id="chat-mode-btn-ai" onclick="window.switchChatMode('ai')" class="py-1.5 px-2 rounded-xl bg-slate-800 text-white flex items-center justify-center gap-1.5 transition-all shadow-sm">
+                        <i data-lucide="bot" class="w-3.5 h-3.5 text-emerald-400"></i>
+                        <span>Robô / IA</span>
+                    </button>
+                    <button type="button" id="chat-mode-btn-human" onclick="window.switchChatMode('human')" class="py-1.5 px-2 rounded-xl text-slate-400 hover:text-white flex items-center justify-center gap-1.5 transition-all relative">
+                        <i data-lucide="user-check" class="w-3.5 h-3.5 text-orange-400"></i>
+                        <span>Falar c/ Dono</span>
+                        <span id="human-chat-badge" class="w-2 h-2 rounded-full bg-orange-500 animate-ping hidden"></span>
+                    </button>
+                </div>
             </div>
             
             <!-- Chat Area -->
-            <div id="ai-messages" class="h-64 sm:h-72 overflow-y-auto p-4 space-y-3 bg-slate-50 dark:bg-slate-900/50 flex flex-col custom-scrollbar">
+            <div id="ai-messages" class="h-64 sm:h-72 overflow-y-auto p-3.5 space-y-3 bg-slate-50 dark:bg-slate-900/50 flex flex-col custom-scrollbar">
                 <div class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 p-3 rounded-2xl rounded-tl-none text-xs font-medium self-start shadow-sm leading-relaxed max-w-[90%]">
-                    Olá! Sou a atendente virtual da loja. Tire suas dúvidas sobre nossos serviços, produtos, prazos, formas de pagamento ou solicite um orçamento!
+                    Olá! Sou a atendente virtual da loja. Tire suas dúvidas sobre nossos produtos, cardápio, entrega ou formas de pagamento! Se preferir, clique em <strong>"Falar c/ Dono"</strong> para conversar diretamente com nossa equipe.
                 </div>
             </div>
 
             <!-- Suggestion Chips / Quick Actions -->
             <div class="px-3 py-2 bg-slate-100 dark:bg-slate-750 flex flex-nowrap overflow-x-auto gap-2 border-t border-slate-200/60 dark:border-slate-700 select-none custom-scrollbar shrink-0">
+                <button type="button" onclick="window.switchChatMode('human')" class="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white duration-200 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 active-scale shadow-sm cursor-pointer">
+                    <i data-lucide="message-circle" class="w-3.5 h-3.5 animate-pulse"></i> Falar com o Dono
+                </button>
                 <button type="button" onclick="window.triggerQuickAction('whatsapp')" class="bg-gradient-to-r from-emerald-500 to-[#25D366] hover:from-emerald-600 hover:to-[#22c35e] text-slate-900 duration-200 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 active-scale shadow-sm shadow-emerald-500/20 cursor-pointer">
-                    <i data-lucide="phone" class="w-3.5 h-3.5 animate-pulse"></i> Falar com Atendente
+                    <i data-lucide="phone" class="w-3.5 h-3.5"></i> WhatsApp
                 </button>
                 <button type="button" onclick="window.triggerQuickAction('pagamento')" class="bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 transition-all duration-200 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 active-scale shadow-sm cursor-pointer">
                     <i data-lucide="credit-card" class="w-3.5 h-3.5"></i> Pagamentos
@@ -4342,8 +4399,8 @@
 
             <!-- Input Area -->
             <div class="p-3 bg-white dark:bg-slate-800 border-t border-slate-100 dark:border-slate-700 flex gap-2 shrink-0">
-                <input type="text" id="ai-input" placeholder="Digite sua dúvida ou pedido..." class="flex-grow bg-slate-100 dark:bg-slate-900 border-none rounded-xl px-4 py-3 text-xs font-bold text-slate-800 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-[#25D366] outline-none">
-                <button type="button" onclick="window.askAI()" class="bg-[#25D366] hover:bg-emerald-500 text-slate-900 p-3 rounded-xl hover:scale-105 active-scale transition-all shadow-md flex items-center justify-center shrink-0 cursor-pointer">
+                <input type="text" id="ai-input" placeholder="Digite sua dúvida ou mensagem..." class="flex-grow bg-slate-100 dark:bg-slate-900 border-none rounded-xl px-4 py-3 text-xs font-bold text-slate-800 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-[#25D366] outline-none">
+                <button type="button" id="chat-send-btn" onclick="window.askAI()" class="bg-[#25D366] hover:bg-emerald-500 text-slate-900 p-3 rounded-xl hover:scale-105 active-scale transition-all shadow-md flex items-center justify-center shrink-0 cursor-pointer">
                     <i data-lucide="send" class="w-4 h-4"></i>
                 </button>
             </div>
@@ -4357,15 +4414,16 @@
             <i data-lucide="x" class="w-3 h-3"></i>
         </button>
         <!-- The trigger button -->
-        <button type="button" onclick="window.toggleAI(true)" class="bg-gradient-to-r from-slate-950 to-slate-800 dark:from-slate-900 dark:to-slate-800 text-white p-2.5 sm:pl-3.5 sm:pr-5 sm:py-3 rounded-full flex items-center justify-center gap-2.5 shadow-2xl hover:scale-105 active-scale transition-all duration-300 border-2 border-emerald-500 cursor-pointer group">
+        <button type="button" onclick="window.toggleAI(true)" class="bg-gradient-to-r from-slate-950 to-slate-800 dark:from-slate-900 dark:to-slate-800 text-white p-2.5 sm:pl-3.5 sm:pr-5 sm:py-3 rounded-full flex items-center justify-center gap-2.5 shadow-2xl hover:scale-105 active-scale transition-all duration-300 border-2 border-emerald-500 cursor-pointer group relative">
             <div class="relative flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-tr from-emerald-500 to-[#25D366] text-slate-950 shadow-md shrink-0 group-hover:rotate-12 transition-transform">
                 <span class="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
                 <i data-lucide="headset" class="relative w-4.5 h-4.5 text-slate-950"></i>
             </div>
             <div class="hidden sm:flex flex-col items-start text-left select-none">
-                <span class="text-[9px] uppercase font-black tracking-wider text-emerald-400 leading-none">Dúvidas?</span>
-                <span class="text-[11px] font-black text-white leading-normal uppercase">Atendente Virtual</span>
+                <span class="text-[9px] uppercase font-black tracking-wider text-emerald-400 leading-none">Chat Ao Vivo</span>
+                <span class="text-[11px] font-black text-white leading-normal uppercase">Atendimento</span>
             </div>
+            <span id="trigger-unread-badge" class="hidden absolute -top-1.5 -right-1.5 px-2 py-0.5 bg-red-500 text-white rounded-full text-[10px] font-black animate-bounce shadow-lg">1</span>
         </button>
     </div>
 
@@ -4382,8 +4440,39 @@
         }
         window.escapeHtml = escapeHtml;
 
-        // Lógica do Atendente Inteligente
+        // ==========================================
+        // LÓGICA DO CHAT AO VIVO & ATENDENTE VIRTUAL
+        // ==========================================
         let aiOpen = false;
+        window.currentChatMode = 'ai'; // 'ai' ou 'human'
+        window.chatSessionId = localStorage.getItem('catalogozap_chat_session') || ('c_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36));
+        localStorage.setItem('catalogozap_chat_session', window.chatSessionId);
+        window.chatUnsubscribe = null;
+        window.activePromoCoupon = '';
+
+        // Efeito Sonoro Sintetizado para Mensagem do Dono e Notificação
+        function playChatNotificationSound() {
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = new AudioCtx();
+                const now = ctx.currentTime;
+                
+                const osc1 = ctx.createOscillator();
+                const gain1 = ctx.createGain();
+                osc1.type = 'sine';
+                osc1.frequency.setValueAtTime(587.33, now); // D5
+                osc1.frequency.exponentialRampToValueAtTime(880.00, now + 0.15); // A5
+                gain1.gain.setValueAtTime(0.3, now);
+                gain1.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc1.connect(gain1);
+                gain1.connect(ctx.destination);
+                osc1.start(now);
+                osc1.stop(now + 0.3);
+            } catch(e) {
+                console.warn("Áudio não pôde ser reproduzido:", e);
+            }
+        }
 
         window.dismissAITrigger = function() {
             const trigger = document.getElementById('ai-trigger');
@@ -4393,19 +4482,73 @@
             }
         };
 
+        window.switchChatMode = function(mode) {
+            window.currentChatMode = mode;
+            const btnAi = document.getElementById('chat-mode-btn-ai');
+            const btnHuman = document.getElementById('chat-mode-btn-human');
+            const headerAvatar = document.getElementById('chat-header-avatar');
+            const headerTitle = document.getElementById('chat-header-title');
+            const headerStatus = document.getElementById('chat-header-status');
+            const input = document.getElementById('ai-input');
+            const sendBtn = document.getElementById('chat-send-btn');
+            const humanBadge = document.getElementById('human-chat-badge');
+
+            if (mode === 'human') {
+                if (btnAi && btnHuman) {
+                    btnHuman.className = "py-1.5 px-2 rounded-xl bg-orange-600 text-white flex items-center justify-center gap-1.5 transition-all shadow-md";
+                    btnAi.className = "py-1.5 px-2 rounded-xl text-slate-400 hover:text-white flex items-center justify-center gap-1.5 transition-all";
+                }
+                if (headerAvatar) {
+                    headerAvatar.className = "w-9 h-9 bg-gradient-to-tr from-orange-500 to-amber-500 rounded-full flex items-center justify-center shadow-md text-slate-950 font-black";
+                    headerAvatar.innerHTML = `<i data-lucide="user-check" class="w-5 h-5 text-slate-950"></i>`;
+                }
+                if (headerTitle) headerTitle.innerText = "Dono / Atendente";
+                if (headerStatus) {
+                    headerStatus.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-orange-400 animate-ping inline-block"></span> Atendimento Direto`;
+                    headerStatus.className = "text-orange-400 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 mt-0.5";
+                }
+                if (input) input.placeholder = "Fale diretamente com o dono da loja...";
+                if (sendBtn) sendBtn.className = "bg-orange-500 hover:bg-orange-400 text-slate-950 p-3 rounded-xl hover:scale-105 active-scale transition-all shadow-md flex items-center justify-center shrink-0 cursor-pointer";
+                if (humanBadge) humanBadge.classList.add('hidden');
+
+                // Conecta e carrega histórico em tempo real com o dono
+                connectLiveHumanChat();
+            } else {
+                if (btnAi && btnHuman) {
+                    btnAi.className = "py-1.5 px-2 rounded-xl bg-slate-800 text-white flex items-center justify-center gap-1.5 transition-all shadow-sm";
+                    btnHuman.className = "py-1.5 px-2 rounded-xl text-slate-400 hover:text-white flex items-center justify-center gap-1.5 transition-all";
+                }
+                if (headerAvatar) {
+                    headerAvatar.className = "w-9 h-9 bg-gradient-to-tr from-emerald-400 to-[#25D366] rounded-full flex items-center justify-center animate-pulse shadow-md shadow-emerald-500/20 text-slate-900";
+                    headerAvatar.innerHTML = `<i data-lucide="headset" class="w-5 h-5 text-slate-900"></i>`;
+                }
+                if (headerTitle) headerTitle.innerText = "Atendente Virtual";
+                if (headerStatus) {
+                    headerStatus.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-[#25D366] animate-ping inline-block"></span> Online agora`;
+                    headerStatus.className = "text-[#25D366] text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 mt-0.5";
+                }
+                if (input) input.placeholder = "Digite sua dúvida ou mensagem...";
+                if (sendBtn) sendBtn.className = "bg-[#25D366] hover:bg-emerald-500 text-slate-900 p-3 rounded-xl hover:scale-105 active-scale transition-all shadow-md flex items-center justify-center shrink-0 cursor-pointer";
+            }
+            if (window.lucide) lucide.createIcons();
+        };
+
         window.toggleAI = function(show) {
             aiOpen = !!show;
             const widget = document.getElementById('ai-attendant');
             const trigger = document.getElementById('ai-trigger');
+            const unreadBadge = document.getElementById('trigger-unread-badge');
             
             if (!widget) return;
 
             if (show) {
-                // Personaliza mensagem inicial com o nome da loja
+                if (unreadBadge) unreadBadge.classList.add('hidden');
+                
+                // Mensagem inicial
                 const firstMsg = document.querySelector('#ai-messages > div:first-child');
                 const storeName = (window.storeData && window.storeData.name) ? window.storeData.name : (storeData && storeData.name ? storeData.name : "");
-                if (firstMsg && storeName) {
-                    firstMsg.innerHTML = `Olá! Sou a atendente virtual da <strong>${escapeHtml(storeName)}</strong>. Posso te ajudar a tirar dúvidas, encontrar serviços ou fazer orçamentos!`;
+                if (firstMsg && storeName && window.currentChatMode === 'ai') {
+                    firstMsg.innerHTML = `Olá! Sou a atendente virtual da <strong>${escapeHtml(storeName)}</strong>. Posso te ajudar a tirar dúvidas, encontrar serviços ou fazer orçamentos! Se preferir falar diretamente com o dono, clique na aba <strong>"Falar c/ Dono"</strong>.`;
                 }
 
                 widget.style.display = 'block';
@@ -4422,6 +4565,11 @@
                     if (aiInput) aiInput.focus();
                     if (window.lucide) lucide.createIcons();
                 }, 20);
+
+                // Se já estiver no modo humano, assegura listener ativo
+                if (window.currentChatMode === 'human') {
+                    connectLiveHumanChat();
+                }
             } else {
                 widget.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
                 widget.classList.add('opacity-0', 'translate-y-10', 'pointer-events-none');
@@ -4439,20 +4587,39 @@
             }
         };
 
-        function appendMessage(text, type, productLink = null, actionType = null, isTemporary = false) {
+        function appendMessage(text, type, productLink = null, actionType = null, isTemporary = false, senderLabel = null, timestamp = null) {
             const messages = document.getElementById('ai-messages');
             if (!messages) return null;
 
             const div = document.createElement('div');
             if (isTemporary) div.id = 'ai-typing-indicator';
             
-            div.className = type === 'user' 
-                ? 'bg-slate-900 text-white p-3 rounded-2xl rounded-tr-none text-xs font-bold self-end shadow-md max-w-[80%]'
-                : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 p-3 rounded-2xl rounded-tl-none text-xs font-medium self-start shadow-sm max-w-[85%] flex flex-col gap-2';
+            if (type === 'user') {
+                div.className = 'bg-slate-900 text-white p-3 rounded-2xl rounded-tr-none text-xs font-bold self-end shadow-md max-w-[85%]';
+            } else if (type === 'owner') {
+                div.className = 'bg-gradient-to-r from-orange-600 to-amber-600 text-white p-3 rounded-2xl rounded-tl-none text-xs font-bold self-start shadow-md max-w-[85%] border border-orange-400/30';
+            } else {
+                div.className = 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 p-3 rounded-2xl rounded-tl-none text-xs font-medium self-start shadow-sm max-w-[85%] flex flex-col gap-2';
+            }
             
+            // Tag do Remetente (se for dono ou atendente humano)
+            if (senderLabel) {
+                const tag = document.createElement('span');
+                tag.className = 'text-[9px] uppercase tracking-wider font-black px-1.5 py-0.5 rounded-md bg-black/30 text-amber-200 self-start mb-1 inline-flex items-center gap-1';
+                tag.innerHTML = `<i data-lucide="shield-check" class="w-3 h-3"></i> ${escapeHtml(senderLabel)}`;
+                div.appendChild(tag);
+            }
+
             const textSpan = document.createElement('span');
             textSpan.innerHTML = text;
             div.appendChild(textSpan);
+
+            if (timestamp) {
+                const timeSpan = document.createElement('span');
+                timeSpan.className = 'text-[9px] opacity-60 self-end mt-0.5';
+                timeSpan.innerText = new Date(timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                div.appendChild(timeSpan);
+            }
 
             if (productLink) {
                 const btn = document.createElement('button');
@@ -4466,33 +4633,129 @@
                     window.toggleAI(false);
                 };
                 div.appendChild(btn);
-                setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 0);
             }
 
             if (actionType === 'whatsapp') {
                 const btn = document.createElement('button');
                 btn.type = 'button';
                 btn.className = 'mt-1.5 bg-gradient-to-r from-emerald-500 to-[#25D366] hover:from-emerald-600 hover:to-[#22c35e] text-slate-900 duration-200 px-4 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 self-start active-scale shadow-md shadow-emerald-500/20 border border-emerald-450/20 cursor-pointer';
-                btn.innerHTML = `<i data-lucide="phone" class="w-4 h-4"></i> Falar com Atendente`;
+                btn.innerHTML = `<i data-lucide="phone" class="w-4 h-4"></i> Falar no WhatsApp`;
                 btn.onclick = () => {
                     const currentStore = window.storeData || storeData;
                     let whatsapp = (currentStore && currentStore.whatsapp) ? currentStore.whatsapp.replace(/\D/g, '') : '';
                     if (whatsapp.length <= 11 && whatsapp.length > 0) whatsapp = '55' + whatsapp;
                     if (typeof window.openResilientWhatsApp === 'function') {
-                        window.openResilientWhatsApp(whatsapp, "Olá! Vim do assistente do seu catálogo e gostaria de tirar uma dúvida.");
+                        window.openResilientWhatsApp(whatsapp, "Olá! Vim do chat ao vivo do seu catálogo e gostaria de tirar uma dúvida.");
                     } else if (whatsapp) {
-                        window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent("Olá! Vim do assistente do seu catálogo e gostaria de tirar uma dúvida.")}`, '_blank');
+                        window.open(`https://wa.me/${whatsapp}?text=${encodeURIComponent("Olá! Vim do chat ao vivo do seu catálogo e gostaria de tirar uma dúvida.")}`, '_blank');
                     }
                 };
                 div.appendChild(btn);
-                setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 0);
             }
 
             messages.appendChild(div);
             messages.scrollTop = messages.scrollHeight;
+            if (window.lucide) lucide.createIcons();
             return div;
         }
         window.appendMessage = appendMessage;
+
+        // SINCRONIZAÇÃO EM TEMPO REAL COM O GESTOR DE PEDIDOS (FIRESTORE)
+        function getChatDocId() {
+            const currentStore = window.storeData || storeData;
+            const storeSlug = currentStore?.slug || currentStore?.id || new URLSearchParams(window.location.search).get('id') || 'demo';
+            return `${storeSlug}_${window.chatSessionId}`;
+        }
+
+        function connectLiveHumanChat() {
+            if (!window.db || !window.firebaseUtils) return;
+            if (window.chatUnsubscribe) return; // já conectado
+
+            const chatId = getChatDocId();
+            const { doc, onSnapshot } = window.firebaseUtils;
+
+            window.chatUnsubscribe = onSnapshot(doc(window.db, "chats", chatId), (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    const messages = data.messages || [];
+                    
+                    // Renderiza mensagens no chat
+                    const msgContainer = document.getElementById('ai-messages');
+                    if (msgContainer && messages.length > 0) {
+                        msgContainer.innerHTML = '';
+                        messages.forEach(m => {
+                            const senderType = m.sender === 'customer' ? 'user' : (m.sender === 'owner' ? 'owner' : 'bot');
+                            const senderLabel = m.sender === 'owner' ? (m.senderName || 'Dono da Loja') : null;
+                            appendMessage(escapeHtml(m.text), senderType, null, null, false, senderLabel, m.timestamp);
+                        });
+                    }
+
+                    // Se a última mensagem foi do dono e não fomos nós que mandamos, toca som e avisa
+                    if (data.lastSender === 'owner' && data.unreadCustomer) {
+                        playChatNotificationSound();
+                        const unreadBadge = document.getElementById('trigger-unread-badge');
+                        if (!aiOpen && unreadBadge) {
+                            unreadBadge.classList.remove('hidden');
+                        }
+                    }
+                }
+            }, (err) => {
+                console.warn("Erro no listener do chat ao vivo:", err);
+            });
+        }
+
+        async function sendHumanChatMessage(text) {
+            if (!window.db || !window.firebaseUtils) {
+                appendMessage("Erro ao conectar com o banco. Tentando reenviar...", 'bot');
+                return;
+            }
+
+            const currentStore = window.storeData || storeData;
+            const storeSlug = currentStore?.slug || currentStore?.id || new URLSearchParams(window.location.search).get('id') || 'demo';
+            const chatId = getChatDocId();
+            const custName = localStorage.getItem('catalogozap_customer_name') || 'Cliente Online';
+            const custPhone = localStorage.getItem('catalogozap_customer_phone') || '';
+
+            const newMsgObj = {
+                id: 'msg_' + Date.now() + '_' + Math.random().toString(36).substring(2, 5),
+                sender: 'customer',
+                senderName: custName,
+                text: text,
+                timestamp: Date.now()
+            };
+
+            const chatDocData = {
+                id: chatId,
+                storeSlug: storeSlug,
+                customerId: window.chatSessionId,
+                customerName: custName,
+                customerPhone: custPhone,
+                status: 'open',
+                lastMessage: text,
+                lastSender: 'customer',
+                unreadOwner: true,
+                unreadCustomer: false,
+                updatedAt: new Date().toISOString(),
+                timestamp: Date.now()
+            };
+
+            const { doc, setDoc, arrayUnion } = window.firebaseUtils;
+
+            try {
+                // Tenta atualizar ou criar com setDoc e merge
+                await setDoc(doc(window.db, "chats", chatId), {
+                    ...chatDocData,
+                    messages: arrayUnion(newMsgObj)
+                }, { merge: true });
+
+                // Garante que o listener está ativo
+                connectLiveHumanChat();
+            } catch(e) {
+                console.error("Erro ao enviar mensagem humana:", e);
+                appendMessage(text, 'user');
+                appendMessage("Sua mensagem foi registrada e o dono da loja receberá uma notificação imediatamente!", 'owner', null, null, false, 'Sistema');
+            }
+        }
 
         window.triggerQuickAction = async function(action) {
             if (action === 'whatsapp') {
@@ -4521,7 +4784,7 @@
             const contactKeys = ['contato', 'whatsapp', 'zap', 'telefone', 'falar', 'conversar', 'suporte', 'ajuda', 'duvida', 'dúvida', 'vendedor', 'humano', 'ligar', 'chamar', 'atendente', 'comprar', 'pedir'];
             if (contactKeys.some(key => queryLower.includes(key))) {
                 return {
-                    text: `Você pode falar diretamente com nossa equipe no WhatsApp para orçamentos, pedidos e dúvidas! Clique no botão abaixo:`,
+                    text: `Você pode falar diretamente com o dono da loja aqui no chat ou pelo WhatsApp! Clique na aba <strong>"Falar c/ Dono"</strong> ou no botão abaixo:`,
                     action: 'whatsapp'
                 };
             }
@@ -4539,7 +4802,6 @@
                 if (queryLower.includes(pName)) score += 10;
                 if (pName.includes(queryLower) && queryLower.length >= 3) score += 8;
                 
-                // Checa palavras individuais
                 const queryWords = queryLower.split(/\s+/).filter(w => w.length > 3);
                 queryWords.forEach(w => {
                     if (pName.includes(w)) score += 4;
@@ -4580,7 +4842,7 @@
 
             // 4. Horário de Funcionamento
             if (['horario', 'horário', 'aberto', 'funciona', 'atendimento', 'horas', 'fecha'].some(k => queryLower.includes(k))) {
-                return { text: `Nosso catálogo digital fica disponível 24 horas para você consultar e montar seu orçamento! Para atendimento via WhatsApp, respondemos com agilidade em horário comercial.` };
+                return { text: `Nosso catálogo digital fica disponível 24 horas para você consultar e montar seu pedido! Para atendimento ao vivo com o dono, envie uma mensagem na aba "Falar c/ Dono".` };
             }
 
             // 5. Categorias e Navegação
@@ -4589,10 +4851,10 @@
                 return { text: `Você pode navegar por todo o catálogo no topo da página. Nossas especialidades incluem: ${topCats}.` };
             }
 
-            // 6. Resposta Contextual Avançada quando perguntam algo que NÃO fazemos
+            // 6. Resposta Contextual quando não há certeza: oferece falar com o dono
             const topProductsNames = products.slice(0, 3).map(p => p.name).join(', ');
             return {
-                text: `A <strong>${storeName}</strong> é especializada em <strong>${storeType}</strong>${topProductsNames ? ` (como ${topProductsNames})` : ''}. No momento não realizamos o serviço ou produto pesquisado. Se quiser falar com um atendente ou solicitar um orçamento especial, chame no WhatsApp!`,
+                text: `A <strong>${storeName}</strong> é especializada em <strong>${storeType}</strong>${topProductsNames ? ` (como ${topProductsNames})` : ''}. Se desejar mais detalhes, clique em <strong>"Falar c/ Dono"</strong> para conversar diretamente com nossa equipe!`,
                 action: 'whatsapp'
             };
         }
@@ -4607,7 +4869,7 @@
                 const currentStore = window.storeData || storeData;
                 const storeContext = {
                     name: currentStore?.name || "CatálogoZap",
-                    type: currentStore?.type || currentStore?.t || "Pisos e Construção",
+                    type: currentStore?.type || currentStore?.t || "Restaurante e Delivery",
                     bio: currentStore?.bio || currentStore?.description || "",
                     city: currentStore?.city || "",
                     address: currentStore?.address || "",
@@ -4634,7 +4896,6 @@
                     const data = await res.json();
                     if (data && data.reply) {
                         if (typingDiv) typingDiv.remove();
-                        // Checa se mencionou algum produto específico para colocar botão
                         const queryLower = query.toLowerCase();
                         const matchingProd = (window.fullCatalog || currentStore?.products || []).find(p => 
                             p.name && queryLower.includes(p.name.toLowerCase())
@@ -4647,7 +4908,6 @@
                 console.log("Fallback para motor de IA local contextual:", e);
             }
 
-            // Fallback imediato para o motor semântico contextual inteligente local (Zero Custo e Sem Erros)
             if (typingDiv) typingDiv.remove();
             const fallbackObj = findLocalContextualResponse(query);
             appendMessage(fallbackObj.text, 'bot', fallbackObj.product, fallbackObj.action);
@@ -4660,24 +4920,203 @@
             const query = input.value.trim();
             if (!query) return;
 
-            appendMessage(query, 'user');
             input.value = '';
 
-            await processAIQuery(query);
+            if (window.currentChatMode === 'human') {
+                // Envia para o Gestor de Pedidos (Dono da Loja)
+                await sendHumanChatMessage(query);
+            } else {
+                appendMessage(query, 'user');
+                await processAIQuery(query);
+            }
         }
         window.askAI = askAI;
 
-        // Inicializador do botão do atendente
+        // ==========================================
+        // WEB PUSH NOTIFICATIONS & PROMOÇÕES
+        // ==========================================
+        window.dismissPushBanner = function() {
+            const bar = document.getElementById('push-notification-bar');
+            if (bar) {
+                bar.classList.add('-translate-y-24', 'opacity-0', 'pointer-events-none');
+                localStorage.setItem('push_banner_dismissed', 'true');
+            }
+        };
+
+        window.requestWebPushPermission = async function() {
+            if (!('Notification' in window)) {
+                alert("Seu navegador não possui suporte a notificações web.");
+                window.dismissPushBanner();
+                return;
+            }
+
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    localStorage.setItem('push_notifications_enabled', 'true');
+                    window.dismissPushBanner();
+                    
+                    // Registra service worker
+                    if ('serviceWorker' in navigator) {
+                        try {
+                            await navigator.serviceWorker.register('/sw.js');
+                        } catch(e) {
+                            console.warn("Service worker register fallback:", e);
+                        }
+                    }
+
+                    // Grava assinante no Firestore
+                    const currentStore = window.storeData || storeData;
+                    const storeSlug = currentStore?.slug || currentStore?.id || new URLSearchParams(window.location.search).get('id') || 'demo';
+                    const storeName = currentStore?.name || "CatálogoZap";
+                    const storeLogo = currentStore?.logo || currentStore?.lg || '';
+
+                    if (window.db && window.firebaseUtils) {
+                        try {
+                            const { collection, addDoc } = window.firebaseUtils;
+                            await addDoc(collection(window.db, "promotions_subscribers"), {
+                                storeSlug: storeSlug,
+                                sessionId: window.chatSessionId,
+                                timestamp: Date.now(),
+                                userAgent: navigator.userAgent
+                            });
+                        } catch(e) {
+                            console.warn("Erro ao salvar assinante push:", e);
+                        }
+                    }
+
+                    // Notificação de Boas-Vindas
+                    new Notification(storeName, {
+                        body: "🎉 Notificações Ativadas! Você receberá ofertas exclusivas, cupons e avisos de pedidos em tempo real!",
+                        icon: storeLogo || 'https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&q=80&w=200'
+                    });
+
+                    playChatNotificationSound();
+                } else {
+                    window.dismissPushBanner();
+                }
+            } catch(e) {
+                console.error("Erro ao solicitar permissão de push:", e);
+                window.dismissPushBanner();
+            }
+        };
+
+        window.closePromoToast = function() {
+            const toast = document.getElementById('live-promo-toast');
+            if (toast) {
+                toast.classList.add('translate-y-12', 'opacity-0', 'pointer-events-none');
+            }
+        };
+
+        window.copyPromoCoupon = function() {
+            if (window.activePromoCoupon && navigator.clipboard) {
+                navigator.clipboard.writeText(window.activePromoCoupon).then(() => {
+                    alert(`✅ Cupom ${window.activePromoCoupon} copiado com sucesso! Cole no carrinho.`);
+                });
+            }
+        };
+
+        function setupPromotionListener() {
+            if (!window.db || !window.firebaseUtils) return;
+            const currentStore = window.storeData || storeData;
+            const storeSlug = currentStore?.slug || currentStore?.id || new URLSearchParams(window.location.search).get('id') || 'demo';
+            
+            const { collection, query, where, onSnapshot } = window.firebaseUtils;
+            const q = query(collection(window.db, "promotions"), where("storeSlug", "==", storeSlug));
+
+            let isFirstLoad = true;
+            onSnapshot(q, (snapshot) => {
+                if (isFirstLoad) {
+                    isFirstLoad = false;
+                    return;
+                }
+
+                snapshot.docChanges().forEach((change) => {
+                    if (change.type === 'added' || change.type === 'modified') {
+                        const promo = change.doc.data();
+                        const timeDiff = Date.now() - (promo.timestamp || 0);
+                        
+                        // Mostra se foi disparada nos últimos 10 minutos
+                        if (timeDiff < 600000 && promo.active !== false) {
+                            showPromoAlert(promo);
+                        }
+                    }
+                });
+            }, (err) => console.warn("Erro no listener de promoções:", err));
+        }
+
+        function showPromoAlert(promo) {
+            playChatNotificationSound();
+
+            const currentStore = window.storeData || storeData;
+            const storeLogo = currentStore?.logo || currentStore?.lg || '';
+
+            // 1. Notificação nativa no navegador se tiver permissão
+            if ('Notification' in window && Notification.permission === 'granted') {
+                try {
+                    new Notification(promo.title || "🔥 Promoção Especial!", {
+                        body: promo.message,
+                        icon: promo.imageUrl || storeLogo || 'https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&q=80&w=200',
+                        data: { url: window.location.href }
+                    });
+                } catch(e) {
+                    console.warn("Falha ao disparar notification nativa:", e);
+                }
+            }
+
+            // 2. Toast ao vivo na loja
+            const toast = document.getElementById('live-promo-toast');
+            const titleEl = document.getElementById('promo-toast-title');
+            const descEl = document.getElementById('promo-toast-desc');
+            const couponWrap = document.getElementById('promo-toast-coupon-wrap');
+            const couponEl = document.getElementById('promo-toast-coupon');
+
+            if (toast && titleEl && descEl) {
+                titleEl.innerText = promo.title || "🔥 Super Oferta Disponível!";
+                descEl.innerText = promo.message || "";
+                
+                if (promo.coupon) {
+                    window.activePromoCoupon = promo.coupon;
+                    couponEl.innerText = promo.coupon;
+                    couponWrap.classList.remove('hidden');
+                } else {
+                    couponWrap.classList.add('hidden');
+                }
+
+                toast.classList.remove('translate-y-12', 'opacity-0', 'pointer-events-none');
+                if (window.lucide) lucide.createIcons();
+
+                setTimeout(() => {
+                    window.closePromoToast();
+                }, 12000);
+            }
+        }
+
+        // Inicializador geral
         window.initAIAttendant = function() {
             const currentStore = window.storeData || storeData;
             const isAffiliate = currentStore && (currentStore.type === 'afiliados' || currentStore.t === 'afiliados');
             if (isAffiliate) return;
-            if (sessionStorage.getItem('ai_trigger_dismissed') === 'true') return;
             
             const trigger = document.getElementById('ai-trigger');
-            if (trigger) {
+            if (trigger && sessionStorage.getItem('ai_trigger_dismissed') !== 'true') {
                 trigger.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
             }
+
+            // Mostra banner de push após 4 segundos se nunca dispensou ou ativou
+            if ('Notification' in window && Notification.permission === 'default' && localStorage.getItem('push_banner_dismissed') !== 'true') {
+                setTimeout(() => {
+                    const bar = document.getElementById('push-notification-bar');
+                    if (bar) {
+                        bar.classList.remove('-translate-y-24', 'opacity-0', 'pointer-events-none');
+                        if (window.lucide) lucide.createIcons();
+                    }
+                }, 4000);
+            }
+
+            // Inicia listener de promoções push
+            setupPromotionListener();
+
             if (window.lucide) lucide.createIcons();
         };
 

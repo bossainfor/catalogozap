@@ -3005,14 +3005,34 @@
             let u = url.trim();
             const original = u;
             
+            // Imgpile links (página de visualização ou link direto)
+            if (u.includes('imgpile.com/')) {
+                if (u.includes('/i/')) {
+                    const fileCode = u.split('/i/')[1].split('?')[0].split('#')[0].replace(/\//g, '');
+                    if (fileCode) {
+                        return { url: `https://cdn.imgpile.com/f/${fileCode}.mp4`, isDirect: true, original };
+                    }
+                }
+                if (u.includes('/f/')) {
+                    let directUrl = u;
+                    if (!directUrl.startsWith('https://cdn.')) {
+                        directUrl = directUrl.replace('https://imgpile.com/', 'https://cdn.imgpile.com/').replace('http://imgpile.com/', 'https://cdn.imgpile.com/');
+                    }
+                    if (!directUrl.match(/\.(mp4|webm|ogg|mov|m4v)$/i)) {
+                        directUrl += '.mp4';
+                    }
+                    return { url: directUrl, isDirect: true, original };
+                }
+            }
+
             // YouTube
             if (u.includes('youtube.com/watch?v=') || u.includes('youtu.be/')) {
                 const id = u.includes('watch?v=') ? u.split('v=')[1].split('&')[0] : u.split('youtu.be/')[1].split('?')[0];
-                return { url: `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=0`, isDirect: false, original };
+                return { url: `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=1&mute=1&loop=1&playlist=${id}&playsinline=1`, isDirect: false, original };
             }
             if (u.includes('youtube.com/shorts/')) {
                 const id = u.split('shorts/')[1].split('?')[0];
-                return { url: `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=0`, isDirect: false, original };
+                return { url: `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=1&mute=1&loop=1&playlist=${id}&playsinline=1`, isDirect: false, original };
             }
             
             // Instagram
@@ -3030,8 +3050,9 @@
                 }
             }
 
-            // Direct Video Extensions (Stricter)
-            const isDirectFile = u.match(/\.(mp4|webm|ogg|mov|m4v)$/i);
+            // Direct Video Extensions
+            const cleanUrlNoParams = u.split('?')[0].split('#')[0];
+            const isDirectFile = cleanUrlNoParams.match(/\.(mp4|webm|ogg|mov|m4v|m3u8)$/i) || u.includes('.mp4') || u.includes('.webm') || u.includes('cdn.imgpile.com');
             if (isDirectFile) {
                 return { url: u, isDirect: true, original };
             }

@@ -15,6 +15,8 @@ self.addEventListener('push', (event) => {
         title: 'Nova Promoção Exclusiva! 🔥',
         body: 'Confira as novidades imperdíveis no nosso catálogo!',
         icon: 'https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&q=80&w=200',
+        imageUrl: '',
+        coupon: '',
         url: '/'
     };
 
@@ -27,13 +29,17 @@ self.addEventListener('push', (event) => {
         }
     }
 
+    const bannerImg = data.image || data.imageUrl || undefined;
+
     const options = {
-        body: data.body,
+        body: data.body || data.message || '',
         icon: data.icon || 'https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&q=80&w=200',
         badge: data.icon || 'https://images.unsplash.com/photo-1549298916-b41d501d3772?auto=format&fit=crop&q=80&w=200',
+        image: bannerImg,
         vibrate: [200, 100, 200, 100, 200],
         data: {
-            url: data.url || '/'
+            url: data.url || '/',
+            promo: data
         },
         actions: [
             { action: 'open', title: 'Ver Oferta 👀' },
@@ -49,15 +55,26 @@ self.addEventListener('push', (event) => {
 // Clique na notificação
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-    const targetUrl = (event.notification.data && event.notification.data.url) ? event.notification.data.url : '/';
+    if (event.action === 'close') return;
+
+    const notifData = event.notification.data || {};
+    const targetUrl = notifData.url || '/';
 
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
             for (let i = 0; i < clientList.length; i++) {
                 const client = clientList[i];
-                if (client.url && 'focus' in client) {
-                    client.navigate(targetUrl);
-                    return client.focus();
+                if ('focus' in client) {
+                    client.focus();
+                    client.postMessage({
+                        type: 'PROMO_CLICKED',
+                        promo: notifData.promo || {
+                            title: event.notification.title,
+                            message: event.notification.body,
+                            imageUrl: event.notification.image
+                        }
+                    });
+                    return;
                 }
             }
             if (clients.openWindow) {
@@ -66,3 +83,4 @@ self.addEventListener('notificationclick', (event) => {
         })
     );
 });
+

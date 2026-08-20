@@ -4409,7 +4409,10 @@
                         </div>
                     </div>
                     <div class="flex items-center gap-1">
-                        <button type="button" onclick="window.toggleAI(false)" class="text-slate-400 hover:text-white p-1 rounded-full hover:bg-slate-800 transition-colors active-scale">
+                        <button type="button" onclick="window.clearChatHistoryAndEnd(true)" class="text-slate-400 hover:text-red-400 p-1.5 rounded-full hover:bg-slate-800 transition-colors active-scale" title="Encerrar Atendimento e Limpar Conversa">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                        <button type="button" onclick="window.toggleAI(false)" class="text-slate-400 hover:text-white p-1.5 rounded-full hover:bg-slate-800 transition-colors active-scale" title="Minimizar Atendimento">
                             <i data-lucide="x" class="w-5 h-5"></i>
                         </button>
                     </div>
@@ -4498,12 +4501,92 @@
         // ==========================================
         // LÓGICA DO CHAT AO VIVO & ATENDENTE VIRTUAL
         // ==========================================
+        const CHAT_TTL_MS = 24 * 60 * 60 * 1000; // 24 Horas de Inatividade
         let aiOpen = false;
         window.currentChatMode = 'ai'; // 'ai' ou 'human'
         window.chatSessionId = localStorage.getItem('catalogozap_chat_session') || ('c_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36));
         localStorage.setItem('catalogozap_chat_session', window.chatSessionId);
         window.chatUnsubscribe = null;
         window.activePromoCoupon = '';
+
+        // Atualiza carimbo de tempo da última movimentação do chat
+        function updateChatLastActivity() {
+            try {
+                localStorage.setItem('catalogozap_chat_last_activity', Date.now().toString());
+            } catch(e) {}
+        }
+        window.updateChatLastActivity = updateChatLastActivity;
+
+        // Limpeza Automática Inteligente de 24h (TTL)
+        function checkChatTTL() {
+            try {
+                const lastActivity = parseInt(localStorage.getItem('catalogozap_chat_last_activity') || '0', 10);
+                const now = Date.now();
+                if (lastActivity > 0 && (now - lastActivity > CHAT_TTL_MS)) {
+                    console.log("Chat sem movimentação há mais de 24h. Limpando automaticamente para manter a tela limpa.");
+                    window.clearChatHistoryAndEnd(false); // limpa silenciosamente sem popup
+                } else if (!lastActivity) {
+                    updateChatLastActivity();
+                }
+            } catch(e) {
+                console.warn("Erro ao checar TTL do chat:", e);
+            }
+        }
+
+        // Função de Limpeza / Encerramento de Atendimento
+        window.clearChatHistoryAndEnd = async function(confirmPrompt = true) {
+            if (confirmPrompt) {
+                if (!confirm("Deseja encerrar este atendimento e limpar o histórico de conversas?")) {
+                    return;
+                }
+            }
+
+            // Cancela listener ativo do Firestore
+            if (window.chatUnsubscribe) {
+                try { window.chatUnsubscribe(); } catch(e) {}
+                window.chatUnsubscribe = null;
+            }
+
+            const currentChatDocId = getChatDocId();
+
+            // Remove o documento do chat no Firestore para não poluir o banco e o painel gestor
+            if (window.db && window.firebaseUtils && currentChatDocId) {
+                try {
+                    const { doc, deleteDoc } = window.firebaseUtils;
+                    await deleteDoc(doc(window.db, "chats", currentChatDocId));
+                } catch(e) {
+                    console.warn("Aviso ao excluir documento de chat no Firestore:", e);
+                }
+            }
+
+            // Gera uma nova sessão limpa
+            window.chatSessionId = 'c_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36);
+            try {
+                localStorage.setItem('catalogozap_chat_session', window.chatSessionId);
+                updateChatLastActivity();
+            } catch(e) {}
+
+            // Restaura mensagens no container do chat
+            const messages = document.getElementById('ai-messages');
+            const currentStore = window.storeData || (typeof storeData !== 'undefined' ? storeData : null);
+            const storeName = currentStore?.name || currentStore?.n || "";
+            if (messages) {
+                messages.innerHTML = `
+                    <div class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 p-3 rounded-2xl rounded-tl-none text-xs font-medium self-start shadow-sm leading-relaxed max-w-[90%]">
+                        ${storeName ? `Olá! Sou a atendente virtual da <strong>${escapeHtml(storeName)}</strong>.` : 'Olá! Sou a atendente virtual da loja.'} Tire suas dúvidas sobre nossos produtos, cardápio, entrega ou formas de pagamento! Se preferir, clique em <strong>"Falar c/ Dono"</strong> para conversar diretamente com nossa equipe.
+                    </div>
+                `;
+            }
+
+            // Volta para o modo robô / IA
+            window.switchChatMode('ai');
+
+            const badge = document.getElementById('trigger-unread-badge');
+            if (badge) badge.classList.add('hidden');
+        };
+
+        // Verifica inatividade no carregamento
+        checkChatTTL();
 
         // Efeito Sonoro Sintetizado para Mensagem do Dono e Notificação
         function playChatNotificationSound() {
@@ -4803,12 +4886,15 @@
                     messages: arrayUnion(newMsgObj)
                 }, { merge: true });
 
+                updateChatLastActivity();
+
                 // Garante que o listener está ativo
                 connectLiveHumanChat();
             } catch(e) {
                 console.error("Erro ao enviar mensagem humana:", e);
                 appendMessage(text, 'user');
                 appendMessage("Sua mensagem foi registrada e o dono da loja receberá uma notificação imediatamente!", 'owner', null, null, false, 'Sistema');
+                updateChatLastActivity();
             }
         }
 
@@ -4976,6 +5062,7 @@
             if (!query) return;
 
             input.value = '';
+            updateChatLastActivity();
 
             if (window.currentChatMode === 'human') {
                 // Envia para o Gestor de Pedidos (Dono da Loja)

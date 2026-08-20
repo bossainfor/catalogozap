@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor de Pedidos em Tempo Real - Estilo iFood</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    keyframes: {
+                        pulseBorder: {
+                            '0%, 100%': { borderColor: 'rgba(234, 88, 12, 1)', boxShadow: '0 0 15px rgba(234, 88, 12, 0.5)' },
+                            '50%': { borderColor: 'rgba(234, 88, 12, 0.3)', boxShadow: '0 0 0px rgba(234, 88, 12, 0)' },
+                        }
+                    },
+                    animation: {
+                        'pulse-border': 'pulseBorder 1.5s infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+    
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, getDoc, updateDoc, addDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAJaxRdA6uzbN41JvAw8xO7F5mzJaDfMBc",
+            authDomain: "gen-lang-client-0664324166.firebaseapp.com",
+            projectId: "gen-lang-client-0664324166",
+            storageBucket: "gen-lang-client-0664324166.firebasestorage.app",
+            messagingSenderId: "1074933311707",
+            appId: "1:1074933311707:web:d841b61f84c05a40fc04fe"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app, "ai-studio-2395f72f-4dac-4517-9681-c654cd1a03ca");
+        const auth = getAuth(app);
+
+        signInAnonymously(auth).catch(err => console.error("Erro no login anônimo do Gestor:", err));
+
+        window.db = db;
+        window.firebaseUtils = { doc, getDoc, updateDoc, collection, addDoc, deleteDoc, getDocs, query, where, orderBy, onSnapshot };
+    </script>
+
+    <style>
+        :root {
+            --receipt-width: 58mm;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(51, 65, 85, 0.8);
+            border-radius: 9999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(100, 116, 139, 1);
+        }
+
+        /* ESTILOS DE IMPRESSÃO TÉRMICA */
+        @media print {
+            body * {
+                visibility: hidden !important;
+            }
+            #receipt-print-area, #receipt-print-area * {
+                visibility: visible !important;
+            }
+            #receipt-print-area {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: var(--receipt-width) !important;
+                margin: 0 !important;
+                padding: 4px !important;
+                background: white !important;
+                color: black !important;
+                font-family: 'Courier New', Courier, monospace !important;
+                font-size: 11px !important;
+                line-height: 1.2 !important;
+            }
+            @page {
+                margin: 0;
+                size: auto;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 h-full flex flex-col overflow-hidden selection:bg-orange-500 selection:text-white">
+
+    <!-- ÁREA OCULTA PARA IMPRESSÃO TÉRMICA -->
+    <div id="receipt-print-area" class="hidden"></div>
+
+    <!-- BANNER DE ALERTA DE NOVO PEDIDO (PISCANTE COM SOM) -->
+    <div id="new-order-sound-alert-bar" class="hidden bg-gradient-to-r from-orange-600 via-red-600 to-orange-600 text-white px-4 py-2.5 flex items-center justify-between shadow-2xl z-50 animate-pulse border-b border-orange-400">
+        <div class="flex items-center gap-3">
+            <span class="p-2 bg-white text-orange-600 rounded-full animate-bounce">
+                <i data-lucide="bell-ring" class="w-5 h-5"></i>
+            </span>
+            <div>
+                <p class="font-black text-sm uppercase tracking-wide flex items-center gap-2">
+                    <span>🛎️ NOVO PEDIDO RECEBIDO!</span>
+                    <span id="pending-count-badge" class="bg-black/40 px-2 py-0.5 rounded-full text-xs font-mono">1 pendente</span>
+                </p>
+                <p class="text-xs text-orange-100 font-medium">Aceite o pedido para iniciar a produção e desligar o alarme.</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <button onclick="window.silenceCurrentAlarm()" class="px-3 py-1.5 bg-black/40 hover:bg-black/60 rounded-xl text-xs font-black uppercase tracking-wider transition-all border border-white/20">
+                Silenciar Som
+            </button>
+            <button onclick="window.scrollToPendingColumn()" class="px-4 py-1.5 bg-white text-orange-600 hover:bg-orange-50 rounded-xl text-xs font-black uppercase tracking-wider shadow-lg transition-all">
+                Ver Pedidos
+            </button>
+        </div>
+    </div>
+
+    <!-- CABEÇALHO PRINCIPAL DO GESTOR -->
+    <header class="bg-slate-900 border-b border-slate-800 px-4 py-3 shrink-0 flex flex-wrap items-center justify-between gap-3 shadow-md z-40">
+        <!-- Logo e Info da Loja -->
+        <div class="flex items-center gap-3">
+            <div id="store-logo-container" class="w-10 h-10 rounded-xl bg-orange-600 text-white flex items-center justify-center font-black text-base shadow-md overflow-hidden border border-slate-700">
+                <i data-lucide="utensils" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 id="store-title" class="font-black text-base sm:text-lg text-white uppercase italic tracking-tight leading-none">Carregando Loja...</h1>
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping inline-block"></span>
+                        AO VIVO
+                    </span>
+                </div>
+                <p class="text-[11px] text-slate-400 font-medium flex items-center gap-2 mt-0.5">
+                    <span id="store-orders-slug" class="font-mono text-slate-500">ID: ...</span>
+                    <span class="text-slate-600">•</span>
+                    <span id="realtime-status-label" class="text-emerald-400 font-bold">Conectado ao Gestor</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Métricas Rápidas do Dia (Estilo iFood / Balcão) -->
+        <div class="hidden lg:flex items-center gap-4 bg-slate-950 px-4 py-2 rounded-2xl border border-slate-800 shadow-inner">
+            <div class="text-center">
+                <span class="text-[9px] uppercase tracking-widest font-black text-slate-400 block">Pedidos Hoje</span>
+                <span id="stat-total-orders" class="font-mono text-sm font-black text-white">0</span>
+            </div>
+            <div class="w-px h-6 bg-slate-800"></div>
+            <div class="text-center">
+                <span class="text-[9px] uppercase tracking-widest font-black text-slate-400 block">Faturamento Hoje</span>
+                <span id="stat-total-revenue" class="font-mono text-sm font-black text-emerald-400">R$ 0,00</span>
+            </div>
+            <div class="w-px h-6 bg-slate-800"></div>
+            <div class="text-center">
+                <span class="text-[9px] uppercase tracking-widest font-black text-slate-400 block">Em Produção</span>
+                <span id="stat-in-kitchen" class="font-mono text-sm font-black text-yellow-400">0</span>
+            </div>
+        </div>
+
+        <!-- Controles de Som, Impressão e Ações -->
+        <div class="flex items-center gap-2">
+            <!-- Botão de Som -->
+            <button id="btn-toggle-sound" onclick="window.toggleSound()" class="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 border border-slate-700 transition-all shadow-sm" title="Ativar/Desativar som do alarme de novos pedidos">
+                <i id="sound-icon" data-lucide="volume-2" class="w-4 h-4 text-emerald-400"></i>
+                <span id="sound-label" class="hidden sm:inline">Som: Ativo</span>
+            </button>
+
+            <!-- Testar Som -->
+            <button onclick="window.testChimeSound()" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-slate-700 transition-all" title="Testar toque do iFood">
+                <i data-lucide="play" class="w-4 h-4 text-orange-400"></i>
+            </button>
+
+            <!-- Largura da Impressão -->
+            <div class="hidden sm:flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
+                <button id="btn-print-58" onclick="window.setPrintWidth('58mm')" class="px-2 py-1 bg-orange-600 text-white rounded-lg text-[10px] font-black uppercase">58mm</button>
+                <button id="btn-print-80" onclick="window.setPrintWidth('80mm')" class="px-2 py-1 bg-transparent text-slate-400 hover:text-white rounded-lg text-[10px] font-bold uppercase">80mm</button>
+            </div>
+
+            <!-- Novo Pedido Manual (Balcão / Telefone) -->
+            <button onclick="window.openManualOrderModal()" class="px-3.5 py-2 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white rounded-xl text-xs font-black uppercase italic tracking-wider flex items-center gap-1.5 shadow-lg shadow-orange-600/20 active:scale-95 transition-all cursor-pointer">
+                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">Novo Pedido</span>
+            </button>
+
+            <!-- Menu de Links / Sair -->
+            <div class="relative">
+                <button onclick="window.toggleDropdownMenu()" class="p-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border border-slate-700 transition-all">
+                    <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                </button>
+                <div id="dropdown-menu" class="hidden absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-1.5 z-50">
+                    <a id="link-view-catalog" href="#" target="_blank" class="flex items-center gap-2 px-3 py-2 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-all">
+                        <i data-lucide="external-link" class="w-4 h-4 text-emerald-400"></i> Ver Catálogo
+                    </a>
+                    <a id="link-edit-store" href="#" class="flex items-center gap-2 px-3 py-2 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-all">
+                        <i data-lucide="settings" class="w-4 h-4 text-blue-400"></i> Painel de Edição
+                    </a>
+                    <button onclick="window.clearFinishedOrders()" class="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-all">
+                        <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i> Limpar Concluídos
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- BARRA DE BUSCA E FILTROS RÁPIDOS -->
+    <div class="bg-slate-900/60 border-b border-slate-800/80 px-4 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <div class="flex items-center gap-2 flex-1 max-w-md">
+            <div class="relative w-full">
+                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                <input type="text" id="filter-search" oninput="window.renderKanbanBoard()" placeholder="Buscar por cliente, Nº pedido ou item..." class="w-full pl-9 pr-4 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-white placeholder:text-slate-500 outline-none focus:border-orange-500">
+            </div>
+        </div>
+        
+        <!-- Abas Mobile para trocar de coluna em telas pequenas -->
+        <div class="flex md:hidden items-center gap-1 overflow-x-auto custom-scrollbar w-full pt-1">
+            <button onclick="window.selectMobileTab('pending')" id="tab-btn-pending" class="px-3 py-1 bg-yellow-500/20 text-yellow-400 border border-yellow-500/40 rounded-lg text-xs font-bold whitespace-nowrap">
+                Novos (<span id="mobile-badge-pending">0</span>)
+            </button>
+            <button onclick="window.selectMobileTab('preparing')" id="tab-btn-preparing" class="px-3 py-1 bg-slate-800 text-slate-400 rounded-lg text-xs font-bold whitespace-nowrap">
+                Preparo (<span id="mobile-badge-preparing">0</span>)
+            </button>
+            <button onclick="window.selectMobileTab('ready')" id="tab-btn-ready" class="px-3 py-1 bg-slate-800 text-slate-400 rounded-lg text-xs font-bold whitespace-nowrap">
+                Prontos (<span id="mobile-badge-ready">0</span>)
+            </button>
+            <button onclick="window.selectMobileTab('completed')" id="tab-btn-completed" class="px-3 py-1 bg-slate-800 text-slate-400 rounded-lg text-xs font-bold whitespace-nowrap">
+                Concluídos (<span id="mobile-badge-completed">0</span>)
+            </button>
+        </div>
+    </div>
+
+    <!-- CORPO DO KANBAN BOARD (4 COLUNAS ESTILO IFOOD) -->
+    <main class="flex-1 p-3 sm:p-4 overflow-x-auto overflow-y-hidden custom-scrollbar bg-slate-950">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 sm:gap-4 h-full min-w-[300px] md:min-w-[1100px]">
+            
+            <!-- COLUNA 1: 🟡 NOVOS / PENDENTES -->
+            <div id="col-container-pending" class="flex flex-col bg-slate-900/80 rounded-2xl border border-yellow-500/30 overflow-hidden shadow-xl h-full">
+                <div class="p-3 bg-gradient-to-r from-yellow-950/60 to-slate-900 border-b border-yellow-500/30 flex items-center justify-between shrink-0">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-yellow-400 animate-pulse"></span>
+                        <h2 class="font-black text-xs uppercase tracking-wider text-yellow-300">1. Novos / Pendentes</h2>
+                    </div>
+                    <span id="col-count-pending" class="px-2.5 py-0.5 bg-yellow-400 text-slate-950 rounded-full text-xs font-black font-mono">0</span>
+                </div>
+                <div id="col-list-pending" class="flex-1 p-2 sm:p-3 overflow-y-auto space-y-3 custom-scrollbar">
+                    <!-- Cards inseridos via JS -->
+                </div>
+            </div>
+
+            <!-- COLUNA 2: 🔵 EM PREPARO / COZINHA -->
+            <div id="col-container-preparing" class="flex flex-col bg-slate-900/80 rounded-2xl border border-blue-500/30 overflow-hidden shadow-xl h-full">
+                <div class="p-3 bg-gradient-to-r from-blue-950/60 to-slate-900 border-b border-blue-500/30 flex items-center justify-between shrink-0">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-blue-400"></span>
+                        <h2 class="font-black text-xs uppercase tracking-wider text-blue-300">2. Em Preparo</h2>
+                    </div>
+                    <span id="col-count-preparing" class="px-2.5 py-0.5 bg-blue-500 text-white rounded-full text-xs font-black font-mono">0</span>
+                </div>
+                <div id="col-list-preparing" class="flex-1 p-2 sm:p-3 overflow-y-auto space-y-3 custom-scrollbar">
+                    <!-- Cards inseridos via JS -->
+                </div>
+            </div>
+
+            <!-- COLUNA 3: 🟣 PRONTO / SAIU PARA ENTREGA -->
+            <div id="col-container-ready" class="flex flex-col bg-slate-900/80 rounded-2xl border border-purple-500/30 overflow-hidden shadow-xl h-full">
+                <div class="p-3 bg-gradient-to-r from-purple-950/60 to-slate-900 border-b border-purple-500/30 flex items-center justify-between shrink-0">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-purple-400"></span>
+                        <h2 class="font-black text-xs uppercase tracking-wider text-purple-300">3. Saiu p/ Entrega</h2>
+                    </div>
+                    <span id="col-count-ready" class="px-2.5 py-0.5 bg-purple-500 text-white rounded-full text-xs font-black font-mono">0</span>
+                </div>
+                <div id="col-list-ready" class="flex-1 p-2 sm:p-3 overflow-y-auto space-y-3 custom-scrollbar">
+                    <!-- Cards inseridos via JS -->
+                </div>
+            </div>
+
+            <!-- COLUNA 4: 🟢 FINALIZADOS / CONCLUÍDOS -->
+            <div id="col-container-completed" class="flex flex-col bg-slate-900/80 rounded-2xl border border-emerald-500/30 overflow-hidden shadow-xl h-full">
+                <div class="p-3 bg-gradient-to-r from-emerald-950/60 to-slate-900 border-b border-emerald-500/30 flex items-center justify-between shrink-0">
+                    <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
+                        <h2 class="font-black text-xs uppercase tracking-wider text-emerald-300">4. Concluídos Hoje</h2>
+                    </div>
+                    <span id="col-count-completed" class="px-2.5 py-0.5 bg-emerald-500 text-slate-950 rounded-full text-xs font-black font-mono">0</span>
+                </div>
+                <div id="col-list-completed" class="flex-1 p-2 sm:p-3 overflow-y-auto space-y-3 custom-scrollbar">
+                    <!-- Cards inseridos via JS -->
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- MODAL DE NOVO PEDIDO MANUAL (BALCÃO / TELEFONE) -->
+    <div id="manual-order-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-4 bg-slate-800 text-white flex items-center justify-between border-b border-slate-700">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-5 h-5 text-orange-400"></i>
+                    <h3 class="font-black text-sm uppercase italic">Lançar Novo Pedido (Balcão / Telefone)</h3>
+                </div>
+                <button onclick="window.closeManualOrderModal()" class="p-1 text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-4 overflow-y-auto space-y-3 custom-scrollbar flex-1">
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-1">Nome do Cliente</label>
+                    <input type="text" id="manual-cust-name" placeholder="Ex: Maria Silva" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-white outline-none focus:border-orange-500">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400 mb-1">Telefone / WhatsApp</label>
+                        <input type="text" id="manual-cust-phone" placeholder="(11) 99999-9999" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-white outline-none focus:border-orange-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400 mb-1">Tipo de Entrega</label>
+                        <select id="manual-ship-type" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-white outline-none focus:border-orange-500">
+                            <option value="pickup">Retirada no Balcão / Mesa</option>
+                            <option value="delivery">Delivery (Entrega)</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-1">Endereço / Mesa / Bairro</label>
+                    <input type="text" id="manual-cust-address" placeholder="Ex: Rua das Flores, 123 ou Mesa 04" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-white outline-none focus:border-orange-500">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-1">Descrição dos Itens / Pedido</label>
+                    <textarea id="manual-items-text" rows="3" placeholder="Ex: 2x X-Burger Especial sem cebola&#10;1x Coca-Cola Lata" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-white outline-none focus:border-orange-500 resize-none"></textarea>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400 mb-1">Valor Total (R$)</label>
+                        <input type="number" step="0.01" id="manual-total-val" placeholder="0.00" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-white outline-none focus:border-orange-500 font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400 mb-1">Forma de Pagamento</label>
+                        <select id="manual-pay-method" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-white outline-none focus:border-orange-500">
+                            <option value="pix">PIX ⚡</option>
+                            <option value="cash">Dinheiro 💵</option>
+                            <option value="card">Cartão de Crédito/Débito 💳</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="p-4 bg-slate-800/80 border-t border-slate-700 flex gap-2">
+                <button onclick="window.closeManualOrderModal()" class="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-xs font-bold uppercase transition-all">Cancelar</button>
+                <button onclick="window.submitManualOrder()" class="flex-1 py-3 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-black uppercase italic tracking-wider transition-all shadow-lg">Lançar Pedido 🛎️</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT PRINCIPAL DO GESTOR DE PEDIDOS -->
+    <script>
+        // Estado Global
+        window.currentStoreId = '';
+        window.storeData = null;
+        window.orders = [];
+        window.soundEnabled = true;
+        window.audioContext = null;
+        window.alarmInterval = null;
+        window.currentPrintWidth = '58mm';
+        window.activeMobileTab = 'pending';
+
+        // Helpers de Formatação
+        function formatCurrency(val) {
+            const num = typeof val === 'number' ? val : parseFloat(String(val || '0').replace(',', '.'));
+            return (isNaN(num) ? 0 : num).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        function formatTimeAgo(timestamp) {
+            if (!timestamp) return '';
+            const diff = Date.now() - timestamp;
+            const mins = Math.floor(diff / 60000);
+            if (mins < 1) return 'Agora mesmo';
+            if (mins < 60) return `há ${mins} min`;
+            const hours = Math.floor(mins / 60);
+            if (hours < 24) return `há ${hours}h`;
+            return new Date(timestamp).toLocaleDateString('pt-BR');
+        }
+
+        // MOTOR DE SOM (WEB AUDIO API - TOQUE SINTETIZADO ESTILO IFOOD)
+        function initAudioContext() {
+            if (!window.audioContext) {
+                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                if (AudioContextClass) {
+                    window.audioContext = new AudioContextClass();
+                }
+            }
+            if (window.audioContext && window.audioContext.state === 'suspended') {
+                window.audioContext.resume();
+            }
+        }
+
+        function playChimeTone(freq, startTime, duration) {
+            if (!window.audioContext) return;
+            try {
+                const ctx = window.audioContext;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, startTime);
+
+                // Envelope suave
+                gain.gain.setValueAtTime(0.01, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.4, startTime + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start(startTime);
+                osc.stop(startTime + duration);
+            } catch(e) {
+                console.warn("Erro no som:", e);
+            }
+        }
+
+        window.testChimeSound = function() {
+            initAudioContext();
+            if (!window.audioContext) return;
+            const now = window.audioContext.currentTime;
+            // Três notas alegres e chamativas (D5 -> A5 -> D6)
+            playChimeTone(587.33, now, 0.25);
+            playChimeTone(880.00, now + 0.18, 0.25);
+            playChimeTone(1174.66, now + 0.36, 0.45);
+        };
+
+        function startRepeatingAlarm() {
+            if (window.alarmInterval) return;
+            window.testChimeSound();
+            window.alarmInterval = setInterval(() => {
+                const pendingOrders = window.orders.filter(o => o.status === 'pending');
+                if (pendingOrders.length > 0 && window.soundEnabled) {
+                    window.testChimeSound();
+                } else {
+                    stopRepeatingAlarm();
+                }
+            }, 4000);
+        }
+
+        function stopRepeatingAlarm() {
+            if (window.alarmInterval) {
+                clearInterval(window.alarmInterval);
+                window.alarmInterval = null;
+            }
+        }
+
+        window.silenceCurrentAlarm = function() {
+            stopRepeatingAlarm();
+            const bar = document.getElementById('new-order-sound-alert-bar');
+            if (bar) bar.classList.add('hidden');
+        };
+
+        window.toggleSound = function() {
+            window.soundEnabled = !window.soundEnabled;
+            const btn = document.getElementById('btn-toggle-sound');
+            const icon = document.getElementById('sound-icon');
+            const label = document.getElementById('sound-label');
+
+            if (window.soundEnabled) {
+                initAudioContext();
+                icon.setAttribute('data-lucide', 'volume-2');
+                icon.className = 'w-4 h-4 text-emerald-400';
+                label.innerText = 'Som: Ativo';
+                window.testChimeSound();
+            } else {
+                stopRepeatingAlarm();
+                icon.setAttribute('data-lucide', 'volume-x');
+                icon.className = 'w-4 h-4 text-red-400';
+                label.innerText = 'Som: Mudo';
+            }
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.setPrintWidth = function(width) {
+            window.currentPrintWidth = width;
+            document.documentElement.style.setProperty('--receipt-width', width);
+            const btn58 = document.getElementById('btn-print-58');
+            const btn80 = document.getElementById('btn-print-80');
+            if (btn58 && btn80) {
+                if (width === '58mm') {
+                    btn58.className = "px-2 py-1 bg-orange-600 text-white rounded-lg text-[10px] font-black uppercase";
+                    btn80.className = "px-2 py-1 bg-transparent text-slate-400 hover:text-white rounded-lg text-[10px] font-bold uppercase";
+                } else {
+                    btn80.className = "px-2 py-1 bg-orange-600 text-white rounded-lg text-[10px] font-black uppercase";
+                    btn58.className = "px-2 py-1 bg-transparent text-slate-400 hover:text-white rounded-lg text-[10px] font-bold uppercase";
+                }
+            }
+        };
+
+        window.toggleDropdownMenu = function() {
+            const el = document.getElementById('dropdown-menu');
+            if (el) el.classList.toggle('hidden');
+        };
+
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('dropdown-menu');
+            if (dropdown && !dropdown.contains(e.target) && !e.target.closest('button[onclick="window.toggleDropdownMenu()"]')) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        // NAVEGAÇÃO MOBILE TABS
+        window.selectMobileTab = function(tabName) {
+            window.activeMobileTab = tabName;
+            const cols = ['pending', 'preparing', 'ready', 'completed'];
+            cols.forEach(c => {
+                const colEl = document.getElementById(`col-container-${c}`);
+                const btnEl = document.getElementById(`tab-btn-${c}`);
+                if (window.innerWidth < 768) {
+                    if (colEl) colEl.style.display = (c === tabName) ? 'flex' : 'none';
+                } else {
+                    if (colEl) colEl.style.display = 'flex';
+                }
+                if (btnEl) {
+                    if (c === tabName) {
+                        btnEl.className = 'px-3 py-1 bg-orange-600 text-white border border-orange-500 rounded-lg text-xs font-black whitespace-nowrap shadow-sm';
+                    } else {
+                        btnEl.className = 'px-3 py-1 bg-slate-800 text-slate-400 rounded-lg text-xs font-bold whitespace-nowrap';
+                    }
+                }
+            });
+        };
+
+        window.scrollToPendingColumn = function() {
+            window.selectMobileTab('pending');
+            const col = document.getElementById('col-container-pending');
+            if (col) col.scrollIntoView({ behavior: 'smooth' });
+        };
+
+        // INICIALIZAÇÃO DA LOJA E LISTENER DE PEDIDOS EM TEMPO REAL
+        async function loadStoreAndSubscribe() {
+            const urlParams = new URLSearchParams(window.location.search);
+            let storeId = urlParams.get('id') || urlParams.get('s') || localStorage.getItem('last_managed_store_id') || '';
+
+            if (!storeId) {
+                storeId = prompt("Digite o ID ou Slug da sua loja para abrir o Gestor de Pedidos:") || 'demo';
+            }
+            window.currentStoreId = storeId;
+            localStorage.setItem('last_managed_store_id', storeId);
+
+            document.getElementById('store-orders-slug').innerText = `ID: ${storeId}`;
+            document.getElementById('link-view-catalog').href = `loja.html?id=${encodeURIComponent(storeId)}`;
+            document.getElementById('link-edit-store').href = `criar.html?edit=${encodeURIComponent(storeId)}`;
+
+            // Aguarda Firestore inicializar
+            let attempts = 0;
+            while (!window.db && attempts < 50) {
+                await new Promise(r => setTimeout(r, 100));
+                attempts++;
+            }
+
+            if (!window.db || !window.firebaseUtils) {
+                console.error("Firestore não inicializado!");
+                return;
+            }
+
+            // Busca dados da Loja para pegar o nome e logo
+            try {
+                const storeDocSnap = await window.firebaseUtils.getDoc(window.firebaseUtils.doc(window.db, "stores", storeId));
+                if (storeDocSnap.exists()) {
+                    window.storeData = storeDocSnap.data();
+                    document.getElementById('store-title').innerText = window.storeData.n || window.storeData.name || storeId;
+                    if (window.storeData.lg || window.storeData.logo) {
+                        const logoUrl = window.storeData.lg || window.storeData.logo;
+                        document.getElementById('store-logo-container').innerHTML = `<img src="${logoUrl}" class="w-full h-full object-cover">`;
+                    }
+                } else {
+                    document.getElementById('store-title').innerText = `Loja: ${storeId}`;
+                }
+            } catch(e) {
+                console.warn("Erro ao buscar dados da loja:", e);
+                document.getElementById('store-title').innerText = `Loja: ${storeId}`;
+            }
+
+            // Inicia Listener em Tempo Real (onSnapshot)
+            setupRealtimeOrderListener(storeId);
+        }
+
+        function setupRealtimeOrderListener(storeId) {
+            const { collection, query, where, orderBy, onSnapshot } = window.firebaseUtils;
+
+            // Escuta pedidos filtrados pelo storeSlug
+            const ordersRef = collection(window.db, "orders");
+            const q = query(ordersRef, where("storeSlug", "==", storeId));
+
+            onSnapshot(q, (snapshot) => {
+                const orderList = [];
+                snapshot.forEach(docSnap => {
+                    orderList.push({
+                        id: docSnap.id,
+                        ...docSnap.data()
+                    });
+                });
+
+                // Ordena pelo timestamp decrescente (mais novos primeiro)
+                orderList.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
+                const prevPendingCount = (window.orders || []).filter(o => o.status === 'pending').length;
+                window.orders = orderList;
+
+                const newPendingCount = orderList.filter(o => o.status === 'pending').length;
+
+                // Se chegou novo pedido pendente, dispara alarme sonoro e banner!
+                if (newPendingCount > 0) {
+                    const alertBar = document.getElementById('new-order-sound-alert-bar');
+                    const badge = document.getElementById('pending-count-badge');
+                    if (alertBar) alertBar.classList.remove('hidden');
+                    if (badge) badge.innerText = `${newPendingCount} novo${newPendingCount > 1 ? 's' : ''}`;
+                    
+                    if (window.soundEnabled) {
+                        startRepeatingAlarm();
+                    }
+                } else {
+                    stopRepeatingAlarm();
+                    const alertBar = document.getElementById('new-order-sound-alert-bar');
+                    if (alertBar) alertBar.classList.add('hidden');
+                }
+
+                window.renderKanbanBoard();
+            }, (error) => {
+                console.error("Erro no listener de pedidos:", error);
+                document.getElementById('realtime-status-label').innerText = "Erro de sincronização";
+                document.getElementById('realtime-status-label').className = "text-red-400 font-bold";
+            });
+        }
+
+        // RENDERIZAÇÃO DO QUADRO KANBAN
+        window.renderKanbanBoard = function() {
+            const searchQuery = (document.getElementById('filter-search')?.value || '').toLowerCase().trim();
+
+            const pendingOrders = [];
+            const preparingOrders = [];
+            const readyOrders = [];
+            const completedOrders = [];
+
+            let totalRevToday = 0;
+            let countInKitchen = 0;
+
+            const filteredOrders = window.orders.filter(order => {
+                if (!searchQuery) return true;
+                const cust = (order.customerName || '').toLowerCase();
+                const num = (order.orderNumber || '').toLowerCase();
+                const itemsText = (order.items || []).map(i => i.name).join(' ').toLowerCase();
+                return cust.includes(searchQuery) || num.includes(searchQuery) || itemsText.includes(searchQuery);
+            });
+
+            filteredOrders.forEach(order => {
+                const status = order.status || 'pending';
+                const orderTotal = typeof order.total === 'number' ? order.total : parseFloat(String(order.total || '0').replace(',', '.'));
+                
+                if (status === 'pending') {
+                    pendingOrders.push(order);
+                } else if (status === 'preparing') {
+                    preparingOrders.push(order);
+                    countInKitchen++;
+                } else if (status === 'ready') {
+                    readyOrders.push(order);
+                    countInKitchen++;
+                } else if (status === 'completed') {
+                    completedOrders.push(order);
+                    totalRevToday += (isNaN(orderTotal) ? 0 : orderTotal);
+                }
+            });
+
+            // Atualiza Contadores
+            document.getElementById('col-count-pending').innerText = pendingOrders.length;
+            document.getElementById('col-count-preparing').innerText = preparingOrders.length;
+            document.getElementById('col-count-ready').innerText = readyOrders.length;
+            document.getElementById('col-count-completed').innerText = completedOrders.length;
+
+            document.getElementById('mobile-badge-pending').innerText = pendingOrders.length;
+            document.getElementById('mobile-badge-preparing').innerText = preparingOrders.length;
+            document.getElementById('mobile-badge-ready').innerText = readyOrders.length;
+            document.getElementById('mobile-badge-completed').innerText = completedOrders.length;
+
+            document.getElementById('stat-total-orders').innerText = window.orders.length;
+            document.getElementById('stat-total-revenue').innerText = formatCurrency(totalRevToday);
+            document.getElementById('stat-in-kitchen').innerText = countInKitchen;
+
+            // Renderiza listas
+            document.getElementById('col-list-pending').innerHTML = renderOrderCards(pendingOrders, 'pending');
+            document.getElementById('col-list-preparing').innerHTML = renderOrderCards(preparingOrders, 'preparing');
+            document.getElementById('col-list-ready').innerHTML = renderOrderCards(readyOrders, 'ready');
+            document.getElementById('col-list-completed').innerHTML = renderOrderCards(completedOrders, 'completed');
+
+            if (window.lucide) lucide.createIcons();
+        };
+
+        function renderOrderCards(ordersList, status) {
+            if (ordersList.length === 0) {
+                return `
+                    <div class="h-40 flex flex-col items-center justify-center text-center p-4 border border-dashed border-slate-800 rounded-xl text-slate-500">
+                        <i data-lucide="inbox" class="w-6 h-6 mb-2 opacity-40"></i>
+                        <p class="text-xs font-bold">Nenhum pedido aqui</p>
+                    </div>
+                `;
+            }
+
+            return ordersList.map(order => {
+                const isPending = status === 'pending';
+                const orderNum = order.orderNumber || ('#' + (order.id || '').slice(0, 4));
+                const timeAgo = formatTimeAgo(order.timestamp);
+                const isDelivery = order.shippingType === 'delivery' || !!order.shippingNeighborhood;
+                const itemsCount = (order.items || []).reduce((acc, i) => acc + (i.quantity || 1), 0);
+
+                let payBadgeClass = "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40";
+                let payLabel = "PIX ⚡";
+                if (order.paymentMethod === 'cash') {
+                    payBadgeClass = "bg-yellow-500/20 text-yellow-400 border border-yellow-500/40";
+                    payLabel = `Dinheiro 💵 ${order.cashChange ? `(Troco: ${order.cashChange})` : ''}`;
+                } else if (order.paymentMethod === 'card') {
+                    payBadgeClass = "bg-blue-500/20 text-blue-400 border border-blue-500/40";
+                    payLabel = "Cartão 💳";
+                }
+
+                // Renderiza Botões de Ação dependendo do Status
+                let actionButtonsHTML = '';
+                if (status === 'pending') {
+                    actionButtonsHTML = `
+                        <div class="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-800">
+                            <button onclick="window.updateOrderStatus('${order.id}', 'preparing')" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition-all cursor-pointer">
+                                <i data-lucide="check" class="w-4 h-4"></i> Aceitar
+                            </button>
+                            <button onclick="window.cancelOrder('${order.id}')" class="w-full py-2.5 bg-slate-800 hover:bg-red-950/60 text-slate-300 hover:text-red-400 rounded-xl text-xs font-bold uppercase transition-all">
+                                Recusar
+                            </button>
+                        </div>
+                    `;
+                } else if (status === 'preparing') {
+                    actionButtonsHTML = `
+                        <div class="mt-3 pt-3 border-t border-slate-800 flex gap-2">
+                            <button onclick="window.updateOrderStatus('${order.id}', 'ready')" class="flex-1 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition-all cursor-pointer">
+                                <i data-lucide="bike" class="w-4 h-4"></i> Pronto / Despachar
+                            </button>
+                        </div>
+                    `;
+                } else if (status === 'ready') {
+                    actionButtonsHTML = `
+                        <div class="mt-3 pt-3 border-t border-slate-800 flex gap-2">
+                            <button onclick="window.updateOrderStatus('${order.id}', 'completed')" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg active:scale-95 transition-all cursor-pointer">
+                                <i data-lucide="check-circle" class="w-4 h-4"></i> Concluir Entrega
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    actionButtonsHTML = `
+                        <div class="mt-3 pt-3 border-t border-slate-800 flex items-center justify-between">
+                            <span class="text-[10px] text-emerald-400 font-bold uppercase flex items-center gap-1">
+                                <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Finalizado
+                            </span>
+                            <button onclick="window.updateOrderStatus('${order.id}', 'preparing')" class="text-[10px] text-slate-400 hover:text-white underline">Reabrir</button>
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="bg-slate-950 border ${isPending ? 'border-yellow-500/80 shadow-yellow-500/10 shadow-xl animate-pulse-border' : 'border-slate-800'} rounded-2xl p-3.5 transition-all hover:border-slate-700 shadow-md">
+                        <!-- Top Header do Pedido -->
+                        <div class="flex items-center justify-between pb-2 border-b border-slate-800/80">
+                            <div class="flex items-center gap-2">
+                                <span class="font-mono text-sm font-black text-white bg-slate-800 px-2 py-0.5 rounded-lg">${orderNum}</span>
+                                <span class="text-[11px] text-slate-400 font-bold">${timeAgo}</span>
+                            </div>
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${isDelivery ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30' : 'bg-blue-500/20 text-blue-400 border border-blue-500/30'}">
+                                ${isDelivery ? '🛵 Delivery' : '🏪 Balcão'}
+                            </span>
+                        </div>
+
+                        <!-- Cliente e Endereço -->
+                        <div class="py-2.5 space-y-1">
+                            <div class="flex items-center justify-between">
+                                <h4 class="font-black text-sm text-white truncate max-w-[180px]">${order.customerName || 'Cliente Online'}</h4>
+                                ${order.customerPhone ? `
+                                    <button onclick="window.openCustomerWhatsApp('${order.customerPhone}', '${orderNum}', '${status}')" class="text-emerald-400 hover:text-emerald-300 p-1 bg-emerald-950/60 rounded-lg flex items-center gap-1 text-[10px] font-bold" title="Conversar no WhatsApp">
+                                        <i data-lucide="message-square" class="w-3 h-3"></i> WhatsApp
+                                    </button>
+                                ` : ''}
+                            </div>
+                            <p class="text-xs text-slate-400 flex items-start gap-1">
+                                <i data-lucide="map-pin" class="w-3.5 h-3.5 text-slate-500 shrink-0 mt-0.5"></i>
+                                <span class="truncate">${order.customerAddress || (order.shippingNeighborhood ? `Bairro ${order.shippingNeighborhood}` : 'Retirada no Local')}</span>
+                            </p>
+                        </div>
+
+                        <!-- Lista de Itens -->
+                        <div class="bg-slate-900/60 p-2.5 rounded-xl border border-slate-800/80 space-y-1.5 my-1">
+                            ${(order.items || []).map(i => {
+                                const vars = Object.entries(i.variations || {}).map(([k, v]) => `${v}`).join(', ');
+                                return `
+                                    <div class="flex items-start justify-between text-xs leading-snug">
+                                        <div class="text-slate-200">
+                                            <span class="font-black text-orange-400">${i.quantity}x</span>
+                                            <span class="font-bold">${i.name}</span>
+                                            ${vars ? `<span class="text-[10px] text-slate-400 block ml-4">[${vars}]</span>` : ''}
+                                            ${i.observation ? `<span class="text-[10px] text-yellow-300/90 block ml-4 italic">Obs: ${i.observation}</span>` : ''}
+                                        </div>
+                                        <span class="font-mono text-slate-400 text-[11px]">${formatCurrency(i.price)}</span>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+
+                        <!-- Financeiro e Pagamento -->
+                        <div class="flex items-center justify-between pt-2">
+                            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold ${payBadgeClass}">${payLabel}</span>
+                            <div class="text-right">
+                                <span class="text-[10px] text-slate-400 uppercase font-black block">Total</span>
+                                <span class="font-mono text-sm font-black text-emerald-400">${formatCurrency(order.total)}</span>
+                            </div>
+                        </div>
+
+                        <!-- Barra de Ferramentas: Imprimir e Status -->
+                        <div class="flex items-center gap-1.5 pt-2">
+                            <button onclick="window.printOrderReceipt('${order.id}')" class="flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1 border border-slate-700 transition-all cursor-pointer" title="Imprimir Comanda Térmica">
+                                <i data-lucide="printer" class="w-3.5 h-3.5 text-emerald-400"></i> Imprimir Comanda
+                            </button>
+                            <button onclick="window.openCustomerWhatsAppDirect('${order.customerPhone}', '${orderNum}', '${status}', '${order.customerName}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-emerald-400 rounded-lg border border-slate-700 transition-all" title="Avisar Cliente no WhatsApp">
+                                <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                            </button>
+                        </div>
+
+                        <!-- Botões de Ação do Ciclo de Vida -->
+                        ${actionButtonsHTML}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ATUALIZAÇÃO DE STATUS NO FIRESTORE
+        window.updateOrderStatus = async function(orderId, newStatus) {
+            initAudioContext();
+            try {
+                const { doc, updateDoc } = window.firebaseUtils;
+                await updateDoc(doc(window.db, "orders", orderId), {
+                    status: newStatus,
+                    updatedAt: new Date().toISOString()
+                });
+                
+                // Atualiza localmente imediato
+                const order = window.orders.find(o => o.id === orderId);
+                if (order) order.status = newStatus;
+                
+                const pendingLeft = window.orders.filter(o => o.status === 'pending').length;
+                if (pendingLeft === 0) {
+                    stopRepeatingAlarm();
+                    const alertBar = document.getElementById('new-order-sound-alert-bar');
+                    if (alertBar) alertBar.classList.add('hidden');
+                }
+                
+                window.renderKanbanBoard();
+            } catch(e) {
+                console.error("Erro ao atualizar status:", e);
+                alert("Erro ao atualizar status do pedido.");
+            }
+        };
+
+        window.cancelOrder = async function(orderId) {
+            if (!confirm("Tem certeza que deseja recusar/cancelar este pedido?")) return;
+            window.updateOrderStatus(orderId, 'cancelled');
+        };
+
+        window.clearFinishedOrders = async function() {
+            if (!confirm("Deseja limpar todos os pedidos concluídos da tela?")) return;
+            const completed = window.orders.filter(o => o.status === 'completed' || o.status === 'cancelled');
+            for (const order of completed) {
+                try {
+                    await window.firebaseUtils.deleteDoc(window.firebaseUtils.doc(window.db, "orders", order.id));
+                } catch(e){}
+            }
+        };
+
+        // WHATSAPP INTEGRATION
+        window.openCustomerWhatsAppDirect = function(phone, orderNum, status, name) {
+            const cleanPhone = (phone || '').replace(/\D/g, '');
+            const custName = name || 'Cliente';
+            let msg = '';
+            if (status === 'pending' || status === 'preparing') {
+                msg = `Olá ${custName}! Seu pedido *${orderNum}* na loja *${window.storeData?.n || 'nossa loja'}* foi confirmado e já está sendo preparado com muito carinho! 👨‍🍳🔥`;
+            } else if (status === 'ready') {
+                msg = `Olá ${custName}! Seu pedido *${orderNum}* acabou de sair para entrega! 🛵💨 Fique atento(a) para receber.`;
+            } else if (status === 'completed') {
+                msg = `Olá ${custName}! Seu pedido *${orderNum}* foi entregue! Esperamos que goste. Obrigado pela preferência! ⭐`;
+            } else {
+                msg = `Olá ${custName}! Referente ao seu pedido *${orderNum}* na nossa loja.`;
+            }
+
+            if (cleanPhone) {
+                const target = cleanPhone.length <= 11 ? '55' + cleanPhone : cleanPhone;
+                window.open(`https://api.whatsapp.com/send?phone=${target}&text=${encodeURIComponent(msg)}`, '_blank');
+            } else {
+                const storeZap = (window.storeData?.w || window.storeData?.whatsapp || '').replace(/\D/g, '');
+                window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+            }
+        };
+
+        // IMPRESSÃO TÉRMICA DIRETA (58MM / 80MM)
+        window.printOrderReceipt = function(orderId) {
+            const order = window.orders.find(o => o.id === orderId);
+            if (!order) return;
+
+            const printArea = document.getElementById('receipt-print-area');
+            if (!printArea) return;
+
+            const dateStr = new Date(order.timestamp || Date.now()).toLocaleString('pt-BR');
+            const storeName = window.storeData?.n || window.storeData?.name || 'Comanda de Pedido';
+            const storePhone = window.storeData?.w || window.storeData?.whatsapp || '';
+            const isDelivery = order.shippingType === 'delivery' || !!order.shippingNeighborhood;
+
+            printArea.innerHTML = `
+                <div style="text-align: center; font-weight: bold; margin-bottom: 8px;">
+                    <div style="font-size: 14px; text-transform: uppercase;">${storeName}</div>
+                    ${storePhone ? `<div>WhatsApp: ${storePhone}</div>` : ''}
+                    <div style="border-top: 1px dashed black; margin: 4px 0;"></div>
+                    <div style="font-size: 16px;">PEDIDO ${order.orderNumber || '#' + order.id.slice(0,4)}</div>
+                    <div style="font-size: 10px; font-weight: normal;">${dateStr}</div>
+                    <div style="border-bottom: 1px dashed black; margin: 4px 0;"></div>
+                </div>
+
+                <div style="margin-bottom: 8px;">
+                    <div><strong>CLIENTE:</strong> ${order.customerName || 'Cliente Balcão'}</div>
+                    ${order.customerPhone ? `<div><strong>FONE:</strong> ${order.customerPhone}</div>` : ''}
+                    <div><strong>TIPO:</strong> ${isDelivery ? 'ENTREGA (DELIVERY)' : 'RETIRADA NO BALCÃO'}</div>
+                    ${order.customerAddress ? `<div><strong>ENDEREÇO:</strong> ${order.customerAddress}</div>` : ''}
+                </div>
+
+                <div style="border-top: 1px dashed black; border-bottom: 1px dashed black; padding: 4px 0; margin-bottom: 8px;">
+                    <div style="font-weight: bold; margin-bottom: 2px;">ITENS DO PEDIDO:</div>
+                    ${(order.items || []).map(i => `
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                            <span>${i.quantity}x ${i.name}</span>
+                            <span>${formatCurrency(i.price)}</span>
+                        </div>
+                        ${Object.keys(i.variations || {}).length > 0 ? `<div style="font-size: 9px; margin-left: 10px;">Opções: ${Object.values(i.variations).join(', ')}</div>` : ''}
+                        ${i.observation ? `<div style="font-size: 9px; margin-left: 10px; font-style: italic;">Obs: ${i.observation}</div>` : ''}
+                    `).join('')}
+                </div>
+
+                <div style="margin-bottom: 8px;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span>Subtotal:</span>
+                        <span>${formatCurrency(order.subtotal || order.total)}</span>
+                    </div>
+                    ${order.shippingPrice ? `
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Taxa Entrega:</span>
+                            <span>${formatCurrency(order.shippingPrice)}</span>
+                        </div>
+                    ` : ''}
+                    ${order.discountAmount ? `
+                        <div style="display: flex; justify-content: space-between;">
+                            <span>Desconto:</span>
+                            <span>-${formatCurrency(order.discountAmount)}</span>
+                        </div>
+                    ` : ''}
+                    <div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: bold; border-top: 1px solid black; padding-top: 4px; margin-top: 4px;">
+                        <span>TOTAL GERAL:</span>
+                        <span>${formatCurrency(order.total)}</span>
+                    </div>
+                </div>
+
+                <div style="border-top: 1px dashed black; padding-top: 4px; margin-bottom: 8px;">
+                    <div><strong>PAGAMENTO:</strong> ${(order.paymentMethod || 'pix').toUpperCase()}</div>
+                    ${order.cashChange ? `<div><strong>TROCO P/:</strong> ${order.cashChange}</div>` : ''}
+                </div>
+
+                <div style="text-align: center; border-top: 1px dashed black; padding-top: 6px; font-size: 10px;">
+                    Obrigado pela preferência!<br>
+                    Volte Sempre!
+                </div>
+            `;
+
+            window.print();
+        };
+
+        // NOVO PEDIDO MANUAL (MODAL)
+        window.openManualOrderModal = function() {
+            document.getElementById('manual-order-modal').classList.remove('hidden');
+            document.getElementById('manual-order-modal').classList.add('flex');
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.closeManualOrderModal = function() {
+            document.getElementById('manual-order-modal').classList.add('hidden');
+            document.getElementById('manual-order-modal').classList.remove('flex');
+        };
+
+        window.submitManualOrder = async function() {
+            const name = document.getElementById('manual-cust-name').value.trim() || 'Cliente Balcão';
+            const phone = document.getElementById('manual-cust-phone').value.trim();
+            const shipType = document.getElementById('manual-ship-type').value;
+            const address = document.getElementById('manual-cust-address').value.trim() || (shipType === 'delivery' ? 'Entrega' : 'Balcão');
+            const itemsText = document.getElementById('manual-items-text').value.trim();
+            const totalVal = parseFloat(document.getElementById('manual-total-val').value || '0');
+            const payMethod = document.getElementById('manual-pay-method').value;
+
+            if (!itemsText || totalVal <= 0) {
+                alert("Por favor, preencha a descrição dos itens e o valor total do pedido.");
+                return;
+            }
+
+            const orderNumStr = '#' + String(Math.floor(1000 + Math.random() * 9000));
+            const newOrderDoc = {
+                storeSlug: window.currentStoreId,
+                storeWhatsapp: (window.storeData?.w || window.storeData?.whatsapp || '').replace(/\D/g, ''),
+                storeName: window.storeData?.n || window.storeData?.name || '',
+                orderNumber: orderNumStr,
+                customerName: name,
+                customerPhone: phone,
+                customerAddress: address,
+                shippingType: shipType,
+                items: [{
+                    id: 'manual',
+                    name: itemsText,
+                    quantity: 1,
+                    price: totalVal,
+                    formattedPrice: formatCurrency(totalVal),
+                    variations: {},
+                    observation: ''
+                }],
+                subtotal: totalVal,
+                total: totalVal,
+                formattedTotal: formatCurrency(totalVal),
+                paymentMethod: payMethod,
+                status: 'pending',
+                createdAt: new Date().toISOString(),
+                timestamp: Date.now()
+            };
+
+            try {
+                await window.firebaseUtils.addDoc(window.firebaseUtils.collection(window.db, "orders"), newOrderDoc);
+                window.closeManualOrderModal();
+                // Limpa form
+                document.getElementById('manual-cust-name').value = '';
+                document.getElementById('manual-cust-phone').value = '';
+                document.getElementById('manual-cust-address').value = '';
+                document.getElementById('manual-items-text').value = '';
+                document.getElementById('manual-total-val').value = '';
+            } catch(e) {
+                console.error("Erro ao lançar pedido:", e);
+                alert("Erro ao gravar pedido.");
+            }
+        };
+
+        // INICIALIZADOR
+        window.addEventListener('DOMContentLoaded', () => {
+            loadStoreAndSubscribe();
+            // Desbloqueia Web Audio no primeiro clique do usuário
+            document.body.addEventListener('click', () => {
+                initAudioContext();
+            }, { once: true });
+        });
+    </script>
+</body>
+</html>

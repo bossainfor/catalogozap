@@ -32,7 +32,7 @@
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, getDoc, updateDoc, addDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, getDoc, setDoc, updateDoc, addDoc, deleteDoc, getDocs, arrayUnion } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -51,7 +51,7 @@
         signInAnonymously(auth).catch(err => console.error("Erro no login anônimo do Gestor:", err));
 
         window.db = db;
-        window.firebaseUtils = { doc, getDoc, updateDoc, collection, addDoc, deleteDoc, getDocs, query, where, orderBy, onSnapshot };
+        window.firebaseUtils = { doc, getDoc, setDoc, updateDoc, collection, addDoc, deleteDoc, getDocs, query, where, orderBy, onSnapshot, arrayUnion };
     </script>
 
     <style>
@@ -157,12 +157,17 @@
             </div>
         </div>
 
-        <!-- NAVEGAÇÃO PRINCIPAL DAS 3 ABAS -->
+        <!-- NAVEGAÇÃO PRINCIPAL DAS 4 ABAS -->
         <nav class="flex items-center bg-slate-950 p-1 rounded-2xl border border-slate-800 shadow-inner">
             <button id="nav-btn-kanban" onclick="window.switchMainTab('kanban')" class="px-3 sm:px-4 py-2 bg-orange-600 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-md">
                 <i data-lucide="kanban" class="w-4 h-4"></i>
                 <span>Painel Ao Vivo</span>
                 <span id="nav-badge-pending" class="hidden px-1.5 py-0.2 bg-white text-orange-600 rounded-full text-[10px] font-mono font-bold">0</span>
+            </button>
+            <button id="nav-btn-chat" onclick="window.switchMainTab('chat')" class="px-3 sm:px-4 py-2 text-slate-400 hover:text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all relative">
+                <i data-lucide="message-square" class="w-4 h-4 text-emerald-400"></i>
+                <span>Chat Clientes</span>
+                <span id="nav-badge-chat" class="hidden px-1.5 py-0.2 bg-emerald-500 text-slate-950 rounded-full text-[10px] font-mono font-black animate-pulse">0</span>
             </button>
             <button id="nav-btn-history" onclick="window.switchMainTab('history')" class="px-3 sm:px-4 py-2 text-slate-400 hover:text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all">
                 <i data-lucide="history" class="w-4 h-4"></i>
@@ -176,6 +181,12 @@
 
         <!-- Controles de Som, Impressão e Ações Rápidas -->
         <div class="flex items-center gap-2">
+            <!-- Disparar Promoção Push -->
+            <button onclick="window.openPromoBroadcastModal()" class="px-3 py-2 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-slate-950 border border-emerald-500/40 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-sm cursor-pointer" title="Enviar Notificação Push de Promoção para Clientes">
+                <i data-lucide="bell-ring" class="w-4 h-4 animate-bounce"></i>
+                <span class="hidden sm:inline">Disparar Oferta 🔔</span>
+            </button>
+
             <!-- Botão de Som -->
             <button id="btn-toggle-sound" onclick="window.toggleSound()" class="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 border border-slate-700 transition-all shadow-sm" title="Ativar/Desativar som do alarme">
                 <i id="sound-icon" data-lucide="volume-2" class="w-4 h-4 text-emerald-400"></i>
@@ -579,8 +590,165 @@
     </div>
 
     <!-- ========================================== -->
+    <!-- ABA 4: CHAT AO VIVO COM CLIENTES           -->
+    <!-- ========================================== -->
+    <div id="tab-view-chat" class="hidden flex-1 flex flex-col md:flex-row overflow-hidden bg-slate-950">
+        <!-- Barra Lateral de Conversas -->
+        <aside class="w-full md:w-80 lg:w-96 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0 h-full">
+            <!-- Header do Chat -->
+            <div class="p-3.5 bg-slate-950/80 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold">
+                        <i data-lucide="messages-square" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-xs font-black uppercase text-white tracking-wider">Atendimento Ao Vivo</h3>
+                        <p class="text-[10px] text-slate-400">Clientes no catálogo agora</p>
+                    </div>
+                </div>
+                <span id="chat-active-count-badge" class="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-[10px] font-mono font-bold">0 online</span>
+            </div>
+
+            <!-- Busca de Conversas -->
+            <div class="p-2.5 border-b border-slate-800">
+                <div class="relative">
+                    <i data-lucide="search" class="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                    <input type="text" id="chat-search-input" oninput="window.filterChatsList()" placeholder="Buscar cliente..." class="w-full pl-8 pr-3 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-white placeholder:text-slate-500 outline-none focus:border-emerald-500">
+                </div>
+            </div>
+
+            <!-- Lista de Conversas -->
+            <div id="chats-list-container" class="flex-1 overflow-y-auto p-2 space-y-1.5 custom-scrollbar">
+                <!-- Inserido dinamicamente via JS -->
+                <div class="p-8 text-center text-slate-500 text-xs">
+                    <i data-lucide="message-circle" class="w-8 h-8 mx-auto mb-2 opacity-30 text-slate-400"></i>
+                    Nenhuma conversa aberta no momento. Quando um cliente enviar mensagem, ela aparecerá aqui em tempo real!
+                </div>
+            </div>
+        </aside>
+
+        <!-- Painel de Conversa Ativa -->
+        <section id="chat-active-panel" class="flex-1 flex flex-col bg-slate-950 h-full overflow-hidden">
+            <!-- Header do Chat Ativo -->
+            <div id="chat-conversation-header" class="p-3.5 bg-slate-900 border-b border-slate-800 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-3">
+                    <div id="active-chat-avatar" class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-orange-500 to-amber-500 text-slate-950 font-black flex items-center justify-center text-sm shadow-md">
+                        👤
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h4 id="active-chat-name" class="text-sm font-black text-white">Selecione uma conversa</h4>
+                            <span id="active-chat-status-badge" class="hidden px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full text-[9px] font-bold uppercase">Online</span>
+                        </div>
+                        <p id="active-chat-phone" class="text-xs text-slate-400 font-mono mt-0.5">Nenhum cliente selecionado</p>
+                    </div>
+                </div>
+
+                <div id="active-chat-actions" class="hidden items-center gap-2">
+                    <a id="active-chat-whatsapp-link" href="#" target="_blank" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-black uppercase flex items-center gap-1.5 transition-all shadow-sm">
+                        <i data-lucide="phone" class="w-3.5 h-3.5"></i> Abrir WhatsApp
+                    </a>
+                </div>
+            </div>
+
+            <!-- Thread de Mensagens -->
+            <div id="chat-messages-thread" class="flex-1 p-4 overflow-y-auto space-y-3 custom-scrollbar flex flex-col bg-slate-950">
+                <div class="my-auto text-center text-slate-500 text-xs">
+                    <i data-lucide="message-square" class="w-10 h-10 mx-auto mb-2 opacity-30 text-emerald-400"></i>
+                    Selecione uma conversa na lista ao lado para responder o cliente em tempo real sem ele sair da página.
+                </div>
+            </div>
+
+            <!-- Sugestões Rápidas de Resposta (Chips) -->
+            <div class="px-3 py-2 bg-slate-900/80 border-t border-slate-800 flex flex-nowrap overflow-x-auto gap-1.5 select-none custom-scrollbar shrink-0">
+                <button type="button" onclick="window.sendQuickReply('Olá! Em que posso te ajudar?')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-[10px] font-bold whitespace-nowrap transition-all border border-slate-700">
+                    👋 Olá! Como posso ajudar?
+                </button>
+                <button type="button" onclick="window.sendQuickReply('Seu pedido já está em preparação!')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-[10px] font-bold whitespace-nowrap transition-all border border-slate-700">
+                    👨‍🍳 Em preparação!
+                </button>
+                <button type="button" onclick="window.sendQuickReply('Seu pedido acabou de sair para entrega!')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-[10px] font-bold whitespace-nowrap transition-all border border-slate-700">
+                    🛵 Saiu para entrega!
+                </button>
+                <button type="button" onclick="window.sendQuickReply('Perfeito! Qualquer dúvida estamos à disposição.')" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-[10px] font-bold whitespace-nowrap transition-all border border-slate-700">
+                    ✅ Estamos à disposição!
+                </button>
+            </div>
+
+            <!-- Caixa de Input de Resposta -->
+            <div class="p-3 bg-slate-900 border-t border-slate-800 flex gap-2 shrink-0">
+                <input type="text" id="owner-chat-input" onkeypress="if(event.key==='Enter') window.sendOwnerReply();" placeholder="Escreva uma resposta para o cliente..." class="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs font-bold text-white placeholder:text-slate-500 focus:border-orange-500 outline-none">
+                <button type="button" onclick="window.sendOwnerReply()" class="px-5 py-3 bg-orange-600 hover:bg-orange-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg shadow-orange-600/20 active:scale-95 transition-all cursor-pointer">
+                    <i data-lucide="send" class="w-4 h-4"></i>
+                    <span>Enviar</span>
+                </button>
+            </div>
+        </section>
+    </div>
+
+    <!-- ========================================== -->
     <!-- MODAIS E COMPONENTES AUXILIARES            -->
     <!-- ========================================== -->
+
+    <!-- MODAL DE DISPARO DE PROMOÇÃO / PUSH NOTIFICATION -->
+    <div id="promo-broadcast-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="p-4 bg-emerald-950/80 text-white flex items-center justify-between border-b border-emerald-900/60">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="bell-ring" class="w-5 h-5 text-emerald-400 animate-bounce"></i>
+                    <h3 class="font-black text-sm uppercase italic">Disparar Oferta / Web Push</h3>
+                </div>
+                <button onclick="window.closePromoBroadcastModal()" class="p-1 text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+
+            <div class="p-5 overflow-y-auto space-y-4 custom-scrollbar">
+                <div class="p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-2xl flex items-center gap-3">
+                    <i data-lucide="info" class="w-5 h-5 text-emerald-400 shrink-0"></i>
+                    <p class="text-xs text-emerald-200 leading-relaxed">
+                        Esta notificação será exibida instantaneamente na tela de todos os clientes com o catálogo aberto e também como <strong>Notificação Nativa do Navegador</strong> nos celulares e PCs cadastrados!
+                    </p>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-1">Título da Oferta / Notificação *</label>
+                    <input type="text" id="promo-title" placeholder="Ex: 🔥 Sexta Maluca: 20% OFF em tudo!" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-white outline-none focus:border-emerald-500">
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-1">Mensagem / Descrição da Promoção *</label>
+                    <textarea id="promo-message" rows="3" placeholder="Ex: Aproveite o final de semana com entrega grátis e desconto especial para os 30 primeiros pedidos!" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-white outline-none focus:border-emerald-500 custom-scrollbar"></textarea>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400 mb-1">Código do Cupom (Opcional)</label>
+                        <input type="text" id="promo-coupon" placeholder="Ex: SEXTOU20" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-black uppercase tracking-wider text-emerald-400 font-mono outline-none focus:border-emerald-500">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400 mb-1">Imagem Banner (URL Opcional)</label>
+                        <input type="url" id="promo-image" placeholder="https://..." class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-white outline-none focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <!-- Preview do Card -->
+                <div class="p-3 bg-slate-950 rounded-2xl border border-slate-800">
+                    <span class="text-[10px] font-black uppercase text-slate-500 block mb-2">Prévia da Notificação no Celular do Cliente:</span>
+                    <div class="bg-slate-900 border border-orange-500/40 rounded-2xl p-3 flex items-start gap-3">
+                        <span class="p-2 rounded-xl bg-orange-500 text-slate-950 font-black text-sm">🔥</span>
+                        <div>
+                            <h5 id="promo-preview-title" class="text-xs font-black text-white">Título da Oferta</h5>
+                            <p id="promo-preview-msg" class="text-[11px] text-slate-400 mt-0.5">Sua mensagem aparecerá aqui com cupom e link direto para o cardápio.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 bg-slate-800/80 border-t border-slate-700 flex gap-2">
+                <button onclick="window.closePromoBroadcastModal()" class="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-xs font-bold uppercase transition-all">Cancelar</button>
+                <button onclick="window.submitPromoBroadcast()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg shadow-emerald-600/20 active:scale-95 cursor-pointer">🚀 Disparar Notificação</button>
+            </div>
+        </div>
+    </div>
 
     <!-- MODAL DE LIMPEZA DO HISTÓRICO (EXPURGO DE BANCO) -->
     <div id="clean-history-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
@@ -884,18 +1052,18 @@
             }
         });
 
-        // TROCA ENTRE AS 3 ABAS PRINCIPAIS
+        // TROCA ENTRE AS 4 ABAS PRINCIPAIS
         window.switchMainTab = function(tabName) {
             window.currentMainTab = tabName;
 
-            const tabs = ['kanban', 'history', 'reports'];
+            const tabs = ['kanban', 'chat', 'history', 'reports'];
             tabs.forEach(t => {
                 const viewEl = document.getElementById(`tab-view-${t}`);
                 const btnEl = document.getElementById(`nav-btn-${t}`);
                 if (viewEl) {
                     if (t === tabName) {
                         viewEl.classList.remove('hidden');
-                        if (t === 'kanban' || t === 'history') viewEl.classList.add('flex');
+                        if (t === 'kanban' || t === 'history' || t === 'chat') viewEl.classList.add('flex');
                     } else {
                         viewEl.classList.add('hidden');
                         viewEl.classList.remove('flex');
@@ -912,6 +1080,11 @@
 
             if (tabName === 'kanban') {
                 window.renderKanbanBoard();
+            } else if (tabName === 'chat') {
+                window.renderChatsList();
+                if (window.activeChatId) {
+                    window.renderActiveChatThread();
+                }
             } else if (tabName === 'history') {
                 window.renderHistoryList();
             } else if (tabName === 'reports') {
@@ -995,6 +1168,7 @@
 
             // Inicia Listener em Tempo Real (onSnapshot)
             setupRealtimeOrderListener(storeId);
+            setupRealtimeChatListener(storeId);
         }
 
         function setupRealtimeOrderListener(storeId) {
@@ -1880,6 +2054,353 @@
             } catch(e) {
                 console.error("Erro ao lançar pedido:", e);
                 alert("Erro ao gravar pedido.");
+            }
+        };
+
+        // ==========================================
+        // SISTEMA DE CHAT AO VIVO (HUMAN-TO-HUMAN)
+        // ==========================================
+        window.chatsList = [];
+        window.activeChatId = null;
+
+        function setupRealtimeChatListener(storeId) {
+            const { collection, query, where, onSnapshot } = window.firebaseUtils;
+            const chatsRef = collection(window.db, "chats");
+            const q = query(chatsRef, where("storeSlug", "==", storeId));
+
+            onSnapshot(q, (snapshot) => {
+                const list = [];
+                snapshot.forEach(docSnap => {
+                    list.push({
+                        id: docSnap.id,
+                        ...docSnap.data()
+                    });
+                });
+
+                // Ordenar por última atualização decrescente
+                list.sort((a, b) => {
+                    const tA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+                    const tB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+                    return tB - tA;
+                });
+
+                const prevUnreadCount = window.chatsList.filter(c => c.unreadOwner).length;
+                window.chatsList = list;
+
+                const unreadCount = list.filter(c => c.unreadOwner).length;
+                const navBadge = document.getElementById('nav-badge-chat');
+                if (navBadge) {
+                    if (unreadCount > 0) {
+                        navBadge.classList.remove('hidden');
+                        navBadge.innerText = unreadCount;
+                    } else {
+                        navBadge.classList.add('hidden');
+                    }
+                }
+
+                const onlineBadge = document.getElementById('chat-active-count-badge');
+                if (onlineBadge) {
+                    onlineBadge.innerText = `${list.length} conversas`;
+                }
+
+                // Se chegou mensagem nova de cliente, toca alerta sonoro suave
+                if (unreadCount > prevUnreadCount && window.soundEnabled) {
+                    playChatNotificationChime();
+                }
+
+                if (window.currentMainTab === 'chat') {
+                    window.renderChatsList();
+                    if (window.activeChatId) {
+                        window.renderActiveChatThread();
+                    }
+                }
+            }, (err) => {
+                console.warn("Erro no listener do chat ao vivo:", err);
+            });
+        }
+
+        function playChatNotificationChime() {
+            initAudioContext();
+            if (!window.audioContext) return;
+            const now = window.audioContext.currentTime;
+            playChimeTone(784.00, now, 0.15); // Sol5
+            playChimeTone(1046.50, now + 0.12, 0.30); // Dó6
+        }
+
+        window.filterChatsList = function() {
+            window.renderChatsList();
+        };
+
+        window.renderChatsList = function() {
+            const container = document.getElementById('chats-list-container');
+            if (!container) return;
+
+            const search = (document.getElementById('chat-search-input')?.value || '').toLowerCase().trim();
+            const filtered = window.chatsList.filter(c => {
+                if (!search) return true;
+                const name = (c.customerName || '').toLowerCase();
+                const phone = (c.customerPhone || '').toLowerCase();
+                const lastMsg = (c.lastMessage || '').toLowerCase();
+                return name.includes(search) || phone.includes(search) || lastMsg.includes(search);
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center text-slate-500 text-xs">
+                        <i data-lucide="message-circle" class="w-8 h-8 mx-auto mb-2 opacity-30 text-slate-400"></i>
+                        Nenhuma conversa encontrada. Quando um cliente enviar mensagem, ela aparecerá aqui instantaneamente!
+                    </div>
+                `;
+                if (window.lucide) lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = filtered.map(chat => {
+                const isSelected = chat.id === window.activeChatId;
+                const hasUnread = chat.unreadOwner;
+                const timeAgo = formatTimeAgo(chat.updatedAt ? new Date(chat.updatedAt).getTime() : 0);
+                const lastSenderTag = chat.lastSender === 'owner' ? '<span class="text-orange-400 font-bold">Você: </span>' : '';
+
+                return `
+                    <div onclick="window.selectChatConversation('${chat.id}')" class="p-3 rounded-2xl cursor-pointer transition-all border ${isSelected ? 'bg-orange-950/40 border-orange-500/50 shadow-md' : (hasUnread ? 'bg-slate-800/90 border-emerald-500/50' : 'bg-slate-950 border-slate-800/80 hover:bg-slate-900')}">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex items-center gap-2.5 min-w-0">
+                                <div class="w-8 h-8 rounded-xl ${hasUnread ? 'bg-emerald-500 text-slate-950 font-black' : 'bg-slate-800 text-slate-300 font-bold'} flex items-center justify-center text-xs shrink-0">
+                                    ${chat.customerName ? chat.customerName.charAt(0).toUpperCase() : '👤'}
+                                </div>
+                                <div class="min-w-0">
+                                    <h4 class="text-xs font-black text-white truncate flex items-center gap-1.5">
+                                        ${chat.customerName || 'Cliente sem nome'}
+                                        ${hasUnread ? '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>' : ''}
+                                    </h4>
+                                    <p class="text-[10px] text-slate-400 font-mono">${chat.customerPhone || 'Via Catálogo'}</p>
+                                </div>
+                            </div>
+                            <span class="text-[9px] text-slate-500 font-mono whitespace-nowrap shrink-0">${timeAgo}</span>
+                        </div>
+                        <p class="text-[11px] text-slate-300 mt-2 truncate font-medium">
+                            ${lastSenderTag}${chat.lastMessage || 'Conversa iniciada'}
+                        </p>
+                    </div>
+                `;
+            }).join('');
+
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.selectChatConversation = async function(chatId) {
+            window.activeChatId = chatId;
+            window.renderChatsList();
+            window.renderActiveChatThread();
+
+            // Marca conversa como lida pelo dono
+            try {
+                const { doc, updateDoc } = window.firebaseUtils;
+                const chatRef = doc(window.db, "chats", chatId);
+                await updateDoc(chatRef, { unreadOwner: false });
+            } catch(e) {
+                console.warn("Erro ao marcar chat como lido:", e);
+            }
+        };
+
+        window.renderActiveChatThread = function() {
+            const chat = window.chatsList.find(c => c.id === window.activeChatId);
+            const headerName = document.getElementById('active-chat-name');
+            const headerPhone = document.getElementById('active-chat-phone');
+            const headerStatus = document.getElementById('active-chat-status-badge');
+            const headerActions = document.getElementById('active-chat-actions');
+            const headerWaLink = document.getElementById('active-chat-whatsapp-link');
+            const thread = document.getElementById('chat-messages-thread');
+
+            if (!chat) {
+                if (headerName) headerName.innerText = "Selecione uma conversa";
+                if (headerPhone) headerPhone.innerText = "Nenhum cliente selecionado";
+                if (headerStatus) headerStatus.classList.add('hidden');
+                if (headerActions) headerActions.classList.add('hidden');
+                if (thread) {
+                    thread.innerHTML = `
+                        <div class="my-auto text-center text-slate-500 text-xs">
+                            <i data-lucide="message-square" class="w-10 h-10 mx-auto mb-2 opacity-30 text-emerald-400"></i>
+                            Selecione uma conversa na lista ao lado para responder o cliente em tempo real sem ele sair da página.
+                        </div>
+                    `;
+                    if (window.lucide) lucide.createIcons();
+                }
+                return;
+            }
+
+            if (headerName) headerName.innerText = chat.customerName || 'Cliente';
+            if (headerPhone) headerPhone.innerText = chat.customerPhone || 'Cliente conectado na loja';
+            if (headerStatus) headerStatus.classList.remove('hidden');
+            
+            if (chat.customerPhone && headerWaLink) {
+                const cleanPhone = chat.customerPhone.replace(/\D/g, '');
+                headerWaLink.href = `https://wa.me/55${cleanPhone}?text=Ol%C3%A1%20${encodeURIComponent(chat.customerName || '')},%20estou%20falando%20do%20atendimento%20da%20loja!`;
+                if (headerActions) headerActions.classList.remove('hidden');
+            } else if (headerActions) {
+                headerActions.classList.add('hidden');
+            }
+
+            const messages = chat.messages || [];
+            if (messages.length === 0) {
+                thread.innerHTML = `
+                    <div class="my-auto text-center text-slate-500 text-xs">
+                        <i data-lucide="messages-square" class="w-8 h-8 mx-auto mb-2 opacity-30 text-emerald-400"></i>
+                        Inicie o diálogo com o cliente digitando abaixo!
+                    </div>
+                `;
+            } else {
+                thread.innerHTML = messages.map(msg => {
+                    const isOwner = msg.sender === 'owner' || msg.sender === 'human';
+                    const timeStr = msg.time || (msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '');
+
+                    if (isOwner) {
+                        return `
+                            <div class="flex justify-end">
+                                <div class="max-w-[85%] bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-2xl rounded-tr-none px-4 py-2.5 shadow-md space-y-1">
+                                    <div class="flex items-center justify-between gap-4 text-[10px] opacity-80 font-bold">
+                                        <span>Você (Atendimento)</span>
+                                        <span>${timeStr}</span>
+                                    </div>
+                                    <p class="text-xs leading-relaxed break-words font-medium">${msg.text}</p>
+                                </div>
+                            </div>
+                        `;
+                    } else {
+                        return `
+                            <div class="flex justify-start">
+                                <div class="max-w-[85%] bg-slate-800 text-slate-100 rounded-2xl rounded-tl-none px-4 py-2.5 shadow-md border border-slate-700 space-y-1">
+                                    <div class="flex items-center justify-between gap-4 text-[10px] text-emerald-400 font-bold">
+                                        <span>${msg.senderName || chat.customerName || 'Cliente'}</span>
+                                        <span class="text-slate-400">${timeStr}</span>
+                                    </div>
+                                    <p class="text-xs leading-relaxed break-words font-medium">${msg.text}</p>
+                                </div>
+                            </div>
+                        `;
+                    }
+                }).join('');
+            }
+
+            thread.scrollTop = thread.scrollHeight;
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.sendOwnerReply = async function() {
+            if (!window.activeChatId) {
+                alert("Por favor, selecione uma conversa primeiro na lista à esquerda!");
+                return;
+            }
+
+            const input = document.getElementById('owner-chat-input');
+            const text = (input?.value || '').trim();
+            if (!text) return;
+
+            const { doc, updateDoc, arrayUnion } = window.firebaseUtils;
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            const newMsg = {
+                sender: 'owner',
+                senderName: window.storeData?.n || window.storeData?.name || 'Atendimento Loja',
+                text: text,
+                time: timeStr,
+                timestamp: now.getTime()
+            };
+
+            try {
+                input.value = '';
+                const chatRef = doc(window.db, "chats", window.activeChatId);
+                await updateDoc(chatRef, {
+                    messages: arrayUnion(newMsg),
+                    lastMessage: text,
+                    lastSender: 'owner',
+                    unreadCustomer: true,
+                    unreadOwner: false,
+                    updatedAt: now.toISOString()
+                });
+            } catch(e) {
+                console.error("Erro ao responder cliente:", e);
+                alert("Erro ao enviar mensagem para o cliente.");
+            }
+        };
+
+        window.sendQuickReply = function(text) {
+            const input = document.getElementById('owner-chat-input');
+            if (input) {
+                input.value = text;
+                window.sendOwnerReply();
+            }
+        };
+
+        // ==========================================
+        // SISTEMA DE DISPARO DE PROMOÇÃO (WEB PUSH)
+        // ==========================================
+        window.openPromoBroadcastModal = function() {
+            const modal = document.getElementById('promo-broadcast-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.closePromoBroadcastModal = function() {
+            const modal = document.getElementById('promo-broadcast-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        };
+
+        // Live preview do card de promoção
+        document.getElementById('promo-title')?.addEventListener('input', (e) => {
+            const preview = document.getElementById('promo-preview-title');
+            if (preview) preview.innerText = e.target.value || 'Título da Oferta';
+        });
+
+        document.getElementById('promo-message')?.addEventListener('input', (e) => {
+            const preview = document.getElementById('promo-preview-msg');
+            if (preview) preview.innerText = e.target.value || 'Sua mensagem aparecerá aqui com cupom e link direto para o cardápio.';
+        });
+
+        window.submitPromoBroadcast = async function() {
+            const title = document.getElementById('promo-title')?.value.trim();
+            const message = document.getElementById('promo-message')?.value.trim();
+            const coupon = document.getElementById('promo-coupon')?.value.trim();
+            const imageUrl = document.getElementById('promo-image')?.value.trim();
+
+            if (!title || !message) {
+                alert("Por favor, preencha o Título e a Mensagem da Promoção!");
+                return;
+            }
+
+            const promoDoc = {
+                storeSlug: window.currentStoreId,
+                title: title,
+                message: message,
+                coupon: coupon || '',
+                imageUrl: imageUrl || '',
+                timestamp: Date.now(),
+                createdAt: new Date().toISOString(),
+                active: true
+            };
+
+            try {
+                const { collection, addDoc } = window.firebaseUtils;
+                await addDoc(collection(window.db, "promotions"), promoDoc);
+
+                alert("🎉 Notificação de Oferta disparada com sucesso! Todos os clientes conectados e inscritos receberão a notificação no navegador agora!");
+                window.closePromoBroadcastModal();
+
+                // Limpar campos
+                if (document.getElementById('promo-title')) document.getElementById('promo-title').value = '';
+                if (document.getElementById('promo-message')) document.getElementById('promo-message').value = '';
+                if (document.getElementById('promo-coupon')) document.getElementById('promo-coupon').value = '';
+                if (document.getElementById('promo-image')) document.getElementById('promo-image').value = '';
+            } catch(e) {
+                console.error("Erro ao disparar promoção:", e);
+                alert("Erro ao disparar notificação de promoção.");
             }
         };
 

@@ -1967,24 +1967,214 @@
             const store = allStores.find(s => s.id === id);
             if (!store) return;
 
-            const currentTv = store.tvUrl || "";
-            const newTv = prompt(`TV / VÍDEO HORIZONTAL DA LOJA\nLoja: ${store.n || id}\n\nCole o link do vídeo (YouTube, MP4, Vimeo, Instagram, etc):\n(Deixe em branco e clique em OK para desativar a TV nesta loja)`, currentTv);
-            
-            if (newTv === null) return; // Cancelou
+            const oldModal = document.getElementById('store-tv-modal');
+            if (oldModal) oldModal.remove();
 
-            try {
-                const cleanedTv = newTv.trim();
-                await window.fs.updateDoc(window.fs.doc(window.db, "stores", id), {
-                    tvUrl: cleanedTv,
-                    updatedAt: new Date().toISOString()
-                });
-                store.tvUrl = cleanedTv;
-                alert(cleanedTv ? "Vídeo da TV atualizado e ativado para esta loja!" : "TV desativada para esta loja.");
-                loadStores();
-            } catch (e) {
-                console.error("Erro ao salvar TV da loja:", e);
-                alert("Erro ao salvar TV: " + (e.message || e));
+            // Extrair lista de links existentes
+            let links = [];
+            if (Array.isArray(store.tvUrls) && store.tvUrls.length > 0) {
+                links = store.tvUrls.filter(Boolean);
+            } else if (store.tvUrl && typeof store.tvUrl === 'string' && store.tvUrl.trim()) {
+                links = store.tvUrl.split(/[\n,;|]+/).map(x => x.trim()).filter(Boolean);
             }
+
+            if (links.length === 0) {
+                links = [''];
+            }
+
+            const modal = document.createElement('div');
+            modal.id = 'store-tv-modal';
+            modal.className = 'fixed inset-0 bg-slate-950/70 backdrop-blur-md z-[1200] flex items-center justify-center p-3 sm:p-6 text-left';
+            modal.innerHTML = `
+                <div class="bg-white max-w-xl w-full rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col animate-fade-in max-h-[92vh]">
+                    <div class="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-900 text-white">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-2xl bg-rose-600/20 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                                <i data-lucide="tv" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></span>
+                                    <span class="text-[10px] font-black uppercase tracking-widest text-rose-400">TV & Múltiplas Promoções</span>
+                                </div>
+                                <h2 class="text-base sm:text-lg font-black uppercase italic tracking-tight text-white">${store.n || store.id}</h2>
+                            </div>
+                        </div>
+                        <button onclick="document.getElementById('store-tv-modal').remove()" class="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-full transition-all">
+                            <i data-lucide="x" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+
+                    <div class="p-6 overflow-y-auto space-y-5 flex-1 bg-slate-50/50">
+                        <div class="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 flex gap-3 text-indigo-900 shadow-sm">
+                            <i data-lucide="sparkles" class="w-5 h-5 text-indigo-600 shrink-0 mt-0.5"></i>
+                            <div class="text-xs leading-relaxed font-medium">
+                                <strong>Adicione Várias Promoções / Vídeos:</strong><br>
+                                O cliente pode ter 2, 3, 5 ou mais promoções! Cole aqui os links dos vídeos (YouTube, MP4 direto do Imgpile <code class="bg-white/90 px-1.5 py-0.5 rounded text-[10px] font-mono border border-indigo-200">https://cdn.imgpile.com/f/...mp4</code>, Instagram, etc). O catálogo tocará <strong>automaticamente em sequência contínua</strong> como um carrossel / playlist de ofertas da TV!
+                            </div>
+                        </div>
+
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <label class="text-[11px] font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                                    <i data-lucide="video" class="w-3.5 h-3.5 text-rose-600"></i>
+                                    Links das Promoções / Vídeos da Loja
+                                </label>
+                                <span id="tv-links-count" class="text-[10px] font-black uppercase bg-rose-100 text-rose-700 px-2.5 py-0.5 rounded-full border border-rose-200">${links.filter(Boolean).length} Vídeo(s)</span>
+                            </div>
+
+                            <div id="tv-links-container" class="space-y-2.5">
+                                <!-- Itens gerados dinamicamente -->
+                            </div>
+
+                            <button type="button" onclick="window.addTvLinkRow()" class="w-full py-3 bg-white hover:bg-indigo-50 text-indigo-600 hover:text-indigo-700 font-black text-xs uppercase tracking-wider rounded-2xl border border-dashed border-indigo-300 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm active:scale-95">
+                                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                                Adicionar Mais Um Vídeo / Promoção
+                            </button>
+                        </div>
+
+                        <div class="pt-2 border-t border-slate-200">
+                            <details class="group bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm">
+                                <summary class="text-xs font-bold text-slate-600 hover:text-slate-900 cursor-pointer flex items-center justify-between select-none">
+                                    <span class="flex items-center gap-2">
+                                        <i data-lucide="copy" class="w-3.5 h-3.5 text-slate-400"></i>
+                                        Colar múltiplos links de uma vez (um por linha)
+                                    </span>
+                                    <i data-lucide="chevron-down" class="w-4 h-4 transition-transform group-open:rotate-180 text-slate-400"></i>
+                                </summary>
+                                <div class="pt-3 space-y-2">
+                                    <textarea id="tv-bulk-textarea" rows="3" placeholder="https://cdn.imgpile.com/f/vRo2IFN.mp4&#10;https://cdn.imgpile.com/f/outra_promo.mp4&#10;https://www.youtube.com/watch?v=..." class="w-full p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs font-mono outline-none focus:border-indigo-500 focus:bg-white"></textarea>
+                                    <button type="button" onclick="window.applyBulkTvLinks()" class="text-[10px] font-black uppercase px-3 py-1.5 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-all cursor-pointer">
+                                        Importar Links do Texto
+                                    </button>
+                                </div>
+                            </details>
+                        </div>
+                    </div>
+
+                    <div class="p-5 border-t border-slate-100 bg-white flex flex-col sm:flex-row items-center justify-between gap-3">
+                        <button type="button" onclick="window.clearStoreTv('${store.id}')" class="w-full sm:w-auto px-4 py-3 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i> Desativar TV
+                        </button>
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <button type="button" onclick="document.getElementById('store-tv-modal').remove()" class="flex-1 sm:flex-none px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider rounded-xl transition-all">
+                                Cancelar
+                            </button>
+                            <button type="button" id="save-tv-btn" onclick="window.saveStoreTvPlaylist('${store.id}')" class="flex-1 sm:flex-none px-6 py-3 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg shadow-rose-600/20 transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-95">
+                                <i data-lucide="check" class="w-4 h-4"></i> Salvar Playlist (${links.filter(Boolean).length})
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(modal);
+
+            window.renderTvLinkRows = function(linkList) {
+                const container = document.getElementById('tv-links-container');
+                if (!container) return;
+                container.innerHTML = '';
+
+                linkList.forEach((link, idx) => {
+                    const row = document.createElement('div');
+                    row.className = 'flex items-center gap-2 p-2.5 bg-white rounded-2xl border border-slate-200 shadow-sm';
+                    row.innerHTML = `
+                        <span class="w-7 h-7 rounded-xl bg-rose-100 text-rose-700 font-black text-xs flex items-center justify-center shrink-0 border border-rose-200">
+                            #${idx + 1}
+                        </span>
+                        <input type="text" value="${link.replace(/"/g, '&quot;')}" oninput="window.updateTvCounter()" placeholder="Ex: https://cdn.imgpile.com/f/vRo2IFN.mp4" class="tv-link-input flex-1 px-3 py-2 bg-slate-50 rounded-xl border border-slate-200 text-xs font-bold outline-none focus:border-rose-500 focus:bg-white transition-all">
+                        <button type="button" onclick="window.removeTvLinkRow(${idx})" class="p-2 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-xl transition-colors cursor-pointer" title="Remover este vídeo">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    `;
+                    container.appendChild(row);
+                });
+
+                window.updateTvCounter();
+                if (window.lucide) lucide.createIcons();
+            };
+
+            window.updateTvCounter = function() {
+                const inputs = Array.from(document.querySelectorAll('.tv-link-input')).map(inp => inp.value.trim()).filter(Boolean);
+                const countEl = document.getElementById('tv-links-count');
+                const btn = document.getElementById('save-tv-btn');
+                if (countEl) countEl.innerText = `${inputs.length} Vídeo(s)`;
+                if (btn) btn.innerHTML = `<i data-lucide="check" class="w-4 h-4"></i> Salvar Playlist (${inputs.length})`;
+                if (window.lucide) lucide.createIcons();
+            };
+
+            window.addTvLinkRow = function() {
+                const inputs = Array.from(document.querySelectorAll('.tv-link-input')).map(inp => inp.value.trim());
+                inputs.push('');
+                window.renderTvLinkRows(inputs);
+            };
+
+            window.removeTvLinkRow = function(index) {
+                let inputs = Array.from(document.querySelectorAll('.tv-link-input')).map(inp => inp.value.trim());
+                inputs.splice(index, 1);
+                if (inputs.length === 0) inputs = [''];
+                window.renderTvLinkRows(inputs);
+            };
+
+            window.applyBulkTvLinks = function() {
+                const txt = document.getElementById('tv-bulk-textarea').value;
+                const linksFromTxt = txt.split(/[\n,;]+/).map(x => x.trim()).filter(Boolean);
+                if (linksFromTxt.length > 0) {
+                    window.renderTvLinkRows(linksFromTxt);
+                    document.getElementById('tv-bulk-textarea').value = '';
+                }
+            };
+
+            window.clearStoreTv = async function(storeId) {
+                if (!confirm('Deseja realmente desativar e remover todos os vídeos da TV desta loja?')) return;
+                try {
+                    await window.fs.updateDoc(window.fs.doc(window.db, "stores", storeId), {
+                        tvUrl: "",
+                        tvUrls: [],
+                        updatedAt: new Date().toISOString()
+                    });
+                    const s = allStores.find(x => x.id === storeId);
+                    if (s) { s.tvUrl = ""; s.tvUrls = []; }
+                    const m = document.getElementById('store-tv-modal');
+                    if (m) m.remove();
+                    alert('TV desativada com sucesso.');
+                    loadStores();
+                } catch(e) {
+                    alert('Erro ao desativar TV: ' + e.message);
+                }
+            };
+
+            window.saveStoreTvPlaylist = async function(storeId) {
+                const btn = document.getElementById('save-tv-btn');
+                if (btn) btn.innerHTML = '<div class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Salvando...';
+
+                const inputs = Array.from(document.querySelectorAll('.tv-link-input')).map(inp => inp.value.trim()).filter(Boolean);
+                
+                try {
+                    const formattedTvUrl = inputs.join('\n');
+                    await window.fs.updateDoc(window.fs.doc(window.db, "stores", storeId), {
+                        tvUrl: formattedTvUrl,
+                        tvUrls: inputs,
+                        updatedAt: new Date().toISOString()
+                    });
+                    const s = allStores.find(x => x.id === storeId);
+                    if (s) {
+                        s.tvUrl = formattedTvUrl;
+                        s.tvUrls = inputs;
+                    }
+                    const m = document.getElementById('store-tv-modal');
+                    if (m) m.remove();
+                    alert(inputs.length > 0 ? `Playlist de TV com ${inputs.length} promoção(ões) salva e ativada com sucesso!` : 'TV desativada para esta loja.');
+                    loadStores();
+                } catch(e) {
+                    console.error(e);
+                    alert('Erro ao salvar playlist da TV: ' + e.message);
+                    if (btn) btn.innerHTML = '<i data-lucide="check" class="w-4 h-4"></i> Salvar Playlist';
+                }
+            };
+
+            window.renderTvLinkRows(links);
+            if (window.lucide) lucide.createIcons();
         }
         window.setStoreTv = setStoreTv;
 

@@ -34,6 +34,15 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    // Allow anyone to read and write orders for the store
+    match /orders/{orderId} {
+      allow read, write: if true;
+    }
+
+    match /stores/{storeId}/orders/{orderId} {
+      allow read, write: if true;
+    }
+
     match /resellers/{resellerId} {
       // Allow all operations on resellers
       allow read, write: if true;

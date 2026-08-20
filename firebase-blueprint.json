@@ -98,12 +98,62 @@
         }
       },
       "required": ["n", "w", "password"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Customer order submitted from catalog",
+      "type": "object",
+      "properties": {
+        "storeSlug": { "type": "string", "description": "Store slug or id" },
+        "storeWhatsapp": { "type": "string", "description": "Store WhatsApp phone" },
+        "orderNumber": { "type": "string", "description": "Order number code like #1042" },
+        "customerName": { "type": "string", "description": "Customer name" },
+        "customerPhone": { "type": "string", "description": "Customer phone" },
+        "customerAddress": { "type": "string", "description": "Delivery address or pickup notice" },
+        "shippingType": { "type": "string", "enum": ["delivery", "pickup"], "description": "Delivery or pickup" },
+        "shippingNeighborhood": { "type": "string", "description": "Neighborhood for delivery" },
+        "shippingFee": { "type": "number", "description": "Delivery fee" },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "quantity": { "type": "integer" },
+              "price": { "type": "string" },
+              "variations": { "type": "object" },
+              "observation": { "type": "string" }
+            }
+          }
+        },
+        "subtotal": { "type": "number" },
+        "discountAmount": { "type": "number" },
+        "discountDesc": { "type": "string" },
+        "cardFee": { "type": "number" },
+        "total": { "type": "number" },
+        "paymentMethod": { "type": "string", "enum": ["pix", "cash", "card"] },
+        "cashChange": { "type": "string" },
+        "installments": { "type": "integer" },
+        "status": { "type": "string", "enum": ["pending", "preparing", "ready", "completed", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "timestamp": { "type": "integer" }
+      },
+      "required": ["storeSlug", "items", "total", "status"]
     }
   },
   "firestore": {
     "/stores/{storeId}": {
       "schema": "Store",
       "description": "Public store data"
+    },
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Store orders collection"
+    },
+    "/stores/{storeId}/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Store subcollection orders"
     }
   }
 }

@@ -2218,9 +2218,15 @@
                 message += `\n\n_(Favor enviar o link de pagamento no valor exato)_`;
             }
 
+            const currentStoreId = urlParams.get('id') || urlParams.get('s') || window.currentStoreSlug || (storeData && storeData.slug) || (storeData.whatsapp || '').replace(/\D/g, '');
+            const cleanOrderNum = orderNumStr.replace('#', '').trim();
+            const trackingUrl = `${window.location.origin}/rastreio.html?pedido=${encodeURIComponent(cleanOrderNum)}&s=${encodeURIComponent(currentStoreId)}`;
+
+            // Link de rastreio em tempo real no WhatsApp
+            message += `\n\n🛵 *Acompanhe seu pedido em tempo real:* \n${trackingUrl}`;
+
             // SALVAMENTO EM TEMPO REAL NO FIRESTORE (GESTOR DE PEDIDOS ESTILO IFOOD)
             try {
-                const currentStoreId = urlParams.get('id') || urlParams.get('s') || window.currentStoreSlug || (storeData && storeData.slug) || (storeData.whatsapp || '').replace(/\D/g, '');
                 if (window.db && window.firebaseUtils && window.firebaseUtils.addDoc && window.firebaseUtils.collection) {
                     const orderDoc = {
                         storeSlug: currentStoreId,
@@ -2257,11 +2263,134 @@
             } catch(e) {
                 console.warn("Erro ao enviar pedido para o Gestor em tempo real:", e);
             }
+
+            // Salva último pedido ativo no localStorage do cliente
+            try {
+                localStorage.setItem('last_active_order', JSON.stringify({
+                    orderNumber: orderNumStr,
+                    storeSlug: currentStoreId,
+                    total: finalTotal,
+                    timestamp: Date.now()
+                }));
+            } catch(e){}
             
             let whatsapp = storeData.whatsapp.replace(/\D/g, '');
             if (whatsapp.length <= 11) whatsapp = '55' + whatsapp;
             window.openResilientWhatsApp(whatsapp, message);
+
+            // Abre modal de acompanhamento na loja e limpa carrinho
+            setTimeout(() => {
+                window.showOrderSuccessTrackingModal(orderNumStr, currentStoreId, trackingUrl);
+                if (typeof window.clearCartAfterCheckout === 'function') {
+                    window.clearCartAfterCheckout();
+                }
+            }, 800);
         }
+
+        window.clearCartAfterCheckout = function() {
+            cart = {};
+            if (typeof saveCart === 'function') saveCart();
+            if (typeof updateCartUI === 'function') updateCartUI();
+            if (typeof closeCart === 'function') closeCart();
+            if (typeof window.checkFloatingOrderTracker === 'function') window.checkFloatingOrderTracker();
+        };
+
+        window.showOrderSuccessTrackingModal = function(orderNum, storeSlug, trackingUrl) {
+            const old = document.getElementById('order-success-tracking-modal');
+            if (old) old.remove();
+
+            const modal = document.createElement('div');
+            modal.id = 'order-success-tracking-modal';
+            modal.className = 'fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[1200] flex items-center justify-center p-4 text-left';
+            modal.innerHTML = `
+                <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 text-white animate-in fade-in zoom-in duration-200">
+                    <div class="w-14 h-14 rounded-2xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center mx-auto shadow-lg">
+                        <i data-lucide="check-circle-2" class="w-8 h-8"></i>
+                    </div>
+
+                    <div class="text-center space-y-1">
+                        <span class="text-[10px] font-black uppercase tracking-widest text-emerald-400">Pedido Confirmado</span>
+                        <h3 class="text-xl font-black tracking-tight text-white">Pedido ${orderNum}</h3>
+                        <p class="text-xs text-slate-400">Seu pedido foi registrado no sistema e enviado para o WhatsApp da loja!</p>
+                    </div>
+
+                    <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2">
+                        <div class="flex items-center gap-2 text-xs font-bold text-slate-300">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span>Acompanhamento em Tempo Real</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 leading-relaxed">
+                            Você pode acompanhar cada etapa (Recebido, Em Preparo, Saiu para Entrega) ao vivo!
+                        </p>
+                    </div>
+
+                    <div class="space-y-2 pt-1">
+                        <a href="${trackingUrl}" class="w-full py-3.5 bg-orange-600 hover:bg-orange-500 text-white rounded-2xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-orange-950/60 active:scale-95 transition-all text-center">
+                            <i data-lucide="radar" class="w-4 h-4"></i>
+                            <span>Acompanhar Pedido Ao Vivo</span>
+                        </a>
+
+                        <button onclick="document.getElementById('order-success-tracking-modal').remove()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold text-xs transition-all">
+                            Continuar Navegando na Loja
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            if (window.lucide) lucide.createIcons();
+            if (typeof window.checkFloatingOrderTracker === 'function') window.checkFloatingOrderTracker();
+        };
+
+        window.checkFloatingOrderTracker = function() {
+            try {
+                const saved = localStorage.getItem('last_active_order');
+                const oldFloater = document.getElementById('floating-order-tracker');
+                if (oldFloater) oldFloater.remove();
+
+                if (!saved) return;
+                const parsed = JSON.parse(saved);
+                if (!parsed || !parsed.orderNumber) return;
+
+                // Mostra se o pedido foi feito nas últimas 16 horas
+                if (parsed.timestamp && (Date.now() - parsed.timestamp > 16 * 60 * 60 * 1000)) {
+                    return;
+                }
+
+                const currentStoreId = urlParams.get('id') || urlParams.get('s') || window.currentStoreSlug || (storeData && storeData.slug) || (storeData.whatsapp || '').replace(/\D/g, '');
+                const cleanNum = parsed.orderNumber.replace('#', '').trim();
+                const trackingUrl = `rastreio.html?pedido=${encodeURIComponent(cleanNum)}&s=${encodeURIComponent(currentStoreId || parsed.storeSlug || '')}`;
+
+                const floater = document.createElement('div');
+                floater.id = 'floating-order-tracker';
+                floater.className = 'fixed bottom-20 left-4 right-4 sm:left-auto sm:right-6 sm:max-w-xs z-30 pointer-events-auto';
+                floater.innerHTML = `
+                    <a href="${trackingUrl}" class="flex items-center justify-between gap-3 p-3 bg-slate-900/95 hover:bg-slate-900 text-white rounded-2xl border border-orange-500/40 shadow-2xl backdrop-blur-md transition-all active-scale group">
+                        <div class="flex items-center gap-2.5 min-w-0">
+                            <div class="w-9 h-9 rounded-xl bg-orange-500 text-slate-950 flex items-center justify-center font-bold shrink-0 shadow-md">
+                                <i data-lucide="bike" class="w-4 h-4"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                                    <span class="text-[10px] font-black uppercase tracking-wider text-orange-400">Pedido em Andamento</span>
+                                </div>
+                                <h4 class="text-xs font-black text-white truncate font-mono">${parsed.orderNumber} • Ver Rastreio</h4>
+                            </div>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform shrink-0"></i>
+                    </a>
+                `;
+                document.body.appendChild(floater);
+                if (window.lucide) lucide.createIcons();
+            } catch(e){}
+        };
+
+        // Chama checagem ao inicializar
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                if (typeof window.checkFloatingOrderTracker === 'function') window.checkFloatingOrderTracker();
+            }, 1200);
+        });
 
         /* Funções de Impressão Térmica de Comanda / Cupom (58mm / 80mm) */
         window.selectedReceiptWidth = '58mm';

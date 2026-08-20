@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Pedidos em Tempo Real - Estilo iFood</title>
+    <title>Gestor de Pedidos & PDV em Tempo Real</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -28,7 +28,7 @@
         }
     </script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -128,14 +128,14 @@
             <button onclick="window.silenceCurrentAlarm()" class="px-3 py-1.5 bg-black/40 hover:bg-black/60 rounded-xl text-xs font-black uppercase tracking-wider transition-all border border-white/20">
                 Silenciar Som
             </button>
-            <button onclick="window.scrollToPendingColumn()" class="px-4 py-1.5 bg-white text-orange-600 hover:bg-orange-50 rounded-xl text-xs font-black uppercase tracking-wider shadow-lg transition-all">
+            <button onclick="window.switchMainTab('kanban'); window.scrollToPendingColumn();" class="px-4 py-1.5 bg-white text-orange-600 hover:bg-orange-50 rounded-xl text-xs font-black uppercase tracking-wider shadow-lg transition-all">
                 Ver Pedidos
             </button>
         </div>
     </div>
 
     <!-- CABEÇALHO PRINCIPAL DO GESTOR -->
-    <header class="bg-slate-900 border-b border-slate-800 px-4 py-3 shrink-0 flex flex-wrap items-center justify-between gap-3 shadow-md z-40">
+    <header class="bg-slate-900 border-b border-slate-800 px-4 py-2.5 shrink-0 flex flex-wrap items-center justify-between gap-3 shadow-md z-40">
         <!-- Logo e Info da Loja -->
         <div class="flex items-center gap-3">
             <div id="store-logo-container" class="w-10 h-10 rounded-xl bg-orange-600 text-white flex items-center justify-center font-black text-base shadow-md overflow-hidden border border-slate-700">
@@ -157,30 +157,29 @@
             </div>
         </div>
 
-        <!-- Métricas Rápidas do Dia (Estilo iFood / Balcão) -->
-        <div class="hidden lg:flex items-center gap-4 bg-slate-950 px-4 py-2 rounded-2xl border border-slate-800 shadow-inner">
-            <div class="text-center">
-                <span class="text-[9px] uppercase tracking-widest font-black text-slate-400 block">Pedidos Hoje</span>
-                <span id="stat-total-orders" class="font-mono text-sm font-black text-white">0</span>
-            </div>
-            <div class="w-px h-6 bg-slate-800"></div>
-            <div class="text-center">
-                <span class="text-[9px] uppercase tracking-widest font-black text-slate-400 block">Faturamento Hoje</span>
-                <span id="stat-total-revenue" class="font-mono text-sm font-black text-emerald-400">R$ 0,00</span>
-            </div>
-            <div class="w-px h-6 bg-slate-800"></div>
-            <div class="text-center">
-                <span class="text-[9px] uppercase tracking-widest font-black text-slate-400 block">Em Produção</span>
-                <span id="stat-in-kitchen" class="font-mono text-sm font-black text-yellow-400">0</span>
-            </div>
-        </div>
+        <!-- NAVEGAÇÃO PRINCIPAL DAS 3 ABAS -->
+        <nav class="flex items-center bg-slate-950 p-1 rounded-2xl border border-slate-800 shadow-inner">
+            <button id="nav-btn-kanban" onclick="window.switchMainTab('kanban')" class="px-3 sm:px-4 py-2 bg-orange-600 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-md">
+                <i data-lucide="kanban" class="w-4 h-4"></i>
+                <span>Painel Ao Vivo</span>
+                <span id="nav-badge-pending" class="hidden px-1.5 py-0.2 bg-white text-orange-600 rounded-full text-[10px] font-mono font-bold">0</span>
+            </button>
+            <button id="nav-btn-history" onclick="window.switchMainTab('history')" class="px-3 sm:px-4 py-2 text-slate-400 hover:text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all">
+                <i data-lucide="history" class="w-4 h-4"></i>
+                <span>Histórico</span>
+            </button>
+            <button id="nav-btn-reports" onclick="window.switchMainTab('reports')" class="px-3 sm:px-4 py-2 text-slate-400 hover:text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all">
+                <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+                <span>Relatórios</span>
+            </button>
+        </nav>
 
-        <!-- Controles de Som, Impressão e Ações -->
+        <!-- Controles de Som, Impressão e Ações Rápidas -->
         <div class="flex items-center gap-2">
             <!-- Botão de Som -->
-            <button id="btn-toggle-sound" onclick="window.toggleSound()" class="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 border border-slate-700 transition-all shadow-sm" title="Ativar/Desativar som do alarme de novos pedidos">
+            <button id="btn-toggle-sound" onclick="window.toggleSound()" class="px-3 py-2 bg-slate-800 hover:bg-slate-750 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 border border-slate-700 transition-all shadow-sm" title="Ativar/Desativar som do alarme">
                 <i id="sound-icon" data-lucide="volume-2" class="w-4 h-4 text-emerald-400"></i>
-                <span id="sound-label" class="hidden sm:inline">Som: Ativo</span>
+                <span id="sound-label" class="hidden xl:inline">Som: Ativo</span>
             </button>
 
             <!-- Testar Som -->
@@ -189,7 +188,7 @@
             </button>
 
             <!-- Largura da Impressão -->
-            <div class="hidden sm:flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
+            <div class="hidden md:flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
                 <button id="btn-print-58" onclick="window.setPrintWidth('58mm')" class="px-2 py-1 bg-orange-600 text-white rounded-lg text-[10px] font-black uppercase">58mm</button>
                 <button id="btn-print-80" onclick="window.setPrintWidth('80mm')" class="px-2 py-1 bg-transparent text-slate-400 hover:text-white rounded-lg text-[10px] font-bold uppercase">80mm</button>
             </div>
@@ -205,109 +204,439 @@
                 <button onclick="window.toggleDropdownMenu()" class="p-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border border-slate-700 transition-all">
                     <i data-lucide="more-vertical" class="w-4 h-4"></i>
                 </button>
-                <div id="dropdown-menu" class="hidden absolute right-0 mt-2 w-48 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-1.5 z-50">
+                <div id="dropdown-menu" class="hidden absolute right-0 mt-2 w-52 bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-1.5 z-50">
                     <a id="link-view-catalog" href="#" target="_blank" class="flex items-center gap-2 px-3 py-2 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-all">
-                        <i data-lucide="external-link" class="w-4 h-4 text-emerald-400"></i> Ver Catálogo
+                        <i data-lucide="external-link" class="w-4 h-4 text-emerald-400"></i> Ver Cardápio / Loja
                     </a>
                     <a id="link-edit-store" href="#" class="flex items-center gap-2 px-3 py-2 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-all">
                         <i data-lucide="settings" class="w-4 h-4 text-blue-400"></i> Painel de Edição
                     </a>
-                    <button onclick="window.clearFinishedOrders()" class="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800 rounded-xl transition-all">
-                        <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i> Limpar Concluídos
+                    <button onclick="window.openCleanHistoryModal()" class="w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-bold text-red-400 hover:text-red-300 hover:bg-slate-800 rounded-xl transition-all">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i> Limpar / Expurgo Banco
                     </button>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- BARRA DE BUSCA E FILTROS RÁPIDOS -->
-    <div class="bg-slate-900/60 border-b border-slate-800/80 px-4 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0">
-        <div class="flex items-center gap-2 flex-1 max-w-md">
-            <div class="relative w-full">
-                <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
-                <input type="text" id="filter-search" oninput="window.renderKanbanBoard()" placeholder="Buscar por cliente, Nº pedido ou item..." class="w-full pl-9 pr-4 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-white placeholder:text-slate-500 outline-none focus:border-orange-500">
+    <!-- ========================================== -->
+    <!-- ABA 1: PAINEL KANBAN AO VIVO (ESTILO IFOOD) -->
+    <!-- ========================================== -->
+    <div id="tab-view-kanban" class="flex-1 flex flex-col overflow-hidden">
+        <!-- BARRA DE BUSCA E FILTROS RÁPIDOS KANBAN -->
+        <div class="bg-slate-900/60 border-b border-slate-800/80 px-4 py-2 flex flex-wrap items-center justify-between gap-2 shrink-0">
+            <div class="flex items-center gap-2 flex-1 max-w-md">
+                <div class="relative w-full">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                    <input type="text" id="filter-search" oninput="window.renderKanbanBoard()" placeholder="Buscar por cliente, Nº pedido ou item..." class="w-full pl-9 pr-4 py-1.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-white placeholder:text-slate-500 outline-none focus:border-orange-500">
+                </div>
+            </div>
+
+            <!-- Métricas Rápidas do Dia (Estilo iFood / Balcão) -->
+            <div class="hidden lg:flex items-center gap-4 bg-slate-950 px-4 py-1.5 rounded-xl border border-slate-800 text-xs">
+                <div class="flex items-center gap-1.5">
+                    <span class="text-[10px] uppercase tracking-wider font-bold text-slate-400">Pedidos Hoje:</span>
+                    <span id="stat-total-orders" class="font-mono font-black text-white">0</span>
+                </div>
+                <div class="w-px h-4 bg-slate-800"></div>
+                <div class="flex items-center gap-1.5">
+                    <span class="text-[10px] uppercase tracking-wider font-bold text-slate-400">Faturado Hoje:</span>
+                    <span id="stat-total-revenue" class="font-mono font-black text-emerald-400">R$ 0,00</span>
+                </div>
+                <div class="w-px h-4 bg-slate-800"></div>
+                <div class="flex items-center gap-1.5">
+                    <span class="text-[10px] uppercase tracking-wider font-bold text-slate-400">Na Cozinha:</span>
+                    <span id="stat-in-kitchen" class="font-mono font-black text-yellow-400">0</span>
+                </div>
+            </div>
+            
+            <!-- Abas Mobile para trocar de coluna em telas pequenas -->
+            <div class="flex md:hidden items-center gap-1 overflow-x-auto custom-scrollbar w-full pt-1">
+                <button onclick="window.selectMobileTab('pending')" id="tab-btn-pending" class="px-3 py-1 bg-yellow-500/20 text-yellow-400 border border-yellow-500/40 rounded-lg text-xs font-bold whitespace-nowrap">
+                    Novos (<span id="mobile-badge-pending">0</span>)
+                </button>
+                <button onclick="window.selectMobileTab('preparing')" id="tab-btn-preparing" class="px-3 py-1 bg-slate-800 text-slate-400 rounded-lg text-xs font-bold whitespace-nowrap">
+                    Preparo (<span id="mobile-badge-preparing">0</span>)
+                </button>
+                <button onclick="window.selectMobileTab('ready')" id="tab-btn-ready" class="px-3 py-1 bg-slate-800 text-slate-400 rounded-lg text-xs font-bold whitespace-nowrap">
+                    Prontos (<span id="mobile-badge-ready">0</span>)
+                </button>
+                <button onclick="window.selectMobileTab('completed')" id="tab-btn-completed" class="px-3 py-1 bg-slate-800 text-slate-400 rounded-lg text-xs font-bold whitespace-nowrap">
+                    Concluídos (<span id="mobile-badge-completed">0</span>)
+                </button>
             </div>
         </div>
-        
-        <!-- Abas Mobile para trocar de coluna em telas pequenas -->
-        <div class="flex md:hidden items-center gap-1 overflow-x-auto custom-scrollbar w-full pt-1">
-            <button onclick="window.selectMobileTab('pending')" id="tab-btn-pending" class="px-3 py-1 bg-yellow-500/20 text-yellow-400 border border-yellow-500/40 rounded-lg text-xs font-bold whitespace-nowrap">
-                Novos (<span id="mobile-badge-pending">0</span>)
-            </button>
-            <button onclick="window.selectMobileTab('preparing')" id="tab-btn-preparing" class="px-3 py-1 bg-slate-800 text-slate-400 rounded-lg text-xs font-bold whitespace-nowrap">
-                Preparo (<span id="mobile-badge-preparing">0</span>)
-            </button>
-            <button onclick="window.selectMobileTab('ready')" id="tab-btn-ready" class="px-3 py-1 bg-slate-800 text-slate-400 rounded-lg text-xs font-bold whitespace-nowrap">
-                Prontos (<span id="mobile-badge-ready">0</span>)
-            </button>
-            <button onclick="window.selectMobileTab('completed')" id="tab-btn-completed" class="px-3 py-1 bg-slate-800 text-slate-400 rounded-lg text-xs font-bold whitespace-nowrap">
-                Concluídos (<span id="mobile-badge-completed">0</span>)
-            </button>
+
+        <!-- CORPO DO KANBAN BOARD (4 COLUNAS ESTILO IFOOD) -->
+        <main class="flex-1 p-3 sm:p-4 overflow-x-auto overflow-y-hidden custom-scrollbar bg-slate-950">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 sm:gap-4 h-full min-w-[300px] md:min-w-[1100px]">
+                
+                <!-- COLUNA 1: 🟡 NOVOS / PENDENTES -->
+                <div id="col-container-pending" class="flex flex-col bg-slate-900/80 rounded-2xl border border-yellow-500/30 overflow-hidden shadow-xl h-full">
+                    <div class="p-3 bg-gradient-to-r from-yellow-950/60 to-slate-900 border-b border-yellow-500/30 flex items-center justify-between shrink-0">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-yellow-400 animate-pulse"></span>
+                            <h2 class="font-black text-xs uppercase tracking-wider text-yellow-300">1. Novos / Pendentes</h2>
+                        </div>
+                        <span id="col-count-pending" class="px-2.5 py-0.5 bg-yellow-400 text-slate-950 rounded-full text-xs font-black font-mono">0</span>
+                    </div>
+                    <div id="col-list-pending" class="flex-1 p-2 sm:p-3 overflow-y-auto space-y-3 custom-scrollbar"></div>
+                </div>
+
+                <!-- COLUNA 2: 🔵 EM PREPARO / COZINHA -->
+                <div id="col-container-preparing" class="flex flex-col bg-slate-900/80 rounded-2xl border border-blue-500/30 overflow-hidden shadow-xl h-full">
+                    <div class="p-3 bg-gradient-to-r from-blue-950/60 to-slate-900 border-b border-blue-500/30 flex items-center justify-between shrink-0">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-blue-400"></span>
+                            <h2 class="font-black text-xs uppercase tracking-wider text-blue-300">2. Em Preparo</h2>
+                        </div>
+                        <span id="col-count-preparing" class="px-2.5 py-0.5 bg-blue-500 text-white rounded-full text-xs font-black font-mono">0</span>
+                    </div>
+                    <div id="col-list-preparing" class="flex-1 p-2 sm:p-3 overflow-y-auto space-y-3 custom-scrollbar"></div>
+                </div>
+
+                <!-- COLUNA 3: 🟣 PRONTO / SAIU PARA ENTREGA -->
+                <div id="col-container-ready" class="flex flex-col bg-slate-900/80 rounded-2xl border border-purple-500/30 overflow-hidden shadow-xl h-full">
+                    <div class="p-3 bg-gradient-to-r from-purple-950/60 to-slate-900 border-b border-purple-500/30 flex items-center justify-between shrink-0">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-purple-400"></span>
+                            <h2 class="font-black text-xs uppercase tracking-wider text-purple-300">3. Saiu p/ Entrega</h2>
+                        </div>
+                        <span id="col-count-ready" class="px-2.5 py-0.5 bg-purple-500 text-white rounded-full text-xs font-black font-mono">0</span>
+                    </div>
+                    <div id="col-list-ready" class="flex-1 p-2 sm:p-3 overflow-y-auto space-y-3 custom-scrollbar"></div>
+                </div>
+
+                <!-- COLUNA 4: 🟢 FINALIZADOS / CONCLUÍDOS HOJE -->
+                <div id="col-container-completed" class="flex flex-col bg-slate-900/80 rounded-2xl border border-emerald-500/30 overflow-hidden shadow-xl h-full">
+                    <div class="p-3 bg-gradient-to-r from-emerald-950/60 to-slate-900 border-b border-emerald-500/30 flex items-center justify-between shrink-0">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
+                            <h2 class="font-black text-xs uppercase tracking-wider text-emerald-300">4. Concluídos Hoje</h2>
+                        </div>
+                        <span id="col-count-completed" class="px-2.5 py-0.5 bg-emerald-500 text-slate-950 rounded-full text-xs font-black font-mono">0</span>
+                    </div>
+                    <div id="col-list-completed" class="flex-1 p-2 sm:p-3 overflow-y-auto space-y-3 custom-scrollbar"></div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- ABA 2: HISTÓRICO COMPLETO & EXCLUSÃO BANCO -->
+    <!-- ========================================== -->
+    <div id="tab-view-history" class="hidden flex-1 flex flex-col overflow-hidden bg-slate-950">
+        <!-- BARRA DE FILTROS DO HISTÓRICO -->
+        <div class="bg-slate-900/80 border-b border-slate-800 px-4 py-3 shrink-0 flex flex-wrap items-center justify-between gap-3">
+            <!-- Filtro de Busca -->
+            <div class="flex items-center gap-2 flex-1 min-w-[220px] max-w-sm">
+                <div class="relative w-full">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2"></i>
+                    <input type="text" id="history-search" oninput="window.renderHistoryList()" placeholder="Buscar cliente, nº ou telefone..." class="w-full pl-9 pr-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-white placeholder:text-slate-500 outline-none focus:border-orange-500">
+                </div>
+            </div>
+
+            <!-- Filtros Rápidos de Período -->
+            <div class="flex items-center gap-1.5 flex-wrap">
+                <button onclick="window.setHistoryPeriod('today')" id="h-filter-today" class="px-3 py-1.5 bg-orange-600 text-white rounded-xl text-xs font-bold uppercase transition-all shadow-sm">Hoje</button>
+                <button onclick="window.setHistoryPeriod('yesterday')" id="h-filter-yesterday" class="px-3 py-1.5 bg-slate-800 text-slate-300 hover:text-white rounded-xl text-xs font-bold uppercase transition-all">Ontem</button>
+                <button onclick="window.setHistoryPeriod('7days')" id="h-filter-7days" class="px-3 py-1.5 bg-slate-800 text-slate-300 hover:text-white rounded-xl text-xs font-bold uppercase transition-all">7 Dias</button>
+                <button onclick="window.setHistoryPeriod('this_month')" id="h-filter-this_month" class="px-3 py-1.5 bg-slate-800 text-slate-300 hover:text-white rounded-xl text-xs font-bold uppercase transition-all">Este Mês</button>
+                <button onclick="window.setHistoryPeriod('all')" id="h-filter-all" class="px-3 py-1.5 bg-slate-800 text-slate-300 hover:text-white rounded-xl text-xs font-bold uppercase transition-all">Todos</button>
+            </div>
+
+            <!-- Filtro de Status e Ação de Limpeza -->
+            <div class="flex items-center gap-2">
+                <select id="history-status-select" onchange="window.renderHistoryList()" class="px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-white outline-none focus:border-orange-500">
+                    <option value="all">Status: Todos</option>
+                    <option value="completed">Concluídos</option>
+                    <option value="cancelled">Cancelados/Recusados</option>
+                    <option value="open">Em Aberto</option>
+                </select>
+
+                <button onclick="window.openCleanHistoryModal()" class="px-3 py-2 bg-red-950/60 hover:bg-red-900/80 text-red-300 border border-red-800/80 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm cursor-pointer" title="Limpar e economizar espaço no Firestore">
+                    <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i>
+                    <span class="hidden sm:inline">Limpar Histórico</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Resumo do Período Filtrado -->
+        <div class="bg-slate-900/40 px-4 py-2 border-b border-slate-800/60 flex items-center justify-between text-xs text-slate-400">
+            <div class="flex items-center gap-2 font-medium">
+                <span>Encontrados: <strong id="history-count-label" class="text-white">0 pedidos</strong></span>
+                <span>•</span>
+                <span>Total somado: <strong id="history-total-label" class="text-emerald-400">R$ 0,00</strong></span>
+            </div>
+            <div class="text-[11px] text-slate-500">
+                <span>* Você pode excluir pedidos individualmente para manter seu banco limpo.</span>
+            </div>
+        </div>
+
+        <!-- Lista de Pedidos do Histórico -->
+        <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
+            <div id="history-orders-container" class="max-w-6xl mx-auto space-y-3">
+                <!-- Inserido dinamicamente via JavaScript -->
+            </div>
         </div>
     </div>
 
-    <!-- CORPO DO KANBAN BOARD (4 COLUNAS ESTILO IFOOD) -->
-    <main class="flex-1 p-3 sm:p-4 overflow-x-auto overflow-y-hidden custom-scrollbar bg-slate-950">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-3 sm:gap-4 h-full min-w-[300px] md:min-w-[1100px]">
+    <!-- ========================================== -->
+    <!-- ABA 3: RELATÓRIOS FINANCEIROS & MÉTRICAS   -->
+    <!-- ========================================== -->
+    <div id="tab-view-reports" class="hidden flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar bg-slate-950">
+        <div class="max-w-6xl mx-auto space-y-6">
             
-            <!-- COLUNA 1: 🟡 NOVOS / PENDENTES -->
-            <div id="col-container-pending" class="flex flex-col bg-slate-900/80 rounded-2xl border border-yellow-500/30 overflow-hidden shadow-xl h-full">
-                <div class="p-3 bg-gradient-to-r from-yellow-950/60 to-slate-900 border-b border-yellow-500/30 flex items-center justify-between shrink-0">
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-yellow-400 animate-pulse"></span>
-                        <h2 class="font-black text-xs uppercase tracking-wider text-yellow-300">1. Novos / Pendentes</h2>
-                    </div>
-                    <span id="col-count-pending" class="px-2.5 py-0.5 bg-yellow-400 text-slate-950 rounded-full text-xs font-black font-mono">0</span>
+            <!-- TOPO: SELETOR DE PERÍODO DO RELATÓRIO -->
+            <div class="flex flex-wrap items-center justify-between gap-4 bg-slate-900 p-4 rounded-3xl border border-slate-800 shadow-xl">
+                <div>
+                    <h2 class="text-lg font-black text-white uppercase italic flex items-center gap-2">
+                        <i data-lucide="pie-chart" class="w-5 h-5 text-emerald-400"></i>
+                        Relatório Financeiro & Desempenho
+                    </h2>
+                    <p class="text-xs text-slate-400">Acompanhe faturamento, formas de pagamento e produtos mais vendidos.</p>
                 </div>
-                <div id="col-list-pending" class="flex-1 p-2 sm:p-3 overflow-y-auto space-y-3 custom-scrollbar">
-                    <!-- Cards inseridos via JS -->
-                </div>
-            </div>
-
-            <!-- COLUNA 2: 🔵 EM PREPARO / COZINHA -->
-            <div id="col-container-preparing" class="flex flex-col bg-slate-900/80 rounded-2xl border border-blue-500/30 overflow-hidden shadow-xl h-full">
-                <div class="p-3 bg-gradient-to-r from-blue-950/60 to-slate-900 border-b border-blue-500/30 flex items-center justify-between shrink-0">
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-blue-400"></span>
-                        <h2 class="font-black text-xs uppercase tracking-wider text-blue-300">2. Em Preparo</h2>
-                    </div>
-                    <span id="col-count-preparing" class="px-2.5 py-0.5 bg-blue-500 text-white rounded-full text-xs font-black font-mono">0</span>
-                </div>
-                <div id="col-list-preparing" class="flex-1 p-2 sm:p-3 overflow-y-auto space-y-3 custom-scrollbar">
-                    <!-- Cards inseridos via JS -->
+                <div class="flex items-center gap-1.5 bg-slate-950 p-1 rounded-2xl border border-slate-800">
+                    <button onclick="window.setReportPeriod('today')" id="r-filter-today" class="px-3.5 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-black uppercase transition-all shadow-md">Hoje</button>
+                    <button onclick="window.setReportPeriod('yesterday')" id="r-filter-yesterday" class="px-3.5 py-1.5 text-slate-400 hover:text-white rounded-xl text-xs font-bold uppercase transition-all">Ontem</button>
+                    <button onclick="window.setReportPeriod('7days')" id="r-filter-7days" class="px-3.5 py-1.5 text-slate-400 hover:text-white rounded-xl text-xs font-bold uppercase transition-all">7 Dias</button>
+                    <button onclick="window.setReportPeriod('this_month')" id="r-filter-this_month" class="px-3.5 py-1.5 text-slate-400 hover:text-white rounded-xl text-xs font-bold uppercase transition-all">Este Mês</button>
+                    <button onclick="window.setReportPeriod('all')" id="r-filter-all" class="px-3.5 py-1.5 text-slate-400 hover:text-white rounded-xl text-xs font-bold uppercase transition-all">Tudo</button>
                 </div>
             </div>
 
-            <!-- COLUNA 3: 🟣 PRONTO / SAIU PARA ENTREGA -->
-            <div id="col-container-ready" class="flex flex-col bg-slate-900/80 rounded-2xl border border-purple-500/30 overflow-hidden shadow-xl h-full">
-                <div class="p-3 bg-gradient-to-r from-purple-950/60 to-slate-900 border-b border-purple-500/30 flex items-center justify-between shrink-0">
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-purple-400"></span>
-                        <h2 class="font-black text-xs uppercase tracking-wider text-purple-300">3. Saiu p/ Entrega</h2>
+            <!-- CARDS DE METRICAS PRINCIPAIS (KPIs) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                <!-- Faturamento Total -->
+                <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-xl flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] uppercase font-black tracking-widest text-slate-400 block mb-1">Total Faturado</span>
+                        <h3 id="kpi-revenue" class="text-2xl font-black font-mono text-emerald-400">R$ 0,00</h3>
+                        <span id="kpi-revenue-subtitle" class="text-[10px] text-slate-500">Pedidos concluídos</span>
                     </div>
-                    <span id="col-count-ready" class="px-2.5 py-0.5 bg-purple-500 text-white rounded-full text-xs font-black font-mono">0</span>
+                    <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-bold">
+                        <i data-lucide="dollar-sign" class="w-6 h-6"></i>
+                    </div>
                 </div>
-                <div id="col-list-ready" class="flex-1 p-2 sm:p-3 overflow-y-auto space-y-3 custom-scrollbar">
-                    <!-- Cards inseridos via JS -->
+
+                <!-- Pedidos Entregues -->
+                <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-xl flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] uppercase font-black tracking-widest text-slate-400 block mb-1">Pedidos Entregues</span>
+                        <h3 id="kpi-completed-orders" class="text-2xl font-black font-mono text-white">0</h3>
+                        <span id="kpi-completed-subtitle" class="text-[10px] text-slate-500">Finalizados com sucesso</span>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center font-bold">
+                        <i data-lucide="package-check" class="w-6 h-6"></i>
+                    </div>
                 </div>
+
+                <!-- Ticket Médio -->
+                <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-xl flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] uppercase font-black tracking-widest text-slate-400 block mb-1">Ticket Médio</span>
+                        <h3 id="kpi-ticket" class="text-2xl font-black font-mono text-amber-400">R$ 0,00</h3>
+                        <span class="text-[10px] text-slate-500">Média por pedido</span>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center font-bold">
+                        <i data-lucide="trending-up" class="w-6 h-6"></i>
+                    </div>
+                </div>
+
+                <!-- Fretes / Taxas de Entrega -->
+                <div class="bg-slate-900 p-5 rounded-3xl border border-slate-800 shadow-xl flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] uppercase font-black tracking-widest text-slate-400 block mb-1">Taxas de Entrega</span>
+                        <h3 id="kpi-shipping" class="text-2xl font-black font-mono text-purple-400">R$ 0,00</h3>
+                        <span id="kpi-shipping-count" class="text-[10px] text-slate-500">0 entregas</span>
+                    </div>
+                    <div class="w-12 h-12 rounded-2xl bg-purple-500/10 text-purple-400 border border-purple-500/20 flex items-center justify-center font-bold">
+                        <i data-lucide="bike" class="w-6 h-6"></i>
+                    </div>
+                </div>
+
             </div>
 
-            <!-- COLUNA 4: 🟢 FINALIZADOS / CONCLUÍDOS -->
-            <div id="col-container-completed" class="flex flex-col bg-slate-900/80 rounded-2xl border border-emerald-500/30 overflow-hidden shadow-xl h-full">
-                <div class="p-3 bg-gradient-to-r from-emerald-950/60 to-slate-900 border-b border-emerald-500/30 flex items-center justify-between shrink-0">
-                    <div class="flex items-center gap-2">
-                        <span class="w-3 h-3 rounded-full bg-emerald-400"></span>
-                        <h2 class="font-black text-xs uppercase tracking-wider text-emerald-300">4. Concluídos Hoje</h2>
+            <!-- SEÇÃO 2: FORMAS DE PAGAMENTO & TIPOS DE ENTREGA -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                <!-- Divisão por Formas de Pagamento (PIX, Cartão, Dinheiro) -->
+                <div class="lg:col-span-7 bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-black text-sm uppercase text-white tracking-wide flex items-center gap-2">
+                            <i data-lucide="wallet" class="w-4 h-4 text-emerald-400"></i>
+                            Faturamento por Forma de Pagamento
+                        </h3>
+                        <span class="text-[11px] text-slate-500 font-bold font-mono" id="pay-total-sum">Total: R$ 0,00</span>
                     </div>
-                    <span id="col-count-completed" class="px-2.5 py-0.5 bg-emerald-500 text-slate-950 rounded-full text-xs font-black font-mono">0</span>
+
+                    <!-- PIX -->
+                    <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                                <span class="font-black text-slate-200">PIX ⚡</span>
+                                <span id="pay-pix-count" class="text-slate-500 font-mono">(0 pedidos)</span>
+                            </div>
+                            <div class="text-right">
+                                <span id="pay-pix-val" class="font-mono font-black text-emerald-400">R$ 0,00</span>
+                                <span id="pay-pix-pct" class="text-[10px] text-slate-500 ml-2 font-mono">0%</span>
+                            </div>
+                        </div>
+                        <div class="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden">
+                            <div id="pay-pix-bar" class="h-full bg-emerald-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- CARTÃO -->
+                    <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+                                <span class="font-black text-slate-200">Cartão de Crédito/Débito 💳</span>
+                                <span id="pay-card-count" class="text-slate-500 font-mono">(0 pedidos)</span>
+                            </div>
+                            <div class="text-right">
+                                <span id="pay-card-val" class="font-mono font-black text-blue-400">R$ 0,00</span>
+                                <span id="pay-card-pct" class="text-[10px] text-slate-500 ml-2 font-mono">0%</span>
+                            </div>
+                        </div>
+                        <div class="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden">
+                            <div id="pay-card-bar" class="h-full bg-blue-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- DINHEIRO -->
+                    <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800/80 space-y-2">
+                        <div class="flex items-center justify-between text-xs">
+                            <div class="flex items-center gap-2">
+                                <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                                <span class="font-black text-slate-200">Dinheiro 💵</span>
+                                <span id="pay-cash-count" class="text-slate-500 font-mono">(0 pedidos)</span>
+                            </div>
+                            <div class="text-right">
+                                <span id="pay-cash-val" class="font-mono font-black text-yellow-400">R$ 0,00</span>
+                                <span id="pay-cash-pct" class="text-[10px] text-slate-500 ml-2 font-mono">0%</span>
+                            </div>
+                        </div>
+                        <div class="w-full h-2.5 bg-slate-900 rounded-full overflow-hidden">
+                            <div id="pay-cash-bar" class="h-full bg-yellow-500 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        </div>
+                    </div>
                 </div>
-                <div id="col-list-completed" class="flex-1 p-2 sm:p-3 overflow-y-auto space-y-3 custom-scrollbar">
-                    <!-- Cards inseridos via JS -->
+
+                <!-- Divisão por Tipo de Entrega (Delivery vs Balcão) -->
+                <div class="lg:col-span-5 bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl space-y-4 flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-black text-sm uppercase text-white tracking-wide flex items-center gap-2 mb-4">
+                            <i data-lucide="truck" class="w-4 h-4 text-orange-400"></i>
+                            Tipo de Entrega
+                        </h3>
+
+                        <div class="grid grid-cols-2 gap-3 mb-4">
+                            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-center">
+                                <i data-lucide="bike" class="w-6 h-6 text-orange-400 mx-auto mb-2"></i>
+                                <span class="text-[10px] uppercase font-bold text-slate-400 block">Delivery</span>
+                                <h4 id="ship-delivery-count" class="text-xl font-black font-mono text-white">0</h4>
+                                <span id="ship-delivery-val" class="text-xs font-mono text-emerald-400 font-bold block mt-1">R$ 0,00</span>
+                            </div>
+
+                            <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-center">
+                                <i data-lucide="store" class="w-6 h-6 text-blue-400 mx-auto mb-2"></i>
+                                <span class="text-[10px] uppercase font-bold text-slate-400 block">Balcão / Mesa</span>
+                                <h4 id="ship-pickup-count" class="text-xl font-black font-mono text-white">0</h4>
+                                <span id="ship-pickup-val" class="text-xs font-mono text-emerald-400 font-bold block mt-1">R$ 0,00</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-slate-950/60 rounded-2xl border border-slate-800 text-xs text-slate-400 flex items-center gap-2">
+                        <i data-lucide="info" class="w-4 h-4 text-slate-500 shrink-0"></i>
+                        <span>Os valores acima são calculados em tempo real com base no período selecionado.</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- SEÇÃO 3: RANKING DE PRODUTOS MAIS VENDIDOS -->
+            <div class="bg-slate-900 p-6 rounded-3xl border border-slate-800 shadow-xl space-y-4">
+                <div class="flex items-center justify-between">
+                    <h3 class="font-black text-sm uppercase text-white tracking-wide flex items-center gap-2">
+                        <i data-lucide="trophy" class="w-4 h-4 text-yellow-400"></i>
+                        Produtos Mais Vendidos no Período
+                    </h3>
+                    <span class="text-xs text-slate-400 font-bold">Top 10 Itens</span>
+                </div>
+
+                <div id="top-products-list" class="space-y-2">
+                    <!-- Inserido dinamicamente via JS -->
                 </div>
             </div>
 
         </div>
-    </main>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- MODAIS E COMPONENTES AUXILIARES            -->
+    <!-- ========================================== -->
+
+    <!-- MODAL DE LIMPEZA DO HISTÓRICO (EXPURGO DE BANCO) -->
+    <div id="clean-history-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col">
+            <div class="p-4 bg-red-950/80 text-white flex items-center justify-between border-b border-red-900/60">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="trash-2" class="w-5 h-5 text-red-400"></i>
+                    <h3 class="font-black text-sm uppercase">Limpeza e Expurgo do Banco</h3>
+                </div>
+                <button onclick="window.closeCleanHistoryModal()" class="p-1 text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-5 space-y-4">
+                <p class="text-xs text-slate-300 leading-relaxed">
+                    Excluir pedidos antigos ou cancelados libera espaço no banco de dados da sua loja e mantém seu painel sempre rápido. Escolha a opção desejada:
+                </p>
+
+                <div class="space-y-2.5">
+                    <label class="flex items-start gap-3 p-3 bg-slate-950 rounded-2xl border border-slate-800 hover:border-slate-700 cursor-pointer">
+                        <input type="radio" name="clean-type" value="cancelled" checked class="mt-1 accent-orange-500">
+                        <div>
+                            <span class="text-xs font-black text-white block">Excluir apenas Cancelados e Recusados</span>
+                            <span class="text-[10px] text-slate-500">Remove pedidos que não foram aceitos ou concluídos.</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-start gap-3 p-3 bg-slate-950 rounded-2xl border border-slate-800 hover:border-slate-700 cursor-pointer">
+                        <input type="radio" name="clean-type" value="older_7days" class="mt-1 accent-orange-500">
+                        <div>
+                            <span class="text-xs font-black text-white block">Excluir Concluídos com mais de 7 dias</span>
+                            <span class="text-[10px] text-slate-500">Mantém os pedidos desta semana e apaga os anteriores.</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-start gap-3 p-3 bg-slate-950 rounded-2xl border border-slate-800 hover:border-slate-700 cursor-pointer">
+                        <input type="radio" name="clean-type" value="older_30days" class="mt-1 accent-orange-500">
+                        <div>
+                            <span class="text-xs font-black text-white block">Excluir Concluídos com mais de 30 dias</span>
+                            <span class="text-[10px] text-slate-500">Mantém os pedidos deste mês e apaga meses passados.</span>
+                        </div>
+                    </label>
+
+                    <label class="flex items-start gap-3 p-3 bg-slate-950 rounded-2xl border border-slate-800 hover:border-red-500 cursor-pointer">
+                        <input type="radio" name="clean-type" value="all_completed" class="mt-1 accent-red-500">
+                        <div>
+                            <span class="text-xs font-black text-red-400 block">Excluir Todos os Concluídos</span>
+                            <span class="text-[10px] text-slate-500">Zera o histórico de concluídos e mantém apenas pedidos abertos de hoje.</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            <div class="p-4 bg-slate-800/80 border-t border-slate-700 flex gap-2">
+                <button onclick="window.closeCleanHistoryModal()" class="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-xs font-bold uppercase transition-all">Cancelar</button>
+                <button onclick="window.executeCleanHistory()" class="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-lg">Confirmar e Excluir</button>
+            </div>
+        </div>
+    </div>
 
     <!-- MODAL DE NOVO PEDIDO MANUAL (BALCÃO / TELEFONE) -->
     <div id="manual-order-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
@@ -367,7 +696,9 @@
         </div>
     </div>
 
-    <!-- SCRIPT PRINCIPAL DO GESTOR DE PEDIDOS -->
+    <!-- ========================================== -->
+    <!-- SCRIPT PRINCIPAL E LÓGICA DO GESTOR       -->
+    <!-- ========================================== -->
     <script>
         // Estado Global
         window.currentStoreId = '';
@@ -378,8 +709,11 @@
         window.alarmInterval = null;
         window.currentPrintWidth = '58mm';
         window.activeMobileTab = 'pending';
+        window.currentMainTab = 'kanban';
+        window.historyPeriod = 'today';
+        window.reportPeriod = 'today';
 
-        // Helpers de Formatação
+        // Helpers de Formatação e Datas
         function formatCurrency(val) {
             const num = typeof val === 'number' ? val : parseFloat(String(val || '0').replace(',', '.'));
             return (isNaN(num) ? 0 : num).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
@@ -394,6 +728,38 @@
             const hours = Math.floor(mins / 60);
             if (hours < 24) return `há ${hours}h`;
             return new Date(timestamp).toLocaleDateString('pt-BR');
+        }
+
+        function isSameDay(d1, d2) {
+            return d1.getFullYear() === d2.getFullYear() &&
+                   d1.getMonth() === d2.getMonth() &&
+                   d1.getDate() === d2.getDate();
+        }
+
+        function filterOrdersByDate(ordersList, period) {
+            const now = new Date();
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+            const yesterdayStart = todayStart - 86400000;
+            const sevenDaysStart = todayStart - (6 * 86400000);
+            const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+            return ordersList.filter(o => {
+                const t = o.timestamp || (o.createdAt ? new Date(o.createdAt).getTime() : 0);
+                if (!t) return false;
+
+                if (period === 'today') {
+                    return t >= todayStart;
+                } else if (period === 'yesterday') {
+                    return t >= yesterdayStart && t < todayStart;
+                } else if (period === '7days') {
+                    return t >= sevenDaysStart;
+                } else if (period === 'this_month') {
+                    return t >= monthStart;
+                } else if (period === 'all') {
+                    return true;
+                }
+                return true;
+            });
         }
 
         // MOTOR DE SOM (WEB AUDIO API - TOQUE SINTETIZADO ESTILO IFOOD)
@@ -438,7 +804,6 @@
             initAudioContext();
             if (!window.audioContext) return;
             const now = window.audioContext.currentTime;
-            // Três notas alegres e chamativas (D5 -> A5 -> D6)
             playChimeTone(587.33, now, 0.25);
             playChimeTone(880.00, now + 0.18, 0.25);
             playChimeTone(1174.66, now + 0.36, 0.45);
@@ -519,7 +884,43 @@
             }
         });
 
-        // NAVEGAÇÃO MOBILE TABS
+        // TROCA ENTRE AS 3 ABAS PRINCIPAIS
+        window.switchMainTab = function(tabName) {
+            window.currentMainTab = tabName;
+
+            const tabs = ['kanban', 'history', 'reports'];
+            tabs.forEach(t => {
+                const viewEl = document.getElementById(`tab-view-${t}`);
+                const btnEl = document.getElementById(`nav-btn-${t}`);
+                if (viewEl) {
+                    if (t === tabName) {
+                        viewEl.classList.remove('hidden');
+                        if (t === 'kanban' || t === 'history') viewEl.classList.add('flex');
+                    } else {
+                        viewEl.classList.add('hidden');
+                        viewEl.classList.remove('flex');
+                    }
+                }
+                if (btnEl) {
+                    if (t === tabName) {
+                        btnEl.className = "px-3 sm:px-4 py-2 bg-orange-600 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-md";
+                    } else {
+                        btnEl.className = "px-3 sm:px-4 py-2 text-slate-400 hover:text-white rounded-xl text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all";
+                    }
+                }
+            });
+
+            if (tabName === 'kanban') {
+                window.renderKanbanBoard();
+            } else if (tabName === 'history') {
+                window.renderHistoryList();
+            } else if (tabName === 'reports') {
+                window.renderReports();
+            }
+            if (window.lucide) lucide.createIcons();
+        };
+
+        // NAVEGAÇÃO MOBILE TABS (KANBAN)
         window.selectMobileTab = function(tabName) {
             window.activeMobileTab = tabName;
             const cols = ['pending', 'preparing', 'ready', 'completed'];
@@ -597,9 +998,8 @@
         }
 
         function setupRealtimeOrderListener(storeId) {
-            const { collection, query, where, orderBy, onSnapshot } = window.firebaseUtils;
+            const { collection, query, where, onSnapshot } = window.firebaseUtils;
 
-            // Escuta pedidos filtrados pelo storeSlug
             const ordersRef = collection(window.db, "orders");
             const q = query(ordersRef, where("storeSlug", "==", storeId));
 
@@ -612,15 +1012,23 @@
                     });
                 });
 
-                // Ordena pelo timestamp decrescente (mais novos primeiro)
+                // Ordena pelo timestamp decrescente
                 orderList.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-                const prevPendingCount = (window.orders || []).filter(o => o.status === 'pending').length;
                 window.orders = orderList;
 
                 const newPendingCount = orderList.filter(o => o.status === 'pending').length;
+                const badgeNav = document.getElementById('nav-badge-pending');
+                if (badgeNav) {
+                    if (newPendingCount > 0) {
+                        badgeNav.classList.remove('hidden');
+                        badgeNav.innerText = newPendingCount;
+                    } else {
+                        badgeNav.classList.add('hidden');
+                    }
+                }
 
-                // Se chegou novo pedido pendente, dispara alarme sonoro e banner!
+                // Disparo de Alarme sonoro se há pendentes
                 if (newPendingCount > 0) {
                     const alertBar = document.getElementById('new-order-sound-alert-bar');
                     const badge = document.getElementById('pending-count-badge');
@@ -636,7 +1044,13 @@
                     if (alertBar) alertBar.classList.add('hidden');
                 }
 
-                window.renderKanbanBoard();
+                if (window.currentMainTab === 'kanban') {
+                    window.renderKanbanBoard();
+                } else if (window.currentMainTab === 'history') {
+                    window.renderHistoryList();
+                } else if (window.currentMainTab === 'reports') {
+                    window.renderReports();
+                }
             }, (error) => {
                 console.error("Erro no listener de pedidos:", error);
                 document.getElementById('realtime-status-label').innerText = "Erro de sincronização";
@@ -644,7 +1058,9 @@
             });
         }
 
+        // ==========================================
         // RENDERIZAÇÃO DO QUADRO KANBAN
+        // ==========================================
         window.renderKanbanBoard = function() {
             const searchQuery = (document.getElementById('filter-search')?.value || '').toLowerCase().trim();
 
@@ -655,6 +1071,9 @@
 
             let totalRevToday = 0;
             let countInKitchen = 0;
+
+            const now = new Date();
+            const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
             const filteredOrders = window.orders.filter(order => {
                 if (!searchQuery) return true;
@@ -667,6 +1086,7 @@
             filteredOrders.forEach(order => {
                 const status = order.status || 'pending';
                 const orderTotal = typeof order.total === 'number' ? order.total : parseFloat(String(order.total || '0').replace(',', '.'));
+                const orderTime = order.timestamp || 0;
                 
                 if (status === 'pending') {
                     pendingOrders.push(order);
@@ -677,8 +1097,13 @@
                     readyOrders.push(order);
                     countInKitchen++;
                 } else if (status === 'completed') {
-                    completedOrders.push(order);
-                    totalRevToday += (isNaN(orderTotal) ? 0 : orderTotal);
+                    // No Kanban mostramos os concluídos de hoje para manter a tela limpa
+                    if (orderTime >= todayStart || !orderTime) {
+                        completedOrders.push(order);
+                    }
+                    if (orderTime >= todayStart) {
+                        totalRevToday += (isNaN(orderTotal) ? 0 : orderTotal);
+                    }
                 }
             });
 
@@ -693,7 +1118,8 @@
             document.getElementById('mobile-badge-ready').innerText = readyOrders.length;
             document.getElementById('mobile-badge-completed').innerText = completedOrders.length;
 
-            document.getElementById('stat-total-orders').innerText = window.orders.length;
+            const todayOrdersCount = window.orders.filter(o => (o.timestamp || 0) >= todayStart).length;
+            document.getElementById('stat-total-orders').innerText = todayOrdersCount;
             document.getElementById('stat-total-revenue').innerText = formatCurrency(totalRevToday);
             document.getElementById('stat-in-kitchen').innerText = countInKitchen;
 
@@ -721,7 +1147,6 @@
                 const orderNum = order.orderNumber || ('#' + (order.id || '').slice(0, 4));
                 const timeAgo = formatTimeAgo(order.timestamp);
                 const isDelivery = order.shippingType === 'delivery' || !!order.shippingNeighborhood;
-                const itemsCount = (order.items || []).reduce((acc, i) => acc + (i.quantity || 1), 0);
 
                 let payBadgeClass = "bg-emerald-500/20 text-emerald-400 border border-emerald-500/40";
                 let payLabel = "PIX ⚡";
@@ -768,7 +1193,10 @@
                             <span class="text-[10px] text-emerald-400 font-bold uppercase flex items-center gap-1">
                                 <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Finalizado
                             </span>
-                            <button onclick="window.updateOrderStatus('${order.id}', 'preparing')" class="text-[10px] text-slate-400 hover:text-white underline">Reabrir</button>
+                            <div class="flex items-center gap-2">
+                                <button onclick="window.updateOrderStatus('${order.id}', 'preparing')" class="text-[10px] text-slate-400 hover:text-white underline">Reabrir</button>
+                                <button onclick="window.deleteSingleOrder('${order.id}')" class="text-[10px] text-red-400 hover:text-red-300 ml-1 p-1 hover:bg-red-950/40 rounded" title="Excluir do banco"><i data-lucide="trash-2" class="w-3 h-3"></i></button>
+                            </div>
                         </div>
                     `;
                 }
@@ -791,7 +1219,7 @@
                             <div class="flex items-center justify-between">
                                 <h4 class="font-black text-sm text-white truncate max-w-[180px]">${order.customerName || 'Cliente Online'}</h4>
                                 ${order.customerPhone ? `
-                                    <button onclick="window.openCustomerWhatsApp('${order.customerPhone}', '${orderNum}', '${status}')" class="text-emerald-400 hover:text-emerald-300 p-1 bg-emerald-950/60 rounded-lg flex items-center gap-1 text-[10px] font-bold" title="Conversar no WhatsApp">
+                                    <button onclick="window.openCustomerWhatsAppDirect('${order.customerPhone}', '${orderNum}', '${status}', '${order.customerName}')" class="text-emerald-400 hover:text-emerald-300 p-1 bg-emerald-950/60 rounded-lg flex items-center gap-1 text-[10px] font-bold" title="Conversar no WhatsApp">
                                         <i data-lucide="message-square" class="w-3 h-3"></i> WhatsApp
                                     </button>
                                 ` : ''}
@@ -846,7 +1274,384 @@
             }).join('');
         }
 
+        // ==========================================
+        // RENDERIZAÇÃO DO HISTÓRICO DE PEDIDOS
+        // ==========================================
+        window.setHistoryPeriod = function(period) {
+            window.historyPeriod = period;
+            const periods = ['today', 'yesterday', '7days', 'this_month', 'all'];
+            periods.forEach(p => {
+                const btn = document.getElementById(`h-filter-${p}`);
+                if (btn) {
+                    if (p === period) {
+                        btn.className = "px-3 py-1.5 bg-orange-600 text-white rounded-xl text-xs font-bold uppercase transition-all shadow-sm";
+                    } else {
+                        btn.className = "px-3 py-1.5 bg-slate-800 text-slate-300 hover:text-white rounded-xl text-xs font-bold uppercase transition-all";
+                    }
+                }
+            });
+            window.renderHistoryList();
+        };
+
+        window.renderHistoryList = function() {
+            const searchQuery = (document.getElementById('history-search')?.value || '').toLowerCase().trim();
+            const statusFilter = document.getElementById('history-status-select')?.value || 'all';
+
+            let list = filterOrdersByDate(window.orders, window.historyPeriod);
+
+            if (statusFilter === 'completed') {
+                list = list.filter(o => o.status === 'completed');
+            } else if (statusFilter === 'cancelled') {
+                list = list.filter(o => o.status === 'cancelled');
+            } else if (statusFilter === 'open') {
+                list = list.filter(o => o.status === 'pending' || o.status === 'preparing' || o.status === 'ready');
+            }
+
+            if (searchQuery) {
+                list = list.filter(order => {
+                    const cust = (order.customerName || '').toLowerCase();
+                    const num = (order.orderNumber || '').toLowerCase();
+                    const phone = (order.customerPhone || '').toLowerCase();
+                    const itemsText = (order.items || []).map(i => i.name).join(' ').toLowerCase();
+                    return cust.includes(searchQuery) || num.includes(searchQuery) || phone.includes(searchQuery) || itemsText.includes(searchQuery);
+                });
+            }
+
+            const totalSum = list.reduce((acc, o) => {
+                const val = typeof o.total === 'number' ? o.total : parseFloat(String(o.total || '0').replace(',', '.'));
+                return acc + (isNaN(val) ? 0 : val);
+            }, 0);
+
+            document.getElementById('history-count-label').innerText = `${list.length} pedido${list.length !== 1 ? 's' : ''}`;
+            document.getElementById('history-total-label').innerText = formatCurrency(totalSum);
+
+            const container = document.getElementById('history-orders-container');
+            if (list.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl p-12 text-center text-slate-400 space-y-3">
+                        <i data-lucide="folder-search" class="w-10 h-10 mx-auto text-slate-600"></i>
+                        <h4 class="font-black text-base text-white">Nenhum pedido encontrado</h4>
+                        <p class="text-xs max-w-sm mx-auto">Tente alterar o período selecionado ou os termos da busca.</p>
+                    </div>
+                `;
+                if (window.lucide) lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = list.map(order => {
+                const orderNum = order.orderNumber || ('#' + (order.id || '').slice(0, 4));
+                const dateStr = new Date(order.timestamp || Date.now()).toLocaleString('pt-BR');
+                const isDelivery = order.shippingType === 'delivery' || !!order.shippingNeighborhood;
+                
+                let statusBadge = `<span class="px-2.5 py-1 bg-yellow-500/20 text-yellow-400 border border-yellow-500/40 rounded-lg text-[10px] font-black uppercase">Pendente</span>`;
+                if (order.status === 'preparing') {
+                    statusBadge = `<span class="px-2.5 py-1 bg-blue-500/20 text-blue-400 border border-blue-500/40 rounded-lg text-[10px] font-black uppercase">Em Preparo</span>`;
+                } else if (order.status === 'ready') {
+                    statusBadge = `<span class="px-2.5 py-1 bg-purple-500/20 text-purple-400 border border-purple-500/40 rounded-lg text-[10px] font-black uppercase">Saiu p/ Entrega</span>`;
+                } else if (order.status === 'completed') {
+                    statusBadge = `<span class="px-2.5 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-lg text-[10px] font-black uppercase">Entregue</span>`;
+                } else if (order.status === 'cancelled') {
+                    statusBadge = `<span class="px-2.5 py-1 bg-red-500/20 text-red-400 border border-red-500/40 rounded-lg text-[10px] font-black uppercase">Cancelado</span>`;
+                }
+
+                return `
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 transition-all hover:border-slate-700 shadow-md">
+                        <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-800">
+                            <div class="flex items-center gap-3">
+                                <span class="font-mono text-base font-black text-white bg-slate-950 px-2.5 py-1 rounded-xl border border-slate-800">${orderNum}</span>
+                                <div>
+                                    <h4 class="font-black text-sm text-white">${order.customerName || 'Cliente Online'}</h4>
+                                    <span class="text-[11px] text-slate-500 font-medium">${dateStr}</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                ${statusBadge}
+                                <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold ${isDelivery ? 'bg-orange-500/10 text-orange-400 border border-orange-500/30' : 'bg-blue-500/10 text-blue-400 border border-blue-500/30'}">
+                                    ${isDelivery ? '🛵 Delivery' : '🏪 Balcão'}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-12 gap-4 py-3 items-center">
+                            <!-- Itens Resumidos -->
+                            <div class="md:col-span-6 space-y-1">
+                                ${(order.items || []).map(i => `
+                                    <div class="text-xs text-slate-300">
+                                        <span class="font-black text-orange-400">${i.quantity}x</span>
+                                        <span class="font-medium">${i.name}</span>
+                                    </div>
+                                `).join('')}
+                                ${order.customerAddress ? `
+                                    <p class="text-[11px] text-slate-500 flex items-center gap-1 mt-1 truncate">
+                                        <i data-lucide="map-pin" class="w-3 h-3 shrink-0"></i>
+                                        <span>${order.customerAddress}</span>
+                                    </p>
+                                ` : ''}
+                            </div>
+
+                            <!-- Pagamento e Total -->
+                            <div class="md:col-span-3 text-left md:text-right">
+                                <span class="text-[10px] text-slate-400 uppercase font-black block">Forma / Total</span>
+                                <span class="text-xs font-bold text-slate-300">${(order.paymentMethod || 'PIX').toUpperCase()}</span>
+                                <div class="font-mono text-base font-black text-emerald-400">${formatCurrency(order.total)}</div>
+                            </div>
+
+                            <!-- Botões de Ação do Histórico -->
+                            <div class="md:col-span-3 flex items-center justify-end gap-1.5">
+                                <button onclick="window.printOrderReceipt('${order.id}')" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-slate-700 transition-all" title="Imprimir Comanda">
+                                    <i data-lucide="printer" class="w-4 h-4 text-emerald-400"></i>
+                                </button>
+                                ${order.customerPhone ? `
+                                    <button onclick="window.openCustomerWhatsAppDirect('${order.customerPhone}', '${orderNum}', '${order.status}', '${order.customerName}')" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-emerald-400 rounded-xl border border-slate-700 transition-all" title="Conversar no WhatsApp">
+                                        <i data-lucide="message-square" class="w-4 h-4 text-emerald-400"></i>
+                                    </button>
+                                ` : ''}
+                                <button onclick="window.deleteSingleOrder('${order.id}')" class="p-2 bg-slate-800 hover:bg-red-950/60 text-slate-300 hover:text-red-400 rounded-xl border border-slate-700 transition-all" title="Excluir do Banco de Dados">
+                                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            if (window.lucide) lucide.createIcons();
+        };
+
+        // ==========================================
+        // RENDERIZAÇÃO DOS RELATÓRIOS FINANCEIROS
+        // ==========================================
+        window.setReportPeriod = function(period) {
+            window.reportPeriod = period;
+            const periods = ['today', 'yesterday', '7days', 'this_month', 'all'];
+            periods.forEach(p => {
+                const btn = document.getElementById(`r-filter-${p}`);
+                if (btn) {
+                    if (p === period) {
+                        btn.className = "px-3.5 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-black uppercase transition-all shadow-md";
+                    } else {
+                        btn.className = "px-3.5 py-1.5 text-slate-400 hover:text-white rounded-xl text-xs font-bold uppercase transition-all";
+                    }
+                }
+            });
+            window.renderReports();
+        };
+
+        window.renderReports = function() {
+            const list = filterOrdersByDate(window.orders, window.reportPeriod);
+            const completedOrders = list.filter(o => o.status === 'completed');
+
+            let totalRev = 0;
+            let totalShipping = 0;
+            let deliveryCount = 0;
+            let deliveryRev = 0;
+            let pickupCount = 0;
+            let pickupRev = 0;
+
+            let pixSum = 0;
+            let pixCount = 0;
+            let cardSum = 0;
+            let cardCount = 0;
+            let cashSum = 0;
+            let cashCount = 0;
+
+            const productSalesMap = {};
+
+            completedOrders.forEach(o => {
+                const total = typeof o.total === 'number' ? o.total : parseFloat(String(o.total || '0').replace(',', '.'));
+                const validTotal = isNaN(total) ? 0 : total;
+                totalRev += validTotal;
+
+                const shipPrice = typeof o.shippingPrice === 'number' ? o.shippingPrice : parseFloat(String(o.shippingPrice || '0').replace(',', '.'));
+                if (!isNaN(shipPrice) && shipPrice > 0) {
+                    totalShipping += shipPrice;
+                }
+
+                const isDelivery = o.shippingType === 'delivery' || !!o.shippingNeighborhood;
+                if (isDelivery) {
+                    deliveryCount++;
+                    deliveryRev += validTotal;
+                } else {
+                    pickupCount++;
+                    pickupRev += validTotal;
+                }
+
+                const payMethod = (o.paymentMethod || 'pix').toLowerCase();
+                if (payMethod === 'pix') {
+                    pixSum += validTotal;
+                    pixCount++;
+                } else if (payMethod === 'card') {
+                    cardSum += validTotal;
+                    cardCount++;
+                } else if (payMethod === 'cash') {
+                    cashSum += validTotal;
+                    cashCount++;
+                } else {
+                    pixSum += validTotal;
+                    pixCount++;
+                }
+
+                (o.items || []).forEach(item => {
+                    const name = item.name || 'Item';
+                    const qty = item.quantity || 1;
+                    const price = typeof item.price === 'number' ? item.price : parseFloat(String(item.price || '0').replace(',', '.'));
+                    const itemTotal = (isNaN(price) ? 0 : price) * qty;
+
+                    if (!productSalesMap[name]) {
+                        productSalesMap[name] = { qty: 0, revenue: 0 };
+                    }
+                    productSalesMap[name].qty += qty;
+                    productSalesMap[name].revenue += itemTotal;
+                });
+            });
+
+            const avgTicket = completedOrders.length > 0 ? (totalRev / completedOrders.length) : 0;
+
+            // Atualiza KPIs
+            document.getElementById('kpi-revenue').innerText = formatCurrency(totalRev);
+            document.getElementById('kpi-completed-orders').innerText = completedOrders.length;
+            document.getElementById('kpi-ticket').innerText = formatCurrency(avgTicket);
+            document.getElementById('kpi-shipping').innerText = formatCurrency(totalShipping);
+            document.getElementById('kpi-shipping-count').innerText = `${deliveryCount} entrega${deliveryCount !== 1 ? 's' : ''}`;
+
+            // Atualiza Formas de Pagamento
+            document.getElementById('pay-total-sum').innerText = `Total: ${formatCurrency(totalRev)}`;
+
+            const pixPct = totalRev > 0 ? Math.round((pixSum / totalRev) * 100) : 0;
+            const cardPct = totalRev > 0 ? Math.round((cardSum / totalRev) * 100) : 0;
+            const cashPct = totalRev > 0 ? Math.round((cashSum / totalRev) * 100) : 0;
+
+            document.getElementById('pay-pix-val').innerText = formatCurrency(pixSum);
+            document.getElementById('pay-pix-count').innerText = `(${pixCount} pedidos)`;
+            document.getElementById('pay-pix-pct').innerText = `${pixPct}%`;
+            document.getElementById('pay-pix-bar').style.width = `${pixPct}%`;
+
+            document.getElementById('pay-card-val').innerText = formatCurrency(cardSum);
+            document.getElementById('pay-card-count').innerText = `(${cardCount} pedidos)`;
+            document.getElementById('pay-card-pct').innerText = `${cardPct}%`;
+            document.getElementById('pay-card-bar').style.width = `${cardPct}%`;
+
+            document.getElementById('pay-cash-val').innerText = formatCurrency(cashSum);
+            document.getElementById('pay-cash-count').innerText = `(${cashCount} pedidos)`;
+            document.getElementById('pay-cash-pct').innerText = `${cashPct}%`;
+            document.getElementById('pay-cash-bar').style.width = `${cashPct}%`;
+
+            // Atualiza Tipo de Entrega
+            document.getElementById('ship-delivery-count').innerText = deliveryCount;
+            document.getElementById('ship-delivery-val').innerText = formatCurrency(deliveryRev);
+            document.getElementById('ship-pickup-count').innerText = pickupCount;
+            document.getElementById('ship-pickup-val').innerText = formatCurrency(pickupRev);
+
+            // Ranking de Produtos Mais Vendidos
+            const topProducts = Object.entries(productSalesMap)
+                .map(([name, data]) => ({ name, ...data }))
+                .sort((a, b) => b.qty - a.qty)
+                .slice(0, 10);
+
+            const topContainer = document.getElementById('top-products-list');
+            if (topProducts.length === 0) {
+                topContainer.innerHTML = `
+                    <div class="p-6 text-center text-slate-500 text-xs font-bold border border-dashed border-slate-800 rounded-2xl">
+                        Nenhuma venda registrada no período selecionado.
+                    </div>
+                `;
+            } else {
+                topContainer.innerHTML = topProducts.map((p, idx) => `
+                    <div class="flex items-center justify-between p-3 bg-slate-950 rounded-2xl border border-slate-800/80 hover:border-slate-700 transition-all text-xs">
+                        <div class="flex items-center gap-3">
+                            <span class="w-6 h-6 rounded-xl bg-slate-900 border border-slate-800 text-slate-300 flex items-center justify-center font-mono font-black text-xs">
+                                ${idx + 1}
+                            </span>
+                            <div>
+                                <span class="font-black text-white block">${p.name}</span>
+                                <span class="text-[10px] text-slate-500 font-mono">${p.qty} unidades vendidas</span>
+                            </div>
+                        </div>
+                        <span class="font-mono font-black text-emerald-400">${formatCurrency(p.revenue)}</span>
+                    </div>
+                `).join('');
+            }
+
+            if (window.lucide) lucide.createIcons();
+        };
+
+        // ==========================================
+        // EXCLUSÃO E LIMPEZA NO BANCO FIRESTORE
+        // ==========================================
+        window.deleteSingleOrder = async function(orderId) {
+            if (!confirm("Tem certeza que deseja EXCLUIR este pedido do banco de dados? Esta ação é irreversível.")) {
+                return;
+            }
+
+            try {
+                const { doc, deleteDoc } = window.firebaseUtils;
+                await deleteDoc(doc(window.db, "orders", orderId));
+                window.orders = window.orders.filter(o => o.id !== orderId);
+                
+                if (window.currentMainTab === 'kanban') window.renderKanbanBoard();
+                if (window.currentMainTab === 'history') window.renderHistoryList();
+                if (window.currentMainTab === 'reports') window.renderReports();
+            } catch(e) {
+                console.error("Erro ao excluir pedido:", e);
+                alert("Erro ao excluir o pedido do banco.");
+            }
+        };
+
+        window.openCleanHistoryModal = function() {
+            document.getElementById('clean-history-modal').classList.remove('hidden');
+            document.getElementById('clean-history-modal').classList.add('flex');
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.closeCleanHistoryModal = function() {
+            document.getElementById('clean-history-modal').classList.add('hidden');
+            document.getElementById('clean-history-modal').classList.remove('flex');
+        };
+
+        window.executeCleanHistory = async function() {
+            const cleanType = document.querySelector('input[name="clean-type"]:checked')?.value || 'cancelled';
+            const now = Date.now();
+            const sevenDaysAgo = now - (7 * 86400000);
+            const thirtyDaysAgo = now - (30 * 86400000);
+
+            let targets = [];
+
+            if (cleanType === 'cancelled') {
+                targets = window.orders.filter(o => o.status === 'cancelled');
+            } else if (cleanType === 'older_7days') {
+                targets = window.orders.filter(o => (o.status === 'completed' || o.status === 'cancelled') && (o.timestamp || 0) < sevenDaysAgo);
+            } else if (cleanType === 'older_30days') {
+                targets = window.orders.filter(o => (o.status === 'completed' || o.status === 'cancelled') && (o.timestamp || 0) < thirtyDaysAgo);
+            } else if (cleanType === 'all_completed') {
+                targets = window.orders.filter(o => o.status === 'completed' || o.status === 'cancelled');
+            }
+
+            if (targets.length === 0) {
+                alert("Nenhum pedido atende aos critérios selecionados para exclusão.");
+                window.closeCleanHistoryModal();
+                return;
+            }
+
+            if (!confirm(`Confirma a exclusão permanente de ${targets.length} pedidos do banco de dados?`)) {
+                return;
+            }
+
+            try {
+                const { doc, deleteDoc } = window.firebaseUtils;
+                for (const order of targets) {
+                    await deleteDoc(doc(window.db, "orders", order.id));
+                }
+                window.closeCleanHistoryModal();
+                alert(`${targets.length} pedidos excluídos com sucesso do banco de dados!`);
+            } catch(e) {
+                console.error("Erro na limpeza do banco:", e);
+                alert("Erro ao realizar limpeza em lote.");
+            }
+        };
+
+        // ==========================================
         // ATUALIZAÇÃO DE STATUS NO FIRESTORE
+        // ==========================================
         window.updateOrderStatus = async function(orderId, newStatus) {
             initAudioContext();
             try {
@@ -856,7 +1661,6 @@
                     updatedAt: new Date().toISOString()
                 });
                 
-                // Atualiza localmente imediato
                 const order = window.orders.find(o => o.id === orderId);
                 if (order) order.status = newStatus;
                 
@@ -867,7 +1671,9 @@
                     if (alertBar) alertBar.classList.add('hidden');
                 }
                 
-                window.renderKanbanBoard();
+                if (window.currentMainTab === 'kanban') window.renderKanbanBoard();
+                if (window.currentMainTab === 'history') window.renderHistoryList();
+                if (window.currentMainTab === 'reports') window.renderReports();
             } catch(e) {
                 console.error("Erro ao atualizar status:", e);
                 alert("Erro ao atualizar status do pedido.");
@@ -877,16 +1683,6 @@
         window.cancelOrder = async function(orderId) {
             if (!confirm("Tem certeza que deseja recusar/cancelar este pedido?")) return;
             window.updateOrderStatus(orderId, 'cancelled');
-        };
-
-        window.clearFinishedOrders = async function() {
-            if (!confirm("Deseja limpar todos os pedidos concluídos da tela?")) return;
-            const completed = window.orders.filter(o => o.status === 'completed' || o.status === 'cancelled');
-            for (const order of completed) {
-                try {
-                    await window.firebaseUtils.deleteDoc(window.firebaseUtils.doc(window.db, "orders", order.id));
-                } catch(e){}
-            }
         };
 
         // WHATSAPP INTEGRATION
@@ -908,7 +1704,6 @@
                 const target = cleanPhone.length <= 11 ? '55' + cleanPhone : cleanPhone;
                 window.open(`https://api.whatsapp.com/send?phone=${target}&text=${encodeURIComponent(msg)}`, '_blank');
             } else {
-                const storeZap = (window.storeData?.w || window.storeData?.whatsapp || '').replace(/\D/g, '');
                 window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
             }
         };
@@ -1064,7 +1859,6 @@
         // INICIALIZADOR
         window.addEventListener('DOMContentLoaded', () => {
             loadStoreAndSubscribe();
-            // Desbloqueia Web Audio no primeiro clique do usuário
             document.body.addEventListener('click', () => {
                 initAudioContext();
             }, { once: true });

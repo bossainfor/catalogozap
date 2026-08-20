@@ -182,9 +182,10 @@
         <!-- Controles de Som, Impressão e Ações Rápidas -->
         <div class="flex items-center gap-2">
             <!-- Disparar Promoção Push -->
-            <button onclick="window.openPromoBroadcastModal()" class="px-3 py-2 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-slate-950 border border-emerald-500/40 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-sm cursor-pointer" title="Enviar Notificação Push de Promoção para Clientes">
+            <button onclick="window.openPromoBroadcastModal()" class="px-3 py-2 bg-emerald-600/20 hover:bg-emerald-600 text-emerald-400 hover:text-slate-950 border border-emerald-500/40 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-sm cursor-pointer relative" title="Enviar Notificação Push de Promoção para Clientes">
                 <i data-lucide="bell-ring" class="w-4 h-4 animate-bounce"></i>
                 <span class="hidden sm:inline">Disparar Oferta 🔔</span>
+                <span id="promo-header-badge" class="hidden px-1.5 py-0.5 bg-emerald-500 text-slate-950 text-[10px] font-black rounded-full shadow leading-none">0</span>
             </button>
 
             <!-- Botão de Som -->
@@ -698,18 +699,38 @@
     <!-- MODAIS E COMPONENTES AUXILIARES            -->
     <!-- ========================================== -->
 
-    <!-- MODAL DE DISPARO DE PROMOÇÃO / PUSH NOTIFICATION -->
+    <!-- MODAL DE DISPARO DE PROMOÇÃO / PUSH NOTIFICATION & HISTÓRICO -->
     <div id="promo-broadcast-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
-            <div class="p-4 bg-emerald-950/80 text-white flex items-center justify-between border-b border-emerald-900/60">
-                <div class="flex items-center gap-2">
-                    <i data-lucide="bell-ring" class="w-5 h-5 text-emerald-400 animate-bounce"></i>
-                    <h3 class="font-black text-sm uppercase italic">Disparar Oferta / Web Push</h3>
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col max-h-[92vh]">
+            <!-- Topo do Modal -->
+            <div class="p-4 bg-emerald-950/90 text-white flex items-center justify-between border-b border-emerald-900/60">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                        <i data-lucide="bell-ring" class="w-4 h-4 animate-bounce"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-black text-sm uppercase italic">Disparar Oferta / Web Push</h3>
+                        <p class="text-[10px] text-emerald-300 font-medium">Notificações e promoções para os clientes da loja</p>
+                    </div>
                 </div>
-                <button onclick="window.closePromoBroadcastModal()" class="p-1 text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <button onclick="window.closePromoBroadcastModal()" class="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-xl transition-all cursor-pointer"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
 
-            <div class="p-5 overflow-y-auto space-y-4 custom-scrollbar">
+            <!-- Abas do Modal -->
+            <div class="flex border-b border-slate-800 bg-slate-950/80 p-1.5 gap-1.5">
+                <button id="promo-tab-btn-new" onclick="window.switchPromoTab('new')" class="flex-1 py-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all bg-emerald-600 text-slate-950 shadow-md cursor-pointer">
+                    <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                    <span>Novo Disparo</span>
+                </button>
+                <button id="promo-tab-btn-history" onclick="window.switchPromoTab('history')" class="flex-1 py-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all text-slate-400 hover:text-white hover:bg-slate-900 cursor-pointer">
+                    <i data-lucide="list-checks" class="w-3.5 h-3.5"></i>
+                    <span>Ofertas Disparadas</span>
+                    <span id="promo-tab-count" class="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full text-[10px] font-mono">0</span>
+                </button>
+            </div>
+
+            <!-- Conteúdo da Aba 1: Novo Disparo -->
+            <div id="promo-view-new" class="flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar">
                 <div class="p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-2xl flex items-center gap-3">
                     <i data-lucide="info" class="w-5 h-5 text-emerald-400 shrink-0"></i>
                     <p class="text-xs text-emerald-200 leading-relaxed">
@@ -791,11 +812,27 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="pt-2 flex gap-2">
+                    <button onclick="window.closePromoBroadcastModal()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-white rounded-xl text-xs font-bold uppercase transition-all">Cancelar</button>
+                    <button onclick="window.submitPromoBroadcast()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg shadow-emerald-600/20 active:scale-95 cursor-pointer">🚀 Disparar Notificação</button>
+                </div>
             </div>
 
-            <div class="p-4 bg-slate-800/80 border-t border-slate-700 flex gap-2">
-                <button onclick="window.closePromoBroadcastModal()" class="flex-1 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-xs font-bold uppercase transition-all">Cancelar</button>
-                <button onclick="window.submitPromoBroadcast()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black rounded-xl text-xs uppercase tracking-wider transition-all shadow-lg shadow-emerald-600/20 active:scale-95 cursor-pointer">🚀 Disparar Notificação</button>
+            <!-- Conteúdo da Aba 2: Histórico de Disparos Ativos -->
+            <div id="promo-view-history" class="hidden flex-1 overflow-y-auto p-5 space-y-4 custom-scrollbar">
+                <div class="p-3 bg-slate-950 border border-slate-800 rounded-2xl flex items-center justify-between gap-3">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></div>
+                        <p class="text-xs text-slate-300">
+                            <strong>Autolimpeza Inteligente:</strong> As ofertas abaixo são <strong>excluídas automaticamente do banco</strong> assim que o tempo configurado (12h, 24h, etc) for atingido.
+                        </p>
+                    </div>
+                </div>
+
+                <div id="promo-history-list" class="space-y-3">
+                    <!-- Cards de promoções ativas gerados dinamicamente -->
+                </div>
             </div>
         </div>
     </div>
@@ -1259,6 +1296,7 @@
             // Inicia Listener em Tempo Real (onSnapshot)
             setupRealtimeOrderListener(storeId);
             setupRealtimeChatListener(storeId);
+            setupRealtimePromotionsListener(storeId);
         }
 
         function setupRealtimeOrderListener(storeId) {
@@ -2519,14 +2557,18 @@
         };
 
         // ==========================================
-        // SISTEMA DE DISPARO DE PROMOÇÃO (WEB PUSH)
+        // SISTEMA DE DISPARO DE PROMOÇÃO (WEB PUSH) & HISTÓRICO
         // ==========================================
+        window.activePromotionsList = [];
+        window.activePromoTab = 'new';
+
         window.openPromoBroadcastModal = function() {
             const modal = document.getElementById('promo-broadcast-modal');
             if (modal) {
                 modal.classList.remove('hidden');
                 modal.classList.add('flex');
             }
+            window.renderPromoHistory();
             if (window.lucide) lucide.createIcons();
         };
 
@@ -2535,6 +2577,299 @@
             if (modal) {
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
+            }
+        };
+
+        window.switchPromoTab = function(tab) {
+            window.activePromoTab = tab;
+            const btnNew = document.getElementById('promo-tab-btn-new');
+            const btnHist = document.getElementById('promo-tab-btn-history');
+            const viewNew = document.getElementById('promo-view-new');
+            const viewHist = document.getElementById('promo-view-history');
+
+            if (tab === 'new') {
+                if (btnNew) {
+                    btnNew.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all bg-emerald-600 text-slate-950 shadow-md cursor-pointer';
+                }
+                if (btnHist) {
+                    btnHist.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all text-slate-400 hover:text-white hover:bg-slate-900 cursor-pointer';
+                }
+                if (viewNew) viewNew.classList.remove('hidden');
+                if (viewHist) viewHist.classList.add('hidden');
+            } else {
+                if (btnNew) {
+                    btnNew.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all text-slate-400 hover:text-white hover:bg-slate-900 cursor-pointer';
+                }
+                if (btnHist) {
+                    btnHist.className = 'flex-1 py-2 px-3 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all bg-emerald-600 text-slate-950 shadow-md cursor-pointer';
+                }
+                if (viewNew) viewNew.classList.add('hidden');
+                if (viewHist) viewHist.classList.remove('hidden');
+                window.renderPromoHistory();
+            }
+            if (window.lucide) lucide.createIcons();
+        };
+
+        function setupRealtimePromotionsListener(storeId) {
+            if (!window.db || !window.firebaseUtils) return;
+            const { collection, query, where, onSnapshot, doc, deleteDoc } = window.firebaseUtils;
+
+            const q = query(collection(window.db, "promotions"), where("storeSlug", "==", storeId));
+
+            onSnapshot(q, (snapshot) => {
+                const now = Date.now();
+                const activeList = [];
+
+                snapshot.forEach(async (docSnap) => {
+                    const promo = { id: docSnap.id, ...docSnap.data() };
+                    const durationHours = promo.durationHours || 24;
+                    const expiresAt = promo.expiresAt || ((promo.timestamp || now) + (durationHours * 60 * 60 * 1000));
+
+                    // Autolimpeza no banco de dados quando expira
+                    if (now > expiresAt) {
+                        try {
+                            await deleteDoc(doc(window.db, "promotions", docSnap.id));
+                        } catch(e) {
+                            console.warn("Erro ao autolimpar promoção expirada:", e);
+                        }
+                    } else {
+                        promo.expiresAt = expiresAt;
+                        activeList.push(promo);
+                    }
+                });
+
+                // Ordena por mais recente primeiro
+                activeList.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+                window.activePromotionsList = activeList;
+
+                // Atualiza contadores
+                const countBadge = document.getElementById('promo-tab-count');
+                const headerBadge = document.getElementById('promo-header-badge');
+
+                if (countBadge) countBadge.innerText = activeList.length;
+                if (headerBadge) {
+                    headerBadge.innerText = activeList.length;
+                    if (activeList.length > 0) {
+                        headerBadge.classList.remove('hidden');
+                    } else {
+                        headerBadge.classList.add('hidden');
+                    }
+                }
+
+                window.renderPromoHistory();
+            }, (err) => console.warn("Erro no listener de promoções do gestor:", err));
+        }
+
+        window.formatRemainingTime = function(expiresAtMs) {
+            const now = Date.now();
+            const diff = expiresAtMs - now;
+            if (diff <= 0) return "Expirando agora...";
+
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+            if (hours > 0) {
+                return `${hours}h ${minutes}m ${seconds}s`;
+            } else if (minutes > 0) {
+                return `${minutes}m ${seconds}s`;
+            } else {
+                return `${seconds}s`;
+            }
+        };
+
+        window.renderPromoHistory = function() {
+            const container = document.getElementById('promo-history-list');
+            if (!container) return;
+
+            const list = window.activePromotionsList || [];
+
+            if (list.length === 0) {
+                container.innerHTML = `
+                    <div class="p-8 text-center bg-slate-950/60 rounded-3xl border border-dashed border-slate-800 flex flex-col items-center justify-center">
+                        <div class="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 mb-3">
+                            <i data-lucide="bell-off" class="w-6 h-6"></i>
+                        </div>
+                        <h4 class="text-xs font-black uppercase text-white tracking-wider">Nenhuma Oferta Ativa</h4>
+                        <p class="text-[11px] text-slate-400 max-w-xs mt-1 leading-relaxed">
+                            As ofertas disparadas anteriormente que passaram do prazo configurado já foram excluídas automaticamente do banco de dados.
+                        </p>
+                        <button onclick="window.switchPromoTab('new')" class="mt-4 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-md flex items-center gap-1.5 cursor-pointer">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i> Criar Novo Disparo
+                        </button>
+                    </div>
+                `;
+                if (window.lucide) lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = list.map(promo => {
+                const remainingText = window.formatRemainingTime(promo.expiresAt);
+                const createdDate = promo.timestamp ? new Date(promo.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit' }) : 'Hoje';
+                const banner = promo.imageUrl || promo.image || '';
+
+                return `
+                    <div class="bg-slate-950 rounded-2xl p-4 border border-slate-800 space-y-3 shadow-md hover:border-emerald-500/30 transition-all">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex items-start gap-2.5 min-w-0">
+                                <span class="p-2 rounded-xl bg-orange-500/20 text-orange-400 border border-orange-500/30 font-black text-sm shrink-0">🔥</span>
+                                <div class="min-w-0">
+                                    <h4 class="text-xs font-black text-white truncate">${promo.title || 'Oferta Especial'}</h4>
+                                    <span class="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                                        <i data-lucide="clock" class="w-3 h-3 text-slate-500"></i> Disparado: ${createdDate}
+                                    </span>
+                                </div>
+                            </div>
+                            <span class="px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-black uppercase rounded-full shrink-0 flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> Ativa
+                            </span>
+                        </div>
+
+                        <p class="text-[11px] text-slate-300 leading-relaxed bg-slate-900/60 p-2.5 rounded-xl border border-slate-850">
+                            ${promo.message || ''}
+                        </p>
+
+                        ${banner ? `
+                            <div class="w-full h-24 rounded-xl overflow-hidden bg-black/50 border border-slate-800">
+                                <img src="${banner}" alt="Banner" class="w-full h-full object-cover">
+                            </div>
+                        ` : ''}
+
+                        <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                            ${promo.coupon ? `
+                                <div class="flex items-center gap-1.5 bg-slate-900 px-2.5 py-1 rounded-xl border border-slate-800">
+                                    <span class="text-[9px] font-black uppercase text-slate-400">Cupom:</span>
+                                    <span class="font-mono font-black text-xs text-emerald-400">${promo.coupon}</span>
+                                </div>
+                            ` : '<div></div>'}
+
+                            <div class="flex items-center gap-1 text-[11px] font-bold text-amber-400 bg-amber-950/40 px-2.5 py-1 rounded-xl border border-amber-500/30">
+                                <i data-lucide="timer" class="w-3.5 h-3.5 text-amber-400"></i>
+                                <span>Expira em: <strong class="promo-countdown font-mono" data-expire="${promo.expiresAt}">${remainingText}</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- Botões de Ação -->
+                        <div class="pt-2 border-t border-slate-850 flex items-center justify-between gap-2">
+                            <button onclick="window.deletePromotion('${promo.id}')" class="p-2 hover:bg-red-950/60 text-slate-400 hover:text-red-400 rounded-xl transition-all cursor-pointer flex items-center gap-1 text-[11px] font-bold" title="Excluir e encerrar promoção agora">
+                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                <span class="hidden sm:inline">Excluir</span>
+                            </button>
+
+                            <div class="flex items-center gap-2">
+                                <button onclick="window.reusePromotion('${promo.id}')" class="px-3 py-1.5 bg-slate-850 hover:bg-slate-800 text-slate-200 hover:text-white rounded-xl text-[11px] font-bold transition-all flex items-center gap-1.5 cursor-pointer border border-slate-700">
+                                    <i data-lucide="edit-3" class="w-3.5 h-3.5 text-slate-400"></i>
+                                    <span>Carregar no Form</span>
+                                </button>
+                                <button onclick="window.reSendPromotion('${promo.id}')" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black rounded-xl text-[11px] uppercase tracking-wider transition-all shadow-md flex items-center gap-1.5 cursor-pointer active:scale-95">
+                                    <i data-lucide="repeat" class="w-3.5 h-3.5"></i>
+                                    <span>Reenviar Agora 🚀</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            if (window.lucide) lucide.createIcons();
+        };
+
+        // Contador regressivo em tempo real a cada segundo
+        window.tickPromotionsCountdown = function() {
+            const els = document.querySelectorAll('.promo-countdown');
+            const now = Date.now();
+
+            els.forEach(el => {
+                const expMs = parseInt(el.getAttribute('data-expire') || '0', 10);
+                if (expMs > 0) {
+                    if (now >= expMs) {
+                        el.innerText = 'Expirada (Limpando...)';
+                    } else {
+                        el.innerText = window.formatRemainingTime(expMs);
+                    }
+                }
+            });
+
+            // Se alguma promoção ativa expirou, auto-limpa do Firestore
+            if (window.activePromotionsList && window.activePromotionsList.length > 0) {
+                window.activePromotionsList.forEach(async (p) => {
+                    if (p.expiresAt && now > p.expiresAt) {
+                        try {
+                            const { doc, deleteDoc } = window.firebaseUtils;
+                            await deleteDoc(doc(window.db, "promotions", p.id));
+                        } catch(e) {}
+                    }
+                });
+            }
+        };
+
+        setInterval(window.tickPromotionsCountdown, 1000);
+
+        // Reenviar a promoção com 1 clique (atualiza timestamp e reinicia validade notificando clientes)
+        window.reSendPromotion = async function(promoId) {
+            const promo = (window.activePromotionsList || []).find(p => p.id === promoId);
+            if (!promo) return;
+
+            if (!confirm(`Deseja REENVIAR a promoção "${promo.title}" agora para todos os clientes conectados?\n\nO tempo de validade (${promo.durationHours || 24}h) será reiniciado.`)) {
+                return;
+            }
+
+            try {
+                const { doc, updateDoc } = window.firebaseUtils;
+                const now = Date.now();
+                const durationHours = promo.durationHours || 24;
+                const expiresAtMs = now + (durationHours * 60 * 60 * 1000);
+
+                await updateDoc(doc(window.db, "promotions", promoId), {
+                    timestamp: now,
+                    expiresAt: expiresAtMs,
+                    updatedAt: new Date(now).toISOString(),
+                    active: true
+                });
+
+                alert(`🚀 Promoção "${promo.title}" reenviada com sucesso!\nTodos os clientes receberão a notificação ao vivo.`);
+                window.renderPromoHistory();
+            } catch(e) {
+                console.error("Erro ao reenviar promoção:", e);
+                alert("Erro ao reenviar promoção: " + e.message);
+            }
+        };
+
+        // Carrega dados da promoção nos campos do formulário para editar/reutilizar
+        window.reusePromotion = function(promoId) {
+            const promo = (window.activePromotionsList || []).find(p => p.id === promoId);
+            if (!promo) return;
+
+            if (document.getElementById('promo-title')) document.getElementById('promo-title').value = promo.title || '';
+            if (document.getElementById('promo-message')) document.getElementById('promo-message').value = promo.message || '';
+            if (document.getElementById('promo-coupon')) document.getElementById('promo-coupon').value = promo.coupon || '';
+            if (document.getElementById('promo-duration')) document.getElementById('promo-duration').value = promo.durationHours || '24';
+            
+            const banner = promo.imageUrl || promo.image || '';
+            const hiddenData = document.getElementById('promo-image-data');
+            const urlInput = document.getElementById('promo-image');
+
+            if (hiddenData) hiddenData.value = banner;
+            if (urlInput) urlInput.value = banner;
+
+            window.updatePromoPreview();
+            window.switchPromoTab('new');
+        };
+
+        // Excluir promoção imediatamente
+        window.deletePromotion = async function(promoId) {
+            if (!confirm("Deseja realmente EXCLUIR e encerrar esta promoção agora?")) {
+                return;
+            }
+
+            try {
+                const { doc, deleteDoc } = window.firebaseUtils;
+                await deleteDoc(doc(window.db, "promotions", promoId));
+                window.activePromotionsList = window.activePromotionsList.filter(p => p.id !== promoId);
+                window.renderPromoHistory();
+            } catch(e) {
+                console.error("Erro ao excluir promoção:", e);
+                alert("Erro ao excluir promoção: " + e.message);
             }
         };
 
@@ -2733,14 +3068,16 @@
 
                 await addDoc(collection(window.db, "promotions"), promoDoc);
 
-                alert(`🎉 Notificação disparada com sucesso! Válida por ${durationHours} horas. Após esse período, ela será excluída automaticamente do banco de dados.`);
-                window.closePromoBroadcastModal();
-
+                alert(`🎉 Notificação disparada com sucesso! Válida por ${durationHours} horas.\nApós esse período, ela será excluída automaticamente do banco de dados.`);
+                
                 // Limpar campos
                 if (document.getElementById('promo-title')) document.getElementById('promo-title').value = '';
                 if (document.getElementById('promo-message')) document.getElementById('promo-message').value = '';
                 if (document.getElementById('promo-coupon')) document.getElementById('promo-coupon').value = '';
                 window.removePromoImage();
+
+                // Muda para a aba de ofertas disparadas
+                window.switchPromoTab('history');
             } catch(e) {
                 console.error("Erro ao disparar promoção:", e);
                 alert("Erro ao disparar notificação de promoção.");

@@ -140,6 +140,56 @@
         "timestamp": { "type": "integer" }
       },
       "required": ["storeSlug", "items", "total", "status"]
+    },
+    "Chat": {
+      "title": "Chat",
+      "description": "Live chat conversation between customer and store owner",
+      "type": "object",
+      "properties": {
+        "storeSlug": { "type": "string" },
+        "customerId": { "type": "string" },
+        "customerName": { "type": "string" },
+        "customerPhone": { "type": "string" },
+        "status": { "type": "string", "enum": ["open", "closed", "escalated"] },
+        "lastMessage": { "type": "string" },
+        "lastSender": { "type": "string", "enum": ["customer", "owner", "bot"] },
+        "unreadOwner": { "type": "boolean" },
+        "unreadCustomer": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "timestamp": { "type": "integer" },
+        "messages": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "sender": { "type": "string", "enum": ["customer", "owner", "bot"] },
+              "senderName": { "type": "string" },
+              "text": { "type": "string" },
+              "timestamp": { "type": "integer" },
+              "timeStr": { "type": "string" }
+            }
+          }
+        }
+      },
+      "required": ["storeSlug", "customerId", "updatedAt"]
+    },
+    "Promotion": {
+      "title": "Promotion",
+      "description": "Push notification promotions sent by store owner to customers",
+      "type": "object",
+      "properties": {
+        "storeSlug": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "couponCode": { "type": "string" },
+        "link": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "timestamp": { "type": "integer" },
+        "active": { "type": "boolean" }
+      },
+      "required": ["storeSlug", "title", "message"]
     }
   },
   "firestore": {
@@ -154,6 +204,22 @@
     "/stores/{storeId}/orders/{orderId}": {
       "schema": "Order",
       "description": "Store subcollection orders"
+    },
+    "/chats/{chatId}": {
+      "schema": "Chat",
+      "description": "Live chat sessions"
+    },
+    "/stores/{storeId}/chats/{chatId}": {
+      "schema": "Chat",
+      "description": "Store subcollection chats"
+    },
+    "/promotions/{promoId}": {
+      "schema": "Promotion",
+      "description": "Store push notifications and promotions"
+    },
+    "/stores/{storeId}/promotions/{promoId}": {
+      "schema": "Promotion",
+      "description": "Store subcollection promotions"
     }
   }
 }

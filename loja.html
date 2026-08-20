@@ -1492,6 +1492,7 @@
                     paymentBadgeImage: data.pmb || data.paymentBadgeImage || '',
                     pixKey: data.px || data.pixKey || '',
                     appLink: data.al || data.appLink || '',
+                    tvUrl: data.tvUrl || data.tv_url || data.videoTv || '',
                     gameUrl: data.gameUrl || '',
                     gameActive: data.gameActive === true || data.gameActive === 'true' || false,
                     gameMinOrderValue: data.gameMinOrderValue !== undefined ? parseFloat(data.gameMinOrderValue) : 0,
@@ -2108,7 +2109,8 @@
                 return;
             }
 
-            let message = `*Novo Pedido - ${storeData.name}*\n\n`;
+            const orderNumStr = '#' + String(Math.floor(1000 + Math.random() * 9000));
+            let message = `*Novo Pedido ${orderNumStr} - ${storeData.name}*\n\n`;
             
             // Adiciona vendedor se existir
             const urlParams = new URLSearchParams(window.location.search);
@@ -2120,6 +2122,7 @@
             }
 
             let total = 0;
+            const itemsList = [];
             cart.forEach(item => {
                 const isWholesale = item.wholesaleMinQty && item.quantity >= item.wholesaleMinQty;
                 const priceToUse = isWholesale ? item.wholesalePrice : item.price;
@@ -2129,6 +2132,17 @@
                 const vars = Object.entries(item.variations || {}).map(([k, v]) => `${k}: ${v}`).join(', ');
                 const obs = item.observation ? ` (Obs: ${item.observation})` : '';
                 message += `- ${item.quantity}x ${item.name} ${vars ? `[${vars}]` : ''}${obs} (${priceDisplay})${isWholesale ? ' *[ATACADO]*' : ''}\n`;
+
+                itemsList.push({
+                    id: item.id || '',
+                    name: item.name || '',
+                    quantity: item.quantity || 1,
+                    price: priceToUse || '0',
+                    formattedPrice: priceDisplay,
+                    variations: item.variations || {},
+                    observation: item.observation || '',
+                    isWholesale: !!isWholesale
+                });
             });
 
             // Restaura desconto salvo do localStorage se disponível
@@ -2161,8 +2175,9 @@
                 }
             }
 
+            let shippingPrice = 0;
             if (selectedShippingZone) {
-                const shippingPrice = parseFloat(String(selectedShippingZone.price || '0').replace(',', '.'));
+                shippingPrice = parseFloat(String(selectedShippingZone.price || '0').replace(',', '.'));
                 message += `\n*Entrega:* ${selectedShippingZone.neighborhood} (+ ${formatCurrency(shippingPrice)})`;
                 total += shippingPrice;
             }
@@ -2201,6 +2216,46 @@
                 }
                 message += `\n\n*Total no Cartão: ${formatCurrency(finalTotal)}*`;
                 message += `\n\n_(Favor enviar o link de pagamento no valor exato)_`;
+            }
+
+            // SALVAMENTO EM TEMPO REAL NO FIRESTORE (GESTOR DE PEDIDOS ESTILO IFOOD)
+            try {
+                const currentStoreId = urlParams.get('id') || urlParams.get('s') || window.currentStoreSlug || (storeData && storeData.slug) || (storeData.whatsapp || '').replace(/\D/g, '');
+                if (window.db && window.firebaseUtils && window.firebaseUtils.addDoc && window.firebaseUtils.collection) {
+                    const orderDoc = {
+                        storeSlug: currentStoreId,
+                        storeWhatsapp: (storeData.whatsapp || '').replace(/\D/g, ''),
+                        storeName: storeData.name || '',
+                        orderNumber: orderNumStr,
+                        vendorCode: vendorCode || '',
+                        customerName: 'Cliente Online',
+                        customerPhone: '',
+                        customerAddress: selectedShippingZone ? selectedShippingZone.neighborhood : 'Retirada no Local / Balcão',
+                        shippingType: selectedShippingZone ? 'delivery' : 'pickup',
+                        shippingNeighborhood: selectedShippingZone ? selectedShippingZone.neighborhood : '',
+                        shippingPrice: shippingPrice,
+                        items: itemsList,
+                        subtotal: total,
+                        discountAmount: discountAmount,
+                        discountDesc: window.appliedGameDiscount ? (window.appliedGameDiscount.prizeName || 'Cupom') : '',
+                        cardFee: activeFee,
+                        total: finalTotal,
+                        formattedTotal: formatCurrency(finalTotal),
+                        paymentMethod: selectedPaymentMethod,
+                        cashChange: window.cashChangeValue || '',
+                        installments: selectedInstallment || 1,
+                        status: 'pending', // 'pending' | 'preparing' | 'ready' | 'completed' | 'cancelled'
+                        createdAt: new Date().toISOString(),
+                        timestamp: Date.now()
+                    };
+
+                    window.firebaseUtils.addDoc(window.firebaseUtils.collection(window.db, "orders"), orderDoc).catch(e => console.warn("Erro ao salvar order global:", e));
+                    if (currentStoreId) {
+                        window.firebaseUtils.addDoc(window.firebaseUtils.collection(window.db, "stores", currentStoreId, "orders"), orderDoc).catch(e => console.warn("Erro ao salvar order na store:", e));
+                    }
+                }
+            } catch(e) {
+                console.warn("Erro ao enviar pedido para o Gestor em tempo real:", e);
             }
             
             let whatsapp = storeData.whatsapp.replace(/\D/g, '');
@@ -3051,6 +3106,40 @@
                 </div>
             ` : '';
 
+            // Seção de TV / Vídeo Horizontal da Loja (configurada exclusivamente pelo Painel Master)
+            let tvVideoHTML = '';
+            if (storeData.tvUrl && storeData.tvUrl.trim() !== '') {
+                const tvMedia = getEmbedUrl(storeData.tvUrl);
+                if (tvMedia.url) {
+                    tvVideoHTML = `
+                    <div class="w-full bg-slate-950 py-6 sm:py-8 px-4 sm:px-6 border-b border-slate-800 shadow-inner">
+                        <div class="max-w-4xl mx-auto">
+                            <div class="flex items-center justify-between mb-3 px-1">
+                                <div class="flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping"></span>
+                                    <h3 class="text-xs sm:text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
+                                        <i data-lucide="tv" class="w-4 h-4 text-red-500"></i>
+                                        TV ${storeData.name}
+                                    </h3>
+                                </div>
+                                <span class="bg-red-600/90 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full shadow-sm">
+                                    AO VIVO / VÍDEO
+                                </span>
+                            </div>
+                            
+                            <div class="relative w-full aspect-video rounded-2xl overflow-hidden bg-black shadow-2xl border border-slate-800 ring-1 ring-white/10">
+                                ${tvMedia.isDirect ? `
+                                    <video src="${tvMedia.url}" controls playsinline class="w-full h-full object-contain"></video>
+                                ` : `
+                                    <iframe src="${tvMedia.url}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen class="w-full h-full"></iframe>
+                                `}
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                }
+            }
+
             const isClinicOrBeauty = isBeauty || isClinica;
             let directSchedulingHTML = '';
             if (isClinicOrBeauty) {
@@ -3166,6 +3255,8 @@
                     ${promoBannersHTML}
 
                     ${featuredHTML}
+
+                    ${tvVideoHTML}
 
                     <div class="px-6 py-4 bg-white dark:bg-slate-900 sticky top-0 z-[45] border-b border-slate-100 dark:border-slate-800">
                         <div class="max-w-6xl mx-auto relative group">

@@ -43,6 +43,22 @@ service cloud.firestore {
       allow read, write: if true;
     }
 
+    match /chats/{chatId} {
+      allow read, write: if true;
+    }
+
+    match /stores/{storeId}/chats/{chatId} {
+      allow read, write: if true;
+    }
+
+    match /promotions/{promoId} {
+      allow read, write: if true;
+    }
+
+    match /stores/{storeId}/promotions/{promoId} {
+      allow read, write: if true;
+    }
+
     match /resellers/{resellerId} {
       // Allow all operations on resellers
       allow read, write: if true;

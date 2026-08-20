@@ -3111,6 +3111,17 @@
             if (storeData.tvUrl && storeData.tvUrl.trim() !== '') {
                 const tvMedia = getEmbedUrl(storeData.tvUrl);
                 if (tvMedia.url) {
+                    let finalEmbedUrl = tvMedia.url;
+                    if (!tvMedia.isDirect) {
+                        // Força desativação de tela cheia e ativa playsinline em embeds como YouTube
+                        if (finalEmbedUrl.includes('youtube.com/embed/')) {
+                            finalEmbedUrl = finalEmbedUrl.replace('fs=1', 'fs=0');
+                            if (!finalEmbedUrl.includes('fs=0')) {
+                                finalEmbedUrl += finalEmbedUrl.includes('?') ? '&fs=0&playsinline=1' : '?fs=0&playsinline=1';
+                            }
+                        }
+                    }
+
                     tvVideoHTML = `
                     <div class="w-full bg-slate-950 py-6 sm:py-8 px-4 sm:px-6 border-b border-slate-800 shadow-inner">
                         <div class="max-w-4xl mx-auto">
@@ -3122,16 +3133,19 @@
                                         TV ${storeData.name}
                                     </h3>
                                 </div>
-                                <span class="bg-red-600/90 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full shadow-sm">
-                                    AO VIVO / VÍDEO
-                                </span>
+                                <div class="flex items-center gap-2">
+                                    <span class="bg-red-600/90 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full shadow-sm flex items-center gap-1">
+                                        <i data-lucide="volume-2" class="w-3 h-3"></i>
+                                        AO VIVO / VÍDEO
+                                    </span>
+                                </div>
                             </div>
                             
-                            <div class="relative w-full aspect-video rounded-2xl overflow-hidden bg-black shadow-2xl border border-slate-800 ring-1 ring-white/10">
+                            <div class="relative w-full aspect-video rounded-2xl overflow-hidden bg-black shadow-2xl border border-slate-800 ring-1 ring-white/10 max-h-[70vh]">
                                 ${tvMedia.isDirect ? `
-                                    <video src="${tvMedia.url}" controls playsinline class="w-full h-full object-contain"></video>
+                                    <video src="${tvMedia.url}" controls playsinline webkit-playsinline disablePictureInPicture controlsList="nofullscreen" class="w-full h-full object-contain bg-black"></video>
                                 ` : `
-                                    <iframe src="${tvMedia.url}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen class="w-full h-full"></iframe>
+                                    <iframe src="${finalEmbedUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" class="w-full h-full"></iframe>
                                 `}
                             </div>
                         </div>

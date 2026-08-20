@@ -733,21 +733,32 @@
                         <input type="text" id="promo-coupon" placeholder="Ex: SEXTOU20" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-black uppercase tracking-wider text-emerald-400 font-mono outline-none focus:border-emerald-500">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-black uppercase text-slate-400 mb-1">Banner da Promoção (Imagem)</label>
-                        <input type="file" id="promo-image-file" accept="image/*" onchange="window.handlePromoFileUpload(event)" class="hidden">
-                        <div class="flex items-center gap-2">
-                            <button type="button" onclick="document.getElementById('promo-image-file').click()" class="flex-1 px-3 py-2.5 bg-slate-800 hover:bg-slate-750 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 border border-slate-700 transition-all cursor-pointer">
-                                <i data-lucide="image-plus" class="w-4 h-4 text-emerald-400"></i>
-                                <span id="promo-upload-btn-text">Carregar Imagem 📁</span>
-                            </button>
-                            <button type="button" id="promo-img-remove-btn" onclick="window.removePromoImage()" class="hidden px-2.5 py-2.5 bg-red-950/60 hover:bg-red-900/80 text-red-400 rounded-xl text-xs border border-red-800/60 transition-all" title="Remover imagem">
-                                <i data-lucide="trash-2" class="w-4 h-4"></i>
-                            </button>
-                        </div>
-                        <input type="hidden" id="promo-image-data">
-                        <div class="mt-1.5 flex items-center gap-1">
-                            <input type="url" id="promo-image" oninput="window.handlePromoUrlInput(event)" placeholder="Ou cole o link da imagem (URL)..." class="w-full px-3 py-1.5 bg-slate-950/60 border border-slate-800 rounded-lg text-[10px] font-medium text-slate-300 outline-none focus:border-emerald-500">
-                        </div>
+                        <label class="block text-[10px] font-black uppercase text-slate-400 mb-1">Validade & Autolimpeza do Banco *</label>
+                        <select id="promo-duration" class="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-emerald-400 outline-none focus:border-emerald-500 cursor-pointer">
+                            <option value="12">⏱️ 12 Horas (Oferta Relâmpago)</option>
+                            <option value="24" selected>⏱️ 24 Horas (Recomendado - 1 Dia)</option>
+                            <option value="48">⏱️ 48 Horas (Final de Semana - 2 Dias)</option>
+                            <option value="72">⏱️ 72 Horas (3 Dias)</option>
+                            <option value="168">⏱️ 7 Dias (Semanal)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-[10px] font-black uppercase text-slate-400 mb-1">Banner da Promoção (Imagem Opcional)</label>
+                    <input type="file" id="promo-image-file" accept="image/*" onchange="window.handlePromoFileUpload(event)" class="hidden">
+                    <div class="flex items-center gap-2">
+                        <button type="button" onclick="document.getElementById('promo-image-file').click()" class="flex-1 px-3 py-2.5 bg-slate-800 hover:bg-slate-750 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 border border-slate-700 transition-all cursor-pointer">
+                            <i data-lucide="image-plus" class="w-4 h-4 text-emerald-400"></i>
+                            <span id="promo-upload-btn-text">Carregar Imagem 📁</span>
+                        </button>
+                        <button type="button" id="promo-img-remove-btn" onclick="window.removePromoImage()" class="hidden px-2.5 py-2.5 bg-red-950/60 hover:bg-red-900/80 text-red-400 rounded-xl text-xs border border-red-800/60 transition-all" title="Remover imagem">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    <input type="hidden" id="promo-image-data">
+                    <div class="mt-1.5 flex items-center gap-1">
+                        <input type="url" id="promo-image" oninput="window.handlePromoUrlInput(event)" placeholder="Ou cole o link da imagem (URL)..." class="w-full px-3 py-1.5 bg-slate-950/60 border border-slate-800 rounded-lg text-[10px] font-medium text-slate-300 outline-none focus:border-emerald-500">
                     </div>
                 </div>
 
@@ -2679,11 +2690,15 @@
             const message = document.getElementById('promo-message')?.value.trim();
             const coupon = document.getElementById('promo-coupon')?.value.trim();
             const bannerData = document.getElementById('promo-image-data')?.value || document.getElementById('promo-image')?.value.trim();
+            const durationHours = parseInt(document.getElementById('promo-duration')?.value || '24', 10);
 
             if (!title || !message) {
                 alert("Por favor, preencha o Título e a Mensagem da Promoção!");
                 return;
             }
+
+            const now = Date.now();
+            const expiresAtMs = now + (durationHours * 60 * 60 * 1000);
 
             const promoDoc = {
                 storeSlug: window.currentStoreId,
@@ -2691,16 +2706,34 @@
                 message: message,
                 coupon: coupon || '',
                 imageUrl: bannerData || '',
-                timestamp: Date.now(),
-                createdAt: new Date().toISOString(),
+                durationHours: durationHours,
+                timestamp: now,
+                expiresAt: expiresAtMs,
+                createdAt: new Date(now).toISOString(),
                 active: true
             };
 
             try {
-                const { collection, addDoc } = window.firebaseUtils;
+                const { collection, addDoc, doc, deleteDoc, query, where, getDocs } = window.firebaseUtils;
+                
+                // Limpeza prévia: remove promoções já expiradas do banco para evitar acúmulo
+                try {
+                    const oldPromosQuery = query(collection(window.db, "promotions"), where("storeSlug", "==", window.currentStoreId));
+                    const snap = await getDocs(oldPromosQuery);
+                    snap.forEach(async (docSnap) => {
+                        const data = docSnap.data();
+                        const exp = data.expiresAt || (data.timestamp ? data.timestamp + 24*60*60*1000 : 0);
+                        if (exp && now > exp) {
+                            await deleteDoc(doc(window.db, "promotions", docSnap.id));
+                        }
+                    });
+                } catch(e) {
+                    console.warn("Aviso na autolimpeza de promoções antigas:", e);
+                }
+
                 await addDoc(collection(window.db, "promotions"), promoDoc);
 
-                alert("🎉 Notificação de Oferta disparada com sucesso! Todos os clientes conectados e inscritos receberão a notificação com banner no navegador agora!");
+                alert(`🎉 Notificação disparada com sucesso! Válida por ${durationHours} horas. Após esse período, ela será excluída automaticamente do banco de dados.`);
                 window.closePromoBroadcastModal();
 
                 // Limpar campos

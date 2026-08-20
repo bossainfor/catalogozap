@@ -736,7 +736,7 @@
                                 ` : `
                                     <div class="video-wrapper">
                                         ${item.isDirect ? `
-                                            <video src="${item.url}" controls class="w-full h-full object-contain" playsinline></video>
+                                            <video src="${item.url}" autoplay muted loop playsinline webkit-playsinline controls class="w-full h-full object-contain"></video>
                                         ` : `
                                             <iframe src="${item.url}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                                         `}
@@ -764,7 +764,7 @@
                     mediaHTML += `
                         <div class="video-wrapper">
                             ${item.isDirect ? `
-                                <video src="${item.url}" controls class="w-full h-full object-contain" playsinline></video>
+                                <video src="${item.url}" autoplay muted loop playsinline webkit-playsinline controls class="w-full h-full object-contain"></video>
                             ` : `
                                 <iframe src="${item.url}" frameborder="0" allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
                             `}
@@ -1328,14 +1328,36 @@
             let u = url.trim();
             const original = u;
             
+            // Imgpile links (página de visualização ou link direto)
+            if (u.includes('imgpile.com/')) {
+                // Link de página ex: https://imgpile.com/i/pqAfHN7 ou https://imgpile.com/i/vRo2IFN
+                if (u.includes('/i/')) {
+                    const fileCode = u.split('/i/')[1].split('?')[0].split('#')[0].replace(/\//g, '');
+                    if (fileCode) {
+                        return { url: `https://cdn.imgpile.com/f/${fileCode}.mp4`, isDirect: true, original };
+                    }
+                }
+                // Link direto ex: https://cdn.imgpile.com/f/vRo2IFN.mp4 ou https://imgpile.com/f/vRo2IFN.mp4
+                if (u.includes('/f/')) {
+                    let directUrl = u;
+                    if (!directUrl.startsWith('https://cdn.')) {
+                        directUrl = directUrl.replace('https://imgpile.com/', 'https://cdn.imgpile.com/').replace('http://imgpile.com/', 'https://cdn.imgpile.com/');
+                    }
+                    if (!directUrl.match(/\.(mp4|webm|ogg|mov|m4v)$/i)) {
+                        directUrl += '.mp4';
+                    }
+                    return { url: directUrl, isDirect: true, original };
+                }
+            }
+
             // YouTube
             if (u.includes('youtube.com/watch?v=') || u.includes('youtu.be/')) {
                 const id = u.includes('watch?v=') ? u.split('v=')[1].split('&')[0] : u.split('youtu.be/')[1].split('?')[0];
-                return { url: `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=0`, isDirect: false, original };
+                return { url: `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=1&mute=1&loop=1&playlist=${id}&playsinline=1`, isDirect: false, original };
             }
             if (u.includes('youtube.com/shorts/')) {
                 const id = u.split('shorts/')[1].split('?')[0];
-                return { url: `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=0`, isDirect: false, original };
+                return { url: `https://www.youtube.com/embed/${id}?rel=0&modestbranding=1&autoplay=1&mute=1&loop=1&playlist=${id}&playsinline=1`, isDirect: false, original };
             }
             
             // Instagram
@@ -1354,7 +1376,8 @@
             }
 
             // Direct Video Extensions (Directly compatible with native <video> tag)
-            const isDirectFile = u.match(/\.(mp4|webm|ogg|mov|m4v|m3u8)$/i);
+            const cleanUrlNoParams = u.split('?')[0].split('#')[0];
+            const isDirectFile = cleanUrlNoParams.match(/\.(mp4|webm|ogg|mov|m4v|m3u8)$/i) || u.includes('.mp4') || u.includes('.webm') || u.includes('cdn.imgpile.com');
             if (isDirectFile) {
                 return { url: u, isDirect: true, original };
             }
@@ -1493,6 +1516,18 @@
                     pixKey: data.px || data.pixKey || '',
                     appLink: data.al || data.appLink || '',
                     tvUrl: data.tvUrl || data.tv_url || data.videoTv || '',
+                    tvUrls: (function() {
+                        let list = [];
+                        if (Array.isArray(data.tvUrls) && data.tvUrls.length > 0) {
+                            list = data.tvUrls;
+                        } else if (typeof data.tvUrls === 'string' && data.tvUrls.trim()) {
+                            list = data.tvUrls.split(/[\n,;|]+/);
+                        } else if (data.tvUrl || data.tv_url || data.videoTv) {
+                            const raw = String(data.tvUrl || data.tv_url || data.videoTv || '');
+                            list = raw.split(/[\n,;|]+/);
+                        }
+                        return list.map(x => String(x).trim()).filter(x => x.length > 0);
+                    })(),
                     gameUrl: data.gameUrl || '',
                     gameActive: data.gameActive === true || data.gameActive === 'true' || false,
                     gameMinOrderValue: data.gameMinOrderValue !== undefined ? parseFloat(data.gameMinOrderValue) : 0,
@@ -2899,6 +2934,107 @@
             }
         }
 
+        window.tvIsMuted = true;
+        window.toggleTvSound = function() {
+            const video = document.getElementById('tv-store-player');
+            const icon = document.getElementById('tv-sound-icon');
+            const text = document.getElementById('tv-sound-text');
+            window.tvIsMuted = !window.tvIsMuted;
+            if (video) {
+                video.muted = window.tvIsMuted;
+            }
+            if (window.tvIsMuted) {
+                if (icon) {
+                    icon.setAttribute('data-lucide', 'volume-x');
+                    icon.classList.remove('text-emerald-400');
+                    icon.classList.add('text-red-400');
+                }
+                if (text) text.innerText = 'ATIVAR SOM';
+            } else {
+                if (icon) {
+                    icon.setAttribute('data-lucide', 'volume-2');
+                    icon.classList.remove('text-red-400');
+                    icon.classList.add('text-emerald-400');
+                }
+                if (text) text.innerText = 'DESATIVAR SOM';
+            }
+            if (window.lucide) lucide.createIcons();
+        };
+
+        window.goToTvVideo = function(index) {
+            if (!window.tvVideosList || window.tvVideosList.length === 0) return;
+            window.currentTvVideoIndex = (index + window.tvVideosList.length) % window.tvVideosList.length;
+            const current = window.tvVideosList[window.currentTvVideoIndex];
+            const container = document.getElementById('tv-player-media-container');
+            const counterEl = document.getElementById('tv-video-current-counter');
+            const dotsContainer = document.getElementById('tv-video-dots-container');
+
+            if (counterEl) {
+                counterEl.innerText = `PROMOÇÃO ${window.currentTvVideoIndex + 1} DE ${window.tvVideosList.length}`;
+            }
+
+            if (dotsContainer) {
+                Array.from(dotsContainer.children).forEach((child, idx) => {
+                    if (idx === window.currentTvVideoIndex) {
+                        child.className = "px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 bg-red-600 text-white shadow-lg shadow-red-600/30 scale-105";
+                    } else {
+                        child.className = "px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800";
+                    }
+                });
+            }
+
+            if (container) {
+                if (current.isDirect) {
+                    const isMuted = window.tvIsMuted !== false;
+                    container.innerHTML = `
+                        <div class="relative w-full h-full group/tv">
+                            <video id="tv-store-player" src="${current.url}" autoplay ${isMuted ? 'muted' : ''} playsinline webkit-playsinline controls class="w-full h-full object-contain bg-black" onended="window.onTvVideoEnded()"></video>
+                            <button onclick="window.toggleTvSound()" id="tv-sound-btn" class="absolute bottom-4 right-4 z-20 bg-black/75 hover:bg-black/90 text-white px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider backdrop-blur-md border border-white/20 flex items-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer">
+                                <i data-lucide="${isMuted ? 'volume-x' : 'volume-2'}" id="tv-sound-icon" class="w-4 h-4 ${isMuted ? 'text-red-400' : 'text-emerald-400'}"></i>
+                                <span id="tv-sound-text">${isMuted ? 'ATIVAR SOM' : 'DESATIVAR SOM'}</span>
+                            </button>
+                        </div>
+                    `;
+                    const v = document.getElementById('tv-store-player');
+                    if (v) {
+                        v.play().catch(() => {});
+                    }
+                } else {
+                    let finalEmbedUrl = current.url;
+                    if (finalEmbedUrl.includes('youtube.com/embed/')) {
+                        finalEmbedUrl = finalEmbedUrl.replace('fs=1', 'fs=0');
+                        if (!finalEmbedUrl.includes('fs=0')) {
+                            finalEmbedUrl += finalEmbedUrl.includes('?') ? '&fs=0&playsinline=1' : '?fs=0&playsinline=1';
+                        }
+                    }
+                    container.innerHTML = `<iframe src="${finalEmbedUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" class="w-full h-full"></iframe>`;
+                }
+                if (window.lucide) lucide.createIcons();
+            }
+        };
+
+        window.nextTvVideo = function() {
+            if (!window.tvVideosList || window.tvVideosList.length <= 1) return;
+            window.goToTvVideo(window.currentTvVideoIndex + 1);
+        };
+
+        window.prevTvVideo = function() {
+            if (!window.tvVideosList || window.tvVideosList.length <= 1) return;
+            window.goToTvVideo(window.currentTvVideoIndex - 1);
+        };
+
+        window.onTvVideoEnded = function() {
+            if (window.tvVideosList && window.tvVideosList.length > 1) {
+                window.nextTvVideo();
+            } else {
+                const v = document.getElementById('tv-store-player');
+                if (v) {
+                    v.currentTime = 0;
+                    v.play().catch(() => {});
+                }
+            }
+        };
+
         function renderStore() {
             const urlParams = new URLSearchParams(window.location.search);
             const app = document.getElementById('app');
@@ -3237,50 +3373,94 @@
 
             // Seção de TV / Vídeo Horizontal da Loja (configurada exclusivamente pelo Painel Master)
             let tvVideoHTML = '';
-            if (storeData.tvUrl && storeData.tvUrl.trim() !== '') {
-                const tvMedia = getEmbedUrl(storeData.tvUrl);
-                if (tvMedia.url) {
-                    let finalEmbedUrl = tvMedia.url;
-                    if (!tvMedia.isDirect) {
-                        // Força desativação de tela cheia e ativa playsinline em embeds como YouTube
-                        if (finalEmbedUrl.includes('youtube.com/embed/')) {
-                            finalEmbedUrl = finalEmbedUrl.replace('fs=1', 'fs=0');
-                            if (!finalEmbedUrl.includes('fs=0')) {
-                                finalEmbedUrl += finalEmbedUrl.includes('?') ? '&fs=0&playsinline=1' : '?fs=0&playsinline=1';
-                            }
-                        }
-                    }
+            const rawTvUrls = (storeData.tvUrls && storeData.tvUrls.length > 0) ? storeData.tvUrls : (storeData.tvUrl ? storeData.tvUrl.split(/[\n,;|]+/).map(x => x.trim()).filter(Boolean) : []);
+            window.tvVideosList = rawTvUrls.map(u => getEmbedUrl(u)).filter(m => m && m.url);
+            window.currentTvVideoIndex = 0;
 
-                    tvVideoHTML = `
-                    <div class="w-full bg-slate-950 py-6 sm:py-8 px-4 sm:px-6 border-b border-slate-800 shadow-inner">
-                        <div class="max-w-4xl mx-auto">
-                            <div class="flex items-center justify-between mb-3 px-1">
-                                <div class="flex items-center gap-2">
-                                    <span class="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping"></span>
-                                    <h3 class="text-xs sm:text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
-                                        <i data-lucide="tv" class="w-4 h-4 text-red-500"></i>
-                                        TV ${storeData.name}
-                                    </h3>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <span class="bg-red-600/90 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full shadow-sm flex items-center gap-1">
-                                        <i data-lucide="volume-2" class="w-3 h-3"></i>
-                                        AO VIVO / VÍDEO
+            if (window.tvVideosList.length > 0) {
+                const firstMedia = window.tvVideosList[0];
+                let firstEmbedUrl = firstMedia.url;
+                if (!firstMedia.isDirect && firstEmbedUrl.includes('youtube.com/embed/')) {
+                    firstEmbedUrl = firstEmbedUrl.replace('fs=1', 'fs=0');
+                    if (!firstEmbedUrl.includes('fs=0')) {
+                        firstEmbedUrl += firstEmbedUrl.includes('?') ? '&fs=0&playsinline=1' : '?fs=0&playsinline=1';
+                    }
+                }
+
+                const totalVideos = window.tvVideosList.length;
+
+                tvVideoHTML = `
+                <div class="w-full bg-slate-950 py-6 sm:py-8 px-4 sm:px-6 border-b border-slate-800 shadow-inner">
+                    <div class="max-w-4xl mx-auto">
+                        <div class="flex flex-wrap items-center justify-between gap-2 mb-3 px-1">
+                            <div class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-red-600 animate-ping"></span>
+                                <h3 class="text-xs sm:text-sm font-black uppercase tracking-wider text-white flex items-center gap-2">
+                                    <i data-lucide="tv" class="w-4 h-4 text-red-500"></i>
+                                    TV ${storeData.name}
+                                </h3>
+                                ${totalVideos > 1 ? `
+                                    <span id="tv-video-current-counter" class="bg-rose-950/80 border border-rose-500/30 text-rose-300 text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full tracking-wider">
+                                        PROMOÇÃO 1 DE ${totalVideos}
                                     </span>
-                                </div>
+                                ` : ''}
                             </div>
-                            
-                            <div class="relative w-full aspect-video rounded-2xl overflow-hidden bg-black shadow-2xl border border-slate-800 ring-1 ring-white/10 max-h-[70vh]">
-                                ${tvMedia.isDirect ? `
-                                    <video src="${tvMedia.url}" controls playsinline webkit-playsinline disablePictureInPicture controlsList="nofullscreen" class="w-full h-full object-contain bg-black"></video>
-                                ` : `
-                                    <iframe src="${finalEmbedUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" class="w-full h-full"></iframe>
-                                `}
+                            <div class="flex items-center gap-2">
+                                ${totalVideos > 1 ? `
+                                    <div class="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-xl p-0.5">
+                                        <button onclick="window.prevTvVideo()" class="p-1.5 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg transition-colors cursor-pointer" title="Vídeo anterior">
+                                            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                                        </button>
+                                        <button onclick="window.nextTvVideo()" class="p-1.5 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg transition-colors cursor-pointer" title="Próximo vídeo">
+                                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                                        </button>
+                                    </div>
+                                ` : ''}
+                                <span class="bg-red-600/90 text-white text-[9px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
+                                    <i data-lucide="volume-2" class="w-3 h-3"></i>
+                                    AO VIVO / VÍDEOS
+                                </span>
                             </div>
                         </div>
+                        
+                        <div class="relative w-full aspect-video rounded-2xl overflow-hidden bg-black shadow-2xl border border-slate-800 ring-1 ring-white/10 max-h-[70vh] group/tvbox">
+                            <div id="tv-player-media-container" class="w-full h-full">
+                                ${firstMedia.isDirect ? `
+                                    <div class="relative w-full h-full group/tv">
+                                        <video id="tv-store-player" src="${firstMedia.url}" autoplay muted playsinline webkit-playsinline controls class="w-full h-full object-contain bg-black" onended="window.onTvVideoEnded()"></video>
+                                        <button onclick="window.toggleTvSound()" id="tv-sound-btn" class="absolute bottom-4 right-4 z-20 bg-black/75 hover:bg-black/90 text-white px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider backdrop-blur-md border border-white/20 flex items-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer">
+                                            <i data-lucide="volume-x" id="tv-sound-icon" class="w-4 h-4 text-red-400"></i>
+                                            <span id="tv-sound-text">ATIVAR SOM</span>
+                                        </button>
+                                    </div>
+                                ` : `
+                                    <iframe src="${firstEmbedUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" class="w-full h-full"></iframe>
+                                `}
+                            </div>
+
+                            ${totalVideos > 1 ? `
+                                <button onclick="window.prevTvVideo()" class="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md border border-white/20 flex items-center justify-center shadow-lg transition-all active:scale-95 cursor-pointer opacity-80 hover:opacity-100" title="Promoção anterior">
+                                    <i data-lucide="chevron-left" class="w-5 h-5"></i>
+                                </button>
+                                <button onclick="window.nextTvVideo()" class="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 sm:w-11 sm:h-11 rounded-full bg-black/60 hover:bg-black/90 text-white backdrop-blur-md border border-white/20 flex items-center justify-center shadow-lg transition-all active:scale-95 cursor-pointer opacity-80 hover:opacity-100" title="Próxima promoção">
+                                    <i data-lucide="chevron-right" class="w-5 h-5"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+
+                        ${totalVideos > 1 ? `
+                            <div id="tv-video-dots-container" class="flex items-center justify-center flex-wrap gap-2 pt-3">
+                                ${window.tvVideosList.map((item, idx) => `
+                                    <button onclick="window.goToTvVideo(${idx})" id="tv-tab-${idx}" class="px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer ${idx === 0 ? 'bg-red-600 text-white shadow-lg shadow-red-600/30 scale-105' : 'bg-slate-900 text-slate-400 hover:text-white hover:bg-slate-800 border border-slate-800'}">
+                                        <i data-lucide="play" class="w-3 h-3"></i>
+                                        <span>Promoção ${idx + 1}</span>
+                                    </button>
+                                `).join('')}
+                            </div>
+                        ` : ''}
                     </div>
-                    `;
-                }
+                </div>
+                `;
             }
 
             const isClinicOrBeauty = isBeauty || isClinica;

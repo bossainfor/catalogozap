@@ -4571,7 +4571,7 @@
         </div>
     </div>
 
-    <!-- ATENDENTE INTELIGENTE E CHAT AO VIVO COM O DONO -->
+    <!-- ATENDENTE INTELIGENTE E CHAT AO VIVO COM ATENDENTE -->
     <div id="ai-attendant" class="fixed bottom-20 left-4 right-4 sm:left-auto sm:right-6 z-[999] pointer-events-none opacity-0 transition-all duration-300 transform translate-y-10 hidden">
         <div class="bg-white dark:bg-slate-800 w-full sm:w-88 rounded-3xl shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden pointer-events-auto flex flex-col max-h-[82vh]">
             <!-- Header -->
@@ -4598,7 +4598,7 @@
                     </div>
                 </div>
 
-                <!-- Seletor de Modo: IA vs Dono da Loja (Humano) -->
+                <!-- Seletor de Modo: IA vs Atendente (Humano) -->
                 <div class="grid grid-cols-2 bg-slate-950 p-1 rounded-2xl border border-slate-800 text-[11px] font-black uppercase tracking-wider">
                     <button type="button" id="chat-mode-btn-ai" onclick="window.switchChatMode('ai')" class="py-1.5 px-2 rounded-xl bg-slate-800 text-white flex items-center justify-center gap-1.5 transition-all shadow-sm">
                         <i data-lucide="bot" class="w-3.5 h-3.5 text-emerald-400"></i>
@@ -4606,7 +4606,7 @@
                     </button>
                     <button type="button" id="chat-mode-btn-human" onclick="window.switchChatMode('human')" class="py-1.5 px-2 rounded-xl text-slate-400 hover:text-white flex items-center justify-center gap-1.5 transition-all relative">
                         <i data-lucide="user-check" class="w-3.5 h-3.5 text-orange-400"></i>
-                        <span>Falar c/ Dono</span>
+                        <span>Falar c/ Atendente</span>
                         <span id="human-chat-badge" class="w-2 h-2 rounded-full bg-orange-500 animate-ping hidden"></span>
                     </button>
                 </div>
@@ -4615,14 +4615,14 @@
             <!-- Chat Area -->
             <div id="ai-messages" class="h-64 sm:h-72 overflow-y-auto p-3.5 space-y-3 bg-slate-50 dark:bg-slate-900/50 flex flex-col custom-scrollbar">
                 <div class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 p-3 rounded-2xl rounded-tl-none text-xs font-medium self-start shadow-sm leading-relaxed max-w-[90%]">
-                    Olá! Sou a atendente virtual da loja. Tire suas dúvidas sobre nossos produtos, cardápio, entrega ou formas de pagamento! Se preferir, clique em <strong>"Falar c/ Dono"</strong> para conversar diretamente com nossa equipe.
+                    Olá! Sou a atendente virtual da loja. Tire suas dúvidas sobre nossos produtos, cardápio, entrega ou formas de pagamento! Se preferir, clique em <strong>"Falar c/ Atendente"</strong> para conversar diretamente com nossa equipe.
                 </div>
             </div>
 
             <!-- Suggestion Chips / Quick Actions -->
             <div class="px-3 py-2 bg-slate-100 dark:bg-slate-750 flex flex-nowrap overflow-x-auto gap-2 border-t border-slate-200/60 dark:border-slate-700 select-none custom-scrollbar shrink-0">
                 <button type="button" onclick="window.switchChatMode('human')" class="bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white duration-200 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 active-scale shadow-sm cursor-pointer">
-                    <i data-lucide="message-circle" class="w-3.5 h-3.5 animate-pulse"></i> Falar com o Dono
+                    <i data-lucide="message-circle" class="w-3.5 h-3.5 animate-pulse"></i> Falar com Atendente
                 </button>
                 <button type="button" onclick="window.triggerQuickAction('whatsapp')" class="bg-gradient-to-r from-emerald-500 to-[#25D366] hover:from-emerald-600 hover:to-[#22c35e] text-slate-900 duration-200 px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 shrink-0 active-scale shadow-sm shadow-emerald-500/20 cursor-pointer">
                     <i data-lucide="phone" class="w-3.5 h-3.5"></i> WhatsApp
@@ -4753,7 +4753,7 @@
             if (messages) {
                 messages.innerHTML = `
                     <div class="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 p-3 rounded-2xl rounded-tl-none text-xs font-medium self-start shadow-sm leading-relaxed max-w-[90%]">
-                        ${storeName ? `Olá! Sou a atendente virtual da <strong>${escapeHtml(storeName)}</strong>.` : 'Olá! Sou a atendente virtual da loja.'} Tire suas dúvidas sobre nossos produtos, cardápio, entrega ou formas de pagamento! Se preferir, clique em <strong>"Falar c/ Dono"</strong> para conversar diretamente com nossa equipe.
+                        ${storeName ? `Olá! Sou a atendente virtual da <strong>${escapeHtml(storeName)}</strong>.` : 'Olá! Sou a atendente virtual da loja.'} Tire suas dúvidas sobre nossos produtos, cardápio, entrega ou formas de pagamento! Se preferir, clique em <strong>"Falar c/ Atendente"</strong> para conversar diretamente com nossa equipe.
                     </div>
                 `;
             }
@@ -4768,7 +4768,7 @@
         // Verifica inatividade no carregamento
         checkChatTTL();
 
-        // Efeito Sonoro Sintetizado para Mensagem do Dono e Notificação
+        // Efeito Sonoro Sintetizado para Mensagem do Atendente e Notificação
         function playChatNotificationSound() {
             try {
                 const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -4820,16 +4820,16 @@
                     headerAvatar.className = "w-9 h-9 bg-gradient-to-tr from-orange-500 to-amber-500 rounded-full flex items-center justify-center shadow-md text-slate-950 font-black";
                     headerAvatar.innerHTML = `<i data-lucide="user-check" class="w-5 h-5 text-slate-950"></i>`;
                 }
-                if (headerTitle) headerTitle.innerText = "Dono / Atendente";
+                if (headerTitle) headerTitle.innerText = "Atendente";
                 if (headerStatus) {
                     headerStatus.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-orange-400 animate-ping inline-block"></span> Atendimento Direto`;
                     headerStatus.className = "text-orange-400 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1 mt-0.5";
                 }
-                if (input) input.placeholder = "Fale diretamente com o dono da loja...";
+                if (input) input.placeholder = "Fale diretamente com o atendente da loja...";
                 if (sendBtn) sendBtn.className = "bg-orange-500 hover:bg-orange-400 text-slate-950 p-3 rounded-xl hover:scale-105 active-scale transition-all shadow-md flex items-center justify-center shrink-0 cursor-pointer";
                 if (humanBadge) humanBadge.classList.add('hidden');
 
-                // Conecta e carrega histórico em tempo real com o dono
+                // Conecta e carrega histórico em tempo real com o atendente
                 connectLiveHumanChat();
             } else {
                 if (btnAi && btnHuman) {
@@ -4866,7 +4866,7 @@
                 const firstMsg = document.querySelector('#ai-messages > div:first-child');
                 const storeName = (window.storeData && window.storeData.name) ? window.storeData.name : (storeData && storeData.name ? storeData.name : "");
                 if (firstMsg && storeName && window.currentChatMode === 'ai') {
-                    firstMsg.innerHTML = `Olá! Sou a atendente virtual da <strong>${escapeHtml(storeName)}</strong>. Posso te ajudar a tirar dúvidas, encontrar serviços ou fazer orçamentos! Se preferir falar diretamente com o dono, clique na aba <strong>"Falar c/ Dono"</strong>.`;
+                    firstMsg.innerHTML = `Olá! Sou a atendente virtual da <strong>${escapeHtml(storeName)}</strong>. Posso te ajudar a tirar dúvidas, encontrar serviços ou fazer orçamentos! Se preferir falar diretamente com o atendente, clique na aba <strong>"Falar c/ Atendente"</strong>.`;
                 }
 
                 widget.style.display = 'block';
@@ -5003,7 +5003,7 @@
                         msgContainer.innerHTML = '';
                         messages.forEach(m => {
                             const senderType = m.sender === 'customer' ? 'user' : (m.sender === 'owner' ? 'owner' : 'bot');
-                            const senderLabel = m.sender === 'owner' ? (m.senderName || 'Dono da Loja') : null;
+                            const senderLabel = m.sender === 'owner' ? (m.senderName || 'Atendente da Loja') : null;
                             appendMessage(escapeHtml(m.text), senderType, null, null, false, senderLabel, m.timestamp);
                         });
                     }
@@ -5073,7 +5073,7 @@
             } catch(e) {
                 console.error("Erro ao enviar mensagem humana:", e);
                 appendMessage(text, 'user');
-                appendMessage("Sua mensagem foi registrada e o dono da loja receberá uma notificação imediatamente!", 'owner', null, null, false, 'Sistema');
+                appendMessage("Sua mensagem foi registrada e nossa equipe de atendimento receberá uma notificação imediatamente!", 'owner', null, null, false, 'Sistema');
                 updateChatLastActivity();
             }
         }
@@ -5105,7 +5105,7 @@
             const contactKeys = ['contato', 'whatsapp', 'zap', 'telefone', 'falar', 'conversar', 'suporte', 'ajuda', 'duvida', 'dúvida', 'vendedor', 'humano', 'ligar', 'chamar', 'atendente', 'comprar', 'pedir'];
             if (contactKeys.some(key => queryLower.includes(key))) {
                 return {
-                    text: `Você pode falar diretamente com o dono da loja aqui no chat ou pelo WhatsApp! Clique na aba <strong>"Falar c/ Dono"</strong> ou no botão abaixo:`,
+                    text: `Você pode falar diretamente com a nossa equipe de atendimento aqui no chat ou pelo WhatsApp! Clique na aba <strong>"Falar c/ Atendente"</strong> ou no botão abaixo:`,
                     action: 'whatsapp'
                 };
             }
@@ -5163,7 +5163,7 @@
 
             // 4. Horário de Funcionamento
             if (['horario', 'horário', 'aberto', 'funciona', 'atendimento', 'horas', 'fecha'].some(k => queryLower.includes(k))) {
-                return { text: `Nosso catálogo digital fica disponível 24 horas para você consultar e montar seu pedido! Para atendimento ao vivo com o dono, envie uma mensagem na aba "Falar c/ Dono".` };
+                return { text: `Nosso catálogo digital fica disponível 24 horas para você consultar e montar seu pedido! Para atendimento ao vivo com nossa equipe, envie uma mensagem na aba "Falar c/ Atendente".` };
             }
 
             // 5. Categorias e Navegação
@@ -5172,10 +5172,10 @@
                 return { text: `Você pode navegar por todo o catálogo no topo da página. Nossas especialidades incluem: ${topCats}.` };
             }
 
-            // 6. Resposta Contextual quando não há certeza: oferece falar com o dono
+            // 6. Resposta Contextual quando não há certeza: oferece falar com o atendente
             const topProductsNames = products.slice(0, 3).map(p => p.name).join(', ');
             return {
-                text: `A <strong>${storeName}</strong> é especializada em <strong>${storeType}</strong>${topProductsNames ? ` (como ${topProductsNames})` : ''}. Se desejar mais detalhes, clique em <strong>"Falar c/ Dono"</strong> para conversar diretamente com nossa equipe!`,
+                text: `A <strong>${storeName}</strong> é especializada em <strong>${storeType}</strong>${topProductsNames ? ` (como ${topProductsNames})` : ''}. Se desejar mais detalhes, clique em <strong>"Falar c/ Atendente"</strong> para conversar diretamente com nossa equipe!`,
                 action: 'whatsapp'
             };
         }

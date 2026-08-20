@@ -1257,10 +1257,13 @@
                             </div>
                         </div>
 
-                        <!-- Barra de Ferramentas: Imprimir e Status -->
+                        <!-- Barra de Ferramentas: Imprimir, Link de Rastreio e WhatsApp -->
                         <div class="flex items-center gap-1.5 pt-2">
                             <button onclick="window.printOrderReceipt('${order.id}')" class="flex-1 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1 border border-slate-700 transition-all cursor-pointer" title="Imprimir Comanda Térmica">
-                                <i data-lucide="printer" class="w-3.5 h-3.5 text-emerald-400"></i> Imprimir Comanda
+                                <i data-lucide="printer" class="w-3.5 h-3.5 text-emerald-400"></i> Imprimir
+                            </button>
+                            <button onclick="window.copyOrderTrackingLink('${orderNum}', '${order.storeSlug || window.currentStoreId}')" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-orange-400 hover:text-orange-300 rounded-lg border border-slate-700 transition-all flex items-center gap-1 text-xs font-bold" title="Copiar Link de Rastreio do Cliente">
+                                <i data-lucide="radar" class="w-3.5 h-3.5"></i> Rastreio
                             </button>
                             <button onclick="window.openCustomerWhatsAppDirect('${order.customerPhone}', '${orderNum}', '${status}', '${order.customerName}')" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-emerald-400 rounded-lg border border-slate-700 transition-all" title="Avisar Cliente no WhatsApp">
                                 <i data-lucide="send" class="w-3.5 h-3.5"></i>
@@ -1398,6 +1401,9 @@
 
                             <!-- Botões de Ação do Histórico -->
                             <div class="md:col-span-3 flex items-center justify-end gap-1.5">
+                                <button onclick="window.copyOrderTrackingLink('${orderNum}', '${order.storeSlug || window.currentStoreId}')" class="p-2 bg-slate-800 hover:bg-slate-700 text-orange-400 hover:text-orange-300 rounded-xl border border-slate-700 transition-all" title="Copiar Link de Rastreio do Pedido">
+                                    <i data-lucide="radar" class="w-4 h-4"></i>
+                                </button>
                                 <button onclick="window.printOrderReceipt('${order.id}')" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl border border-slate-700 transition-all" title="Imprimir Comanda">
                                     <i data-lucide="printer" class="w-4 h-4 text-emerald-400"></i>
                                 </button>
@@ -1685,10 +1691,29 @@
             window.updateOrderStatus(orderId, 'cancelled');
         };
 
+        // LINK DE RASTREIO DO CLIENTE EM TEMPO REAL
+        window.copyOrderTrackingLink = function(orderNum, storeSlug) {
+            const cleanNum = (orderNum || '').replace('#', '').trim();
+            const slug = storeSlug || window.currentStoreId || '';
+            const url = `${window.location.origin}/rastreio.html?pedido=${encodeURIComponent(cleanNum)}&s=${encodeURIComponent(slug)}`;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(url).then(() => {
+                    alert(`✅ Link de rastreio copiado!\n\nEnvie este link para o cliente acompanhar ao vivo:\n${url}`);
+                }).catch(() => {
+                    prompt("Copie o link de rastreio em tempo real abaixo:", url);
+                });
+            } else {
+                prompt("Copie o link de rastreio em tempo real abaixo:", url);
+            }
+        };
+
         // WHATSAPP INTEGRATION
         window.openCustomerWhatsAppDirect = function(phone, orderNum, status, name) {
             const cleanPhone = (phone || '').replace(/\D/g, '');
             const custName = name || 'Cliente';
+            const cleanNum = (orderNum || '').replace('#', '').trim();
+            const trackingUrl = `${window.location.origin}/rastreio.html?pedido=${encodeURIComponent(cleanNum)}&s=${encodeURIComponent(window.currentStoreId || '')}`;
+
             let msg = '';
             if (status === 'pending' || status === 'preparing') {
                 msg = `Olá ${custName}! Seu pedido *${orderNum}* na loja *${window.storeData?.n || 'nossa loja'}* foi confirmado e já está sendo preparado com muito carinho! 👨‍🍳🔥`;
@@ -1699,6 +1724,8 @@
             } else {
                 msg = `Olá ${custName}! Referente ao seu pedido *${orderNum}* na nossa loja.`;
             }
+
+            msg += `\n\n🛵 *Acompanhe ao vivo pelo rastreio:* \n${trackingUrl}`;
 
             if (cleanPhone) {
                 const target = cleanPhone.length <= 11 ? '55' + cleanPhone : cleanPhone;

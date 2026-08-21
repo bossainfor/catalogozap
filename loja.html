@@ -791,6 +791,19 @@
                 badgeCont.innerHTML = `<span class="bg-orange-500 text-white text-[10px] font-black uppercase px-4 py-1.5 rounded-lg shadow-lg shadow-orange-500/20">${product.badge}</span>`;
             }
 
+            const hasStock = product.stock !== null && product.stock !== undefined && product.stock !== '';
+            const isOutOfStock = hasStock && parseInt(product.stock, 10) <= 0;
+            const isLowStock = hasStock && parseInt(product.stock, 10) > 0 && parseInt(product.stock, 10) <= 3;
+            const stockQty = hasStock ? parseInt(product.stock, 10) : null;
+
+            if (isOutOfStock) {
+                badgeCont.innerHTML += `<span class="bg-red-600 text-white text-[10px] font-black uppercase px-3 py-1.5 rounded-lg shadow-md flex items-center gap-1"><i data-lucide="slash" class="w-3 h-3"></i> Esgotado</span>`;
+            } else if (isLowStock) {
+                badgeCont.innerHTML += `<span class="bg-amber-500 text-white text-[10px] font-black uppercase px-3 py-1.5 rounded-lg shadow-md flex items-center gap-1"><i data-lucide="alert-triangle" class="w-3 h-3"></i> Restam apenas ${stockQty} un</span>`;
+            } else if (hasStock) {
+                badgeCont.innerHTML += `<span class="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-[10px] font-black uppercase px-3 py-1.5 rounded-lg">Estoque: ${stockQty} un</span>`;
+            }
+
             const variationsCont = document.getElementById('variations-container');
             variationsCont.innerHTML = '';
             currentVariations = {};
@@ -857,21 +870,34 @@
             });
 
             const addBtn = document.getElementById('modal-add-btn');
-            addBtn.style.backgroundColor = storeData.primaryColor;
             
             const isService = ['servicos', 'serviços', 'portfolio', 'orcamento', 'clinica', 'salao', 'barbearia'].includes(storeData.type);
             const isAffiliate = storeData.type === 'afiliados';
             const isClinica = storeData.type === 'clinica';
             const isBeauty = ['salao', 'barbearia'].includes(storeData.type);
             const isAcougue = storeData.type === 'acougue';
-            const btnIcon = isAffiliate ? 'external-link' : (isService ? (isClinica || isBeauty ? 'calendar' : 'message-circle') : (isAcougue ? 'shopping-cart' : 'shopping-cart'));
-            const btnText = isAffiliate ? 'Comprar Agora' : (isService ? (isClinica || isBeauty ? 'Agendar Agora' : 'Solicitar Orçamento') : (isAcougue ? 'Adicionar ao Carrinho' : 'Adicionar ao Carrinho'));
+
+            let btnIcon = isAffiliate ? 'external-link' : (isService ? (isClinica || isBeauty ? 'calendar' : 'message-circle') : (isAcougue ? 'shopping-cart' : 'shopping-cart'));
+            let btnText = isAffiliate ? 'Comprar Agora' : (isService ? (isClinica || isBeauty ? 'Agendar Agora' : 'Solicitar Orçamento') : (isAcougue ? 'Adicionar ao Carrinho' : 'Adicionar ao Carrinho'));
             
+            if (isOutOfStock) {
+                btnIcon = 'slash';
+                btnText = 'Produto Esgotado';
+                addBtn.style.backgroundColor = '#64748b';
+            } else {
+                addBtn.style.backgroundColor = storeData.primaryColor;
+            }
+
             addBtn.innerHTML = `<i data-lucide="${btnIcon}" class="w-5 h-5"></i> <span>${btnText}</span>`;
             
             addBtn.onclick = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+
+                if (isOutOfStock) {
+                    alert("Desculpe! Este produto está esgotado no momento e não pode ser adicionado.");
+                    return;
+                }
 
                 // Validação de opções obrigatórias para o item (como tamanho e cor)
                 for (const opt of options) {
@@ -1551,6 +1577,7 @@
                         const pCategory = p.cat !== undefined ? p.cat : (p.category !== undefined ? p.category : (p.categoria !== undefined ? p.categoria : ''));
                         const pDesc = p.d !== undefined ? p.d : (p.description !== undefined ? p.description : (p.descricao !== undefined ? p.descricao : ''));
                         const pAv = p.av !== undefined ? p.av : (p.available !== undefined ? p.available : true);
+                        const pStock = p.st !== undefined ? p.st : (p.stock !== undefined ? p.stock : (p.estoque !== undefined ? p.estoque : ''));
                         const pWp = p.wp !== undefined ? p.wp : (p.wholesalePrice !== undefined ? p.wholesalePrice : '');
                         const pWq = p.wq !== undefined ? p.wq : (p.wholesaleMinQty !== undefined ? p.wholesaleMinQty : '');
                         const pVars = p.vars !== undefined ? p.vars : (p.variations !== undefined ? p.variations : '');
@@ -1561,6 +1588,7 @@
                             id: p.id || Math.random().toString(36).substr(2, 9),
                             name: String(pName || 'Produto sem nome').trim(),
                             price: pPrice,
+                            stock: (pStock !== '' && pStock !== null && pStock !== undefined && !isNaN(parseInt(pStock, 10))) ? parseInt(pStock, 10) : null,
                             wholesalePrice: pWp,
                             wholesaleMinQty: pWq,
                             image: pImage,
@@ -1669,6 +1697,22 @@
 
         function addToCart(productId, variations = {}, observation = '') {
             const product = storeData.products.find(p => p.id === productId);
+            if (!product) return;
+
+            // Verificação de Estoque Disponível
+            if (product.stock !== null && product.stock !== undefined && product.stock !== '') {
+                const stockNum = parseInt(product.stock, 10);
+                if (stockNum <= 0) {
+                    alert(`Desculpe! O produto "${product.name}" está esgotado no momento.`);
+                    return;
+                }
+                const totalInCart = cart.filter(item => item.id === productId).reduce((sum, item) => sum + (item.quantity || 0), 0);
+                if (totalInCart >= stockNum) {
+                    alert(`Desculpe! O estoque máximo disponível deste item é de ${stockNum} unidade(s). Você já colocou ${totalInCart} no carrinho.`);
+                    return;
+                }
+            }
+
             const itemKey = JSON.stringify({ variations, observation });
             const existing = cart.find(item => item.id === productId && JSON.stringify({ variations: item.variations || {}, observation: item.observation || '' }) === itemKey);
             
@@ -1684,6 +1728,17 @@
         window.updateQuantity = function(index, delta) {
             const item = cart[index];
             if (item) {
+                if (delta > 0) {
+                    const product = (storeData.products || []).find(p => p.id === item.id) || item;
+                    if (product && product.stock !== null && product.stock !== undefined && product.stock !== '') {
+                        const stockNum = parseInt(product.stock, 10);
+                        const totalInCart = cart.filter(ci => ci.id === item.id).reduce((sum, ci) => sum + (ci.quantity || 0), 0);
+                        if (totalInCart + delta > stockNum) {
+                            alert(`Desculpe! O estoque máximo disponível deste produto é de ${stockNum} unidade(s).`);
+                            return;
+                        }
+                    }
+                }
                 item.quantity += delta;
                 if (item.quantity <= 0) {
                     window.removeFromCart(index);
@@ -2142,6 +2197,23 @@
                 alert("Nossa loja está fechada no momento e não estamos aceitando pedidos agora.\n\nConsulte nossos horários de funcionamento.");
                 window.openOperatingHoursModal();
                 return;
+            }
+
+            // Validação de Estoque antes de fechar o pedido
+            for (const item of cart) {
+                const prod = (storeData.products || []).find(p => p.id === item.id);
+                if (prod && prod.stock !== null && prod.stock !== undefined && prod.stock !== '') {
+                    const stockNum = parseInt(prod.stock, 10);
+                    const totalInCart = cart.filter(ci => ci.id === item.id).reduce((sum, ci) => sum + (ci.quantity || 0), 0);
+                    if (stockNum <= 0) {
+                        alert(`O item "${item.name}" está esgotado no momento. Remova-o do carrinho para prosseguir com o pedido.`);
+                        return;
+                    }
+                    if (totalInCart > stockNum) {
+                        alert(`A quantidade do item "${item.name}" (${totalInCart} un) excede o estoque disponível (${stockNum} un). Por favor, ajuste o carrinho.`);
+                        return;
+                    }
+                }
             }
 
             const orderNumStr = '#' + String(Math.floor(1000 + Math.random() * 9000));
@@ -3167,18 +3239,32 @@
 
                 const offerEndsAt = badge.toLowerCase().includes('oferta') ? new Date(new Date().getTime() + 1000 * 60 * 60 * 3) : null;
                 const swiperId = `swiper-${p.id}`;
+
+                const hasStock = p.stock !== null && p.stock !== undefined && p.stock !== '';
+                const isOutOfStock = hasStock && parseInt(p.stock, 10) <= 0;
+                const isLowStock = hasStock && parseInt(p.stock, 10) > 0 && parseInt(p.stock, 10) <= 3;
+                const stockQty = hasStock ? parseInt(p.stock, 10) : null;
                 
                 const isAffiliate = storeData && storeData.type === 'afiliados';
                 const isBeauty = storeData && ['salao', 'barbearia'].includes(storeData.type);
-                const buttonIcon = isAffiliate ? 'external-link' : (isService ? (isClinica || isBeauty ? 'calendar' : 'message-circle') : 'eye');
-                const buttonText = isAffiliate ? 'Comprar Agora' : (isService ? (isClinica || isBeauty ? 'Agendar Agora' : 'Pedir Orçamento') : 'Ver Detalhes');
+                const buttonIcon = isOutOfStock ? 'slash' : (isAffiliate ? 'external-link' : (isService ? (isClinica || isBeauty ? 'calendar' : 'message-circle') : 'eye'));
+                const buttonText = isOutOfStock ? 'Esgotado' : (isAffiliate ? 'Comprar Agora' : (isService ? (isClinica || isBeauty ? 'Agendar Agora' : 'Pedir Orçamento') : 'Ver Detalhes'));
                 const buttonAction = isAffiliate ? `event.stopPropagation(); window.open('${p.affiliateLink}', '_blank')` : `window.openProductModal('${p.id}')`;
 
                 return `
-                <div onclick="${buttonAction}" class="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all flex flex-col group/card cursor-pointer active-scale md:active:scale-100 touch-manipulation" role="button" aria-label="Ver detalhes de ${p.name}">
+                <div onclick="${buttonAction}" class="bg-white dark:bg-slate-800 rounded-xl sm:rounded-2xl overflow-hidden border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all flex flex-col group/card cursor-pointer active-scale md:active:scale-100 touch-manipulation ${isOutOfStock ? 'opacity-85' : ''}" role="button" aria-label="Ver detalhes de ${p.name}">
                     <div class="relative overflow-hidden bg-white dark:bg-slate-900 w-full" style="aspect-ratio: ${storeData.imageFormat === 'quadrado' ? '1/1' : '9/16'} !important;">
                         ${badge ? `<div class="absolute top-2 left-2 z-20 bg-orange-500 text-white text-[9px] font-black uppercase px-2 py-1 rounded-full shadow-lg pointer-events-none">${badge}</div>` : ''}
-                        ${offerEndsAt ? `
+                        ${isOutOfStock ? `
+                            <div class="absolute top-2 right-2 z-20 bg-red-600/95 backdrop-blur-sm text-white text-[9px] font-black uppercase px-2.5 py-1 rounded-full shadow-lg pointer-events-none flex items-center gap-1">
+                                <i data-lucide="slash" class="w-3 h-3"></i> Esgotado
+                            </div>
+                        ` : (isLowStock ? `
+                            <div class="absolute top-2 right-2 z-20 bg-amber-500/95 backdrop-blur-sm text-white text-[9px] font-black uppercase px-2 py-1 rounded-full shadow-lg pointer-events-none">
+                                Restam ${stockQty} un
+                            </div>
+                        ` : '')}
+                        ${offerEndsAt && !isOutOfStock ? `
                             <div class="absolute top-2 right-2 z-20 bg-black/60 backdrop-blur-md text-white text-[9px] font-black px-2 py-1 rounded-lg border border-white/20 flex flex-col items-center pointer-events-none">
                                 <span class="text-[7px] text-white/60 mb-0.5">ACABA EM</span>
                                 <span data-countdown="${offerEndsAt.toISOString()}">00:00:00</span>
@@ -3246,7 +3332,7 @@
                         <div class="pt-2">
                             <p class="font-black text-lg sm:text-2xl mb-3 dark:text-white tracking-tighter" style="color: ${storeData.primaryColor}">${formatCurrency(p.price)}</p>
                             <div class="grid grid-cols-1">
-                                <div class="w-full py-3 sm:py-4 text-white font-black rounded-[0.75rem] sm:rounded-2xl text-[9px] sm:text-xs uppercase tracking-widest italic flex items-center justify-center gap-2 shadow-lg active-scale transition-all select-none" style="background-color: ${storeData.primaryColor}">
+                                <div class="w-full py-3 sm:py-4 text-white font-black rounded-[0.75rem] sm:rounded-2xl text-[9px] sm:text-xs uppercase tracking-widest italic flex items-center justify-center gap-2 shadow-lg active-scale transition-all select-none" style="background-color: ${isOutOfStock ? '#64748b' : storeData.primaryColor}">
                                     <i data-lucide="${buttonIcon}" class="w-3.5 h-3.5 sm:w-5 sm:h-5"></i>
                                     <span>${buttonText}</span>
                                 </div>
@@ -5262,8 +5348,7 @@
             if (bar) {
                 bar.classList.add('-translate-y-24', 'opacity-0', 'pointer-events-none');
             }
-            // Guarda apenas na sessão temporária; se o cliente atualizar e não ativou, reaparece
-            sessionStorage.setItem('push_banner_temp_dismissed', 'true');
+            // Não bloqueia futuras recargas: se o cliente recarregar a página sem ter ativado, reaparecerá até ele ativar
         };
 
         window.requestWebPushPermission = async function() {

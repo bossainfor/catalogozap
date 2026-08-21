@@ -526,6 +526,13 @@
                             <select id="product-category-filter" onchange="window.filterProducts()" class="w-full sm:w-auto px-3 py-2.5 bg-white rounded-xl border border-slate-200 text-xs font-bold text-slate-700 outline-none focus:border-orange-500 shadow-sm">
                                 <option value="">Todas as Categorias</option>
                             </select>
+                            <select id="product-stock-filter" onchange="window.filterProducts()" class="w-full sm:w-auto px-3 py-2.5 bg-white rounded-xl border border-slate-200 text-xs font-bold text-slate-700 outline-none focus:border-orange-500 shadow-sm">
+                                <option value="">📦 Todos os Estoques</option>
+                                <option value="in_stock">✅ Com Estoque (&gt;0)</option>
+                                <option value="low_stock">⚠️ Estoque Baixo (1 a 3)</option>
+                                <option value="out_of_stock">🔴 Esgotados (0)</option>
+                                <option value="unlimited">♾️ Ilimitado</option>
+                            </select>
                         </div>
                         <div class="flex items-center gap-2 flex-wrap justify-between sm:justify-end">
                             <button type="button" id="toggle-list-visibility-btn" onclick="window.toggleProductListVisibility()" class="bg-white text-slate-700 border border-slate-200 px-3.5 py-2 rounded-xl text-xs font-black uppercase tracking-wider hover:bg-slate-50 active-scale flex items-center gap-1.5 cursor-pointer shadow-sm" title="Mostrar ou ocultar lista de produtos">
@@ -806,7 +813,7 @@
 
     <script>
         // Tornar funções globais explicitamente para garantir funcionamento em botões
-        window.products = [{ id: Date.now().toString(), name: '', price: '', wholesalePrice: '', wholesaleMinQty: '', image: '', videoUrl: '', category: '', description: '' }];
+        window.products = [{ id: Date.now().toString(), name: '', price: '', stock: '', wholesalePrice: '', wholesaleMinQty: '', image: '', videoUrl: '', category: '', description: '' }];
         window.storePlan = 'free';
         window.vendors = [];
         window.shippingZones = [];
@@ -816,6 +823,7 @@
         window.isProductListVisible = true;
         window.productSearchQuery = '';
         window.productCategoryFilter = '';
+        window.productStockFilter = '';
         window.productCurrentPage = 1;
         window.productItemsPerPage = 15;
 
@@ -1300,6 +1308,7 @@
                     id: id, 
                     name: '', 
                     price: '', 
+                    stock: '',
                     available: true, 
                     f: false,
                     vars: '', 
@@ -1321,10 +1330,13 @@
                 window.productCurrentPage = 1;
                 window.productSearchQuery = '';
                 window.productCategoryFilter = '';
+                window.productStockFilter = '';
                 const searchInp = document.getElementById('product-search-input');
                 if (searchInp) searchInp.value = '';
                 const catF = document.getElementById('product-category-filter');
                 if (catF) catF.value = '';
+                const stockF = document.getElementById('product-stock-filter');
+                if (stockF) stockF.value = '';
 
                 window.renderProducts();
                 // Auto-expandir o novo produto e focar nele
@@ -1587,6 +1599,34 @@
                         }
                     }
                     window.updateCategoriesDatalist();
+                } else if (field === 'stock') {
+                    if (value === '' || value === null || value === undefined) {
+                        p.stock = '';
+                    } else {
+                        const num = Math.max(0, parseInt(value, 10) || 0);
+                        p.stock = num;
+                    }
+                    
+                    const badgeEl = document.getElementById(`stock-header-badge-${id}`);
+                    if (badgeEl) {
+                        if (p.stock !== '' && p.stock !== undefined && p.stock !== null) {
+                            const stNum = parseInt(p.stock, 10);
+                            if (stNum === 0) {
+                                badgeEl.className = "text-[8px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border border-red-200";
+                                badgeEl.innerHTML = `<i data-lucide="alert-circle" class="w-2.5 h-2.5"></i> 0 un (Esgotado)`;
+                            } else if (stNum <= 3) {
+                                badgeEl.className = "text-[8px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border border-amber-200";
+                                badgeEl.innerHTML = `<i data-lucide="package" class="w-2.5 h-2.5"></i> Estoque: ${stNum} un (Baixo)`;
+                            } else {
+                                badgeEl.className = "text-[8px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter flex items-center gap-1 border border-emerald-200";
+                                badgeEl.innerHTML = `<i data-lucide="package" class="w-2.5 h-2.5"></i> Estoque: ${stNum} un`;
+                            }
+                            badgeEl.classList.remove('hidden');
+                        } else {
+                            badgeEl.classList.add('hidden');
+                        }
+                        if (window.lucide) lucide.createIcons();
+                    }
                 } else {
                     p[field] = value;
                 }
@@ -1815,8 +1855,10 @@
         window.filterProducts = function() {
             const searchInp = document.getElementById('product-search-input');
             const catF = document.getElementById('product-category-filter');
+            const stockF = document.getElementById('product-stock-filter');
             if (searchInp) window.productSearchQuery = searchInp.value.trim().toLowerCase();
             if (catF) window.productCategoryFilter = catF.value.trim();
+            if (stockF) window.productStockFilter = stockF.value.trim();
             window.productCurrentPage = 1;
             window.renderProducts();
         }
@@ -1957,7 +1999,7 @@
                     return;
                 }
 
-                // Filtragem por Busca e Categoria
+                // Filtragem por Busca, Categoria e Estoque
                 let filtered = window.products;
                 if (window.productSearchQuery) {
                     const q = window.productSearchQuery;
@@ -1971,12 +2013,24 @@
                     const c = window.productCategoryFilter;
                     filtered = filtered.filter(p => (p.category || '').trim() === c);
                 }
+                if (window.productStockFilter) {
+                    const sf = window.productStockFilter;
+                    if (sf === 'in_stock') {
+                        filtered = filtered.filter(p => p.stock !== '' && p.stock !== undefined && p.stock !== null && parseInt(p.stock, 10) > 0);
+                    } else if (sf === 'low_stock') {
+                        filtered = filtered.filter(p => p.stock !== '' && p.stock !== undefined && p.stock !== null && parseInt(p.stock, 10) > 0 && parseInt(p.stock, 10) <= 3);
+                    } else if (sf === 'out_of_stock') {
+                        filtered = filtered.filter(p => p.stock !== '' && p.stock !== undefined && p.stock !== null && parseInt(p.stock, 10) === 0);
+                    } else if (sf === 'unlimited') {
+                        filtered = filtered.filter(p => p.stock === '' || p.stock === undefined || p.stock === null);
+                    }
+                }
 
                 if (filtered.length === 0) {
                     list.innerHTML = `
                         <div class="bg-slate-50 p-8 rounded-[2rem] border-2 border-slate-200 text-center space-y-3">
                             <p class="font-bold text-xs uppercase tracking-wider text-slate-400">Nenhum produto encontrado para a busca ou filtro selecionado.</p>
-                            <button type="button" onclick="document.getElementById('product-search-input').value=''; document.getElementById('product-category-filter').value=''; window.filterProducts()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold text-xs uppercase hover:bg-slate-300 transition-all cursor-pointer">
+                            <button type="button" onclick="document.getElementById('product-search-input').value=''; document.getElementById('product-category-filter').value=''; document.getElementById('product-stock-filter').value=''; window.filterProducts()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl font-bold text-xs uppercase hover:bg-slate-300 transition-all cursor-pointer">
                                 Limpar Filtros
                             </button>
                         </div>
@@ -2016,6 +2070,21 @@
                     const videoEscaped = String(p.videoUrl || '').replace(/"/g, '&quot;');
                     const hasVideo = p.videoUrl && p.videoUrl.trim() !== '';
 
+                    const hasStock = p.stock !== '' && p.stock !== undefined && p.stock !== null;
+                    const stockNum = hasStock ? parseInt(p.stock, 10) : null;
+                    let stockBadgeHtml = '';
+                    if (hasStock) {
+                        if (stockNum === 0) {
+                            stockBadgeHtml = `<span id="stock-header-badge-${p.id}" class="text-[8px] bg-red-100 text-red-700 px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border border-red-200"><i data-lucide="alert-circle" class="w-2.5 h-2.5"></i> 0 un (Esgotado)</span>`;
+                        } else if (stockNum <= 3) {
+                            stockBadgeHtml = `<span id="stock-header-badge-${p.id}" class="text-[8px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1 border border-amber-200"><i data-lucide="package" class="w-2.5 h-2.5"></i> Estoque: ${stockNum} un (Baixo)</span>`;
+                        } else {
+                            stockBadgeHtml = `<span id="stock-header-badge-${p.id}" class="text-[8px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter flex items-center gap-1 border border-emerald-200"><i data-lucide="package" class="w-2.5 h-2.5"></i> Estoque: ${stockNum} un</span>`;
+                        }
+                    } else {
+                        stockBadgeHtml = `<span id="stock-header-badge-${p.id}" class="text-[8px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold uppercase tracking-tighter hidden flex items-center gap-1 border border-slate-200"></span>`;
+                    }
+
                     const isItemOverLimit = index >= limit;
 
                     return `
@@ -2034,8 +2103,9 @@
                                 </div>
                                 <div class="truncate">
                                     <h4 id="title-${p.id}" class="font-black uppercase italic tracking-tighter text-slate-800 truncate">${p.name || 'Novo Item'}</h4>
-                                    <div class="flex items-center gap-2">
+                                    <div class="flex items-center gap-2 flex-wrap">
                                         <p id="price-display-${p.id}" class="${niche === 'portfolio' ? 'hidden' : ''} text-[10px] font-bold text-orange-500 uppercase tracking-widest">${p.price ? 'R$ ' + p.price : (isClinica ? 'Sob Consulta' : 'Sem preço')}</p>
+                                        ${stockBadgeHtml}
                                         ${hasVideo ? '<span class="text-[8px] bg-indigo-50 text-indigo-500 px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex items-center gap-1"><i data-lucide="video" class="w-2 h-2"></i> Vídeo</span>' : ''}
                                     </div>
                                 </div>
@@ -2080,12 +2150,26 @@
                                 </div>
                             </div>
 
-                             <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mt-6">
+                             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-6">
                                 <div class="space-y-2 ${niche === 'portfolio' ? 'hidden' : ''}">
                                     <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">
                                         ${isClinica ? 'Valor da Consulta (Opcional)' : (isBeauty ? 'Valor do Serviço' : (isAcougue ? 'Preço por KG' : (isService ? 'Preço do Serviço' : 'Preço Varejo (R$)')))}
                                     </label>
                                     <input type="text" value="${priceEscaped}" oninput="window.updateProduct('${p.id}', 'price', this.value)" placeholder="${isAcougue ? 'Ex: 45,90' : 'Ex: 150,00'}" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold">
+                                </div>
+                                <div class="space-y-2 ${isService || isAffiliate ? 'hidden' : ''}">
+                                    <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1 flex items-center justify-between">
+                                        <span class="flex items-center gap-1 text-slate-600 font-black"><i data-lucide="package" class="w-3 h-3 text-indigo-500"></i> Estoque (Qtd)</span>
+                                        <span class="text-[8px] text-slate-400 font-normal">Vazio = Ilimitado</span>
+                                    </label>
+                                    <div class="relative flex items-center">
+                                        <input type="number" min="0" step="1" value="${p.stock !== undefined && p.stock !== null ? p.stock : ''}" oninput="window.updateProduct('${p.id}', 'stock', this.value)" placeholder="Ex: 20 (ou Vazio = Ilimitado)" class="w-full px-5 py-4 rounded-2xl bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-slate-800">
+                                        ${(p.stock !== '' && p.stock !== undefined && p.stock !== null) ? `
+                                            <span class="absolute right-3 px-2 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${parseInt(p.stock, 10) === 0 ? 'bg-red-100 text-red-700 border border-red-200' : (parseInt(p.stock, 10) <= 3 ? 'bg-amber-100 text-amber-700 border border-amber-200' : 'bg-emerald-100 text-emerald-700 border border-emerald-200')}">
+                                                ${parseInt(p.stock, 10) === 0 ? 'Esgotado' : (parseInt(p.stock, 10) <= 3 ? 'Estoque Baixo' : 'Em Estoque')}
+                                            </span>
+                                        ` : ''}
+                                    </div>
                                 </div>
                                 <div class="space-y-2 ${isService || isAffiliate || isFood || isClinica || isBeauty || isAcougue ? 'hidden' : ''}">
                                     <label class="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Variações (P, M, G ou Cores)</label>
@@ -2742,6 +2826,11 @@
                     const catVal = p.category || p.cat;
                     if (catVal) item.cat = catVal;
 
+                    const stockVal = p.stock !== undefined ? p.stock : (p.st !== undefined ? p.st : (p.estoque !== undefined ? p.estoque : ''));
+                    if (stockVal !== '' && stockVal !== null && stockVal !== undefined && !isNaN(parseInt(stockVal, 10))) {
+                        item.st = parseInt(stockVal, 10);
+                    }
+
                     const wpVal = p.wholesalePrice || p.wp;
                     if (wpVal) item.wp = wpVal;
 
@@ -3298,6 +3387,7 @@
                             const pCat = p.cat !== undefined ? p.cat : (p.category !== undefined ? p.category : (p.categoria !== undefined ? p.categoria : ''));
                             const pDesc = p.d !== undefined ? p.d : (p.description !== undefined ? p.description : (p.descricao !== undefined ? p.descricao : ''));
                             const pAv = p.av !== undefined ? p.av : (p.available !== undefined ? p.available : true);
+                            const pStock = p.st !== undefined ? p.st : (p.stock !== undefined ? p.stock : (p.estoque !== undefined ? p.estoque : ''));
                             const pWp = p.wp !== undefined ? p.wp : (p.wholesalePrice !== undefined ? p.wholesalePrice : '');
                             const pWq = p.wq !== undefined ? p.wq : (p.wholesaleMinQty !== undefined ? p.wholesaleMinQty : '');
                             const pVars = p.vars !== undefined ? p.vars : (p.variations !== undefined ? p.variations : '');
@@ -3308,6 +3398,7 @@
                                 id: p.id || Math.random().toString(36).substr(2, 9),
                                 name: String(pName || 'Produto sem nome').trim(),
                                 price: pPrice,
+                                stock: (pStock !== '' && pStock !== null && pStock !== undefined && !isNaN(parseInt(pStock, 10))) ? parseInt(pStock, 10) : '',
                                 wholesalePrice: pWp,
                                 wholesaleMinQty: pWq,
                                 image: pImg,
@@ -3732,6 +3823,13 @@
                     const catVal = item.category || item.categoria || item.cat || item.group || item.grupo || item.secao || item.section || item.category_name || 'Outros';
                     const descVal = item.description || item.descricao || item.d || item.desc || item.detalhes || item.details || item.obs || item.observacao || item.info || '';
                     
+                    let stockVal = item.stock !== undefined ? item.stock : (item.estoque !== undefined ? item.estoque : (item.st !== undefined ? item.st : (item.qtd !== undefined ? item.qtd : (item.quantidade !== undefined ? item.quantidade : ''))));
+                    if (stockVal !== '' && stockVal !== null && stockVal !== undefined && !isNaN(parseInt(stockVal, 10))) {
+                        stockVal = parseInt(stockVal, 10);
+                    } else {
+                        stockVal = '';
+                    }
+
                     const extractedImgs = extractImagesFromItem(item);
                     const avVal = item.available !== undefined ? item.available : (item.disponivel !== undefined ? item.disponivel : (item.av !== undefined ? item.av : true));
 
@@ -3739,6 +3837,7 @@
                         id: item.id ? String(item.id).trim() : '',
                         name: String(nameVal).trim(),
                         price: pVal || '',
+                        stock: stockVal,
                         category: String(catVal).trim() || 'Outros',
                         description: String(descVal).trim(),
                         image: extractedImgs[0] || '',
@@ -3948,6 +4047,7 @@
                         if (item.vars !== '') matched.vars = item.vars;
                         if (item.sh_sizes !== '') matched.sh_sizes = item.sh_sizes;
                         if (item.sh_colors !== '') matched.sh_colors = item.sh_colors;
+                        if (item.stock !== undefined && item.stock !== '') matched.stock = item.stock;
                         if (item.available !== undefined) matched.available = item.available;
                         if (item.f !== undefined) matched.f = item.f;
                         if (item.affiliateLink !== '') matched.affiliateLink = item.affiliateLink;
@@ -3958,6 +4058,7 @@
                             id: item.id || (Date.now().toString() + '_' + index),
                             name: item.name,
                             price: item.price,
+                            stock: item.stock !== undefined ? item.stock : '',
                             category: item.category,
                             description: item.description,
                             image: item.image,
@@ -3992,6 +4093,7 @@
                         id: item.id || (Date.now().toString() + '_' + index),
                         name: item.name,
                         price: item.price,
+                        stock: item.stock !== undefined ? item.stock : '',
                         category: item.category,
                         description: item.description,
                         image: item.image,
@@ -4031,6 +4133,7 @@
                 id: p.id || '',
                 name: p.name || '',
                 price: p.price !== undefined && p.price !== '' ? (parseFloat(String(p.price).replace(',', '.')) || p.price) : 0,
+                stock: (p.stock !== '' && p.stock !== undefined && p.stock !== null && !isNaN(parseInt(p.stock, 10))) ? parseInt(p.stock, 10) : null,
                 category: p.category || 'Outros',
                 description: p.description || '',
                 image: p.image || '',

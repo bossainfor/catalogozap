@@ -8,7 +8,9 @@
     <meta name="description" content="Tenha hoje mesmo seu Catálogo Online no WhatsApp com Gestor de Pedidos, Chat ao Vivo, Rastreamento e Impressão Térmica. Plano Completo por apenas R$ 59,90/mês com produtos ilimitados.">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -32,7 +34,7 @@
 
     <style>
         body { 
-            font-family: 'Inter', sans-serif; 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
             scroll-behavior: smooth;
         }
         .font-outfit {
@@ -42,140 +44,250 @@
             transform: scale(0.97); 
             transition: transform 0.1s; 
         }
-        .gradient-glow {
-            background: radial-gradient(circle at 50% 0%, rgba(37, 211, 102, 0.12) 0%, rgba(255, 255, 255, 0) 70%);
+        .hero-mesh {
+            background-color: #060b13;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.18) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.15) 0px, transparent 50%),
+                radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.12) 0px, transparent 60%);
+        }
+        .grid-pattern {
+            background-size: 32px 32px;
+            background-image: linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+                              linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
         }
         .card-hover {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .card-hover:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.08);
+            transform: translateY(-6px);
+            box-shadow: 0 25px 50px -12px rgba(16, 185, 129, 0.15);
+        }
+        .glow-emerald {
+            box-shadow: 0 0 35px -5px rgba(16, 185, 129, 0.4);
+        }
+        .glow-emerald-lg {
+            box-shadow: 0 0 60px -10px rgba(16, 185, 129, 0.5);
+        }
+        .glow-orange {
+            box-shadow: 0 0 30px -5px rgba(249, 115, 22, 0.35);
+        }
+        .text-glow {
+            text-shadow: 0 0 20px rgba(52, 211, 153, 0.4);
+        }
+        .floating-anim-1 {
+            animation: float 4s ease-in-out infinite;
+        }
+        .floating-anim-2 {
+            animation: float 5s ease-in-out 1.5s infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        .btn-shimmer {
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-shimmer::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                60deg,
+                transparent 30%,
+                rgba(255, 255, 255, 0.25) 50%,
+                transparent 70%
+            );
+            transform: rotate(30deg);
+            animation: shimmer 4s infinite;
+        }
+        @keyframes shimmer {
+            0% { transform: translateX(-100%) rotate(30deg); }
+            100% { transform: translateX(100%) rotate(30deg); }
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 antialiased selection:bg-emerald-500 selection:text-white">
+<body class="bg-slate-950 text-slate-100 antialiased selection:bg-emerald-500 selection:text-white">
 
-    <!-- BARRA SUPERIOR DE AVISO -->
-    <div class="w-full bg-slate-900 text-white py-2.5 px-4 text-center text-xs font-semibold tracking-wide border-b border-slate-800">
-        <div class="max-w-7xl mx-auto flex items-center justify-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>Atendimento Rápido: Catálogo Digital, Cardápio ou Loja Online com Entrega no Mesmo Dia!</span>
+    <!-- BARRA SUPERIOR DE AVISO & ATENDIMENTO -->
+    <div class="w-full bg-slate-950 text-slate-300 py-2.5 px-4 text-center text-xs font-semibold tracking-wide border-b border-emerald-950/60 relative z-50">
+        <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-center gap-2 sm:gap-4">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-bold text-[11px]">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                ENTREGA NO MESMO DIA
+            </span>
+            <span class="text-slate-200">Catálogo Digital, Cardápio Online ou Loja no WhatsApp com Gestor de Pedidos Completo!</span>
+            <button onclick="openWhatsApp('Olá! Gostaria de criar meu Catálogo no AcheAqui Digital hoje mesmo!')" class="text-emerald-400 hover:text-emerald-300 font-extrabold underline underline-offset-2 ml-1 cursor-pointer">
+                Falar com Especialista &rarr;
+            </button>
         </div>
     </div>
 
-    <!-- CABEÇALHO / NAVEGAÇÃO -->
-    <header class="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-slate-200/80">
+    <!-- CABEÇALHO / NAVEGAÇÃO HIGH-TECH -->
+    <header class="sticky top-0 z-50 bg-slate-950/85 backdrop-blur-xl border-b border-slate-800/80 transition-all">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
             <!-- Branding -->
-            <a href="index.html" class="flex items-center gap-2 text-2xl font-black font-outfit text-slate-900 tracking-tight">
-                <span class="text-emerald-600">Ache</span>Aqui
-                <span class="text-[10px] font-bold px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-sans uppercase">DIGITAL</span>
+            <a href="index.html" class="flex items-center gap-2.5 text-2xl font-black font-outfit tracking-tight group">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-slate-950 font-black shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
+                    <i data-lucide="store" class="w-5 h-5 text-white"></i>
+                </div>
+                <div class="flex flex-col">
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-emerald-400 font-black">Ache</span><span class="text-white font-black">Aqui</span>
+                        <span class="text-[9px] font-black px-2 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full font-mono uppercase tracking-wider">PRO</span>
+                    </div>
+                    <span class="text-[10px] text-slate-400 font-semibold tracking-wider uppercase">Plataforma & Gestor</span>
+                </div>
             </a>
 
             <!-- Menu Desktop -->
-            <nav class="hidden lg:flex items-center gap-8 text-sm font-semibold text-slate-600">
-                <a href="#telas-sistema" class="text-emerald-600 font-bold hover:text-emerald-700 transition-colors flex items-center gap-1.5"><i data-lucide="monitor" class="w-4 h-4"></i> Conheça o Sistema</a>
-                <a href="#destaques" class="hover:text-emerald-600 transition-colors">Destaques</a>
-                <a href="#problemas" class="hover:text-emerald-600 transition-colors">Por que ter?</a>
-                <a href="#nichos" class="hover:text-emerald-600 transition-colors">Segmentos</a>
-                <a href="#exemplos" class="hover:text-emerald-600 transition-colors">Exemplos</a>
-                <a href="#diferenciais" class="hover:text-emerald-600 transition-colors">Diferenciais</a>
-                <a href="#como-funciona" class="hover:text-emerald-600 transition-colors">Como Funciona</a>
-                <a href="#preco" class="hover:text-emerald-600 transition-colors">Planos</a>
-                <a href="#depoimentos" class="hover:text-emerald-600 transition-colors">Depoimentos</a>
-                <a href="#faq" class="hover:text-emerald-600 transition-colors">FAQ</a>
+            <nav class="hidden lg:flex items-center gap-6 text-xs font-bold text-slate-300">
+                <a href="#telas-sistema" class="text-emerald-400 hover:text-emerald-300 transition-colors flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                    <i data-lucide="monitor" class="w-3.5 h-3.5"></i> Conheça o Sistema
+                </a>
+                <a href="#visibilidade-portal" class="hover:text-emerald-400 transition-colors">Minha Divulgação</a>
+                <a href="#destaques" class="hover:text-emerald-400 transition-colors">Recursos</a>
+                <a href="#exemplos" class="hover:text-emerald-400 transition-colors">Modelos</a>
+                <a href="#nichos" class="hover:text-emerald-400 transition-colors">Segmentos</a>
+                <a href="#preco" class="text-white hover:text-emerald-400 transition-colors">Planos</a>
+                <a href="#depoimentos" class="hover:text-emerald-400 transition-colors">Depoimentos</a>
+                <a href="#faq" class="hover:text-emerald-400 transition-colors">FAQ</a>
             </nav>
 
             <!-- Ações -->
             <div class="flex items-center gap-3">
-                <button onclick="openLoginModal()" class="text-xs sm:text-sm font-bold px-4 py-2.5 sm:px-5 sm:py-2.5 text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all">
-                    Área do Cliente
+                <button onclick="openLoginModal()" class="text-xs sm:text-sm font-bold px-4 py-2.5 sm:px-5 sm:py-2.5 text-slate-200 bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 rounded-xl transition-all flex items-center gap-2 cursor-pointer">
+                    <i data-lucide="lock" class="w-3.5 h-3.5 text-emerald-400"></i>
+                    <span>Área do Cliente</span>
                 </button>
-                <a href="#exemplos" class="text-xs sm:text-sm font-extrabold px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-md hover:shadow-lg transition-all active-scale inline-flex items-center justify-center">
-                    Ver Exemplos
+                <a href="#preco" class="btn-shimmer text-xs sm:text-sm font-black px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 rounded-xl shadow-lg shadow-emerald-500/25 transition-all active-scale inline-flex items-center justify-center gap-1.5 cursor-pointer">
+                    <i data-lucide="sparkles" class="w-4 h-4 text-slate-950"></i>
+                    <span>Começar por R$ 59,90</span>
                 </a>
             </div>
         </div>
     </header>
 
-    <!-- HERO SECTION (PRIMEIRA DOBRA) -->
-    <section class="relative pt-12 pb-20 lg:pt-20 lg:pb-28 overflow-hidden bg-white border-b border-slate-200/80 gradient-glow">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- HERO SECTION (PRIMEIRA DOBRA DE ALTO IMPACTO) -->
+    <section class="relative pt-12 pb-20 lg:pt-20 lg:pb-32 overflow-hidden hero-mesh grid-pattern border-b border-slate-800/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
                 
-                <!-- Coluna da Esquerda (Texto & CTAs) -->
-                <div class="lg:col-span-7 space-y-8 text-center lg:text-left">
-                    <div class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 border border-emerald-200 rounded-full text-xs font-bold text-emerald-800 tracking-wide font-outfit">
-                        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-                        GESTOR DE PEDIDOS • CHAT AO VIVO • RASTREAMENTO • IMPRESSÃO TÉRMICA
+                <!-- Coluna da Esquerda (Copywriting & Conversão) -->
+                <div class="lg:col-span-7 space-y-7 text-center lg:text-left">
+                    <div class="inline-flex items-center gap-2.5 px-4 py-2 bg-emerald-950/80 border border-emerald-800/60 rounded-full text-xs font-extrabold text-emerald-300 tracking-wide font-outfit uppercase shadow-inner">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+                        <span>ECOSSISTEMA DE VENDAS &bull; GESTOR &bull; CATÁLOGO &bull; PORTAL</span>
                     </div>
 
-                    <h1 class="text-3xl sm:text-5xl lg:text-6xl font-black font-outfit text-slate-900 tracking-tight leading-[1.15] uppercase">
-                        TENHA SEU <span class="text-emerald-600">CATÁLOGO ONLINE</span> NO WHATSAPP
+                    <h1 class="text-3xl sm:text-5xl lg:text-[3.35rem] font-black font-outfit text-white tracking-tight leading-[1.10] uppercase">
+                        SUA EMPRESA NÃO PRECISA DE APENAS UM LINK. <span class="bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-200 bg-clip-text text-transparent text-glow block sm:inline">PRECISA DE UMA MÁQUINA DE VENDAS DIGITAL.</span>
                     </h1>
 
-                    <p class="text-base sm:text-lg text-slate-600 font-normal leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                        Apresente seus produtos com máxima qualidade: <strong>Catálogo Digital</strong>, <strong>Cardápio Online</strong>, <strong>Lojas Virtuais</strong> e <strong>Gestor de Pedidos</strong> com chat ao vivo, rastreamento em tempo real e impressão de comandas térmicas.
+                    <p class="text-base sm:text-lg text-slate-300 font-normal leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                        Tenha seu <strong>Catálogo Digital</strong>, <strong>Cardápio Online</strong>, <strong>Loja Virtual</strong> ou <strong>Sistema de Agendamento</strong> pronto em minutos. Receba pedidos 100% organizados no WhatsApp, controle tudo com alerta sonoro estilo iFood, imprima comandas térmicas e ainda ganhe presença no <strong>Portal Minha Divulgação</strong>.
                     </p>
 
                     <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-2">
-                        <a href="#preco" class="px-8 py-4 sm:px-10 sm:py-5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-2xl shadow-xl shadow-emerald-600/20 hover:shadow-2xl transition-all active-scale text-sm tracking-wide uppercase flex items-center justify-center gap-3">
-                            <i data-lucide="sparkles" class="w-5 h-5"></i>
-                            <span>VER PLANOS & PREÇOS</span>
+                        <a href="#preco" class="btn-shimmer px-8 py-4 sm:px-9 sm:py-5 bg-gradient-to-r from-emerald-500 via-emerald-400 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black rounded-2xl shadow-xl shadow-emerald-500/30 hover:scale-[1.02] transition-all active-scale text-xs sm:text-sm tracking-wider uppercase flex items-center justify-center gap-3 cursor-pointer">
+                            <i data-lucide="zap" class="w-5 h-5 fill-slate-950"></i>
+                            <span>QUERO MEU CATÁLOGO POR R$ 59,90/MÊS</span>
                         </a>
-                        <a href="#exemplos" class="px-8 py-4 sm:px-10 sm:py-5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold rounded-2xl transition-all active-scale text-sm tracking-wide uppercase flex items-center justify-center gap-2">
-                            <span>VER UM EXEMPLO FUNCIONANDO</span>
-                            <i data-lucide="arrow-down" class="w-4 h-4"></i>
+                        <a href="#telas-sistema" class="px-8 py-4 sm:px-8 sm:py-5 bg-slate-900/90 hover:bg-slate-800 text-white font-extrabold border border-slate-700 rounded-2xl transition-all active-scale text-xs sm:text-sm tracking-wider uppercase flex items-center justify-center gap-2 cursor-pointer">
+                            <i data-lucide="play-circle" class="w-5 h-5 text-emerald-400"></i>
+                            <span>VER SISTEMA POR DENTRO</span>
                         </a>
                     </div>
 
-                    <!-- Destaques rápidos abaixo dos botões -->
-                    <div class="pt-6 grid grid-cols-1 sm:grid-cols-3 gap-3 text-slate-600 text-xs font-semibold">
-                        <div class="flex items-center justify-center lg:justify-start gap-2 bg-slate-50 border border-slate-200/80 p-3 rounded-xl">
-                            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 shrink-0"></i>
-                            <span>Status em Tempo Real</span>
+                    <!-- 4 Selos de Garantia & Vantagens -->
+                    <div class="pt-4 grid grid-cols-2 sm:grid-cols-4 gap-3 text-slate-200 text-xs font-bold">
+                        <div class="flex items-center justify-center lg:justify-start gap-2 bg-slate-900/70 border border-slate-800/90 p-3 rounded-2xl backdrop-blur-sm">
+                            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                            <span>Catálogo ou Loja</span>
                         </div>
-                        <div class="flex items-center justify-center lg:justify-start gap-2 bg-slate-50 border border-slate-200/80 p-3 rounded-xl">
-                            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 shrink-0"></i>
-                            <span>Impressão 58mm e 80mm</span>
+                        <div class="flex items-center justify-center lg:justify-start gap-2 bg-slate-900/70 border border-slate-800/90 p-3 rounded-2xl backdrop-blur-sm">
+                            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                            <span>Gestor em Tempo Real</span>
                         </div>
-                        <div class="flex items-center justify-center lg:justify-start gap-2 bg-slate-50 border border-slate-200/80 p-3 rounded-xl">
-                            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 shrink-0"></i>
-                            <span>Zero Comissão por Venda</span>
+                        <div class="flex items-center justify-center lg:justify-start gap-2 bg-slate-900/70 border border-slate-800/90 p-3 rounded-2xl backdrop-blur-sm">
+                            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                            <span>Pedidos no WhatsApp</span>
+                        </div>
+                        <div class="flex items-center justify-center lg:justify-start gap-2 bg-slate-900/70 border border-slate-800/90 p-3 rounded-2xl backdrop-blur-sm">
+                            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                            <span>Guia Minha Divulgação</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Coluna da Direita (Mockups do Notebook e Smartphone) -->
+                <!-- Coluna da Direita (Mockups com Efeitos de Luz & Badges Flutuantes) -->
                 <div class="lg:col-span-5 relative flex justify-center items-center">
+                    
+                    <!-- Glow de Fundo -->
+                    <div class="absolute -inset-4 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+                    <!-- CARD FLUTUANTE 1: NOVO PEDIDO (TOP-LEFT) -->
+                    <div class="absolute -top-4 -left-3 sm:-left-6 z-30 bg-slate-900/95 border border-emerald-500/50 p-3.5 rounded-2xl shadow-2xl backdrop-blur-md floating-anim-1 hidden sm:flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center font-bold">
+                            <i data-lucide="bell" class="w-4 h-4 animate-bounce"></i>
+                        </div>
+                        <div class="text-left">
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-[10px] font-black text-orange-400 font-mono">NOVO PEDIDO #1084</span>
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                            </div>
+                            <div class="text-xs font-black text-white">R$ 149,90 • WhatsApp</div>
+                        </div>
+                    </div>
+
+                    <!-- CARD FLUTUANTE 2: IMPRESSÃO AUTOMÁTICA (BOTTOM-LEFT) -->
+                    <div class="absolute -bottom-6 -left-2 sm:-left-4 z-30 bg-slate-900/95 border border-slate-700/80 p-3 rounded-2xl shadow-2xl backdrop-blur-md floating-anim-2 hidden sm:flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
+                            <i data-lucide="printer" class="w-4 h-4"></i>
+                        </div>
+                        <div class="text-left">
+                            <div class="text-[10px] font-black text-emerald-400 uppercase">Impressão 80mm</div>
+                            <div class="text-xs font-bold text-slate-200">Comanda Pronta!</div>
+                        </div>
+                    </div>
+
                     <div class="relative w-full max-w-lg py-6">
                         
                         <!-- NOTEBOOK MOCKUP -->
-                        <div class="bg-slate-900 p-2.5 sm:p-3 rounded-t-2xl shadow-2xl border border-slate-700 relative z-10 mx-auto w-[92%] sm:w-[95%]">
+                        <div class="bg-slate-900 p-2.5 sm:p-3.5 rounded-t-2xl shadow-2xl border-2 border-slate-700/80 relative z-10 mx-auto w-[94%] sm:w-[96%] glow-emerald">
                             <!-- Top bar controls -->
-                            <div class="flex items-center gap-1.5 pb-2 px-1">
-                                <span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span>
-                                <span class="w-2.5 h-2.5 rounded-full bg-yellow-500 inline-block"></span>
-                                <span class="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span>
-                                <span class="text-[9px] text-slate-400 font-mono ml-2 truncate">https://sualoja.com.br</span>
+                            <div class="flex items-center justify-between pb-2.5 px-1 border-b border-slate-800 mb-2">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-yellow-500 inline-block"></span>
+                                    <span class="w-2.5 h-2.5 rounded-full bg-green-500 inline-block"></span>
+                                </div>
+                                <div class="px-3 py-0.5 rounded-md bg-slate-950 text-[10px] text-emerald-400 font-mono font-bold flex items-center gap-1.5 border border-slate-800">
+                                    <i data-lucide="lock" class="w-2.5 h-2.5"></i>
+                                    <span>https://acheaqui.com/sua-empresa</span>
+                                </div>
+                                <div class="text-[10px] text-slate-500 font-bold hidden sm:block">Painel Ativo</div>
                             </div>
                             <!-- Screen Content -->
-                            <div class="bg-slate-100 rounded-lg overflow-hidden h-56 sm:h-72 relative flex flex-col border border-slate-800/20">
+                            <div class="bg-slate-950 rounded-xl overflow-hidden h-60 sm:h-76 relative flex flex-col border border-slate-800">
                                 <img src="https://i.postimg.cc/vTRjZRWs/4.png" alt="Catálogo Digital no Notebook" class="w-full h-full object-cover object-top" referrerpolicy="no-referrer" />
                             </div>
                         </div>
                         <!-- Laptop Base -->
-                        <div class="bg-slate-800 h-3.5 w-full rounded-b-xl shadow-md border-t border-slate-700 relative z-10 mb-2"></div>
+                        <div class="bg-slate-800 h-4 w-full rounded-b-2xl shadow-xl border-t border-slate-700 relative z-10 mb-2"></div>
 
                         <!-- SMARTPHONE MOCKUP (CATÁLOGO MOBILE) -->
-                        <div class="absolute -bottom-2 -right-1 sm:-right-4 z-20 w-36 sm:w-44 bg-slate-900 rounded-[2.2rem] p-1.5 sm:p-2 border-2 border-slate-700 shadow-2xl transform rotate-2 hover:rotate-0 transition-all duration-300">
+                        <div class="absolute -bottom-4 -right-1 sm:-right-4 z-20 w-36 sm:w-44 bg-slate-950 rounded-[2.4rem] p-2 border-2 border-emerald-500/80 shadow-2xl transform rotate-2 hover:rotate-0 transition-all duration-300 glow-emerald">
                             <!-- Notch -->
-                            <div class="w-10 h-2 bg-slate-800 rounded-full mx-auto mb-1 flex items-center justify-center">
-                                <span class="w-1 h-1 rounded-full bg-slate-600"></span>
+                            <div class="w-12 h-2.5 bg-slate-900 rounded-full mx-auto mb-1.5 flex items-center justify-center">
+                                <span class="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
                             </div>
                             <!-- Screen -->
-                            <div class="bg-white rounded-[1.6rem] overflow-hidden shadow-inner h-56 sm:h-68 flex flex-col relative border border-slate-800/20">
+                            <div class="bg-white rounded-[1.8rem] overflow-hidden shadow-inner h-56 sm:h-68 flex flex-col relative border border-slate-800">
                                 <img src="https://i.postimg.cc/vTRjZRWs/4.png" alt="Catálogo Digital no Celular" class="w-full h-full object-cover object-top" referrerpolicy="no-referrer" />
                             </div>
                         </div>
@@ -187,213 +299,464 @@
         </div>
     </section>
 
-    <!-- SEÇÃO DESTAQUES (10 CARDS MODERNOS) -->
-    <section id="destaques" class="py-20 bg-slate-50 border-b border-slate-200/80">
+    <!-- FAIXA DE MÉTRICAS & PROVA DE IMPACTO IMEDIATO -->
+    <div class="w-full bg-slate-950 border-b border-slate-800 py-6 relative z-20">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center divide-y md:divide-y-0 md:divide-x divide-slate-800">
+                <div class="pt-3 md:pt-0 space-y-1">
+                    <div class="text-2xl sm:text-3xl font-black font-outfit text-emerald-400">0%</div>
+                    <div class="text-xs text-slate-400 font-bold uppercase tracking-wider">Taxa por Venda</div>
+                </div>
+                <div class="pt-3 md:pt-0 space-y-1">
+                    <div class="text-2xl sm:text-3xl font-black font-outfit text-white">ILIMITADO</div>
+                    <div class="text-xs text-slate-400 font-bold uppercase tracking-wider">Produtos & Fotos</div>
+                </div>
+                <div class="pt-3 md:pt-0 space-y-1">
+                    <div class="text-2xl sm:text-3xl font-black font-outfit text-emerald-400">TEMPO REAL</div>
+                    <div class="text-xs text-slate-400 font-bold uppercase tracking-wider">Gestor de Pedidos</div>
+                </div>
+                <div class="pt-3 md:pt-0 space-y-1">
+                    <div class="text-2xl sm:text-3xl font-black font-outfit text-white">R$ 59,90<span class="text-xs font-normal text-slate-400">/mês</span></div>
+                    <div class="text-xs text-emerald-400 font-bold uppercase tracking-wider">Sem Contrato ou Fidelidade</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEÇÃO 2: MAIS QUE UM CATÁLOGO: SUA EMPRESA TAMBÉM PODE SER ENCONTRADA -->
+    <section id="visibilidade-portal" class="py-24 bg-slate-900 text-white border-b border-slate-800 relative overflow-hidden">
+        <div class="absolute -right-24 -top-24 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -left-24 -bottom-24 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="text-center max-w-3xl mx-auto space-y-4 mb-16">
-                <span class="text-xs font-bold px-3.5 py-1.5 bg-emerald-100 text-emerald-800 rounded-full uppercase tracking-wider font-outfit">RECURSOS DO PLANO COMPLETO</span>
-                <h2 class="text-2xl sm:text-4xl font-black font-outfit text-slate-900 tracking-tight uppercase">
-                    TUDO O QUE SUA EMPRESA PRECISA EM UMA ÚNICA PLATAFORMA
+                <div class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-950/80 border border-emerald-800/60 rounded-full text-xs font-black text-emerald-400 tracking-wide font-outfit uppercase">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                    ECOSSISTEMA INTEGRADO DE VISIBILIDADE
+                </div>
+                <h2 class="text-2xl sm:text-4xl lg:text-5xl font-black font-outfit tracking-tight uppercase">
+                    MAIS QUE UM CATÁLOGO: SUA EMPRESA TAMBÉM PODE SER ENCONTRADA
                 </h2>
-                <p class="text-slate-600 text-base">
-                    Funcionalidades pensadas para valorizar seus produtos e serviços e facilitar a compra para o seu cliente.
+                <p class="text-slate-300 text-base sm:text-lg max-w-3xl mx-auto leading-relaxed">
+                    Com o <strong>AcheAqui Digital</strong>, sua empresa não fica limitada apenas ao link que você divulga no WhatsApp ou Instagram. Enquanto sua assinatura estiver ativa, sua empresa também poderá fazer parte do ecossistema digital e ganhar presença no <strong>Portal Minha Divulgação</strong>, um guia comercial criado para ajudar clientes a encontrar empresas, produtos, serviços e promoções.
                 </p>
             </div>
 
-            <!-- Grid de 10 Cartões Modernos -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+            <!-- Fluxo Visual de 4 Etapas -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
                 
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 card-hover flex flex-col justify-between">
-                    <div>
-                        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
-                            <i data-lucide="shopping-bag" class="w-6 h-6"></i>
+                <div class="bg-slate-950/90 p-7 rounded-3xl border border-slate-800 hover:border-emerald-500/60 transition-all flex flex-col justify-between space-y-5 card-hover shadow-xl">
+                    <div class="space-y-3.5">
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black text-xl font-outfit border border-emerald-500/30">
+                            1️⃣
                         </div>
-                        <h3 class="font-extrabold text-base text-slate-900 mb-2">Catálogo Digital</h3>
-                        <p class="text-xs text-slate-500 leading-relaxed">Exibição organizada de fotos, descrições detalhadas e preços atualizados.</p>
+                        <h3 class="text-base sm:text-lg font-black text-white font-outfit uppercase">CRIAMOS SUA PRESENÇA DIGITAL</h3>
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                            Catálogo, Cardápio, Loja Online ou Agendamento estruturados profissionalmente para o seu segmento.
+                        </p>
+                    </div>
+                    <div class="text-[11px] text-emerald-400 font-extrabold flex items-center gap-1.5 pt-3 border-t border-slate-800/80">
+                        <i data-lucide="check" class="w-3.5 h-3.5 text-emerald-400"></i> Estrutura Completa
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 card-hover flex flex-col justify-between">
-                    <div>
-                        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
-                            <i data-lucide="utensils" class="w-6 h-6"></i>
+                <div class="bg-slate-950/90 p-7 rounded-3xl border border-slate-800 hover:border-blue-500/60 transition-all flex flex-col justify-between space-y-5 card-hover shadow-xl">
+                    <div class="space-y-3.5">
+                        <div class="w-12 h-12 rounded-2xl bg-blue-500/20 text-blue-400 flex items-center justify-center font-black text-xl font-outfit border border-blue-500/30">
+                            2️⃣
                         </div>
-                        <h3 class="font-extrabold text-base text-slate-900 mb-2">Cardápio Online</h3>
-                        <p class="text-xs text-slate-500 leading-relaxed">Ideal para delivery e alimentação com adicionais, sabores e observações.</p>
+                        <h3 class="text-base sm:text-lg font-black text-white font-outfit uppercase">VOCÊ RECEBE SEU LINK EXCLUSIVO</h3>
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                            Divulgue no WhatsApp, Instagram, Facebook, Google Meu Negócio e em todas as suas redes.
+                        </p>
+                    </div>
+                    <div class="text-[11px] text-blue-400 font-extrabold flex items-center gap-1.5 pt-3 border-t border-slate-800/80">
+                        <i data-lucide="share-2" class="w-3.5 h-3.5 text-blue-400"></i> Link Próprio Rápido
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 card-hover flex flex-col justify-between">
-                    <div>
-                        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
-                            <i data-lucide="store" class="w-6 h-6"></i>
+                <div class="bg-slate-950/90 p-7 rounded-3xl border border-slate-800 hover:border-amber-500/60 transition-all flex flex-col justify-between space-y-5 card-hover shadow-xl">
+                    <div class="space-y-3.5">
+                        <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-black text-xl font-outfit border border-amber-500/30">
+                            3️⃣
                         </div>
-                        <h3 class="font-extrabold text-base text-slate-900 mb-2">Lojas Online</h3>
-                        <p class="text-xs text-slate-500 leading-relaxed">Carrinho de compras inteligente com cálculo de total, entrega e frete.</p>
+                        <h3 class="text-base sm:text-lg font-black text-white font-outfit uppercase">VOCÊ GERENCIA PELO PAINEL</h3>
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                            Altere produtos, preços, fotos, banners e informações da empresa direto pelo celular ou PC.
+                        </p>
+                    </div>
+                    <div class="text-[11px] text-amber-400 font-extrabold flex items-center gap-1.5 pt-3 border-t border-slate-800/80">
+                        <i data-lucide="sliders" class="w-3.5 h-3.5 text-amber-400"></i> Total Autonomia
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 card-hover flex flex-col justify-between">
-                    <div>
-                        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
-                            <i data-lucide="calendar" class="w-6 h-6"></i>
+                <div class="bg-slate-950/90 p-7 rounded-3xl border border-slate-800 hover:border-purple-500/60 transition-all flex flex-col justify-between space-y-5 card-hover shadow-xl">
+                    <div class="space-y-3.5">
+                        <div class="w-12 h-12 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center font-black text-xl font-outfit border border-purple-500/30">
+                            4️⃣
                         </div>
-                        <h3 class="font-extrabold text-base text-slate-900 mb-2">Agendamentos</h3>
-                        <p class="text-xs text-slate-500 leading-relaxed">Perfeito para barbearias, salões, clínicas e serviços com escolha de data/hora.</p>
+                        <h3 class="text-base sm:text-lg font-black text-white font-outfit uppercase">SUA EMPRESA GANHA MAIS VISIBILIDADE</h3>
+                        <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
+                            Sua empresa pode aparecer no Portal Minha Divulgação, conectando seu negócio a pessoas que procuram empresas e serviços.
+                        </p>
+                    </div>
+                    <div class="text-[11px] text-purple-400 font-extrabold flex items-center gap-1.5 pt-3 border-t border-slate-800/80">
+                        <i data-lucide="globe" class="w-3.5 h-3.5 text-purple-400"></i> Portal Comercial
                     </div>
                 </div>
 
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 card-hover flex flex-col justify-between">
-                    <div>
-                        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
-                            <i data-lucide="message-square" class="w-6 h-6"></i>
-                        </div>
-                        <h3 class="font-extrabold text-base text-slate-900 mb-2">Integração WhatsApp</h3>
-                        <p class="text-xs text-slate-500 leading-relaxed">Pedidos prontos chegam direto no seu WhatsApp totalmente organizados.</p>
-                    </div>
-                </div>
+            </div>
 
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 card-hover flex flex-col justify-between">
-                    <div>
-                        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
-                            <i data-lucide="package-check" class="w-6 h-6"></i>
-                        </div>
-                        <h3 class="font-extrabold text-base text-slate-900 mb-2">Produtos Ilimitados</h3>
-                        <p class="text-xs text-slate-500 leading-relaxed">Cadastre quantos produtos e fotos desejar com variações, estoque e preços.</p>
-                    </div>
-                </div>
-
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 card-hover flex flex-col justify-between">
-                    <div>
-                        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
-                            <i data-lucide="key-round" class="w-6 h-6"></i>
-                        </div>
-                        <h3 class="font-extrabold text-base text-slate-900 mb-2">Entrega no Mesmo Dia</h3>
-                        <p class="text-xs text-slate-500 leading-relaxed">Receba no mesmo dia seu acesso com Login e Senha para gerenciar.</p>
-                    </div>
-                </div>
-
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 card-hover flex flex-col justify-between">
-                    <div>
-                        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
-                            <i data-lucide="smartphone" class="w-6 h-6"></i>
-                        </div>
-                        <h3 class="font-extrabold text-base text-slate-900 mb-2">100% Responsivo</h3>
-                        <p class="text-xs text-slate-500 leading-relaxed">Layout rápido e adaptado para Celular, Tablet e Computador.</p>
-                    </div>
-                </div>
-
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 card-hover flex flex-col justify-between">
-                    <div>
-                        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
-                            <i data-lucide="layout-dashboard" class="w-6 h-6"></i>
-                        </div>
-                        <h3 class="font-extrabold text-base text-slate-900 mb-2">Painel de Gestão</h3>
-                        <p class="text-xs text-slate-500 leading-relaxed">Gerencie produtos, fotos, valores e banners com facilidade.</p>
-                    </div>
-                </div>
-
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 card-hover flex flex-col justify-between">
-                    <div>
-                        <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-4">
-                            <i data-lucide="layers" class="w-6 h-6"></i>
-                        </div>
-                        <h3 class="font-extrabold text-base text-slate-900 mb-2">Categorias e Busca</h3>
-                        <p class="text-xs text-slate-500 leading-relaxed">Navegação intuitiva por categorias para achar itens instantaneamente.</p>
-                    </div>
-                </div>
-
+            <!-- Botão Portal Minha Divulgação -->
+            <div class="text-center pt-2">
+                <a href="https://minhadivulgacao.com.br/" target="_blank" class="inline-flex items-center gap-3 px-8 py-4 sm:px-10 sm:py-5 bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-slate-950 font-black rounded-2xl shadow-xl shadow-emerald-900/50 transition-all active-scale text-xs sm:text-sm uppercase tracking-wider">
+                    <span>🌐 CONHECER O PORTAL MINHA DIVULGAÇÃO</span>
+                    <i data-lucide="external-link" class="w-4 h-4"></i>
+                </a>
             </div>
         </div>
     </section>
 
-    <!-- NOVA SEÇÃO: POR QUE SUA EMPRESA MERECE MAIS QUE UM LINK NO INSTAGRAM -->
-    <section id="problemas" class="py-20 bg-white border-b border-slate-200/80">
+    <!-- SEÇÃO 3: SEÇÃO EXCLUSIVA PARA O PORTAL MINHA DIVULGAÇÃO (DOIS CARDS LADO A LADO) -->
+    <section id="ecossistema" class="py-20 bg-slate-50 border-b border-slate-200/80">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center max-w-3xl mx-auto space-y-4 mb-16">
-                <span class="text-xs font-bold px-3.5 py-1.5 bg-red-100 text-red-800 rounded-full uppercase tracking-wider font-outfit">EVITE PERDER CLIENTES</span>
+                <span class="text-xs font-bold px-3.5 py-1.5 bg-emerald-100 text-emerald-800 rounded-full uppercase tracking-wider font-outfit">PARCERIA ESTRATÉGICA</span>
                 <h2 class="text-2xl sm:text-4xl font-black font-outfit text-slate-900 tracking-tight uppercase">
-                    SUA EMPRESA MERECE MAIS DO QUE APENAS UM LINK NO INSTAGRAM
+                    UM ECOSSISTEMA PARA SUA EMPRESA SER ENCONTRADA
                 </h2>
-                <p class="text-slate-600 text-base">
-                    Depender apenas de mensagens soltas nas redes sociais gera atrito, desorganização e perda frequente de vendas.
+                <div class="text-emerald-700 font-black text-lg sm:text-xl font-outfit">
+                    AcheAqui Digital + Minha Divulgação
+                </div>
+                <p class="text-slate-600 text-base max-w-2xl mx-auto leading-relaxed">
+                    O <strong>AcheAqui Digital</strong> cuida da sua vitrine e organização online. O <strong>Minha Divulgação</strong> amplia sua presença mostrando empresas, anunciantes, destaques e promoções em um portal comercial.
                 </p>
             </div>
 
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-stretch">
+            <!-- Dois Cards Lado a Lado -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch mb-12">
                 
-                <!-- Problemas Frequentes -->
-                <div class="bg-red-50/50 p-8 sm:p-10 rounded-3xl border border-red-200/80 flex flex-col justify-between space-y-6">
+                <!-- Card 1: AcheAqui Digital -->
+                <div class="bg-white p-8 sm:p-10 rounded-3xl border border-slate-200/80 card-hover flex flex-col justify-between space-y-6 shadow-sm">
+                    <div>
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-2xl">
+                                🛍️
+                            </div>
+                            <div>
+                                <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-600 font-outfit">Sua estrutura de vendas</span>
+                                <h3 class="text-2xl font-black text-slate-900 font-outfit uppercase">ACHEAQUI DIGITAL</h3>
+                            </div>
+                        </div>
+
+                        <ul class="space-y-3.5 text-sm text-slate-700 font-medium">
+                            <li class="flex items-center gap-3">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600 shrink-0"></i>
+                                <span><strong>Catálogo Digital:</strong> Vitrine visual de produtos com fotos e preços.</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600 shrink-0"></i>
+                                <span><strong>Cardápio Online:</strong> Itens adicionais, sabores e observações para delivery.</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600 shrink-0"></i>
+                                <span><strong>Loja Online:</strong> Carrinho de compras com cálculo de entrega.</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600 shrink-0"></i>
+                                <span><strong>Agendamento:</strong> Seleção de datas e horários de serviços.</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600 shrink-0"></i>
+                                <span><strong>Gestor de Pedidos:</strong> Painel em tempo real com alerta sonoro.</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600 shrink-0"></i>
+                                <span><strong>WhatsApp:</strong> Pedidos calculados direto no seu chat.</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600 shrink-0"></i>
+                                <span><strong>Painel Administrativo:</strong> Controle completo no celular e computador.</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="pt-4 border-t border-slate-100 text-xs text-slate-500 font-semibold">
+                        Sua máquina de vendas e atendimento automatizado no dia a dia.
+                    </div>
+                </div>
+
+                <!-- Card 2: Minha Divulgação -->
+                <div class="bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 text-white p-8 sm:p-10 rounded-3xl border border-slate-800 card-hover flex flex-col justify-between space-y-6 shadow-xl">
+                    <div>
+                        <div class="flex items-center gap-3 mb-6">
+                            <div class="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-2xl">
+                                📣
+                            </div>
+                            <div>
+                                <span class="text-xs font-extrabold uppercase tracking-wider text-amber-400 font-outfit">Sua vitrine de visibilidade</span>
+                                <h3 class="text-2xl font-black text-white font-outfit uppercase">MINHA DIVULGAÇÃO</h3>
+                            </div>
+                        </div>
+
+                        <ul class="space-y-3.5 text-sm text-slate-200 font-medium">
+                            <li class="flex items-center gap-3">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-amber-400 shrink-0"></i>
+                                <span><strong>Guia Comercial:</strong> Portal para busca de negócios e comércios.</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-amber-400 shrink-0"></i>
+                                <span><strong>Empresas por categoria:</strong> Segmentação que ajuda clientes locais.</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-amber-400 shrink-0"></i>
+                                <span><strong>Empresas em destaque:</strong> Posicionamento estratégico e vitrine.</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-amber-400 shrink-0"></i>
+                                <span><strong>Promoções e Ofertas:</strong> Espaço para expor oportunidades do seu negócio.</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-amber-400 shrink-0"></i>
+                                <span><strong>Anunciantes e Parceiros:</strong> Divulgação ativa para novos públicos.</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-amber-400 shrink-0"></i>
+                                <span><strong>Divulgação Local:</strong> Alcance direcionado para o seu público-alvo.</span>
+                            </li>
+                            <li class="flex items-center gap-3">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-amber-400 shrink-0"></i>
+                                <span><strong>Rádio e TV do Portal:</strong> Mídia e entretenimento que atraem audiência diária.</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="pt-4 border-t border-slate-800 text-xs text-slate-400 font-semibold">
+                        A vitrine coletiva que conecta novos consumidores ao seu link.
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Resumo e CTA do Ecossistema -->
+            <div class="text-center space-y-5">
+                <p class="text-slate-800 font-extrabold text-base sm:text-lg">
+                    Um sistema para organizar seu negócio. Um portal para aumentar sua presença digital.
+                </p>
+                <div>
+                    <a href="#preco" class="inline-flex items-center gap-3 px-10 py-5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-2xl shadow-xl shadow-emerald-600/20 transition-all active-scale text-xs sm:text-sm uppercase tracking-wider">
+                        <span>🚀 QUERO FAZER PARTE DESSE ECOSSISTEMA</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SEÇÃO 4: RECURSOS COMPLETOS ORGANIZADOS EM 4 BLOCOS -->
+    <section id="destaques" class="py-20 bg-white border-b border-slate-200/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto space-y-4 mb-16">
+                <span class="text-xs font-bold px-3.5 py-1.5 bg-emerald-100 text-emerald-800 rounded-full uppercase tracking-wider font-outfit">RECURSOS COMPLETOS</span>
+                <h2 class="text-2xl sm:text-4xl font-black font-outfit text-slate-900 tracking-tight uppercase">
+                    TUDO O QUE SUA EMPRESA PRECISA PARA VENDER E SE DIVULGAR
+                </h2>
+                <p class="text-slate-600 text-base">
+                    Funcionalidades completas divididas para cobrir cada etapa da sua operação online.
+                </p>
+            </div>
+
+            <!-- 4 Blocos de Recursos -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                <!-- Bloco 1: Vendas Online -->
+                <div class="bg-slate-50 p-8 rounded-3xl border border-slate-200/80 card-hover flex flex-col justify-between space-y-6">
+                    <div class="space-y-4">
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                            <i data-lucide="shopping-bag" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700">MÓDULO DE VENDAS</span>
+                            <h3 class="text-xl font-black text-slate-900 font-outfit uppercase">🛒 VENDAS ONLINE</h3>
+                        </div>
+                        <ul class="space-y-2.5 text-xs text-slate-600 leading-relaxed font-medium">
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 shrink-0"></i> Catálogo Digital</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 shrink-0"></i> Cardápio Online</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 shrink-0"></i> Loja Online</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 shrink-0"></i> Carrinho de Compras</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 shrink-0"></i> Produtos e Categorias</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600 shrink-0"></i> Busca de Produtos</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Bloco 2: Atendimento -->
+                <div class="bg-slate-50 p-8 rounded-3xl border border-slate-200/80 card-hover flex flex-col justify-between space-y-6">
+                    <div class="space-y-4">
+                        <div class="w-12 h-12 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                            <i data-lucide="message-circle" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-extrabold uppercase tracking-wider text-blue-700">MÓDULO DE ATENDIMENTO</span>
+                            <h3 class="text-xl font-black text-slate-900 font-outfit uppercase">💬 ATENDIMENTO</h3>
+                        </div>
+                        <ul class="space-y-2.5 text-xs text-slate-600 leading-relaxed font-medium">
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-blue-600 shrink-0"></i> Pedidos pelo WhatsApp</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-blue-600 shrink-0"></i> Chat ao Vivo</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-blue-600 shrink-0"></i> Agendamento de Horários</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-blue-600 shrink-0"></i> Observações e adicionais</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-blue-600 shrink-0"></i> Dados organizados do cliente</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-blue-600 shrink-0"></i> Rastreamento de Entrega</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Bloco 3: Gestão -->
+                <div class="bg-slate-50 p-8 rounded-3xl border border-slate-200/80 card-hover flex flex-col justify-between space-y-6">
+                    <div class="space-y-4">
+                        <div class="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
+                            <i data-lucide="layout-dashboard" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-extrabold uppercase tracking-wider text-purple-700">MÓDULO DE GESTÃO</span>
+                            <h3 class="text-xl font-black text-slate-900 font-outfit uppercase">📊 GESTÃO</h3>
+                        </div>
+                        <ul class="space-y-2.5 text-xs text-slate-600 leading-relaxed font-medium">
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-purple-600 shrink-0"></i> Painel Administrativo</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-purple-600 shrink-0"></i> Gestor de Pedidos em tempo real</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-purple-600 shrink-0"></i> Histórico Completo</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-purple-600 shrink-0"></i> Relatórios de Faturamento</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-purple-600 shrink-0"></i> Alteração de preços e fotos</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-purple-600 shrink-0"></i> Impressão Térmica de comandas</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Bloco 4: Visibilidade -->
+                <div class="bg-slate-50 p-8 rounded-3xl border border-slate-200/80 card-hover flex flex-col justify-between space-y-6">
+                    <div class="space-y-4">
+                        <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+                            <i data-lucide="globe" class="w-6 h-6"></i>
+                        </div>
+                        <div>
+                            <span class="text-[10px] font-extrabold uppercase tracking-wider text-amber-700">MÓDULO DE VISIBILIDADE</span>
+                            <h3 class="text-xl font-black text-slate-900 font-outfit uppercase">📣 VISIBILIDADE</h3>
+                        </div>
+                        <ul class="space-y-2.5 text-xs text-slate-600 leading-relaxed font-medium">
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-amber-600 shrink-0"></i> Link exclusivo para bio</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-amber-600 shrink-0"></i> Divulgação nas redes sociais</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-amber-600 shrink-0"></i> Presença no Portal Minha Divulgação</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-amber-600 shrink-0"></i> Possibilidade de destaques e promoções*</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-amber-600 shrink-0"></i> Zero comissões sobre vendas</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-amber-600 shrink-0"></i> Conexão direta com novos clientes</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+            
+            <div class="mt-8 text-center text-xs text-slate-500">
+                *A disponibilidade de recursos de divulgação, destaque e posicionamento no portal pode variar conforme o plano contratado e as condições comerciais.
+            </div>
+        </div>
+    </section>
+
+    <!-- SEÇÃO 5: POR QUE ACHEAQUI + MINHA DIVULGAÇÃO? (COMPARAÇÃO VISUAL) -->
+    <section id="problemas" class="py-20 bg-slate-50 border-b border-slate-200/80">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center max-w-3xl mx-auto space-y-4 mb-16">
+                <span class="text-xs font-bold px-3.5 py-1.5 bg-red-100 text-red-800 rounded-full uppercase tracking-wider font-outfit">COMPARATIVO DE RESULTADOS</span>
+                <h2 class="text-2xl sm:text-4xl font-black font-outfit text-slate-900 tracking-tight uppercase">
+                    TER APENAS REDES SOCIAIS JÁ NÃO É SUFICIENTE
+                </h2>
+                <p class="text-slate-600 text-base">
+                    Veja a diferença real entre depender exclusivamente do feed de redes sociais e contar com um ecossistema completo de vendas e visibilidade.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
+                
+                <!-- Apenas Redes Sociais -->
+                <div class="bg-red-50/60 p-8 sm:p-10 rounded-3xl border border-red-200/80 flex flex-col justify-between space-y-6">
                     <div>
                         <div class="flex items-center gap-3 mb-6">
                             <div class="w-10 h-10 rounded-xl bg-red-100 text-red-600 flex items-center justify-center font-bold">
                                 <i data-lucide="alert-triangle" class="w-5 h-5"></i>
                             </div>
-                            <h3 class="text-xl font-extrabold text-slate-900 font-outfit uppercase">Problemas sem Catálogo Digital</h3>
+                            <h3 class="text-xl font-extrabold text-slate-900 font-outfit uppercase">APENAS REDES SOCIAIS</h3>
                         </div>
 
-                        <ul class="space-y-4">
-                            <li class="flex items-start gap-3 text-slate-700 text-sm font-medium">
+                        <ul class="space-y-4 text-sm font-medium text-slate-700">
+                            <li class="flex items-start gap-3">
                                 <i data-lucide="x-circle" class="w-5 h-5 text-red-500 shrink-0 mt-0.5"></i>
-                                <span><strong>Instagram não mostra todos os produtos:</strong> As publicações se perdem no feed e stories.</span>
+                                <span>❌ <strong>Produtos espalhados em postagens:</strong> Fotos se perdem no feed e stories.</span>
                             </li>
-                            <li class="flex items-start gap-3 text-slate-700 text-sm font-medium">
+                            <li class="flex items-start gap-3">
                                 <i data-lucide="x-circle" class="w-5 h-5 text-red-500 shrink-0 mt-0.5"></i>
-                                <span><strong>Clientes perguntam preços repetidamente:</strong> Perda de tempo precioso respondendo "preço no direct".</span>
+                                <span>❌ <strong>Cliente precisa perguntar preço:</strong> Perda de tempo constante no direct ou chat.</span>
                             </li>
-                            <li class="flex items-start gap-3 text-slate-700 text-sm font-medium">
+                            <li class="flex items-start gap-3">
                                 <i data-lucide="x-circle" class="w-5 h-5 text-red-500 shrink-0 mt-0.5"></i>
-                                <span><strong>Produtos difíceis de localizar:</strong> O cliente desiste de procurar e compra no concorrente.</span>
+                                <span>❌ <strong>Atendimento manual:</strong> Demora para responder gera desistência na compra.</span>
                             </li>
-                            <li class="flex items-start gap-3 text-slate-700 text-sm font-medium">
+                            <li class="flex items-start gap-3">
                                 <i data-lucide="x-circle" class="w-5 h-5 text-red-500 shrink-0 mt-0.5"></i>
-                                <span><strong>Falta de organização nos pedidos:</strong> Ausência de carrinho de compras e cálculo automatizado.</span>
+                                <span>❌ <strong>Dificuldade para encontrar produtos:</strong> Ausência de busca e categorias claras.</span>
                             </li>
-                            <li class="flex items-start gap-3 text-slate-700 text-sm font-medium">
+                            <li class="flex items-start gap-3">
                                 <i data-lucide="x-circle" class="w-5 h-5 text-red-500 shrink-0 mt-0.5"></i>
-                                <span><strong>Atendimento lento e manual:</strong> Dificuldade em agendar horários ou receber pedidos com itens adicionais.</span>
+                                <span>❌ <strong>Link não organiza pedidos:</strong> Mensagens chegam sem cálculo e sem detalhes.</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <i data-lucide="x-circle" class="w-5 h-5 text-red-500 shrink-0 mt-0.5"></i>
+                                <span>❌ <strong>Empresa depende apenas do alcance das redes:</strong> Se o algoritmo não entregar, ninguém vê.</span>
                             </li>
                         </ul>
                     </div>
                 </div>
 
-                <!-- Solução com nosso Sistema -->
-                <div class="bg-emerald-50/60 p-8 sm:p-10 rounded-3xl border border-emerald-200/80 flex flex-col justify-between space-y-6">
+                <!-- Com o Ecossistema AcheAqui -->
+                <div class="bg-emerald-950 text-white p-8 sm:p-10 rounded-3xl border border-emerald-800 flex flex-col justify-between space-y-6 shadow-xl">
                     <div>
                         <div class="flex items-center gap-3 mb-6">
-                            <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">
                                 <i data-lucide="check-circle-2" class="w-5 h-5"></i>
                             </div>
-                            <h3 class="text-xl font-extrabold text-slate-900 font-outfit uppercase">Com Nosso Sistema Você Possui</h3>
+                            <h3 class="text-xl font-extrabold text-white font-outfit uppercase">COM O ECOSSISTEMA ACHEAQUI</h3>
                         </div>
 
-                        <ul class="space-y-4">
-                            <li class="flex items-start gap-3 text-slate-800 text-sm font-bold">
-                                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5"></i>
-                                <span>Catálogo Digital, Cardápio, Loja Online e Agendamentos completos em um só link.</span>
+                        <ul class="space-y-4 text-sm font-bold text-emerald-100">
+                            <li class="flex items-start gap-3">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400 shrink-0 mt-0.5"></i>
+                                <span>✅ <strong>Catálogo ou loja organizada:</strong> Todas as informações acessíveis num só toque.</span>
                             </li>
-                            <li class="flex items-start gap-3 text-slate-800 text-sm font-bold">
-                                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5"></i>
-                                <span>Produtos e serviços ilimitados cadastrados com fotos, variações e descrições.</span>
+                            <li class="flex items-start gap-3">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400 shrink-0 mt-0.5"></i>
+                                <span>✅ <strong>Produtos e serviços em um único link:</strong> Fotos em alta qualidade e preços visíveis.</span>
                             </li>
-                            <li class="flex items-start gap-3 text-slate-800 text-sm font-bold">
-                                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5"></i>
-                                <span>Pedidos direcionados no WhatsApp com o valor total e detalhes prontos.</span>
+                            <li class="flex items-start gap-3">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400 shrink-0 mt-0.5"></i>
+                                <span>✅ <strong>Pedido direcionado para o WhatsApp:</strong> Já calculado com entrega e itens detalhados.</span>
                             </li>
-                            <li class="flex items-start gap-3 text-slate-800 text-sm font-bold">
-                                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5"></i>
-                                <span>Entrega efetuada no mesmo dia com Login e Senha exclusivos para você gerenciar.</span>
+                            <li class="flex items-start gap-3">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400 shrink-0 mt-0.5"></i>
+                                <span>✅ <strong>Painel para gerenciar:</strong> Facilidade para alterar dados quando quiser.</span>
                             </li>
-                            <li class="flex items-start gap-3 text-slate-800 text-sm font-bold">
-                                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5"></i>
-                                <span>Plano Completo por R$ 59,90/mês — Produtos Ilimitados, sem comissões e sem taxas extras.</span>
+                            <li class="flex items-start gap-3">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400 shrink-0 mt-0.5"></i>
+                                <span>✅ <strong>Sistema disponível 24 horas:</strong> Seus clientes escolhem e compram até de madrugada.</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400 shrink-0 mt-0.5"></i>
+                                <span>✅ <strong>Presença adicional no Portal Minha Divulgação:</strong> Visibilidade além do seu próprio alcance.</span>
+                            </li>
+                            <li class="flex items-start gap-3">
+                                <i data-lucide="check-circle" class="w-5 h-5 text-emerald-400 shrink-0 mt-0.5"></i>
+                                <span>✅ <strong>Mais facilidade para ser encontrada digitalmente:</strong> Mais credibilidade e profissionalismo.</span>
                             </li>
                         </ul>
                     </div>
 
                     <div class="pt-4">
-                        <a href="#preco" class="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold rounded-2xl shadow-lg transition-all active-scale text-xs uppercase tracking-wider flex items-center justify-center gap-2">
-                            <span>QUERO PROFISSIONALIZAR MEU NEGÓCIO</span>
+                        <a href="#preco" class="w-full py-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl shadow-lg transition-all active-scale text-xs uppercase tracking-wider flex items-center justify-center gap-2">
+                            <span>QUERO PROFISSIONALIZAR MINHA EMPRESA HOJE</span>
                             <i data-lucide="arrow-right" class="w-4 h-4"></i>
                         </a>
                     </div>
@@ -403,127 +766,85 @@
         </div>
     </section>
 
-    <!-- SEÇÃO NICHOS E SEGMENTOS -->
+    <!-- SEÇÃO NICHOS E SEGMENTOS (UMA PLATAFORMA QUE SE ADAPTA AO SEU NEGÓCIO) -->
     <section id="nichos" class="py-20 bg-slate-50 border-b border-slate-200/80">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center max-w-3xl mx-auto space-y-4 mb-16">
-                <span class="text-xs font-bold px-3.5 py-1.5 bg-emerald-100 text-emerald-800 rounded-full uppercase tracking-wider font-outfit">VERSATILIDADE TOTAL</span>
+                <span class="text-xs font-bold px-3.5 py-1.5 bg-emerald-100 text-emerald-800 rounded-full uppercase tracking-wider font-outfit">ADAPTABILIDADE TOTAL</span>
                 <h2 class="text-2xl sm:text-4xl font-black font-outfit text-slate-900 tracking-tight uppercase">
-                    PERFEITO PARA DIVERSOS SEGMENTOS
+                    UMA PLATAFORMA QUE SE ADAPTA AO SEU NEGÓCIO
                 </h2>
                 <p class="text-slate-600 text-base">
-                    Seja qual for seu tipo de produto ou serviço, a plataforma se adapta perfeitamente.
+                    Estruturas especializadas criadas para atender com perfeição as particularidades de cada tipo de operação comercial.
                 </p>
             </div>
 
-            <!-- Grid de Nichos -->
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <!-- 4 Grupos de Segmentos -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
                 
-                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 flex items-center gap-3 shadow-sm hover:border-emerald-300 transition-all">
-                    <div class="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
-                        <i data-lucide="wine" class="w-5 h-5"></i>
+                <!-- 1. ALIMENTAÇÃO -->
+                <div class="bg-white p-8 rounded-3xl border border-slate-200/80 card-hover flex flex-col justify-between space-y-4">
+                    <div class="space-y-3">
+                        <div class="w-12 h-12 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center text-2xl">
+                            🍔
+                        </div>
+                        <h3 class="font-black text-lg text-slate-900 font-outfit uppercase">ALIMENTAÇÃO</h3>
+                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                            Restaurantes, pizzarias, hamburguerias, marmitarias, lanchonetes, açaí, docerias e muito mais.
+                        </p>
                     </div>
-                    <span class="text-xs font-bold text-slate-800">Depósitos de Bebidas</span>
+                    <div class="text-[11px] font-bold text-orange-600">Cardápio + Adicionais + Sabores</div>
                 </div>
 
-                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 flex items-center gap-3 shadow-sm hover:border-emerald-300 transition-all">
-                    <div class="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
-                        <i data-lucide="utensils-crossed" class="w-5 h-5"></i>
+                <!-- 2. COMÉRCIO -->
+                <div class="bg-white p-8 rounded-3xl border border-slate-200/80 card-hover flex flex-col justify-between space-y-4">
+                    <div class="space-y-3">
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-2xl">
+                            🛍️
+                        </div>
+                        <h3 class="font-black text-lg text-slate-900 font-outfit uppercase">COMÉRCIO</h3>
+                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                            Lojas de roupas, calçados, cosméticos, eletrônicos, móveis, autopeças, mercados e outros segmentos.
+                        </p>
                     </div>
-                    <span class="text-xs font-bold text-slate-800">Restaurantes</span>
+                    <div class="text-[11px] font-bold text-emerald-600">Catálogo + Variações + Carrinho</div>
                 </div>
 
-                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 flex items-center gap-3 shadow-sm hover:border-emerald-300 transition-all">
-                    <div class="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
-                        <i data-lucide="pizza" class="w-5 h-5"></i>
+                <!-- 3. PEDIDOS E DELIVERY -->
+                <div class="bg-white p-8 rounded-3xl border border-slate-200/80 card-hover flex flex-col justify-between space-y-4">
+                    <div class="space-y-3">
+                        <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-2xl">
+                            🚚
+                        </div>
+                        <h3 class="font-black text-lg text-slate-900 font-outfit uppercase">PEDIDOS E DELIVERY</h3>
+                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                            Depósitos de bebidas, água e gás, distribuidoras, mercados e empresas que trabalham com entregas.
+                        </p>
                     </div>
-                    <span class="text-xs font-bold text-slate-800">Pizzarias</span>
+                    <div class="text-[11px] font-bold text-blue-600">Gestor de Pedidos + Taxa de Entrega</div>
                 </div>
 
-                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 flex items-center gap-3 shadow-sm hover:border-emerald-300 transition-all">
-                    <div class="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
-                        <i data-lucide="beef" class="w-5 h-5"></i>
+                <!-- 4. SERVIÇOS E AGENDAMENTOS -->
+                <div class="bg-white p-8 rounded-3xl border border-slate-200/80 card-hover flex flex-col justify-between space-y-4">
+                    <div class="space-y-3">
+                        <div class="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center text-2xl">
+                            ✂️
+                        </div>
+                        <h3 class="font-black text-lg text-slate-900 font-outfit uppercase">SERVIÇOS E AGENDAMENTOS</h3>
+                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                            Barbearias, salões, clínicas, estética, pet shops, profissionais autônomos e empresas de serviços.
+                        </p>
                     </div>
-                    <span class="text-xs font-bold text-slate-800">Hamburguerias</span>
+                    <div class="text-[11px] font-bold text-purple-600">Agendamento de Data e Hora</div>
                 </div>
 
-                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 flex items-center gap-3 shadow-sm hover:border-emerald-300 transition-all">
-                    <div class="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
-                        <i data-lucide="box" class="w-5 h-5"></i>
-                    </div>
-                    <span class="text-xs font-bold text-slate-800">Marmitarias</span>
-                </div>
+            </div>
 
-                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 flex items-center gap-3 shadow-sm hover:border-emerald-300 transition-all">
-                    <div class="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
-                        <i data-lucide="coffee" class="w-5 h-5"></i>
-                    </div>
-                    <span class="text-xs font-bold text-slate-800">Lanchonetes</span>
-                </div>
-
-                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 flex items-center gap-3 shadow-sm hover:border-emerald-300 transition-all">
-                    <div class="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
-                        <i data-lucide="heart-pulse" class="w-5 h-5"></i>
-                    </div>
-                    <span class="text-xs font-bold text-slate-800">Farmácias</span>
-                </div>
-
-                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 flex items-center gap-3 shadow-sm hover:border-emerald-300 transition-all">
-                    <div class="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
-                        <i data-lucide="glasses" class="w-5 h-5"></i>
-                    </div>
-                    <span class="text-xs font-bold text-slate-800">Óticas</span>
-                </div>
-
-                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 flex items-center gap-3 shadow-sm hover:border-emerald-300 transition-all">
-                    <div class="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
-                        <i data-lucide="dog" class="w-5 h-5"></i>
-                    </div>
-                    <span class="text-xs font-bold text-slate-800">Pet Shops</span>
-                </div>
-
-                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 flex items-center gap-3 shadow-sm hover:border-emerald-300 transition-all">
-                    <div class="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
-                        <i data-lucide="shirt" class="w-5 h-5"></i>
-                    </div>
-                    <span class="text-xs font-bold text-slate-800">Lojas de Roupas</span>
-                </div>
-
-                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 flex items-center gap-3 shadow-sm hover:border-emerald-300 transition-all">
-                    <div class="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
-                        <i data-lucide="hammer" class="w-5 h-5"></i>
-                    </div>
-                    <span class="text-xs font-bold text-slate-800">Materiais de Construção</span>
-                </div>
-
-                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 flex items-center gap-3 shadow-sm hover:border-emerald-300 transition-all">
-                    <div class="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
-                        <i data-lucide="wrench" class="w-5 h-5"></i>
-                    </div>
-                    <span class="text-xs font-bold text-slate-800">Autopeças</span>
-                </div>
-
-                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 flex items-center gap-3 shadow-sm hover:border-emerald-300 transition-all">
-                    <div class="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
-                        <i data-lucide="truck" class="w-5 h-5"></i>
-                    </div>
-                    <span class="text-xs font-bold text-slate-800">Distribuidoras</span>
-                </div>
-
-                <div class="bg-white p-4 rounded-2xl border border-slate-200/80 flex items-center gap-3 shadow-sm hover:border-emerald-300 transition-all">
-                    <div class="p-2.5 rounded-xl bg-emerald-50 text-emerald-600 shrink-0">
-                        <i data-lucide="book-open" class="w-5 h-5"></i>
-                    </div>
-                    <span class="text-xs font-bold text-slate-800">Papelarias</span>
-                </div>
-
-                <div class="bg-emerald-600 text-white p-4 rounded-2xl flex items-center gap-3 shadow-md">
-                    <div class="p-2.5 rounded-xl bg-white/20 text-white shrink-0">
-                        <i data-lucide="plus-circle" class="w-5 h-5"></i>
-                    </div>
-                    <span class="text-xs font-extrabold uppercase tracking-wide">E Muitos Outros!</span>
-                </div>
-
+            <!-- Fechamento dos Nichos -->
+            <div class="text-center p-6 bg-white border border-slate-200/80 rounded-2xl max-w-3xl mx-auto shadow-sm">
+                <p class="text-slate-800 font-bold text-sm sm:text-base">
+                    💡 Se sua empresa vende produtos ou serviços, o <strong>AcheAqui Digital</strong> pode ser adaptado para sua realidade.
+                </p>
             </div>
         </div>
     </section>
@@ -559,10 +880,10 @@
                     VISÃO POR DENTRO DA PLATAFORMA
                 </div>
                 <h2 class="text-2xl sm:text-4xl lg:text-5xl font-black font-outfit tracking-tight uppercase">
-                    CONHEÇA AS TELAS DO NOSSO SISTEMA
+                    NÃO É APENAS UMA IDEIA. VEJA O SISTEMA FUNCIONANDO POR DENTRO.
                 </h2>
                 <p class="text-slate-400 text-base sm:text-lg max-w-2xl mx-auto">
-                    Veja na prática cada módulo desenvolvido para automatizar seu atendimento, multiplicar suas vendas e organizar sua operação.
+                    Conheça as telas reais da plataforma e veja como sua empresa pode organizar pedidos, produtos, clientes e informações em um único ambiente.
                 </p>
             </div>
 
@@ -760,21 +1081,40 @@
     <!-- SEÇÃO DEMONSTRAÇÕES (EXEMPLOS DE LOJAS E CATÁLOGOS) -->
     <section id="exemplos" class="py-20 bg-slate-50 border-b border-slate-200/80">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center max-w-3xl mx-auto space-y-4 mb-16">
+            <div class="text-center max-w-3xl mx-auto space-y-4 mb-10">
                 <span class="text-xs font-bold px-3.5 py-1.5 bg-emerald-100 text-emerald-800 rounded-full uppercase tracking-wider font-outfit">MODELOS EM FUNCIONAMENTO</span>
                 <h2 class="text-2xl sm:text-4xl font-black font-outfit text-slate-900 tracking-tight uppercase">
-                    EXEMPLOS DE LOJAS E CATÁLOGOS
+                    CADA NEGÓCIO PODE TER UMA EXPERIÊNCIA DIFERENTE
                 </h2>
                 <p class="text-slate-600 text-base">
-                    Navegue por lojas e catálogos modelo criados com a nossa tecnologia e veja a qualidade na prática.
+                    Veja alguns exemplos de vitrines digitais criadas para diferentes segmentos. Cada empresa pode organizar seus produtos, serviços e informações de acordo com sua necessidade.
                 </p>
             </div>
 
+            <!-- Filtros Interativos por Categoria -->
+            <div class="flex items-center justify-center flex-wrap gap-2 mb-12">
+                <button onclick="filterExamples('todos', this)" class="example-filter-btn px-4 py-2 rounded-full text-xs font-extrabold transition-all bg-emerald-600 text-white shadow-sm cursor-pointer">
+                    Todos
+                </button>
+                <button onclick="filterExamples('alimentacao', this)" class="example-filter-btn px-4 py-2 rounded-full text-xs font-extrabold transition-all bg-white text-slate-700 border border-slate-200 hover:border-emerald-400 cursor-pointer">
+                    Alimentação
+                </button>
+                <button onclick="filterExamples('comercio', this)" class="example-filter-btn px-4 py-2 rounded-full text-xs font-extrabold transition-all bg-white text-slate-700 border border-slate-200 hover:border-emerald-400 cursor-pointer">
+                    Comércio
+                </button>
+                <button onclick="filterExamples('servicos', this)" class="example-filter-btn px-4 py-2 rounded-full text-xs font-extrabold transition-all bg-white text-slate-700 border border-slate-200 hover:border-emerald-400 cursor-pointer">
+                    Serviços
+                </button>
+                <button onclick="filterExamples('casa-construcao', this)" class="example-filter-btn px-4 py-2 rounded-full text-xs font-extrabold transition-all bg-white text-slate-700 border border-slate-200 hover:border-emerald-400 cursor-pointer">
+                    Casa & Construção
+                </button>
+            </div>
+
             <!-- Grid de Exemplos de Lojas -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div id="examples-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 
                 <!-- Larissa Móveis -->
-                <div class="bg-white rounded-3xl p-6 border border-slate-200/80 flex flex-col justify-between card-hover">
+                <div class="example-card bg-white rounded-3xl p-6 border border-slate-200/80 flex flex-col justify-between card-hover" data-category="casa-construcao comercio">
                     <div class="space-y-4">
                         <div class="aspect-video rounded-2xl overflow-hidden bg-slate-100 relative flex items-center justify-center border border-slate-200">
                             <img src="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&q=80&w=500" alt="Larissa Móveis" class="w-full h-full object-cover opacity-15" referrerpolicy="no-referrer">
@@ -799,7 +1139,7 @@
                 </div>
 
                 <!-- Madruga Geladão -->
-                <div class="bg-white rounded-3xl p-6 border border-slate-200/80 flex flex-col justify-between card-hover">
+                <div class="example-card bg-white rounded-3xl p-6 border border-slate-200/80 flex flex-col justify-between card-hover" data-category="alimentacao comercio">
                     <div class="space-y-4">
                         <div class="aspect-video rounded-2xl overflow-hidden bg-slate-100 relative flex items-center justify-center border border-slate-200">
                             <img src="https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&q=80&w=500" alt="Madruga Geladão" class="w-full h-full object-cover opacity-15" referrerpolicy="no-referrer">
@@ -824,7 +1164,7 @@
                 </div>
 
                 <!-- Dona Bella Makeup (Novo) -->
-                <div class="bg-white rounded-3xl p-6 border border-slate-200/80 flex flex-col justify-between card-hover">
+                <div class="example-card bg-white rounded-3xl p-6 border border-slate-200/80 flex flex-col justify-between card-hover" data-category="comercio">
                     <div class="space-y-4">
                         <div class="aspect-video rounded-2xl overflow-hidden bg-slate-100 relative flex items-center justify-center border border-slate-200">
                             <img src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&q=80&w=500" alt="Dona Bella Makeup" class="w-full h-full object-cover opacity-15" referrerpolicy="no-referrer">
@@ -849,7 +1189,7 @@
                 </div>
 
                 <!-- Exemplo 1 - Bossa Infor -->
-                <div class="bg-white rounded-3xl p-6 border border-slate-200/80 flex flex-col justify-between card-hover">
+                <div class="example-card bg-white rounded-3xl p-6 border border-slate-200/80 flex flex-col justify-between card-hover" data-category="servicos">
                     <div class="space-y-4">
                         <div class="aspect-video rounded-2xl overflow-hidden bg-slate-100 relative flex items-center justify-center border border-slate-200">
                             <img src="https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?auto=format&fit=crop&q=80&w=500" alt="Bossa Infor" class="w-full h-full object-cover opacity-15" referrerpolicy="no-referrer">
@@ -874,7 +1214,7 @@
                 </div>
 
                 <!-- Exemplo 2 - LOJA ON LINE 24H -->
-                <div class="bg-white rounded-3xl p-6 border border-slate-200/80 flex flex-col justify-between card-hover">
+                <div class="example-card bg-white rounded-3xl p-6 border border-slate-200/80 flex flex-col justify-between card-hover" data-category="comercio">
                     <div class="space-y-4">
                         <div class="aspect-video rounded-2xl overflow-hidden bg-slate-100 relative flex items-center justify-center border border-slate-200">
                             <img src="https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?auto=format&fit=crop&q=80&w=500" alt="Loja On Line 24h" class="w-full h-full object-cover opacity-15" referrerpolicy="no-referrer">
@@ -899,7 +1239,7 @@
                 </div>
 
                 <!-- Exemplo 3 - ROSENO & SOUZA -->
-                <div class="bg-white rounded-3xl p-6 border border-slate-200/80 flex flex-col justify-between card-hover">
+                <div class="example-card bg-white rounded-3xl p-6 border border-slate-200/80 flex flex-col justify-between card-hover" data-category="comercio casa-construcao">
                     <div class="space-y-4">
                         <div class="aspect-video rounded-2xl overflow-hidden bg-slate-100 relative flex items-center justify-center border border-slate-200">
                             <img src="https://images.unsplash.com/photo-1526733169351-84074421272b?auto=format&fit=crop&q=80&w=500" alt="Roseno & Souza" class="w-full h-full object-cover opacity-15" referrerpolicy="no-referrer">
@@ -924,7 +1264,7 @@
                 </div>
 
                 <!-- Exemplo 4 - JLS Calçados -->
-                <div class="bg-white rounded-3xl p-6 border border-slate-200/80 flex flex-col justify-between card-hover">
+                <div class="example-card bg-white rounded-3xl p-6 border border-slate-200/80 flex flex-col justify-between card-hover" data-category="comercio">
                     <div class="space-y-4">
                         <div class="aspect-video rounded-2xl overflow-hidden bg-slate-100 relative flex items-center justify-center border border-slate-200">
                             <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&q=80&w=500" alt="JLS Calçados" class="w-full h-full object-cover opacity-15" referrerpolicy="no-referrer">
@@ -949,7 +1289,7 @@
                 </div>
 
                 <!-- Exemplo 5 - Granitel Pisos -->
-                <div class="bg-white rounded-3xl p-6 border border-slate-200/80 flex flex-col justify-between card-hover">
+                <div class="example-card bg-white rounded-3xl p-6 border border-slate-200/80 flex flex-col justify-between card-hover" data-category="casa-construcao">
                     <div class="space-y-4">
                         <div class="aspect-video rounded-2xl overflow-hidden bg-slate-100 relative flex items-center justify-center border border-slate-200">
                             <img src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&q=80&w=500" alt="Granitel Pisos" class="w-full h-full object-cover opacity-15" referrerpolicy="no-referrer">
@@ -1091,46 +1431,61 @@
     <section id="como-funciona" class="py-20 bg-slate-50 border-b border-slate-200/80">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center max-w-3xl mx-auto space-y-4 mb-16">
-                <span class="text-xs font-bold px-3.5 py-1.5 bg-emerald-100 text-emerald-800 rounded-full uppercase tracking-wider font-outfit">PASSO A PASSO</span>
+                <span class="text-xs font-bold px-3.5 py-1.5 bg-emerald-100 text-emerald-800 rounded-full uppercase tracking-wider font-outfit">PASSO A PASSO SIMPLES</span>
                 <h2 class="text-2xl sm:text-4xl font-black font-outfit text-slate-900 tracking-tight uppercase">
                     COMO FUNCIONA
                 </h2>
                 <p class="text-slate-600 text-base">
-                    Um fluxo simples de 5 etapas para colocar seu negócio em outro patamar.
+                    Um fluxo simples de 5 etapas para colocar seu negócio em outro patamar de vendas e presença digital.
                 </p>
             </div>
 
-            <!-- Etapas -->
+            <!-- 5 Etapas Estruturadas -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 relative">
                 
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 relative space-y-3">
-                    <span class="text-3xl font-black text-emerald-600 font-outfit">01</span>
-                    <h4 class="font-extrabold text-slate-900 text-base">Entre em contato</h4>
-                    <p class="text-xs text-slate-500 leading-relaxed">Você clica no botão e nos chama no WhatsApp para escolher seu plano.</p>
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 relative space-y-3 flex flex-col justify-between card-hover">
+                    <div>
+                        <span class="text-3xl font-black text-emerald-600 font-outfit">01</span>
+                        <h4 class="font-extrabold text-slate-900 text-base mt-2">Escolha o modelo ideal</h4>
+                        <p class="text-xs text-slate-500 leading-relaxed mt-1">Defina o formato perfeito para sua empresa: Catálogo, Cardápio, Loja ou Agendamento.</p>
+                    </div>
+                    <div class="text-[11px] font-bold text-emerald-600">Alinhamento Rápido</div>
                 </div>
 
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 relative space-y-3">
-                    <span class="text-3xl font-black text-emerald-600 font-outfit">02</span>
-                    <h4 class="font-extrabold text-slate-900 text-base">Demonstração personalizada</h4>
-                    <p class="text-xs text-slate-500 leading-relaxed">Criamos uma prévia com a cara e o segmento do seu negócio.</p>
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 relative space-y-3 flex flex-col justify-between card-hover">
+                    <div>
+                        <span class="text-3xl font-black text-emerald-600 font-outfit">02</span>
+                        <h4 class="font-extrabold text-slate-900 text-base mt-2">Organize seus produtos</h4>
+                        <p class="text-xs text-slate-500 leading-relaxed mt-1">Estruture fotos, descrições, valores, categorias e opções de entrega ou agendamento.</p>
+                    </div>
+                    <div class="text-[11px] font-bold text-emerald-600">Configuração Fácil</div>
                 </div>
 
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 relative space-y-3">
-                    <span class="text-3xl font-black text-emerald-600 font-outfit">03</span>
-                    <h4 class="font-extrabold text-slate-900 text-base">Aprovação e ajuste</h4>
-                    <p class="text-xs text-slate-500 leading-relaxed">Após sua aprovação, configuramos fotos, cores e detalhes finais.</p>
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 relative space-y-3 flex flex-col justify-between card-hover">
+                    <div>
+                        <span class="text-3xl font-black text-emerald-600 font-outfit">03</span>
+                        <h4 class="font-extrabold text-slate-900 text-base mt-2">Receba link e painel</h4>
+                        <p class="text-xs text-slate-500 leading-relaxed mt-1">Acesso imediato ao seu painel exclusivo e link personalizado pronto para o ar.</p>
+                    </div>
+                    <div class="text-[11px] font-bold text-emerald-600">Entrega no Mesmo Dia</div>
                 </div>
 
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 relative space-y-3">
-                    <span class="text-3xl font-black text-emerald-600 font-outfit">04</span>
-                    <h4 class="font-extrabold text-slate-900 text-base">Entrega no Mesmo Dia</h4>
-                    <p class="text-xs text-slate-500 leading-relaxed">Entregamos tudo pronto com seu Login e Senha de acesso exclusivo.</p>
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 relative space-y-3 flex flex-col justify-between card-hover">
+                    <div>
+                        <span class="text-3xl font-black text-emerald-600 font-outfit">04</span>
+                        <h4 class="font-extrabold text-slate-900 text-base mt-2">Divulgue seu link</h4>
+                        <p class="text-xs text-slate-500 leading-relaxed mt-1">Coloque na bio do Instagram, compartilhe em grupos e envie direto no WhatsApp.</p>
+                    </div>
+                    <div class="text-[11px] font-bold text-emerald-600">Conversão Direta</div>
                 </div>
 
-                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 relative space-y-3">
-                    <span class="text-3xl font-black text-emerald-600 font-outfit">05</span>
-                    <h4 class="font-extrabold text-slate-900 text-base">Você começa a divulgar</h4>
-                    <p class="text-xs text-slate-500 leading-relaxed">Insira o link na bio do Instagram e compartilhe pelo WhatsApp.</p>
+                <div class="bg-white p-6 rounded-2xl border border-slate-200/80 relative space-y-3 flex flex-col justify-between card-hover">
+                    <div>
+                        <span class="text-3xl font-black text-emerald-600 font-outfit">05</span>
+                        <h4 class="font-extrabold text-slate-900 text-base mt-2">Ganhe visibilidade extra</h4>
+                        <p class="text-xs text-slate-500 leading-relaxed mt-1">Sua empresa ganha destaque também no Guia Comercial Minha Divulgação.</p>
+                    </div>
+                    <div class="text-[11px] font-bold text-emerald-600">Alcance Multiplicado</div>
                 </div>
 
             </div>
@@ -1213,12 +1568,12 @@
     <section id="preco" class="py-20 bg-slate-950 text-white border-b border-slate-800 relative overflow-hidden">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="text-center max-w-3xl mx-auto space-y-4 mb-12">
-                <span class="text-xs font-bold px-3.5 py-1.5 bg-emerald-950 text-emerald-400 border border-emerald-800/60 rounded-full uppercase tracking-wider font-outfit">PLANOS & CONDIÇÕES EXCLUSIVAS</span>
+                <span class="text-xs font-bold px-3.5 py-1.5 bg-emerald-950 text-emerald-400 border border-emerald-800/60 rounded-full uppercase tracking-wider font-outfit">INVESTIMENTO SIMPLES, RESULTADO REAL</span>
                 <h2 class="text-3xl sm:text-5xl font-black font-outfit tracking-tight uppercase">
-                    PLANOS & CONDIÇÕES EXCLUSIVAS
+                    PLANO COMPLETO ACHEAQUI DIGITAL
                 </h2>
                 <p class="text-slate-300 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto">
-                    Tenha seu Catálogo Online no WhatsApp com Gestor de Pedidos, Chat ao Vivo, Rastreamento e Impressão Térmica.
+                    A plataforma completa para vender mais no WhatsApp, organizar seus produtos e pedidos, e ganhar visibilidade contínua no Guia Minha Divulgação.
                 </p>
             </div>
 
@@ -1268,8 +1623,8 @@
                         <div class="inline-flex items-center gap-2 px-3.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full text-xs font-black font-outfit mb-4 uppercase">
                             PLANO COMPLETO • PRODUTOS ILIMITADOS
                         </div>
-                        <h3 class="text-3xl sm:text-4xl font-black font-outfit text-white uppercase mb-1">Plano Mensal</h3>
-                        <p class="text-sm text-slate-300 mb-6">Tudo que sua empresa precisa para vender no digital</p>
+                        <h3 class="text-3xl sm:text-4xl font-black font-outfit text-white uppercase mb-1">Plano Mensal Completo</h3>
+                        <p class="text-sm text-slate-300 mb-6">Tudo que sua empresa precisa para vender no digital e crescer</p>
 
                         <div class="flex items-baseline gap-1 pb-4 border-b border-slate-800">
                             <span class="text-2xl font-bold text-slate-400">R$</span>
@@ -1280,7 +1635,7 @@
                         <div class="py-4">
                             <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-950/80 border border-emerald-800/60 rounded-xl">
                                 <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400 shrink-0"></i>
-                                <span class="text-xs sm:text-sm text-emerald-300 font-bold">Mensalidade de R$ 59,90 • Produtos e Fotos Ilimitados</span>
+                                <span class="text-xs sm:text-sm text-emerald-300 font-bold">R$ 59,90/mês • Sem Fidelidade • Cancele quando quiser</span>
                             </div>
                         </div>
 
@@ -1288,33 +1643,37 @@
                         <ul class="space-y-3.5 py-4">
                             <li class="flex items-start gap-3 text-sm text-slate-200 font-medium">
                                 <i data-lucide="check" class="w-5 h-5 text-emerald-400 shrink-0 mt-0.5"></i>
-                                <span>Catálogo ou Cardápio Digital</span>
+                                <span><strong>Catálogo, Cardápio, Loja Online ou Agendamento</strong> adaptado ao seu nicho</span>
                             </li>
                             <li class="flex items-start gap-3 text-sm text-slate-200 font-medium">
                                 <i data-lucide="check" class="w-5 h-5 text-emerald-400 shrink-0 mt-0.5"></i>
-                                <span>Painel Gestor de Pedidos no celular e computador</span>
+                                <span><strong>Produtos, fotos e categorias ilimitados</strong> para cadastrar tudo</span>
                             </li>
                             <li class="flex items-start gap-3 text-sm text-slate-200 font-medium">
                                 <i data-lucide="check" class="w-5 h-5 text-emerald-400 shrink-0 mt-0.5"></i>
-                                <span>Chat ao vivo, Rastreamento e Impressão Térmica</span>
+                                <span><strong>Painel Gestor de Pedidos</strong> no celular e computador com aviso sonoro</span>
                             </li>
                             <li class="flex items-start gap-3 text-sm text-slate-200 font-medium">
                                 <i data-lucide="check" class="w-5 h-5 text-emerald-400 shrink-0 mt-0.5"></i>
-                                <span>Link exclusivo para Instagram e WhatsApp</span>
+                                <span><strong>Chat ao vivo, rastreamento de entregas</strong> e impressão térmica 58mm/80mm</span>
                             </li>
                             <li class="flex items-start gap-3 text-sm text-slate-200 font-medium">
                                 <i data-lucide="check" class="w-5 h-5 text-emerald-400 shrink-0 mt-0.5"></i>
-                                <span>Zero comissão sobre suas vendas</span>
+                                <span><strong>Link exclusivo e QR Code</strong> para Instagram, WhatsApp e balcão</span>
                             </li>
                             <li class="flex items-start gap-3 text-sm text-slate-200 font-medium">
                                 <i data-lucide="check" class="w-5 h-5 text-emerald-400 shrink-0 mt-0.5"></i>
-                                <span>Presença no Guia Comercial Minha Divulgação (enquanto assinatura ativa)</span>
+                                <span><strong>Presença ativa no Guia Minha Divulgação</strong> para mais visibilidade</span>
+                            </li>
+                            <li class="flex items-start gap-3 text-sm text-slate-200 font-medium">
+                                <i data-lucide="check" class="w-5 h-5 text-emerald-400 shrink-0 mt-0.5"></i>
+                                <span><strong>Zero comissões por venda</strong> e 100% do lucro direto para você</span>
                             </li>
                         </ul>
                     </div>
 
                     <div class="pt-6">
-                        <button onclick="openWhatsApp('Olá! Quero contratar o Plano Completo (R$ 59,90/mês) para o meu Catálogo Online.')" class="w-full py-5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl shadow-xl shadow-emerald-500/20 transition-all active-scale text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer">
+                        <button onclick="openWhatsApp('Olá! Quero contratar o Plano Completo AcheAqui Digital por R$ 59,90/mês.')" class="w-full py-5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-2xl shadow-xl shadow-emerald-500/20 transition-all active-scale text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer">
                             <span>CONTRATAR PLANO COMPLETO (R$ 59,90/MÊS)</span>
                             <i data-lucide="arrow-right" class="w-5 h-5"></i>
                         </button>
@@ -1549,6 +1908,19 @@
         </div>
     </footer>
 
+    <!-- BOTÃO FLUTUANTE DE CONVERSÃO WHATSAPP -->
+    <aside aria-label="Atendimento WhatsApp" class="fixed bottom-6 right-6 z-50 flex items-center gap-3">
+        <button onclick="openWhatsApp('Olá! Gostaria de tirar dúvidas e contratar o AcheAqui Digital por R$ 59,90/mês.')" class="group flex items-center gap-3 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-950 px-5 py-3.5 rounded-full font-black text-xs uppercase tracking-wider shadow-2xl shadow-emerald-500/40 border border-emerald-300 hover:scale-105 active-scale transition-all duration-300">
+            <span class="relative flex h-3 w-3">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-950 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-950"></span>
+            </span>
+            <span class="hidden sm:inline">Fale Conosco no WhatsApp</span>
+            <span class="sm:hidden">WhatsApp</span>
+            <i data-lucide="message-circle" class="w-5 h-5 text-slate-950"></i>
+        </button>
+    </aside>
+
     <!-- MODAL DE LOGIN / PAINEL DE CLIENTE -->
     <div id="login-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-[100] hidden items-center justify-center p-4">
         <div class="bg-white rounded-3xl max-w-md w-full p-8 border border-slate-200 shadow-2xl relative text-left">
@@ -1604,6 +1976,27 @@
     <!-- SCRIPTS INTERATIVOS -->
     <script>
         const DEFAULT_WHATSAPP = "5585992862177";
+
+        function filterExamples(category, btn) {
+            // Update button styles
+            document.querySelectorAll('.example-filter-btn').forEach(b => {
+                b.className = 'example-filter-btn px-4 py-2 rounded-full text-xs font-extrabold transition-all bg-white text-slate-700 border border-slate-200 hover:border-emerald-400 cursor-pointer';
+            });
+            if (btn) {
+                btn.className = 'example-filter-btn px-4 py-2 rounded-full text-xs font-extrabold transition-all bg-emerald-600 text-white shadow-sm cursor-pointer';
+            }
+
+            // Filter cards
+            const cards = document.querySelectorAll('.example-card');
+            cards.forEach(card => {
+                const cardCats = card.getAttribute('data-category') || '';
+                if (category === 'todos' || cardCats.includes(category)) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
 
         function openWhatsApp(customText) {
             const text = encodeURIComponent(customText || "Olá! Gostaria de mais informações sobre o Catálogo Digital e Loja Online.");

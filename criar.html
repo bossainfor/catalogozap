@@ -559,16 +559,92 @@
                 <section id="shipping-section" class="p-4 sm:p-8 bg-slate-50 rounded-[2rem] sm:rounded-[3rem] border border-slate-200 mt-6 space-y-6">
                     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div class="space-y-1">
-                            <h3 class="font-black uppercase italic tracking-tighter text-2xl sm:text-3xl leading-none">Taxas de Entrega</h3>
-                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-tight">Cadastre bairros e valores de frete</p>
+                            <h3 class="font-black uppercase italic tracking-tighter text-2xl sm:text-3xl leading-none">Envio & Frete</h3>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-tight">Cálculo de frete para todo o Brasil (Correios/Transportadoras) e Entrega Local</p>
+                        </div>
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase tracking-wider self-start sm:self-auto">
+                            <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+                            <span>Melhor Envio Ativo</span>
                         </div>
                     </div>
 
-                    <div class="space-y-4">
+                    <!-- MÓDULO DE ENVIO NACIONAL (MELHOR ENVIO / CORREIOS / TRANSPORTADORAS) -->
+                    <div class="bg-white p-5 sm:p-7 rounded-[2rem] border border-slate-200 space-y-5 shadow-sm">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-2xl bg-orange-100 text-orange-600 flex items-center justify-center font-bold shrink-0">
+                                <i data-lucide="truck" class="w-5 h-5"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <h4 class="font-black text-slate-900 uppercase italic tracking-tight text-base sm:text-lg">Envio para Todo o Brasil</h4>
+                                <p class="text-xs text-slate-400 font-medium leading-tight">Cálculo automático de SEDEX, PAC, Jadlog e Loggi para qualquer CEP do país</p>
+                            </div>
+                        </div>
+
+                        <div class="p-4 bg-orange-50/80 rounded-2xl border border-orange-100 flex items-start gap-3">
+                            <i data-lucide="shield-check" class="w-5 h-5 text-orange-600 shrink-0 mt-0.5"></i>
+                            <div class="space-y-1 text-xs text-orange-950">
+                                <p class="font-bold">Privacidade 100% Garantida</p>
+                                <p class="text-orange-800 text-[11px] leading-relaxed">Apenas o seu <strong>CEP de Origem</strong> e Cidade são utilizados para calcular a rota e o preço. O seu endereço pessoal completo nunca é revelado aos clientes.</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 flex items-center gap-1">
+                                    <span>CEP de Origem da Loja</span>
+                                    <span class="text-orange-500">*</span>
+                                </label>
+                                <div class="relative">
+                                    <input type="text" id="origin-cep" placeholder="00000-000" maxlength="9" oninput="window.maskCep(this); window.lookupOriginCep(this.value)" class="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-sm">
+                                    <span id="origin-cep-status" class="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-slate-400"></span>
+                                </div>
+                                <p id="origin-cep-city" class="text-[10px] font-bold text-emerald-600 ml-1 hidden"></p>
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Prazo Adicional de Despacho (Dias)</label>
+                                <input type="number" id="shipping-extra-days" min="0" max="30" placeholder="Ex: 1 ou 2 dias" class="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-sm">
+                                <p class="text-[9px] text-slate-400 font-medium ml-1">Dias que você leva para embalar/postar</p>
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Frete Grátis a partir de (R$)</label>
+                                <input type="text" id="shipping-free-tier" placeholder="Ex: 199,00 (Opcional)" class="w-full px-4 py-3.5 rounded-2xl bg-slate-50 border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-sm">
+                                <p class="text-[9px] text-slate-400 font-medium ml-1">Deixe vazio se não oferecer frete grátis</p>
+                            </div>
+                        </div>
+
+                        <!-- Configurações Avançadas Opcionais (Token Próprio) -->
+                        <div class="pt-2 border-t border-slate-100">
+                            <button type="button" onclick="document.getElementById('melhor-envio-advanced').classList.toggle('hidden')" class="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-700 flex items-center gap-1.5 transition-colors">
+                                <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
+                                <span>Configurações Avançadas de API (Opcional)</span>
+                                <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                            </button>
+                            <div id="melhor-envio-advanced" class="hidden mt-3 p-4 bg-slate-50 rounded-2xl space-y-2 border border-slate-100">
+                                <label class="text-[9px] font-black uppercase tracking-widest text-slate-500">Token Próprio de API do Melhor Envio (Opcional)</label>
+                                <input type="password" id="melhor-envio-token" placeholder="Cole o token JWT se quiser usar sua conta pessoal do Melhor Envio" class="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 outline-none text-xs font-mono">
+                                <p class="text-[9px] text-slate-400">Por padrão, o sistema utiliza a integração centralizada e segura do CatálogoZap sem necessidade de preenchimento.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MÓDULO DE ENTREGA LOCAL (BAIRROS) -->
+                    <div class="space-y-4 pt-2">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-2xl bg-blue-100 text-blue-600 flex items-center justify-center font-bold shrink-0">
+                                <i data-lucide="map-pin" class="w-5 h-5"></i>
+                            </div>
+                            <div class="min-w-0">
+                                <h4 class="font-black text-slate-900 uppercase italic tracking-tight text-base sm:text-lg">Entrega Local por Bairro</h4>
+                                <p class="text-xs text-slate-400 font-medium leading-tight">Defina taxas fixas para bairros da sua cidade (Motoboy / Delivery Local)</p>
+                            </div>
+                        </div>
+
                         <div class="flex flex-col sm:flex-row gap-3">
-                            <input type="text" id="new-neighborhood" placeholder="Nome do Bairro" class="flex-1 px-6 py-5 rounded-[1.5rem] bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-lg shadow-sm">
-                            <input type="text" id="new-shipping-price" placeholder="Preço (ex: 5,00)" class="w-full sm:w-40 px-6 py-5 rounded-[1.5rem] bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-lg shadow-sm">
-                            <button onclick="window.addShippingZone()" class="bg-orange-600 text-white px-8 py-5 rounded-[1.5rem] font-black uppercase italic tracking-widest hover:bg-orange-700 transition-all flex items-center justify-center gap-2 active-scale shadow-xl shadow-orange-200">
+                            <input type="text" id="new-neighborhood" placeholder="Nome do Bairro (ex: Centro, Jardins)" class="flex-1 px-6 py-4 rounded-[1.5rem] bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-base shadow-sm">
+                            <input type="text" id="new-shipping-price" placeholder="Preço (ex: 5,00)" class="w-full sm:w-40 px-6 py-4 rounded-[1.5rem] bg-white border-2 border-transparent focus:border-orange-500 outline-none transition-all font-bold text-base shadow-sm">
+                            <button onclick="window.addShippingZone()" class="bg-orange-600 text-white px-8 py-4 rounded-[1.5rem] font-black uppercase italic tracking-widest hover:bg-orange-700 transition-all flex items-center justify-center gap-2 active-scale shadow-xl shadow-orange-200">
                                 <i data-lucide="plus" class="w-5 h-5"></i> Add
                             </button>
                         </div>
@@ -2785,6 +2861,16 @@
             if (cardFeeVal) data.cf = parseFloat(cardFeeVal);
             if (paymentBadgeVal) data.pmb = paymentBadgeVal;
             
+            // Configurações de Envio Nacional (Melhor Envio / Correios)
+            const originCepVal = document.getElementById('origin-cep').value;
+            const shippingExtraDaysVal = document.getElementById('shipping-extra-days').value;
+            const shippingFreeTierVal = document.getElementById('shipping-free-tier').value;
+            const melhorEnvioTokenVal = document.getElementById('melhor-envio-token').value;
+            if (originCepVal) data.oc = originCepVal.replace(/\D/g, '');
+            if (shippingExtraDaysVal) data.sed = parseInt(shippingExtraDaysVal, 10) || 0;
+            if (shippingFreeTierVal) data.sft = parseFloat(shippingFreeTierVal.replace(',', '.')) || 0;
+            if (melhorEnvioTokenVal) data.met = melhorEnvioTokenVal.trim();
+            
             // Adicional: Carrossel de Banners Promocionais
             data.pb = (window.promotionalBanners || []).map(b => ({
                 id: b.id,
@@ -3342,6 +3428,16 @@
                     document.getElementById('banner-image').value = data.bi || '';
                     document.getElementById('hide-banner-bg').checked = data.hb || false;
                     document.getElementById('payment-badge-image').value = data.pmb || '';
+                    
+                    // Preenche campos de Envio Nacional (Melhor Envio / Correios)
+                    if (data.oc) {
+                        document.getElementById('origin-cep').value = data.oc.replace(/^(\d{5})(\d{3})$/, '$1-$2');
+                        window.lookupOriginCep(data.oc);
+                    }
+                    if (data.sed !== undefined) document.getElementById('shipping-extra-days').value = data.sed;
+                    if (data.sft !== undefined) document.getElementById('shipping-free-tier').value = data.sft > 0 ? data.sft.toFixed(2).replace('.', ',') : '';
+                    if (data.met) document.getElementById('melhor-envio-token').value = data.met;
+
                     window.updateBannerPreview(data.bi);
                     window.updateLogoPreview(data.lg);
                     window.updatePaymentBadgePreview(data.pmb || '');
@@ -3627,6 +3723,48 @@
             }).join('');
             if (window.lucide) lucide.createIcons();
         }
+
+        window.maskCep = function(input) {
+            let val = input.value.replace(/\D/g, '');
+            if (val.length > 8) val = val.substring(0, 8);
+            if (val.length > 5) {
+                input.value = val.substring(0, 5) + '-' + val.substring(5);
+            } else {
+                input.value = val;
+            }
+        };
+
+        window.lookupOriginCep = async function(val) {
+            const clean = val.replace(/\D/g, '');
+            const statusEl = document.getElementById('origin-cep-status');
+            const cityEl = document.getElementById('origin-cep-city');
+            if (!statusEl || !cityEl) return;
+
+            if (clean.length < 8) {
+                statusEl.innerText = '';
+                cityEl.innerText = '';
+                cityEl.classList.add('hidden');
+                return;
+            }
+
+            statusEl.innerText = 'Buscando...';
+            try {
+                const res = await fetch(`https://viacep.com.br/ws/${clean}/json/`);
+                const data = await res.json();
+                if (data && !data.erro) {
+                    statusEl.innerText = '✓ Válido';
+                    statusEl.className = 'absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-emerald-600';
+                    cityEl.innerText = `📍 Origem: ${data.localidade} - ${data.uf} (${data.bairro || 'Centro'})`;
+                    cityEl.classList.remove('hidden');
+                } else {
+                    statusEl.innerText = '✕ CEP não encontrado';
+                    statusEl.className = 'absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] font-bold text-red-500';
+                    cityEl.classList.add('hidden');
+                }
+            } catch(e) {
+                statusEl.innerText = '';
+            }
+        };
 
         window.renderShippingZones = function() {
             const list = document.getElementById('shipping-zones-list');

@@ -202,7 +202,8 @@ app.post("/api/shipping/calculate", async (req, res) => {
                 success: true,
                 fromCep: cleanFrom,
                 toCep: cleanTo,
-                options
+                options: options,
+                quotes: options
               });
             }
           }
@@ -232,39 +233,45 @@ app.post("/api/shipping/calculate", async (req, res) => {
     const fallbackOptions = [
       {
         id: "pac_estimate",
-        name: "Correios (PAC)",
+        name: "PAC (Correios)",
         service: "PAC",
         company: "Correios",
         companyLogo: "https://assets.melhorenvio.com.br/companies/correios.png",
         price: Math.round((pacBase + extraVal) * 100) / 100,
         currency: "R$",
+        delivery_time: (isSameRegion ? 4 : (isSameState ? 6 : 9)) + addedDays,
+        custom_delivery_time: (isSameRegion ? 4 : (isSameState ? 6 : 9)) + addedDays,
         deliveryMinDays: (isSameRegion ? 3 : (isSameState ? 5 : 7)) + addedDays,
         deliveryMaxDays: (isSameRegion ? 5 : (isSameState ? 8 : 12)) + addedDays,
         deliveryDaysText: `${(isSameRegion ? 3 : (isSameState ? 5 : 7)) + addedDays} a ${(isSameRegion ? 5 : (isSameState ? 8 : 12)) + addedDays} dias úteis`
       },
       {
-        id: "sedex_estimate",
-        name: "Correios (SEDEX Express)",
-        service: "SEDEX",
-        company: "Correios",
-        companyLogo: "https://assets.melhorenvio.com.br/companies/correios.png",
-        price: Math.round((sedexBase + extraVal) * 100) / 100,
-        currency: "R$",
-        deliveryMinDays: (isSameRegion ? 1 : (isSameState ? 2 : 3)) + addedDays,
-        deliveryMaxDays: (isSameRegion ? 2 : (isSameState ? 3 : 5)) + addedDays,
-        deliveryDaysText: `${(isSameRegion ? 1 : (isSameState ? 2 : 3)) + addedDays} a ${(isSameRegion ? 2 : (isSameState ? 3 : 5)) + addedDays} dias úteis`
-      },
-      {
         id: "jadlog_estimate",
-        name: "Jadlog (.Package)",
+        name: ".Package (Jadlog)",
         service: ".Package",
         company: "Jadlog",
         companyLogo: "https://assets.melhorenvio.com.br/companies/jadlog.png",
         price: Math.round((jadlogBase + extraVal) * 100) / 100,
         currency: "R$",
+        delivery_time: (isSameRegion ? 3 : (isSameState ? 5 : 8)) + addedDays,
+        custom_delivery_time: (isSameRegion ? 3 : (isSameState ? 5 : 8)) + addedDays,
         deliveryMinDays: (isSameRegion ? 2 : (isSameState ? 4 : 6)) + addedDays,
         deliveryMaxDays: (isSameRegion ? 4 : (isSameState ? 7 : 10)) + addedDays,
         deliveryDaysText: `${(isSameRegion ? 2 : (isSameState ? 4 : 6)) + addedDays} a ${(isSameRegion ? 4 : (isSameState ? 7 : 10)) + addedDays} dias úteis`
+      },
+      {
+        id: "sedex_estimate",
+        name: "SEDEX Express (Correios)",
+        service: "SEDEX",
+        company: "Correios",
+        companyLogo: "https://assets.melhorenvio.com.br/companies/correios.png",
+        price: Math.round((sedexBase + extraVal) * 100) / 100,
+        currency: "R$",
+        delivery_time: (isSameRegion ? 2 : (isSameState ? 3 : 4)) + addedDays,
+        custom_delivery_time: (isSameRegion ? 2 : (isSameState ? 3 : 4)) + addedDays,
+        deliveryMinDays: (isSameRegion ? 1 : (isSameState ? 2 : 3)) + addedDays,
+        deliveryMaxDays: (isSameRegion ? 2 : (isSameState ? 3 : 5)) + addedDays,
+        deliveryDaysText: `${(isSameRegion ? 1 : (isSameState ? 2 : 3)) + addedDays} a ${(isSameRegion ? 2 : (isSameState ? 3 : 5)) + addedDays} dias úteis`
       }
     ];
 
@@ -273,7 +280,8 @@ app.post("/api/shipping/calculate", async (req, res) => {
       fromCep: cleanFrom,
       toCep: cleanTo,
       isEstimate: !authToken,
-      options: fallbackOptions
+      options: fallbackOptions,
+      quotes: fallbackOptions
     });
   } catch (err: any) {
     console.error("Erro no /api/shipping/calculate:", err);

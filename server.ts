@@ -89,6 +89,198 @@ DIRETRIZES FUNDAMENTAIS DE ATENDIMENTO:
   }
 });
 
+// Endpoint for Shipping / Freight Calculation (Melhor Envio API)
+app.post("/api/shipping/calculate", async (req, res) => {
+  try {
+    const { fromCep, toCep, products, token, extraDays, additionalValue, sandbox } = req.body;
+
+    const cleanFrom = String(fromCep || "").replace(/\D/g, "");
+    const cleanTo = String(toCep || "").replace(/\D/g, "");
+
+    if (cleanFrom.length !== 8) {
+      return res.status(400).json({ error: "CEP de origem inválido. Deve conter 8 dígitos." });
+    }
+    if (cleanTo.length !== 8) {
+      return res.status(400).json({ error: "CEP de destino inválido. Deve conter 8 dígitos." });
+    }
+
+    const authToken = (token && typeof token === "string" && token.trim()) 
+      ? token.trim() 
+      : (process.env.MELHOR_ENVIO_TOKEN || "").trim();
+
+    const isSandbox = !!sandbox || process.env.MELHOR_ENVIO_SANDBOX === "true";
+    const baseUrl = isSandbox 
+      ? "https://sandbox.melhorenvio.com.br/api/v2/me/shipment/calculate"
+      : "https://melhorenvio.com.br/api/v2/me/shipment/calculate";
+
+    // Build package items payload for Melhor Envio
+    let itemsPayload: any[] = [];
+    if (Array.isArray(products) && products.length > 0) {
+      itemsPayload = products.map((p: any, idx: number) => {
+        const qty = Math.max(1, parseInt(p.quantity || p.q || 1, 10));
+        const priceNum = parseFloat(String(p.price || p.p || 10).replace(",", ".")) || 10;
+        const widthNum = parseFloat(p.width || p.w || 15);
+        const heightNum = parseFloat(p.height || p.h || 10);
+        const lengthNum = parseFloat(p.length || p.l || 20);
+        const weightNum = parseFloat(p.weight || p.peso || 0.3);
+
+        return {
+          id: String(p.id || `item_${idx + 1}`),
+          width: Math.max(11, Math.min(100, widthNum)),
+          height: Math.max(2, Math.min(100, heightNum)),
+          length: Math.max(16, Math.min(100, lengthNum)),
+          weight: Math.max(0.1, weightNum),
+          insurance_value: Math.max(1, priceNum),
+          quantity: qty
+        };
+      });
+    } else {
+      // Default standard e-commerce small box
+      itemsPayload = [{
+        id: "default_package",
+        width: 16,
+        height: 11,
+        length: 16,
+        weight: 0.5,
+        insurance_value: 50.0,
+        quantity: 1
+      }];
+    }
+
+    const requestPayload = {
+      from: { postal_code: cleanFrom },
+      to: { postal_code: cleanTo },
+      products: itemsPayload
+    };
+
+    if (authToken) {
+      try {
+        const meRes = await fetch(baseUrl, {
+          method: "POST",
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${authToken}`,
+            "User-Agent": "CatalogoZap (suporte@catalogozap.com)"
+          },
+          body: JSON.stringify(requestPayload)
+        });
+
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          if (Array.isArray(meData)) {
+            const addedDays = parseInt(String(extraDays || 0), 10) || 0;
+            const extraVal = parseFloat(String(additionalValue || 0).replace(",", ".")) || 0;
+
+            const options = meData
+              .filter((opt: any) => !opt.error && opt.price && parseFloat(opt.price) > 0)
+              .map((opt: any) => {
+                const basePrice = parseFloat(opt.custom_price || opt.price || 0);
+                const finalPrice = Math.round((basePrice + extraVal) * 100) / 100;
+                const minDays = (opt.custom_delivery_range?.min || opt.delivery_range?.min || opt.custom_delivery_time || opt.delivery_time || 2) + addedDays;
+                const maxDays = (opt.custom_delivery_range?.max || opt.delivery_range?.max || opt.custom_delivery_time || opt.delivery_time || 5) + addedDays;
+                
+                return {
+                  id: opt.id,
+                  name: `${opt.company?.name || "Transportadora"} (${opt.name})`,
+                  service: opt.name,
+                  company: opt.company?.name || "Transportadora",
+                  companyLogo: opt.company?.picture || "",
+                  price: finalPrice,
+                  originalPrice: basePrice,
+                  currency: opt.currency || "R$",
+                  deliveryMinDays: minDays,
+                  deliveryMaxDays: maxDays,
+                  deliveryDaysText: minDays === maxDays 
+                    ? `${minDays} ${minDays === 1 ? 'dia útil' : 'dias úteis'}`
+                    : `${minDays} a ${maxDays} dias úteis`
+                };
+              });
+
+            if (options.length > 0) {
+              return res.json({
+                success: true,
+                fromCep: cleanFrom,
+                toCep: cleanTo,
+                options
+              });
+            }
+          }
+        } else {
+          const errText = await meRes.text();
+          console.warn("Melhor Envio returned error:", meRes.status, errText);
+        }
+      } catch (meError: any) {
+        console.warn("Error requesting Melhor Envio API:", meError.message);
+      }
+    }
+
+    // Fallback: Realistic Estimation based on CEP distance (Region matching)
+    // Ensures customers always get a functional shipping quote even if token is pending
+    const fromPrefix = parseInt(cleanFrom.substring(0, 2), 10);
+    const toPrefix = parseInt(cleanTo.substring(0, 2), 10);
+    const isSameRegion = Math.abs(fromPrefix - toPrefix) <= 5;
+    const isSameState = cleanFrom.charAt(0) === cleanTo.charAt(0);
+
+    const pacBase = isSameRegion ? 18.90 : (isSameState ? 24.50 : 34.90);
+    const sedexBase = isSameRegion ? 26.50 : (isSameState ? 39.90 : 58.90);
+    const jadlogBase = isSameRegion ? 17.50 : (isSameState ? 22.90 : 31.90);
+
+    const addedDays = parseInt(String(extraDays || 0), 10) || 0;
+    const extraVal = parseFloat(String(additionalValue || 0).replace(",", ".")) || 0;
+
+    const fallbackOptions = [
+      {
+        id: "pac_estimate",
+        name: "Correios (PAC)",
+        service: "PAC",
+        company: "Correios",
+        companyLogo: "https://assets.melhorenvio.com.br/companies/correios.png",
+        price: Math.round((pacBase + extraVal) * 100) / 100,
+        currency: "R$",
+        deliveryMinDays: (isSameRegion ? 3 : (isSameState ? 5 : 7)) + addedDays,
+        deliveryMaxDays: (isSameRegion ? 5 : (isSameState ? 8 : 12)) + addedDays,
+        deliveryDaysText: `${(isSameRegion ? 3 : (isSameState ? 5 : 7)) + addedDays} a ${(isSameRegion ? 5 : (isSameState ? 8 : 12)) + addedDays} dias úteis`
+      },
+      {
+        id: "sedex_estimate",
+        name: "Correios (SEDEX Express)",
+        service: "SEDEX",
+        company: "Correios",
+        companyLogo: "https://assets.melhorenvio.com.br/companies/correios.png",
+        price: Math.round((sedexBase + extraVal) * 100) / 100,
+        currency: "R$",
+        deliveryMinDays: (isSameRegion ? 1 : (isSameState ? 2 : 3)) + addedDays,
+        deliveryMaxDays: (isSameRegion ? 2 : (isSameState ? 3 : 5)) + addedDays,
+        deliveryDaysText: `${(isSameRegion ? 1 : (isSameState ? 2 : 3)) + addedDays} a ${(isSameRegion ? 2 : (isSameState ? 3 : 5)) + addedDays} dias úteis`
+      },
+      {
+        id: "jadlog_estimate",
+        name: "Jadlog (.Package)",
+        service: ".Package",
+        company: "Jadlog",
+        companyLogo: "https://assets.melhorenvio.com.br/companies/jadlog.png",
+        price: Math.round((jadlogBase + extraVal) * 100) / 100,
+        currency: "R$",
+        deliveryMinDays: (isSameRegion ? 2 : (isSameState ? 4 : 6)) + addedDays,
+        deliveryMaxDays: (isSameRegion ? 4 : (isSameState ? 7 : 10)) + addedDays,
+        deliveryDaysText: `${(isSameRegion ? 2 : (isSameState ? 4 : 6)) + addedDays} a ${(isSameRegion ? 4 : (isSameState ? 7 : 10)) + addedDays} dias úteis`
+      }
+    ];
+
+    return res.json({
+      success: true,
+      fromCep: cleanFrom,
+      toCep: cleanTo,
+      isEstimate: !authToken,
+      options: fallbackOptions
+    });
+  } catch (err: any) {
+    console.error("Erro no /api/shipping/calculate:", err);
+    return res.status(500).json({ error: "Erro ao calcular frete: " + (err.message || err) });
+  }
+});
+
 interface StoreCache {
   name: string;
   description: string;

@@ -468,6 +468,56 @@
             window.shippingDestinationCep = v;
         };
 
+        window.computeClientShippingQuotes = function(fromCep, toCep, extraDays, cartItems) {
+            const cleanFrom = String(fromCep || '01001000').replace(/\D/g, '');
+            const cleanTo = String(toCep || '').replace(/\D/g, '');
+            const fromPrefix = parseInt(cleanFrom.substring(0, 2), 10);
+            const toPrefix = parseInt(cleanTo.substring(0, 2), 10);
+            const isSameRegion = Math.abs(fromPrefix - toPrefix) <= 5;
+            const isSameState = cleanFrom.charAt(0) === cleanTo.charAt(0);
+            const addedDays = parseInt(String(extraDays || 0), 10) || 0;
+
+            let totalItems = 0;
+            if (Array.isArray(cartItems)) {
+                totalItems = cartItems.reduce((acc, it) => acc + (it.quantity || 1), 0);
+            }
+            const weightFactor = Math.min(1.4, 1 + (Math.max(1, totalItems) - 1) * 0.05);
+
+            const pacBase = (isSameRegion ? 18.90 : (isSameState ? 24.50 : 34.90)) * weightFactor;
+            const jadlogBase = (isSameRegion ? 17.50 : (isSameState ? 22.90 : 31.90)) * weightFactor;
+            const sedexBase = (isSameRegion ? 26.50 : (isSameState ? 39.90 : 58.90)) * weightFactor;
+
+            return [
+                {
+                    id: 'pac_estimate',
+                    name: 'PAC (Correios)',
+                    service: 'PAC',
+                    company: 'Correios',
+                    price: Math.round(pacBase * 100) / 100,
+                    delivery_time: (isSameRegion ? 4 : (isSameState ? 6 : 9)) + addedDays,
+                    custom_delivery_time: (isSameRegion ? 4 : (isSameState ? 6 : 9)) + addedDays
+                },
+                {
+                    id: 'jadlog_estimate',
+                    name: '.Package (Jadlog)',
+                    service: '.Package',
+                    company: 'Jadlog',
+                    price: Math.round(jadlogBase * 100) / 100,
+                    delivery_time: (isSameRegion ? 3 : (isSameState ? 5 : 8)) + addedDays,
+                    custom_delivery_time: (isSameRegion ? 3 : (isSameState ? 5 : 8)) + addedDays
+                },
+                {
+                    id: 'sedex_estimate',
+                    name: 'SEDEX Express (Correios)',
+                    service: 'SEDEX',
+                    company: 'Correios',
+                    price: Math.round(sedexBase * 100) / 100,
+                    delivery_time: (isSameRegion ? 2 : (isSameState ? 3 : 4)) + addedDays,
+                    custom_delivery_time: (isSameRegion ? 2 : (isSameState ? 3 : 4)) + addedDays
+                }
+            ];
+        };
+
         window.calculateNationalShipping = async function() {
             const cepInput = document.getElementById('shipping-cep-input');
             const rawCep = cepInput ? cepInput.value : window.shippingDestinationCep;
@@ -480,6 +530,7 @@
             }
 
             const fromCep = (storeData && storeData.originCep ? storeData.originCep : '01001000').replace(/\D/g, '');
+            const extraDays = storeData && storeData.shippingExtraDays ? storeData.shippingExtraDays : 0;
             window.isCalculatingShipping = true;
             window.shippingDestinationCep = cleanCep;
             updateCartUI();
@@ -503,23 +554,45 @@
                     console.warn("ViaCEP lookup error:", eCep);
                 }
 
-                // 2. Chama a API backend de cálculo de frete
-                const payload = {
-                    fromCep: fromCep,
-                    toCep: cleanCep,
-                    cart: cart,
-                    extraDays: storeData && storeData.shippingExtraDays ? storeData.shippingExtraDays : 0,
-                    token: storeData && storeData.melhorEnvioToken ? storeData.melhorEnvioToken : undefined
-                };
+                // 2. Chama a API backend de cálculo de frete ou usa fallback imediato
+                let rawQuotes = null;
+                try {
+                    const payload = {
+                        fromCep: fromCep,
+                        toCep: cleanCep,
+                        cart: cart,
+                        products: cart,
+                        extraDays: extraDays,
+                        token: storeData && storeData.melhorEnvioToken ? storeData.melhorEnvioToken : undefined
+                    };
 
-                const res = await fetch('/api/shipping/calculate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 4000);
 
-                const data = await res.json();
-                if (data.quotes && Array.isArray(data.quotes) && data.quotes.length > 0) {
+                    const res = await fetch('/api/shipping/calculate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload),
+                        signal: controller.signal
+                    });
+                    clearTimeout(timeoutId);
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data && (Array.isArray(data.options) || Array.isArray(data.quotes))) {
+                            rawQuotes = data.options || data.quotes;
+                        }
+                    }
+                } catch (errApi) {
+                    console.warn("API de frete indisponível no domínio atual, utilizando cálculo regional integrado:", errApi);
+                }
+
+                // Se a API não respondeu ou estamos em hospedagem estática, calcula localmente
+                if (!rawQuotes || rawQuotes.length === 0) {
+                    rawQuotes = window.computeClientShippingQuotes(fromCep, cleanCep, extraDays, cart);
+                }
+
+                if (rawQuotes && rawQuotes.length > 0) {
                     // Verifica se a loja possui valor de frete grátis
                     const freeTier = storeData && storeData.shippingFreeTier ? parseFloat(storeData.shippingFreeTier) : 0;
                     const subtotal = cart.reduce((acc, item) => {
@@ -528,17 +601,20 @@
                         return acc + parseFloat(String(price || '0').replace(',', '.')) * item.quantity;
                     }, 0);
 
-                    const quotesWithPromo = data.quotes.map(q => {
-                        let finalPrice = q.price;
+                    const quotesWithPromo = rawQuotes.map((q, idx) => {
+                        let basePrice = parseFloat(q.price || 0);
+                        let finalPrice = basePrice;
                         let isFree = false;
-                        if (freeTier > 0 && subtotal >= freeTier && (q.name.toLowerCase().includes('pac') || q.name.toLowerCase().includes('econômico') || q.name.toLowerCase().includes('package') || q.id === data.quotes[0].id)) {
+                        const serviceName = (q.name || q.service || '').toLowerCase();
+                        if (freeTier > 0 && subtotal >= freeTier && (serviceName.includes('pac') || serviceName.includes('econômico') || serviceName.includes('package') || idx === 0)) {
                             finalPrice = 0;
                             isFree = true;
                         }
                         return {
                             ...q,
-                            finalPrice,
-                            isFree
+                            price: basePrice,
+                            finalPrice: finalPrice,
+                            isFree: isFree
                         };
                     });
 
@@ -548,11 +624,14 @@
                 } else {
                     window.nationalShippingQuotes = [];
                     window.selectedNationalQuote = null;
-                    alert(data.error || 'Não encontramos opções de envio disponíveis para este CEP.');
+                    alert('Não encontramos opções de envio disponíveis para este CEP.');
                 }
             } catch (err) {
                 console.error("Erro no cálculo de frete:", err);
-                alert('Não foi possível calcular o frete no momento. Tente novamente.');
+                // Mesmo em caso de erro imprevisto, garante o cálculo para o cliente
+                const fallbackQuotes = window.computeClientShippingQuotes(fromCep, cleanCep, extraDays, cart);
+                window.nationalShippingQuotes = fallbackQuotes;
+                window.selectedNationalQuote = fallbackQuotes[0];
             } finally {
                 window.isCalculatingShipping = false;
                 updateCartUI();

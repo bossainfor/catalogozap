@@ -430,229 +430,6 @@
         window.cashChangeValue = '';
         window.appliedGameDiscount = null;
 
-        // Variáveis de Estado para Envio Nacional e Local
-        window.selectedDeliveryType = 'national'; // 'national' | 'local' | 'pickup'
-        window.shippingDestinationCep = '';
-        window.nationalShippingQuotes = [];
-        window.selectedNationalQuote = null;
-        window.isCalculatingShipping = false;
-        window.shippingAddressDetails = {
-            cep: '',
-            logradouro: '',
-            numero: '',
-            complemento: '',
-            bairro: '',
-            localidade: '',
-            uf: ''
-        };
-
-        window.setDeliveryType = function(type) {
-            window.selectedDeliveryType = type;
-            if (type === 'pickup') {
-                selectedShippingZone = null;
-                window.selectedNationalQuote = null;
-            } else if (type === 'local') {
-                window.selectedNationalQuote = null;
-            } else if (type === 'national') {
-                selectedShippingZone = null;
-            }
-            updateCartUI();
-        };
-
-        window.maskShippingCep = function(input) {
-            let v = input.value.replace(/\D/g, '').slice(0, 8);
-            if (v.length > 5) {
-                v = v.replace(/^(\d{5})(\d{1,3})/, '$1-$2');
-            }
-            input.value = v;
-            window.shippingDestinationCep = v;
-        };
-
-        window.computeClientShippingQuotes = function(fromCep, toCep, extraDays, cartItems) {
-            const cleanFrom = String(fromCep || '01001000').replace(/\D/g, '');
-            const cleanTo = String(toCep || '').replace(/\D/g, '');
-            const fromPrefix = parseInt(cleanFrom.substring(0, 2), 10);
-            const toPrefix = parseInt(cleanTo.substring(0, 2), 10);
-            const isSameRegion = Math.abs(fromPrefix - toPrefix) <= 5;
-            const isSameState = cleanFrom.charAt(0) === cleanTo.charAt(0);
-            const addedDays = parseInt(String(extraDays || 0), 10) || 0;
-
-            let totalItems = 0;
-            if (Array.isArray(cartItems)) {
-                totalItems = cartItems.reduce((acc, it) => acc + (it.quantity || 1), 0);
-            }
-            const weightFactor = Math.min(1.4, 1 + (Math.max(1, totalItems) - 1) * 0.05);
-
-            const pacBase = (isSameRegion ? 18.90 : (isSameState ? 24.50 : 34.90)) * weightFactor;
-            const jadlogBase = (isSameRegion ? 17.50 : (isSameState ? 22.90 : 31.90)) * weightFactor;
-            const sedexBase = (isSameRegion ? 26.50 : (isSameState ? 39.90 : 58.90)) * weightFactor;
-
-            return [
-                {
-                    id: 'pac_estimate',
-                    name: 'PAC (Correios)',
-                    service: 'PAC',
-                    company: 'Correios',
-                    price: Math.round(pacBase * 100) / 100,
-                    delivery_time: (isSameRegion ? 4 : (isSameState ? 6 : 9)) + addedDays,
-                    custom_delivery_time: (isSameRegion ? 4 : (isSameState ? 6 : 9)) + addedDays
-                },
-                {
-                    id: 'jadlog_estimate',
-                    name: '.Package (Jadlog)',
-                    service: '.Package',
-                    company: 'Jadlog',
-                    price: Math.round(jadlogBase * 100) / 100,
-                    delivery_time: (isSameRegion ? 3 : (isSameState ? 5 : 8)) + addedDays,
-                    custom_delivery_time: (isSameRegion ? 3 : (isSameState ? 5 : 8)) + addedDays
-                },
-                {
-                    id: 'sedex_estimate',
-                    name: 'SEDEX Express (Correios)',
-                    service: 'SEDEX',
-                    company: 'Correios',
-                    price: Math.round(sedexBase * 100) / 100,
-                    delivery_time: (isSameRegion ? 2 : (isSameState ? 3 : 4)) + addedDays,
-                    custom_delivery_time: (isSameRegion ? 2 : (isSameState ? 3 : 4)) + addedDays
-                }
-            ];
-        };
-
-        window.calculateNationalShipping = async function() {
-            const cepInput = document.getElementById('shipping-cep-input');
-            const rawCep = cepInput ? cepInput.value : window.shippingDestinationCep;
-            const cleanCep = (rawCep || '').replace(/\D/g, '');
-
-            if (cleanCep.length !== 8) {
-                alert('Por favor, informe um CEP válido com 8 dígitos (ex: 01001-000).');
-                if (cepInput) cepInput.focus();
-                return;
-            }
-
-            const fromCep = (storeData && storeData.originCep ? storeData.originCep : '01001000').replace(/\D/g, '');
-            const extraDays = storeData && storeData.shippingExtraDays ? storeData.shippingExtraDays : 0;
-            window.isCalculatingShipping = true;
-            window.shippingDestinationCep = cleanCep;
-            updateCartUI();
-
-            try {
-                // 1. Busca dados do endereço no ViaCEP
-                try {
-                    const viaCepRes = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
-                    const viaCepData = await viaCepRes.json();
-                    if (!viaCepData.erro) {
-                        window.shippingAddressDetails = {
-                            ...window.shippingAddressDetails,
-                            cep: cleanCep,
-                            logradouro: viaCepData.logradouro || '',
-                            bairro: viaCepData.bairro || '',
-                            localidade: viaCepData.localidade || '',
-                            uf: viaCepData.uf || ''
-                        };
-                    }
-                } catch (eCep) {
-                    console.warn("ViaCEP lookup error:", eCep);
-                }
-
-                // 2. Chama a API backend de cálculo de frete ou usa fallback imediato
-                let rawQuotes = null;
-                try {
-                    const payload = {
-                        fromCep: fromCep,
-                        toCep: cleanCep,
-                        cart: cart,
-                        products: cart,
-                        extraDays: extraDays,
-                        token: storeData && storeData.melhorEnvioToken ? storeData.melhorEnvioToken : undefined
-                    };
-
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 4000);
-
-                    const res = await fetch('/api/shipping/calculate', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload),
-                        signal: controller.signal
-                    });
-                    clearTimeout(timeoutId);
-
-                    if (res.ok) {
-                        const data = await res.json();
-                        if (data && (Array.isArray(data.options) || Array.isArray(data.quotes))) {
-                            rawQuotes = data.options || data.quotes;
-                        }
-                    }
-                } catch (errApi) {
-                    console.warn("API de frete indisponível no domínio atual, utilizando cálculo regional integrado:", errApi);
-                }
-
-                // Se a API não respondeu ou estamos em hospedagem estática, calcula localmente
-                if (!rawQuotes || rawQuotes.length === 0) {
-                    rawQuotes = window.computeClientShippingQuotes(fromCep, cleanCep, extraDays, cart);
-                }
-
-                if (rawQuotes && rawQuotes.length > 0) {
-                    // Verifica se a loja possui valor de frete grátis
-                    const freeTier = storeData && storeData.shippingFreeTier ? parseFloat(storeData.shippingFreeTier) : 0;
-                    const subtotal = cart.reduce((acc, item) => {
-                        const isWholesale = item.wholesaleMinQty && item.quantity >= item.wholesaleMinQty;
-                        const price = isWholesale ? item.wholesalePrice : item.price;
-                        return acc + parseFloat(String(price || '0').replace(',', '.')) * item.quantity;
-                    }, 0);
-
-                    const quotesWithPromo = rawQuotes.map((q, idx) => {
-                        let basePrice = parseFloat(q.price || 0);
-                        let finalPrice = basePrice;
-                        let isFree = false;
-                        const serviceName = (q.name || q.service || '').toLowerCase();
-                        if (freeTier > 0 && subtotal >= freeTier && (serviceName.includes('pac') || serviceName.includes('econômico') || serviceName.includes('package') || idx === 0)) {
-                            finalPrice = 0;
-                            isFree = true;
-                        }
-                        return {
-                            ...q,
-                            price: basePrice,
-                            finalPrice: finalPrice,
-                            isFree: isFree
-                        };
-                    });
-
-                    window.nationalShippingQuotes = quotesWithPromo;
-                    // Seleciona a opção mais barata por padrão
-                    window.selectedNationalQuote = quotesWithPromo[0];
-                } else {
-                    window.nationalShippingQuotes = [];
-                    window.selectedNationalQuote = null;
-                    alert('Não encontramos opções de envio disponíveis para este CEP.');
-                }
-            } catch (err) {
-                console.error("Erro no cálculo de frete:", err);
-                // Mesmo em caso de erro imprevisto, garante o cálculo para o cliente
-                const fallbackQuotes = window.computeClientShippingQuotes(fromCep, cleanCep, extraDays, cart);
-                window.nationalShippingQuotes = fallbackQuotes;
-                window.selectedNationalQuote = fallbackQuotes[0];
-            } finally {
-                window.isCalculatingShipping = false;
-                updateCartUI();
-            }
-        };
-
-        window.selectNationalShippingOption = function(quoteId) {
-            const found = window.nationalShippingQuotes.find(q => String(q.id) === String(quoteId));
-            if (found) {
-                window.selectedNationalQuote = found;
-                updateCartUI();
-            }
-        };
-
-        window.updateShippingAddressField = function(field, value) {
-            if (!window.shippingAddressDetails) {
-                window.shippingAddressDetails = {};
-            }
-            window.shippingAddressDetails[field] = value;
-        };
-
         try {
             const savedCoupon = localStorage.getItem('bossa_promo_coupon');
             if (savedCoupon) {
@@ -1472,21 +1249,49 @@
             });
         }
 
-        // Proxy de Imagem (Melhorado para Postimages e outros)
+        // Placeholder SVG elegante caso a imagem falhe (queda de internet, 404 ou bloqueio de CDN)
+        window.FALLBACK_IMG_SVG = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400" fill="none"><rect width="400" height="400" fill="%23f1f5f9"/><path d="M160 160C160 148.954 168.954 140 180 140H220C231.046 140 240 148.954 240 160V170H160V160Z" stroke="%2394a3b8" stroke-width="8" stroke-linecap="round"/><rect x="130" y="170" width="140" height="110" rx="16" fill="%23cbd5e1" stroke="%2394a3b8" stroke-width="8"/><circle cx="200" cy="225" r="14" fill="%2394a3b8"/></svg>';
+
+        window.handleImageError = function(imgEl) {
+            if (!imgEl || imgEl.dataset.failed === 'true') return;
+            imgEl.dataset.failed = 'true';
+            imgEl.src = window.FALLBACK_IMG_SVG;
+            imgEl.classList.add('opacity-75');
+        };
+
+        // Proxy de Imagem Inteligente e Resiliente (Suporte total a ImgBB, Postimages, Drive, Dropbox, Imgur)
         function proxyImg(url) {
             if (!url) return '';
-            let u = url.trim();
+            let u = String(url).trim();
+            if (!u) return '';
             
-            // Se for base64, retorna direto
-            if (u.startsWith('data:image')) return u;
+            // Base64 ou blob direto
+            if (u.startsWith('data:image') || u.startsWith('blob:')) return u;
             
-            // Se for link do Firebase, não precisa de proxy
+            // Firebase Storage direto
             if (u.includes('firebasestorage.')) return u;
+
+            // Google Drive (converte link de visualização em link direto de alta velocidade)
+            if (u.includes('drive.google.com')) {
+                const driveMatch = u.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || u.match(/id=([a-zA-Z0-9_-]+)/);
+                if (driveMatch && driveMatch[1]) {
+                    return `https://lh3.googleusercontent.com/d/${driveMatch[1]}`;
+                }
+            }
+
+            // Dropbox (converte link comum em link raw direto)
+            if (u.includes('dropbox.com')) {
+                return u.replace('www.dropbox.com', 'dl.dropboxusercontent.com').replace('?dl=0', '');
+            }
+
+            // Imgur
+            if (u.includes('imgur.com/') && !u.includes('i.imgur.com/')) {
+                const imgurId = u.split('/').pop().split('.')[0];
+                if (imgurId) return `https://i.imgur.com/${imgurId}.jpg`;
+            }
             
-            // Tratamento inteligente para Postimages
+            // Postimages
             if (u.includes('postimg.cc/')) {
-                // Se o cliente colou o link da página (ex: postimg.cc/65sF32Sj)
-                // Transformamos no link direto (ex: i.postimg.cc/65sF32Sj/image.jpg)
                 if (!u.includes('i.postimg.cc/')) {
                     const parts = u.split('/');
                     const id = parts[parts.length - 1];
@@ -1494,9 +1299,11 @@
                 }
             }
             
-            // Tratamento para ImgBB
+            // ImgBB
+            // Se for link direto (i.ibb.co ou i.ibb.co.com), mantém perfeitamente intacto
             if (u.includes('ibb.co/') && !u.includes('i.ibb.co/')) {
-                u = u.replace('ibb.co/', 'i.ibb.co/') + '.png';
+                // Não adicionamos .png cego para evitar erro 404 se foi colado link da página
+                // Mantém o link para ser renderizado ou capturado pelo fallback
             }
 
             if (!u.startsWith('http')) u = 'https://' + u;
@@ -1759,10 +1566,6 @@
                     expiresAt: data.expiresAt || data.createdAt,
                     vendors: data.v || data.vendors || [],
                     shippingZones: data.sh || data.shippingZones || [],
-                    originCep: data.oc || data.originCep || '',
-                    shippingExtraDays: data.sed !== undefined ? parseInt(data.sed, 10) : 0,
-                    shippingFreeTier: data.sft !== undefined ? parseFloat(data.sft) : 0,
-                    melhorEnvioToken: data.met || data.melhorEnvioToken || '',
                     logo: data.lg || data.logo || '',
                     subtitle: data.sub || data.subtitle || '',
                     paymentBadgeImage: data.pmb || data.paymentBadgeImage || '',
@@ -2223,170 +2026,14 @@
                     promoContainer.innerHTML = gamePromoBannerHTML;
                 }
 
-                // Render Seção de Entrega & Frete Nacional / Local
+                // Render Seção de Entrega & Bairro
                 if (shippingContainer) {
-                    const hasNational = !!(storeData.originCep || storeData.type === 'loja');
-                    const hasLocal = !!(storeData.shippingZones && storeData.shippingZones.length > 0);
-                    const freeTier = storeData.shippingFreeTier ? parseFloat(storeData.shippingFreeTier) : 0;
-                    
-                    // Se não tiver tipo selecionado ainda, define padrão
-                    if (!window.selectedDeliveryType) {
-                        window.selectedDeliveryType = hasNational ? 'national' : (hasLocal ? 'local' : 'pickup');
-                    }
-
-                    let freeTierBanner = '';
-                    if (freeTier > 0) {
-                        const currentSubtotal = Math.max(0, total - discountAmount);
-                        if (currentSubtotal >= freeTier) {
-                            freeTierBanner = `
-                                <div class="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300 text-[11px] font-black flex items-center gap-2 animate-fade-in">
-                                    <i data-lucide="sparkles" class="w-4 h-4 text-emerald-500 shrink-0"></i>
-                                    <span>🎉 Parabéns! Você ganhou <strong>FRETE GRÁTIS</strong>!</span>
-                                </div>
-                            `;
-                        } else {
-                            const diff = freeTier - currentSubtotal;
-                            const pct = Math.min(100, Math.round((currentSubtotal / freeTier) * 100));
-                            freeTierBanner = `
-                                <div class="p-2.5 rounded-xl bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-800/60 text-orange-700 dark:text-orange-300 text-[10px] space-y-1.5 font-bold">
-                                    <div class="flex justify-between items-center">
-                                        <span>Faltam <strong>${formatCurrency(diff)}</strong> para <strong>FRETE GRÁTIS</strong>!</span>
-                                        <span>${pct}%</span>
-                                    </div>
-                                    <div class="w-full h-1.5 bg-orange-200 dark:bg-orange-900 rounded-full overflow-hidden">
-                                        <div class="h-full bg-orange-500 rounded-full transition-all duration-500" style="width: ${pct}%"></div>
-                                    </div>
-                                </div>
-                            `;
-                        }
-                    }
-
-                    let modeSelectorHTML = '';
-                    if (hasNational && hasLocal) {
-                        modeSelectorHTML = `
-                            <div class="grid grid-cols-3 gap-1 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl mb-3">
-                                <button type="button" onclick="window.setDeliveryType('national')" class="py-1.5 px-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${window.selectedDeliveryType === 'national' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}">
-                                    📦 Brasil
-                                </button>
-                                <button type="button" onclick="window.setDeliveryType('local')" class="py-1.5 px-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${window.selectedDeliveryType === 'local' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}">
-                                    🛵 Bairro
-                                </button>
-                                <button type="button" onclick="window.setDeliveryType('pickup')" class="py-1.5 px-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${window.selectedDeliveryType === 'pickup' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}">
-                                    🏪 Balcão
-                                </button>
-                            </div>
-                        `;
-                    } else if (hasNational) {
-                        modeSelectorHTML = `
-                            <div class="grid grid-cols-2 gap-1 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl mb-3">
-                                <button type="button" onclick="window.setDeliveryType('national')" class="py-1.5 px-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${window.selectedDeliveryType === 'national' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}">
-                                    📦 Envio Nacional
-                                </button>
-                                <button type="button" onclick="window.setDeliveryType('pickup')" class="py-1.5 px-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${window.selectedDeliveryType === 'pickup' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}">
-                                    🏪 Retirar no Local
-                                </button>
-                            </div>
-                        `;
-                    } else if (hasLocal) {
-                        modeSelectorHTML = `
-                            <div class="grid grid-cols-2 gap-1 p-1 bg-slate-100 dark:bg-slate-900 rounded-xl mb-3">
-                                <button type="button" onclick="window.setDeliveryType('local')" class="py-1.5 px-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${window.selectedDeliveryType === 'local' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}">
-                                    🛵 Entrega no Bairro
-                                </button>
-                                <button type="button" onclick="window.setDeliveryType('pickup')" class="py-1.5 px-2 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${window.selectedDeliveryType === 'pickup' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs' : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-200'}">
-                                    🏪 Retirar no Local
-                                </button>
-                            </div>
-                        `;
-                    }
-
-                    let deliveryContentHTML = '';
-
-                    if (window.selectedDeliveryType === 'national') {
-                        let quotesHTML = '';
-                        if (window.isCalculatingShipping) {
-                            quotesHTML = `
-                                <div class="py-6 flex flex-col items-center justify-center gap-2 text-slate-400">
-                                    <div class="animate-spin rounded-full h-7 w-7 border-2 border-orange-500 border-t-transparent"></div>
-                                    <span class="text-xs font-bold">Consultando transportadoras e Correios...</span>
-                                </div>
-                            `;
-                        } else if (window.nationalShippingQuotes && window.nationalShippingQuotes.length > 0) {
-                            quotesHTML = `
-                                <div class="space-y-2 mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60">
-                                    <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Opções de Envio Disponíveis</label>
-                                    <div class="space-y-1.5">
-                                        ${window.nationalShippingQuotes.map(q => {
-                                            const isSelected = window.selectedNationalQuote && String(window.selectedNationalQuote.id) === String(q.id);
-                                            const priceDisplay = q.isFree ? '<span class="text-emerald-600 font-black">GRÁTIS</span>' : formatCurrency(q.finalPrice !== undefined ? q.finalPrice : q.price);
-                                            return `
-                                                <div onclick="window.selectNationalShippingOption('${q.id}')" class="p-3 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between gap-3 ${isSelected ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/20 shadow-xs' : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 bg-white dark:bg-slate-900'}">
-                                                    <div class="flex items-center gap-2.5">
-                                                        <div class="w-4 h-4 rounded-full border-2 flex items-center justify-center ${isSelected ? 'border-orange-500 bg-orange-500' : 'border-slate-300 dark:border-slate-600'}">
-                                                            ${isSelected ? '<div class="w-1.5 h-1.5 bg-white rounded-full"></div>' : ''}
-                                                        </div>
-                                                        <div class="text-left">
-                                                            <div class="flex items-center gap-1.5">
-                                                                <span class="text-xs font-black text-slate-800 dark:text-white uppercase">${escapeHtml(q.name)}</span>
-                                                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">${escapeHtml(q.company)}</span>
-                                                            </div>
-                                                            <p class="text-[10px] text-slate-400 font-medium">Prazo: ${q.custom_delivery_time || q.delivery_time} dias úteis</p>
-                                                        </div>
-                                                    </div>
-                                                    <div class="text-right font-black text-xs sm:text-sm text-slate-900 dark:text-white">
-                                                        ${priceDisplay}
-                                                    </div>
-                                                </div>
-                                            `;
-                                        }).join('')}
-                                    </div>
-
-                                    <!-- Endereço de Entrega Completo -->
-                                    <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/60 space-y-2">
-                                        <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 flex items-center gap-1">
-                                            <i data-lucide="map-pin" class="w-3 h-3 text-orange-500"></i>
-                                            <span>Endereço de Entrega</span>
-                                        </label>
-
-                                        <div class="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-700 text-xs space-y-1 text-slate-700 dark:text-slate-300 font-medium">
-                                            <p><strong class="font-black text-slate-900 dark:text-white">Rua:</strong> ${escapeHtml(window.shippingAddressDetails.logradouro || 'Preencha abaixo')} ${window.shippingAddressDetails.bairro ? `• ${escapeHtml(window.shippingAddressDetails.bairro)}` : ''}</p>
-                                            <p><strong class="font-black text-slate-900 dark:text-white">Cidade/UF:</strong> ${escapeHtml(window.shippingAddressDetails.localidade || '')} / ${escapeHtml(window.shippingAddressDetails.uf || '')} (CEP: ${escapeHtml(window.shippingAddressDetails.cep || window.shippingDestinationCep)})</p>
-                                        </div>
-
-                                        <div class="grid grid-cols-3 gap-2">
-                                            <div class="col-span-1">
-                                                <input type="text" placeholder="Número *" value="${escapeHtml(window.shippingAddressDetails.numero || '')}" oninput="window.updateShippingAddressField('numero', this.value)" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold outline-none dark:text-white focus:border-orange-500">
-                                            </div>
-                                            <div class="col-span-2">
-                                                <input type="text" placeholder="Compl. (Apto, Bloco, etc)" value="${escapeHtml(window.shippingAddressDetails.complemento || '')}" oninput="window.updateShippingAddressField('complemento', this.value)" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 text-xs font-bold outline-none dark:text-white focus:border-orange-500">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        }
-
-                        deliveryContentHTML = `
-                            <div class="space-y-2">
-                                <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 flex items-center gap-1.5">
-                                    <i data-lucide="truck" class="w-3.5 h-3.5 text-orange-500"></i>
-                                    <span>Calcular Frete (Envio para todo o Brasil)</span>
-                                </label>
-                                <div class="flex gap-2">
-                                    <input type="text" id="shipping-cep-input" placeholder="Digite seu CEP (Ex: 00000-000)" value="${escapeHtml(window.shippingDestinationCep || '')}" oninput="window.maskShippingCep(this)" onkeydown="if(event.key==='Enter'){event.preventDefault();window.calculateNationalShipping();}" class="flex-1 px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-xs sm:text-sm outline-none dark:text-white placeholder:text-slate-400 focus:border-orange-500">
-                                    <button type="button" onclick="window.calculateNationalShipping()" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 rounded-xl font-black text-xs uppercase tracking-wider transition-all active-scale shrink-0 cursor-pointer shadow-xs">
-                                        Calcular
-                                    </button>
-                                </div>
-                                ${quotesHTML}
-                            </div>
-                        `;
-                    } else if (window.selectedDeliveryType === 'local') {
-                        deliveryContentHTML = `
-                            <div class="space-y-1.5">
+                    if (storeData.shippingZones && storeData.shippingZones.length > 0) {
+                        shippingContainer.innerHTML = `
+                            <div class="space-y-1.5 text-left bg-white dark:bg-slate-800 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-xs">
                                 <label class="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1 flex items-center gap-1.5">
                                     <i data-lucide="map-pin" class="w-3.5 h-3.5 text-orange-500"></i>
-                                    <span>Selecione seu Bairro (Entrega Local)</span>
+                                    <span>Selecione seu Bairro (Entrega)</span>
                                 </label>
                                 <select onchange="window.setShippingZone(this.value)" class="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 font-bold text-xs sm:text-sm outline-none dark:text-white cursor-pointer focus:border-orange-500">
                                     <option value="">Selecione seu bairro...</option>
@@ -2395,42 +2042,11 @@
                             </div>
                         `;
                     } else {
-                        deliveryContentHTML = `
-                            <div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-700/60 flex items-center gap-3 text-left">
-                                <div class="w-9 h-9 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-orange-600 flex items-center justify-center shrink-0">
-                                    <i data-lucide="store" class="w-5 h-5"></i>
-                                </div>
-                                <div>
-                                    <h5 class="text-xs font-black uppercase text-slate-800 dark:text-white">Retirada no Local</h5>
-                                    <p class="text-[10px] text-slate-400 font-medium">Você retira o pedido no balcão da loja física sem custo de entrega.</p>
-                                </div>
-                            </div>
-                        `;
+                        shippingContainer.innerHTML = '';
                     }
-
-                    shippingContainer.innerHTML = `
-                        <div class="space-y-2 text-left bg-white dark:bg-slate-800 p-3.5 rounded-2xl border border-slate-200/80 dark:border-slate-700 shadow-xs">
-                            ${freeTierBanner}
-                            ${modeSelectorHTML}
-                            ${deliveryContentHTML}
-                        </div>
-                    `;
                 }
 
-                // Cálculo do valor do frete ativo
-                let shippingPrice = 0;
-                let shippingDetailsLabel = '';
-                if (window.selectedDeliveryType === 'national' && window.selectedNationalQuote) {
-                    shippingPrice = window.selectedNationalQuote.finalPrice !== undefined ? window.selectedNationalQuote.finalPrice : window.selectedNationalQuote.price;
-                    shippingDetailsLabel = `Frete (${window.selectedNationalQuote.name} - ${window.selectedNationalQuote.company})`;
-                } else if (window.selectedDeliveryType === 'local' && selectedShippingZone) {
-                    shippingPrice = parseFloat(selectedShippingZone.price.replace(',', '.'));
-                    shippingDetailsLabel = `Taxa de Entrega (${selectedShippingZone.neighborhood})`;
-                } else if (window.selectedDeliveryType === 'pickup') {
-                    shippingPrice = 0;
-                    shippingDetailsLabel = 'Retirada no Local (Grátis)';
-                }
-
+                const shippingPrice = selectedShippingZone ? parseFloat(selectedShippingZone.price.replace(',', '.')) : 0;
                 const discountedSubtotal = Math.max(0, total - discountAmount);
                 const grandTotal = discountedSubtotal + shippingPrice;
 
@@ -2488,7 +2104,15 @@
                                         <h5 class="text-[10px] font-black uppercase text-slate-700 dark:text-white">Pagamento por Link Seguro</h5>
                                         <p class="text-[8px] text-slate-400 font-bold uppercase tracking-wide leading-none">Cartão de Crédito e Débito</p>
                                     </div>
-                                    <img src="https://i0.wp.com/imprensa24h.com.br/wp-content/uploads/2023/03/bandeiras-de-cartoes-de-credito-png-e-vetor.png?fit=1920%2C1080&ssl=1" alt="Bandeiras de Cartão" class="h-5 w-auto object-contain bg-white px-1.5 py-0.5 rounded border border-slate-100 shadow-xs" referrerpolicy="no-referrer">
+                                    <div class="flex items-center gap-1 bg-white dark:bg-slate-800 px-2 py-1 rounded border border-slate-200 dark:border-slate-700 shadow-xs shrink-0">
+                                        <span class="text-[8px] font-black tracking-wider text-slate-800 dark:text-slate-100 font-mono">VISA</span>
+                                        <span class="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                                        <span class="text-[8px] font-black tracking-wider text-amber-500 font-mono">MASTER</span>
+                                        <span class="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                                        <span class="text-[8px] font-black tracking-wider text-blue-500 font-mono">ELO</span>
+                                        <span class="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600"></span>
+                                        <span class="text-[8px] font-black tracking-wider text-emerald-500 font-mono">PIX</span>
+                                    </div>
                                 </div>
                             </div>
                         `;
@@ -2526,10 +2150,10 @@
                                 </div>
                             ` : ''}
 
-                            ${shippingDetailsLabel ? `
+                            ${selectedShippingZone ? `
                                 <div class="flex justify-between text-xs font-bold">
-                                    <span class="text-slate-400">${escapeHtml(shippingDetailsLabel)}</span>
-                                    <span class="dark:text-white font-black ${shippingPrice === 0 ? 'text-emerald-500' : ''}">${shippingPrice === 0 ? 'GRÁTIS' : formatCurrency(shippingPrice)}</span>
+                                    <span class="text-slate-400">Taxa de Entrega (${escapeHtml(selectedShippingZone.neighborhood)})</span>
+                                    <span class="dark:text-white font-black">${formatCurrency(shippingPrice)}</span>
                                 </div>
                             ` : ''}
 
@@ -2630,25 +2254,6 @@
                 }
             }
 
-            // Validação de Envio Nacional / Endereço
-            if (window.selectedDeliveryType === 'national') {
-                if (!window.selectedNationalQuote) {
-                    alert('Por favor, informe seu CEP e selecione a modalidade de frete desejada antes de finalizar.');
-                    const cepInput = document.getElementById('shipping-cep-input');
-                    if (cepInput) cepInput.focus();
-                    return;
-                }
-                if (!window.shippingAddressDetails || !window.shippingAddressDetails.numero || window.shippingAddressDetails.numero.trim() === '') {
-                    alert('Por favor, informe o número da sua residência/endereço para envio.');
-                    return;
-                }
-            } else if (window.selectedDeliveryType === 'local') {
-                if (!selectedShippingZone) {
-                    alert('Por favor, selecione seu bairro para entrega.');
-                    return;
-                }
-            }
-
             const orderNumStr = '#' + String(Math.floor(1000 + Math.random() * 9000));
             let message = `*Novo Pedido ${orderNumStr} - ${storeData.name}*\n\n`;
             
@@ -2716,37 +2321,10 @@
             }
 
             let shippingPrice = 0;
-            let shippingTypeStr = 'Retirada no Local';
-            let customerAddressStr = 'Retirada no Balcão';
-
-            if (window.selectedDeliveryType === 'national' && window.selectedNationalQuote) {
-                const q = window.selectedNationalQuote;
-                shippingPrice = q.finalPrice !== undefined ? q.finalPrice : q.price;
-                shippingTypeStr = `Envio Nacional (${q.company} - ${q.name})`;
-                const addr = window.shippingAddressDetails || {};
-                customerAddressStr = `${addr.logradouro || ''}, Nº ${addr.numero || 'S/N'}${addr.complemento ? ' (' + addr.complemento + ')' : ''} - ${addr.bairro || ''}, ${addr.localidade || ''}/${addr.uf || ''} - CEP: ${addr.cep || window.shippingDestinationCep}`;
-
-                message += `\n*📦 Modalidade de Envio:* Envio Nacional`;
-                message += `\n*🚚 Transportadora:* ${q.company} (${q.name})`;
-                message += `\n*⏱️ Prazo Estimado:* ${q.custom_delivery_time || q.delivery_time} dias úteis`;
-                message += `\n*💰 Valor do Frete:* ${shippingPrice === 0 ? 'GRÁTIS' : formatCurrency(shippingPrice)}`;
-                message += `\n\n*📍 Endereço de Entrega:*`;
-                message += `\n- CEP: ${addr.cep || window.shippingDestinationCep}`;
-                message += `\n- Rua: ${addr.logradouro || 'Não informado'}, Nº ${addr.numero || 'S/N'}`;
-                if (addr.complemento) message += `\n- Complemento: ${addr.complemento}`;
-                if (addr.bairro) message += `\n- Bairro: ${addr.bairro}`;
-                if (addr.localidade) message += `\n- Cidade/UF: ${addr.localidade}/${addr.uf || ''}`;
-
-                total += shippingPrice;
-            } else if (window.selectedDeliveryType === 'local' && selectedShippingZone) {
+            if (selectedShippingZone) {
                 shippingPrice = parseFloat(String(selectedShippingZone.price || '0').replace(',', '.'));
-                shippingTypeStr = `Entrega Local (${selectedShippingZone.neighborhood})`;
-                customerAddressStr = `Bairro ${selectedShippingZone.neighborhood}`;
-                message += `\n*🛵 Entrega Local:* ${selectedShippingZone.neighborhood} (+ ${formatCurrency(shippingPrice)})`;
+                message += `\n*Entrega:* ${selectedShippingZone.neighborhood} (+ ${formatCurrency(shippingPrice)})`;
                 total += shippingPrice;
-            } else {
-                shippingTypeStr = 'Retirada no Local';
-                message += `\n*🏪 Entrega:* Retirada no Balcão / Loja Física (Sem taxa)`;
             }
 
             const cardFeePercentage = storeData.cf ? parseFloat(storeData.cf) : 0;
@@ -2803,11 +2381,8 @@
                         vendorCode: vendorCode || '',
                         customerName: 'Cliente Online',
                         customerPhone: '',
-                        customerAddress: customerAddressStr,
-                        shippingType: window.selectedDeliveryType,
-                        shippingCarrier: window.selectedNationalQuote ? `${window.selectedNationalQuote.company} - ${window.selectedNationalQuote.name}` : '',
-                        shippingEstimatedDays: window.selectedNationalQuote ? (window.selectedNationalQuote.custom_delivery_time || window.selectedNationalQuote.delivery_time) : '',
-                        shippingAddressDetails: window.selectedDeliveryType === 'national' ? window.shippingAddressDetails : null,
+                        customerAddress: selectedShippingZone ? selectedShippingZone.neighborhood : 'Retirada no Local / Balcão',
+                        shippingType: selectedShippingZone ? 'delivery' : 'pickup',
                         shippingNeighborhood: selectedShippingZone ? selectedShippingZone.neighborhood : '',
                         shippingPrice: shippingPrice,
                         items: itemsList,
@@ -3657,7 +3232,7 @@
             const logoHTML = storeData.logo ? `
                 <div class="relative z-20 mb-6 flex justify-center">
                     <div class="w-32 h-32 sm:w-40 sm:h-40 rounded-full border-4 border-white dark:border-slate-900 bg-transparent overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.4)] ring-8 ring-white/20 transition-all duration-500 hover:scale-110 flex items-center justify-center">
-                        <img src="${proxyImg(storeData.logo)}" class="w-full h-full object-contain p-2" alt="Logo">
+                        <img src="${proxyImg(storeData.logo)}" class="w-full h-full object-contain p-2" alt="Logo" onerror="window.handleImageError(this)">
                     </div>
                 </div>
             ` : '';
@@ -3738,7 +3313,7 @@
                                 ${cardMedia.map((item, idx) => `
                                     <div class="snap-start flex-shrink-0 w-full h-full relative pointer-events-none">
                                         ${item.type === 'image' ? `
-                                            <img src="${item.url}" class="absolute inset-0 w-full h-full object-contain" referrerpolicy="no-referrer">
+                                            <img src="${item.url}" class="absolute inset-0 w-full h-full object-contain" referrerpolicy="no-referrer" onerror="window.handleImageError(this)">
                                         ` : `
                                             <div class="video-wrapper">
                                                 ${item.isDirect ? `
@@ -3770,7 +3345,7 @@
                         ` : (cardMedia.length === 1 ? `
                             <div class="absolute inset-0 pointer-events-none">
                                 ${cardMedia[0].type === 'image' ? `
-                                    <img src="${cardMedia[0].url}" class="absolute inset-0 w-full h-full object-contain hover:scale-105 transition-transform duration-500" style="image-rendering: -webkit-optimize-contrast;" referrerpolicy="no-referrer">
+                                    <img src="${cardMedia[0].url}" class="absolute inset-0 w-full h-full object-contain hover:scale-105 transition-transform duration-500" style="image-rendering: -webkit-optimize-contrast;" referrerpolicy="no-referrer" onerror="window.handleImageError(this)">
                                 ` : `
                                     <div class="video-wrapper h-full">
                                         ${cardMedia[0].isDirect ? `
@@ -3853,7 +3428,7 @@
                                 const cursorClass = isClickable ? 'cursor-pointer' : 'cursor-default pointer-events-none';
                                 return `
                                 <div ${clickAction} class="snap-start flex-shrink-0 w-full h-full relative ${cursorClass} group/slide overflow-hidden">
-                                    <img src="${proxyImg(b.i)}" alt="Banner Promocional" class="w-full h-full object-fill group-hover/slide:scale-105 transition-transform duration-700 ease-out" referrerpolicy="no-referrer">
+                                    <img src="${proxyImg(b.i)}" alt="Banner Promocional" class="w-full h-full object-fill group-hover/slide:scale-105 transition-transform duration-700 ease-out" referrerpolicy="no-referrer" onerror="window.handleImageError(this)">
                                     <div class="absolute inset-0 bg-gradient-to-t from-black/20 dark:from-black/45 via-transparent to-transparent"></div>
                                 </div>
                                 `;
@@ -3906,7 +3481,7 @@
                                 return `
                                 <div onclick="${featAction}" class="snap-start flex-shrink-0 w-[200px] sm:w-[240px] bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm hover:shadow-md transition-all group/feat cursor-pointer active-scale">
                                     <div class="relative aspect-square overflow-hidden rounded-t-2xl bg-slate-100 dark:bg-slate-900">
-                                        <img src="${proxyImg(p.image)}" class="absolute inset-0 w-full h-full object-contain p-2 group-hover/feat:scale-110 transition-transform duration-500" referrerpolicy="no-referrer">
+                                        <img src="${proxyImg(p.image)}" class="absolute inset-0 w-full h-full object-contain p-2 group-hover/feat:scale-110 transition-transform duration-500" referrerpolicy="no-referrer" onerror="window.handleImageError(this)">
                                         <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
                                     </div>
                                     <div class="p-4">

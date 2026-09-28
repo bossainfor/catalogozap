@@ -3045,29 +3045,62 @@
         }
 
         window.tvIsMuted = true;
+        window.tvSoundTimer = null;
+        window.showTvSoundTemporarily = function() {
+            const btn = document.getElementById('tv-sound-btn');
+            if (btn) {
+                btn.classList.remove('opacity-0', 'pointer-events-none');
+                btn.classList.add('opacity-100', 'pointer-events-auto');
+                if (window.tvSoundTimer) clearTimeout(window.tvSoundTimer);
+                window.tvSoundTimer = setTimeout(() => {
+                    btn.classList.remove('opacity-100', 'pointer-events-auto');
+                    btn.classList.add('opacity-0', 'pointer-events-none');
+                }, 3000);
+            }
+        };
+
         window.toggleTvSound = function() {
             const video = document.getElementById('tv-store-player');
-            const icon = document.getElementById('tv-sound-icon');
-            const text = document.getElementById('tv-sound-text');
             window.tvIsMuted = !window.tvIsMuted;
             if (video) {
                 video.muted = window.tvIsMuted;
             }
-            if (window.tvIsMuted) {
-                if (icon) {
-                    icon.setAttribute('data-lucide', 'volume-x');
-                    icon.classList.remove('text-emerald-400');
-                    icon.classList.add('text-red-400');
+            window.updateTvSoundUI();
+        };
+
+        window.updateTvSoundUI = function() {
+            const isMuted = window.tvIsMuted !== false;
+
+            // Botão no cabeçalho acima do anúncio (não fica em cima do vídeo)
+            const headerBtn = document.getElementById('tv-header-sound-btn');
+            const headerIcon = document.getElementById('tv-header-sound-icon');
+            const headerText = document.getElementById('tv-header-sound-text');
+            if (headerBtn) {
+                if (isMuted) {
+                    headerBtn.className = "px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-sm bg-slate-900 text-rose-300 hover:text-white hover:bg-slate-800 border border-rose-500/30 active:scale-95";
+                } else {
+                    headerBtn.className = "px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-sm bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30 active:scale-95";
                 }
-                if (text) text.innerText = 'ATIVAR SOM';
-            } else {
-                if (icon) {
-                    icon.setAttribute('data-lucide', 'volume-2');
-                    icon.classList.remove('text-red-400');
-                    icon.classList.add('text-emerald-400');
-                }
-                if (text) text.innerText = 'DESATIVAR SOM';
             }
+            if (headerIcon) {
+                headerIcon.setAttribute('data-lucide', isMuted ? 'volume-x' : 'volume-2');
+                headerIcon.className = `w-4 h-4 ${isMuted ? 'text-red-400' : 'text-white'}`;
+            }
+            if (headerText) {
+                headerText.innerText = isMuted ? 'LIGAR SOM' : 'SOM LIGADO';
+            }
+
+            // Botão flutuante sobre o vídeo (agora no canto superior direito e auto-ocultável)
+            const icon = document.getElementById('tv-sound-icon');
+            const text = document.getElementById('tv-sound-text');
+            if (icon) {
+                icon.setAttribute('data-lucide', isMuted ? 'volume-x' : 'volume-2');
+                icon.className = `w-4 h-4 ${isMuted ? 'text-red-400' : 'text-emerald-400'}`;
+            }
+            if (text) {
+                text.innerText = isMuted ? 'ATIVAR SOM' : 'DESATIVAR SOM';
+            }
+
             if (window.lucide) lucide.createIcons();
         };
 
@@ -3097,9 +3130,9 @@
                 if (current.isDirect) {
                     const isMuted = window.tvIsMuted !== false;
                     container.innerHTML = `
-                        <div class="relative w-full h-full group/tv">
+                        <div class="relative w-full h-full group/tv" id="tv-video-wrapper" onmousemove="window.showTvSoundTemporarily()" ontouchstart="window.showTvSoundTemporarily()">
                             <video id="tv-store-player" src="${current.url}" autoplay ${isMuted ? 'muted' : ''} playsinline webkit-playsinline controls class="w-full h-full object-contain bg-black" onended="window.onTvVideoEnded()"></video>
-                            <button onclick="window.toggleTvSound()" id="tv-sound-btn" class="absolute bottom-4 right-4 z-20 bg-black/75 hover:bg-black/90 text-white px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider backdrop-blur-md border border-white/20 flex items-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer">
+                            <button onclick="window.toggleTvSound(); window.showTvSoundTemporarily();" id="tv-sound-btn" class="absolute top-3 right-3 z-20 bg-black/85 hover:bg-black text-white px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider backdrop-blur-md border border-white/20 flex items-center gap-2 shadow-2xl active:scale-95 transition-all duration-300 cursor-pointer opacity-0 pointer-events-none group-hover/tv:opacity-100 group-hover/tv:pointer-events-auto" title="Ligar/Desligar som">
                                 <i data-lucide="${isMuted ? 'volume-x' : 'volume-2'}" id="tv-sound-icon" class="w-4 h-4 ${isMuted ? 'text-red-400' : 'text-emerald-400'}"></i>
                                 <span id="tv-sound-text">${isMuted ? 'ATIVAR SOM' : 'DESATIVAR SOM'}</span>
                             </button>
@@ -3109,6 +3142,8 @@
                     if (v) {
                         v.play().catch(() => {});
                     }
+                    const headerBtn = document.getElementById('tv-header-sound-btn');
+                    if (headerBtn) headerBtn.classList.remove('hidden');
                 } else {
                     let finalEmbedUrl = current.url;
                     if (finalEmbedUrl.includes('youtube.com/embed/')) {
@@ -3118,8 +3153,10 @@
                         }
                     }
                     container.innerHTML = `<iframe src="${finalEmbedUrl}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" class="w-full h-full"></iframe>`;
+                    const headerBtn = document.getElementById('tv-header-sound-btn');
+                    if (headerBtn) headerBtn.classList.add('hidden');
                 }
-                if (window.lucide) lucide.createIcons();
+                window.updateTvSoundUI();
             }
         };
 
@@ -3530,6 +3567,12 @@
                                 ` : ''}
                             </div>
                             <div class="flex items-center gap-2">
+                                ${firstMedia.isDirect ? `
+                                    <button onclick="window.toggleTvSound()" id="tv-header-sound-btn" class="px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-sm ${window.tvIsMuted !== false ? 'bg-slate-900 text-rose-300 hover:text-white hover:bg-slate-800 border border-rose-500/30' : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30'} active:scale-95" title="Ligar ou Desligar Som">
+                                        <i data-lucide="${window.tvIsMuted !== false ? 'volume-x' : 'volume-2'}" id="tv-header-sound-icon" class="w-4 h-4 ${window.tvIsMuted !== false ? 'text-red-400' : 'text-white'}"></i>
+                                        <span id="tv-header-sound-text">${window.tvIsMuted !== false ? 'LIGAR SOM' : 'SOM LIGADO'}</span>
+                                    </button>
+                                ` : ''}
                                 ${totalVideos > 1 ? `
                                     <div class="flex items-center gap-1 bg-slate-900 border border-slate-800 rounded-xl p-0.5">
                                         <button onclick="window.prevTvVideo()" class="p-1.5 hover:bg-slate-800 text-slate-300 hover:text-white rounded-lg transition-colors cursor-pointer" title="Vídeo anterior">
@@ -3550,9 +3593,9 @@
                         <div class="relative w-full aspect-video rounded-2xl overflow-hidden bg-black shadow-2xl border border-slate-800 ring-1 ring-white/10 max-h-[70vh] group/tvbox">
                             <div id="tv-player-media-container" class="w-full h-full">
                                 ${firstMedia.isDirect ? `
-                                    <div class="relative w-full h-full group/tv">
+                                    <div class="relative w-full h-full group/tv" id="tv-video-wrapper" onmousemove="window.showTvSoundTemporarily()" ontouchstart="window.showTvSoundTemporarily()">
                                         <video id="tv-store-player" src="${firstMedia.url}" autoplay muted playsinline webkit-playsinline controls class="w-full h-full object-contain bg-black" onended="window.onTvVideoEnded()"></video>
-                                        <button onclick="window.toggleTvSound()" id="tv-sound-btn" class="absolute bottom-4 right-4 z-20 bg-black/75 hover:bg-black/90 text-white px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider backdrop-blur-md border border-white/20 flex items-center gap-2 shadow-lg active:scale-95 transition-all cursor-pointer">
+                                        <button onclick="window.toggleTvSound(); window.showTvSoundTemporarily();" id="tv-sound-btn" class="absolute top-3 right-3 z-20 bg-black/85 hover:bg-black text-white px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider backdrop-blur-md border border-white/20 flex items-center gap-2 shadow-2xl active:scale-95 transition-all duration-300 cursor-pointer opacity-0 pointer-events-none group-hover/tv:opacity-100 group-hover/tv:pointer-events-auto" title="Ligar/Desligar som">
                                             <i data-lucide="volume-x" id="tv-sound-icon" class="w-4 h-4 text-red-400"></i>
                                             <span id="tv-sound-text">ATIVAR SOM</span>
                                         </button>
